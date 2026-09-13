@@ -4,7 +4,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>gelyn</AssemblyName>
-    <RootNamespace>Gelyn</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PublishDocumentationFile>false</PublishDocumentationFile>
@@ -24,6 +23,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>gelyn</ToolCommandName>
     <ToolPackageRuntimeIdentifiers>osx-arm64;osx-x64;linux-x64;linux-arm64;win-x64;win-arm64</ToolPackageRuntimeIdentifiers>
+    <RuntimeIdentifiers>$(ToolPackageRuntimeIdentifiers)</RuntimeIdentifiers>
   </PropertyGroup>
 
   <PropertyGroup Label="Package metadata">
