@@ -1,3 +1,5 @@
+using System.CommandLine;
+
 namespace Gelyn;
 
 /// <summary>
@@ -16,7 +18,6 @@ internal static class Program
     /// </returns>
     internal static int Main(string[] args)
     {
-        Console.WriteLine("Hello from gelyn!");
-        return 0;
+        return new GelynCommand().Parse(args).Invoke();
     }
 }
