@@ -1,8 +1,38 @@
 <Project>
 
-  <PropertyGroup>
+  <PropertyGroup Label="Restore">
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <RestoreLockedMode Condition="'$(CI)' == 'true' or '$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+    <!-- GitHub Actions sets $(CI) -->
+    <ContinuousIntegrationBuild Condition="'$(CI)' != ''">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
+    <RestoreLockedMode>true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Language">
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Analyzers">
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>all</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Output">
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/nupkg</PackageOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Shared package metadata">
+    <Authors>Stefan Greve</Authors>
+    <Version>0.1.0-alpha.1</Version>
   </PropertyGroup>
 
 </Project>

@@ -1,5 +1,6 @@
-using System;
 using System.CommandLine;
+
+using Spectre.Console;
 
 namespace Gelyn;
 
@@ -23,7 +24,7 @@ internal sealed class GelynCommand : RootCommand
         SetAction(parseResult =>
         {
             string name = parseResult.GetValue(_greetOption) ?? "world";
-            Console.WriteLine($"Hello from gelyn, {name}!");
+            AnsiConsole.MarkupLineInterpolated($"Hello from [green]gelyn[/], [bold]{name}[/]!");
         });
     }
 }

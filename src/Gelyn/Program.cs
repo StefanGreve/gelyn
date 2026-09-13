@@ -1,5 +1,3 @@
-using System.CommandLine;
-
 namespace Gelyn;
 
 /// <summary>
