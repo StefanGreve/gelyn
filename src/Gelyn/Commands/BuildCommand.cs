@@ -41,13 +41,13 @@ internal sealed class BuildCommand : Command
 
                 console.MarkupLineInterpolated($"Generated [bold]{written.Count}[/] page(s).");
 
-                return 0;
+                return ExitCodes.Success;
             }
             catch (IOException exception)
             {
                 console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
-                return 1;
+                return ExitCodes.Error;
             }
         });
     }
