@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Abstractions;
 using Gelyn.Internals;
+using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
 

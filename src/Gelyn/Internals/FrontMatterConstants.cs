@@ -1,12 +1,12 @@
 namespace Gelyn.Internals;
 
 /// <summary>
-///     The metadata vocabulary the generator recognizes.
+///     The front matter vocabulary the generator recognizes.
 /// </summary>
-internal static class MetaDataConstants
+internal static class FrontMatterConstants
 {
     /// <summary>
-    ///     The fence that opens and closes a metadata block.
+    ///     The fence that opens and closes a front matter block.
     /// </summary>
     internal const string Delimiter = "---";
 

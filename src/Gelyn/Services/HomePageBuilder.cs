@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Gelyn.Abstractions;
 using Gelyn.Internals;
 using Gelyn.Model;
+using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
 
@@ -14,8 +15,7 @@ namespace Gelyn.Services;
 /// <summary>
 ///     Builds the landing page from <c>index.md</c>.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class HomePageBuilder : PageBuilderContract
+public sealed class HomePageBuilder : PageBuilderContract
 {
     private const string SourceFileName = "index.md";
 
@@ -35,6 +35,7 @@ internal sealed class HomePageBuilder : PageBuilderContract
     /// <param name="options">
     ///     Supplies the content root.
     /// </param>
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public HomePageBuilder(MarkdownRendererContract renderer, PageLayout layout, IOptions<SiteOptions> options)
     {
         this._renderer = renderer;

@@ -3,6 +3,8 @@ using System.IO;
 using Gelyn.Abstractions;
 using Gelyn.Commands;
 using Gelyn.Components;
+using Gelyn.Internals;
+using Gelyn.Model.Options;
 using Gelyn.Services;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +34,7 @@ internal static class ServiceCollectionExtensions
         services.TryAddSingleton(AnsiConsole.Console);
 
         services.AddOptions<SiteOptions>()
-            .BindConfiguration(SiteOptions.SectionName)
+            .BindConfiguration(Sections.Site)
             .PostConfigure<IHostEnvironment>((options, environment) =>
             {
                 options.ContentDirectory = Path.Combine(environment.ContentRootPath, options.ContentDirectory);

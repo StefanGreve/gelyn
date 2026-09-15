@@ -3,6 +3,7 @@ using System.Net;
 
 using Gelyn.Abstractions;
 using Gelyn.Internals;
+using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
 
@@ -11,8 +12,7 @@ namespace Gelyn.Components;
 /// <summary>
 ///     The block rendered at the bottom of every page.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class FooterComponent : ComponentContract
+public sealed class FooterComponent : ComponentContract
 {
     private readonly SiteOptions _options;
 
@@ -22,6 +22,7 @@ internal sealed class FooterComponent : ComponentContract
     /// <param name="options">
     ///     Supplies the site title.
     /// </param>
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public FooterComponent(IOptions<SiteOptions> options)
     {
         this._options = options.Value;

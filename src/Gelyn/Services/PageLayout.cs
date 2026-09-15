@@ -3,6 +3,7 @@ using System.Net;
 
 using Gelyn.Components;
 using Gelyn.Internals;
+using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
 
@@ -11,8 +12,7 @@ namespace Gelyn.Services;
 /// <summary>
 ///     Wraps rendered page content in the shared document shell.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class PageLayout
+public sealed class PageLayout
 {
     private readonly HeaderComponent _header;
     private readonly FooterComponent _footer;
@@ -30,6 +30,7 @@ internal sealed class PageLayout
     /// <param name="options">
     ///     Supplies the fallback title.
     /// </param>
+    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public PageLayout(HeaderComponent header, FooterComponent footer, IOptions<SiteOptions> options)
     {
         this._header = header;

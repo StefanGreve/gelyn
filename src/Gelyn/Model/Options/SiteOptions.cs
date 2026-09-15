@@ -1,20 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
-
-using Gelyn.Internals;
-
-namespace Gelyn;
+namespace Gelyn.Model.Options;
 
 /// <summary>
 ///     Locations and metadata the generator works with, bound from the <c>Site</c> configuration section.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class SiteOptions
+public sealed class SiteOptions
 {
-    /// <summary>
-    ///     The configuration section these options are bound from.
-    /// </summary>
-    internal const string SectionName = "Site";
-
     /// <summary>
     ///     The name shown in the header and used when a page declares no title.
     /// </summary>

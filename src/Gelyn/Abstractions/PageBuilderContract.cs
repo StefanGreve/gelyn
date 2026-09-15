@@ -9,7 +9,7 @@ namespace Gelyn.Abstractions;
 /// <remarks>
 ///     Implementations return markup rather than writing it, so that all file output stays in one place.
 /// </remarks>
-internal abstract class PageBuilderContract
+public abstract class PageBuilderContract
 {
     /// <summary>
     ///     The path of the generated file, relative to the output root.
