@@ -4,6 +4,8 @@ using System.Net;
 using Gelyn.Components;
 using Gelyn.Internals;
 
+using Microsoft.Extensions.Options;
+
 namespace Gelyn.Services;
 
 /// <summary>
@@ -28,11 +30,11 @@ internal sealed class PageLayout
     /// <param name="options">
     ///     Supplies the fallback title.
     /// </param>
-    public PageLayout(HeaderComponent header, FooterComponent footer, SiteOptions options)
+    public PageLayout(HeaderComponent header, FooterComponent footer, IOptions<SiteOptions> options)
     {
         this._header = header;
         this._footer = footer;
-        this._options = options;
+        this._options = options.Value;
     }
 
     /// <summary>

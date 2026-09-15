@@ -1,3 +1,5 @@
+using System.IO;
+
 using Gelyn.Abstractions;
 using Gelyn.Commands;
 using Gelyn.Components;
@@ -5,6 +7,7 @@ using Gelyn.Services;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 using Spectre.Console;
 
@@ -27,7 +30,14 @@ internal static class ServiceCollectionExtensions
     internal static IServiceCollection AddGelyn(this IServiceCollection services)
     {
         services.TryAddSingleton(AnsiConsole.Console);
-        services.TryAddSingleton<SiteOptions>();
+
+        services.AddOptions<SiteOptions>()
+            .BindConfiguration(SiteOptions.SectionName)
+            .PostConfigure<IHostEnvironment>((options, environment) =>
+            {
+                options.ContentDirectory = Path.Combine(environment.ContentRootPath, options.ContentDirectory);
+                options.OutputDirectory = Path.Combine(environment.ContentRootPath, options.OutputDirectory);
+            });
 
         services.TryAddSingleton<MarkdownRendererContract, MarkdigRenderer>();
         services.TryAddSingleton<HeaderComponent>();

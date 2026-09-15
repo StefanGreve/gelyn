@@ -7,6 +7,8 @@ using Gelyn.Abstractions;
 using Gelyn.Internals;
 using Gelyn.Model;
 
+using Microsoft.Extensions.Options;
+
 namespace Gelyn.Services;
 
 /// <summary>
@@ -33,11 +35,11 @@ internal sealed class HomePageBuilder : PageBuilderContract
     /// <param name="options">
     ///     Supplies the content root.
     /// </param>
-    public HomePageBuilder(MarkdownRendererContract renderer, PageLayout layout, SiteOptions options)
+    public HomePageBuilder(MarkdownRendererContract renderer, PageLayout layout, IOptions<SiteOptions> options)
     {
         this._renderer = renderer;
         this._layout = layout;
-        this._options = options;
+        this._options = options.Value;
     }
 
     /// <inheritdoc/>
@@ -46,7 +48,7 @@ internal sealed class HomePageBuilder : PageBuilderContract
     /// <inheritdoc/>
     public override async Task<string> BuildAsync(CancellationToken cancellationToken)
     {
-        string source = Path.Combine(this._options.ContentRoot, SourceFileName);
+        string source = Path.Combine(this._options.ContentDirectory, SourceFileName);
 
         if (!File.Exists(source))
             throw new FileNotFoundException($"No landing page found at '{source}'.", source);

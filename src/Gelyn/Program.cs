@@ -1,4 +1,3 @@
-using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
@@ -25,22 +24,9 @@ internal static class Program
     /// </returns>
     internal static async Task<int> Main(string[] args)
     {
-        HostApplicationBuilder builder = new(new HostApplicationBuilderSettings
-        {
-            Args = args,
-            ContentRootPath = Directory.GetCurrentDirectory(),
-            DisableDefaults = true,
-        });
+        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
         builder.Services.AddGelyn();
-
-#if DEBUG
-        builder.ConfigureContainer(new DefaultServiceProviderFactory(new ServiceProviderOptions
-        {
-            ValidateOnBuild = true,
-            ValidateScopes = true,
-        }));
-#endif
 
         using IHost host = builder.Build();
 

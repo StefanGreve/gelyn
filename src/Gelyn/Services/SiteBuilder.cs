@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Gelyn.Abstractions;
 using Gelyn.Internals;
 
+using Microsoft.Extensions.Options;
+
 namespace Gelyn.Services;
 
 /// <summary>
@@ -27,10 +29,10 @@ internal sealed class SiteBuilder
     /// <param name="options">
     ///     Supplies the output root.
     /// </param>
-    public SiteBuilder(IEnumerable<PageBuilderContract> pageBuilders, SiteOptions options)
+    public SiteBuilder(IEnumerable<PageBuilderContract> pageBuilders, IOptions<SiteOptions> options)
     {
         this._pageBuilders = pageBuilders;
-        this._options = options;
+        this._options = options.Value;
     }
 
     /// <summary>
@@ -49,9 +51,9 @@ internal sealed class SiteBuilder
         foreach (PageBuilderContract pageBuilder in this._pageBuilders)
         {
             string html = await pageBuilder.BuildAsync(cancellationToken).ConfigureAwait(false);
-            string destination = Path.Combine(this._options.OutputRoot, pageBuilder.OutputPath);
+            string destination = Path.Combine(this._options.OutputDirectory, pageBuilder.OutputPath);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? this._options.OutputRoot);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? this._options.OutputDirectory);
             await File.WriteAllTextAsync(destination, html, cancellationToken).ConfigureAwait(false);
 
             written.Add(pageBuilder.OutputPath);

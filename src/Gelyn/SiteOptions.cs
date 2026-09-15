@@ -1,45 +1,32 @@
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 
 using Gelyn.Internals;
-
-using Microsoft.Extensions.Hosting;
 
 namespace Gelyn;
 
 /// <summary>
-///     Locations and metadata the generator works with, resolved from the working directory.
+///     Locations and metadata the generator works with, bound from the <c>Site</c> configuration section.
 /// </summary>
 [SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
 internal sealed class SiteOptions
 {
-    private const string ContentDirectoryName = "content";
-    private const string OutputDirectoryName = "_site";
-
     /// <summary>
-    ///     Initializes a new instance of the <see cref="SiteOptions"/> class.
+    ///     The configuration section these options are bound from.
     /// </summary>
-    /// <param name="environment">
-    ///     Supplies the content root, which the host sets to the current working directory.
-    /// </param>
-    public SiteOptions(IHostEnvironment environment)
-    {
-        this.ContentRoot = Path.Combine(environment.ContentRootPath, ContentDirectoryName);
-        this.OutputRoot = Path.Combine(environment.ContentRootPath, OutputDirectoryName);
-    }
+    internal const string SectionName = "Site";
 
     /// <summary>
     ///     The name shown in the header and used when a page declares no title.
     /// </summary>
-    public string SiteTitle { get; } = "Gelyn";
+    public string SiteTitle { get; set; } = "Gelyn";
 
     /// <summary>
-    ///     The directory holding the Markdown sources.
+    ///     The directory holding the Markdown sources. Relative values are resolved against the working directory.
     /// </summary>
-    public string ContentRoot { get; }
+    public string ContentDirectory { get; set; } = "content";
 
     /// <summary>
-    ///     The directory the generated site is written to.
+    ///     The directory the generated site is written to. Relative values are resolved against the working directory.
     /// </summary>
-    public string OutputRoot { get; }
+    public string OutputDirectory { get; set; } = "_site";
 }

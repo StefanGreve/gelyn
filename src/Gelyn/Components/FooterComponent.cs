@@ -4,6 +4,8 @@ using System.Net;
 using Gelyn.Abstractions;
 using Gelyn.Internals;
 
+using Microsoft.Extensions.Options;
+
 namespace Gelyn.Components;
 
 /// <summary>
@@ -20,9 +22,9 @@ internal sealed class FooterComponent : ComponentContract
     /// <param name="options">
     ///     Supplies the site title.
     /// </param>
-    public FooterComponent(SiteOptions options)
+    public FooterComponent(IOptions<SiteOptions> options)
     {
-        this._options = options;
+        this._options = options.Value;
     }
 
     /// <inheritdoc/>
