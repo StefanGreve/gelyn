@@ -60,6 +60,6 @@ internal static class MetaDataParser
 
         return title is null && date is null
             ? MetaData.Empty
-            : new MetaData(title, date);
+            : new MetaData { Title = title, Date = date };
     }
 }
