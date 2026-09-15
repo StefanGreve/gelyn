@@ -11,6 +11,11 @@ internal static class FrontMatterConstants
     internal const string Delimiter = "---";
 
     /// <summary>
+    ///     The character separating a key from its value.
+    /// </summary>
+    internal const char Separator = ':';
+
+    /// <summary>
     ///     The key supplying the page title.
     /// </summary>
     internal const string Title = "title";

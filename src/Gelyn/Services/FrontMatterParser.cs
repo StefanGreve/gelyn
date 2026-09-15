@@ -32,18 +32,8 @@ public static class FrontMatterParser
 
         foreach (ReadOnlySpan<char> line in block.EnumerateLines())
         {
-            ReadOnlySpan<char> trimmed = line.Trim();
-
-            if (trimmed.IsEmpty || trimmed.SequenceEqual(FrontMatterConstants.Delimiter))
+            if (!TryReadPair(line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value))
                 continue;
-
-            int separator = trimmed.IndexOf(':');
-
-            if (separator < 0)
-                continue;
-
-            ReadOnlySpan<char> key = trimmed[..separator].Trim();
-            ReadOnlySpan<char> value = trimmed[(separator + 1)..].Trim().Trim('"').Trim('\'');
 
             switch (key)
             {
@@ -62,4 +52,38 @@ public static class FrontMatterParser
             ? FrontMatter.Empty
             : new FrontMatter { Title = title, Date = date };
     }
+
+    #region Helpers
+
+    private static bool TryReadPair(ReadOnlySpan<char> line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value)
+    {
+        key = default;
+        value = default;
+
+        ReadOnlySpan<char> trimmed = line.Trim();
+
+        if (trimmed.IsEmpty || trimmed.SequenceEqual(FrontMatterConstants.Delimiter))
+            return false;
+
+        int separator = trimmed.IndexOf(FrontMatterConstants.Separator);
+
+        if (separator < 0)
+            return false;
+
+        key = trimmed[..separator].Trim();
+        value = Unquote(trimmed[(separator + 1)..].Trim());
+
+        return !key.IsEmpty;
+    }
+
+    // Quotes are only stripped as a matched pair, so an unquoted value may end in an apostrophe.
+    private static ReadOnlySpan<char> Unquote(ReadOnlySpan<char> value)
+    {
+        if (value.Length < 2 || value[0] is not ('"' or '\''))
+            return value;
+
+        return value[^1] == value[0] ? value[1..^1] : value;
+    }
+
+    #endregion
 }
