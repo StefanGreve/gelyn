@@ -38,6 +38,10 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <Target Name="CleanGeneratedOutput" AfterTargets="Clean">
+    <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />

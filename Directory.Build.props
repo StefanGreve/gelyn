@@ -26,8 +26,9 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Output">
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/nupkg</PackageOutputPath>
+    <PackageOutputPath>$(RepositoryRoot)artifacts/nupkg</PackageOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Label="Shared package metadata">
