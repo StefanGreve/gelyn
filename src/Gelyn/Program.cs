@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading.Tasks;
 
 using Gelyn.Commands;
 using Gelyn.Extensions;
@@ -22,7 +23,7 @@ internal static class Program
     /// <returns>
     ///     Zero on success, a non-zero exit code otherwise.
     /// </returns>
-    internal static int Main(string[] args)
+    internal static async Task<int> Main(string[] args)
     {
         HostApplicationBuilder builder = new(new HostApplicationBuilderSettings
         {
@@ -43,6 +44,10 @@ internal static class Program
 
         using IHost host = builder.Build();
 
-        return host.Services.GetRequiredService<GelynCommand>().Parse(args).Invoke();
+        return await host.Services
+            .GetRequiredService<GelynCommand>()
+            .Parse(args)
+            .InvokeAsync()
+            .ConfigureAwait(false);
     }
 }

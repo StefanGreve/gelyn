@@ -4,7 +4,27 @@ A static site generator, packaged as a .NET tool.
 
 ## Usage
 
-TODO
+Write Markdown into `content/`, then generate the site:
+
+```sh
+gelyn build
+```
+
+Output is written to `_site/`. Both directories are resolved relative to the working directory.
+
+Each page starts with a YAML front matter block supplying its metadata:
+
+```markdown
+---
+title: Home
+date: 2026-09-13
+---
+
+# Welcome
+```
+
+`title` becomes the document title; a page that omits it falls back to the site title. Only flat
+`key: value` pairs are recognised.
 
 ## Tab completion
 

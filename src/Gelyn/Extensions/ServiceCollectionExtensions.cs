@@ -1,6 +1,10 @@
+using Gelyn.Abstractions;
 using Gelyn.Commands;
+using Gelyn.Components;
+using Gelyn.Services;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using Spectre.Console;
 
@@ -22,9 +26,19 @@ internal static class ServiceCollectionExtensions
     /// </returns>
     internal static IServiceCollection AddGelyn(this IServiceCollection services)
     {
-        services.AddSingleton(AnsiConsole.Console);
+        services.TryAddSingleton(AnsiConsole.Console);
+        services.TryAddSingleton<SiteOptions>();
 
-        services.AddSingleton<GelynCommand>();
+        services.TryAddSingleton<MarkdownRendererContract, MarkdigRenderer>();
+        services.TryAddSingleton<HeaderComponent>();
+        services.TryAddSingleton<FooterComponent>();
+        services.TryAddSingleton<PageLayout>();
+
+        services.TryAddSingleton<PageBuilderContract, HomePageBuilder>();
+        services.TryAddSingleton<SiteBuilder>();
+
+        services.TryAddSingleton<BuildCommand>();
+        services.TryAddSingleton<GelynCommand>();
 
         return services;
     }
