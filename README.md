@@ -10,8 +10,6 @@ Write Markdown into `content/`, then generate the site:
 gelyn build
 ```
 
-Output is written to `_site/`. Both directories are resolved relative to the working directory.
-
 ## Tab completion
 
 Built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
@@ -47,28 +45,37 @@ dotnet test
 Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp].
 A [`Husky.Net`][husky] `pre-push` hook runs the same suite before every push.
 
-To install this project locally, pack the tool and install it from the local package output:
+To use the tool locally, publish it and link the resulting binary onto your `PATH`:
 
 ```sh
-dotnet pack
-dotnet tool install --global --add-source ./artifacts/nupkg Gelyn --prerelease
+dotnet publish src/Gelyn -r osx-arm64
+ln -sf "$PWD/src/Gelyn/bin/Release/net10.0/osx-arm64/publish/gelyn" ~/.local/bin/gelyn
 ```
 
-Then invoke it by its command name:
+`PublishAot` makes that a standalone executable, so the link is made once and every later `dotnet publish`
+updates the command in place. Then invoke it by its command name (`gelyn`).
+
+> [!TIP]
+> Use one of the known [RIDs][known-rids] in place of `osx-arm64`; `Gelyn.csproj` lists the set this project
+> targets. Native AOT cannot cross-compile between operating systems, so each one is built on its own.
+
+Packing and installing as a global tool works differently: it rehearses what a consumer gets, including
+the runtime-specific package layout that the publish output alone does not cover.
 
 ```sh
-gelyn
+dotnet pack && dotnet pack -r osx-arm64
+dotnet tool install --global Gelyn --prerelease
 ```
 
-To update after a rebuild, uninstall and reinstall:
-
-```sh
-dotnet tool uninstall --global Gelyn
-```
+> [!NOTE]
+> A plain `dotnet pack` emits only the pointer package listing the per-architecture ones, so the matching RID
+> has to be packed as well. `Gelyn` resolves as a package id rather than a path, so `nuget.config` declares
+> `artifacts/nupkg` as the `local` source and maps `Gelyn*` to it.
 
 <!-- References -->
 
 [tunit]: https://tunit.dev
 [husky]: https://alirezanet.github.io/Husky.Net
-[mtp]:https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
+[mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [tab-completion]: https://learn.microsoft.com/en-us/dotnet/standard/commandline/how-to-enable-tab-completion
+[known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
