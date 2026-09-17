@@ -8,8 +8,7 @@ using Gelyn.Services;
 namespace Gelyn.Tests;
 
 /// <summary>
-///     Black-box tests for the public <see cref="FrontMatterParser"/> API, exercising
-///     <c>Parse</c> end-to-end against raw front matter blocks.
+///     Unit tests for the <see cref="FrontMatterParser"/> class.
 /// </summary>
 public partial class FrontMatterParserTests
 {
@@ -41,7 +40,7 @@ public partial class FrontMatterParserTests
         const string block = """
             ---
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -62,7 +61,7 @@ public partial class FrontMatterParserTests
             author: Stefan
             draft: true
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -83,7 +82,7 @@ public partial class FrontMatterParserTests
             title: Home
             date: 2026-09-13
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -107,7 +106,7 @@ public partial class FrontMatterParserTests
             ---
             title: Home
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -269,7 +268,7 @@ public partial class FrontMatterParserTests
             title: First
             title: Second
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -293,7 +292,7 @@ public partial class FrontMatterParserTests
             : orphaned value
             title: Home
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
@@ -395,7 +394,7 @@ public partial class FrontMatterParserTests
             title: Home
             date: not a date
             ---
-            """;
+        """;
 
         // Act
         FrontMatter result = FrontMatterParser.Parse(block);
