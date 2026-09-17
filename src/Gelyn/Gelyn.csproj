@@ -13,6 +13,16 @@
       <DebugType>None</DebugType>
   </PropertyGroup>
 
+  <PropertyGroup Label="Restore">
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Analyzers">
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>all</AnalysisMode>
+  </PropertyGroup>
+
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>

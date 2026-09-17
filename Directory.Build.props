@@ -1,13 +1,8 @@
 <Project>
 
-  <PropertyGroup Label="Restore">
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  <PropertyGroup Label="Build">
     <!-- GitHub Actions sets $(CI) -->
     <ContinuousIntegrationBuild Condition="'$(CI)' != ''">true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
-    <RestoreLockedMode>true</RestoreLockedMode>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
@@ -20,8 +15,6 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Analyzers">
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>all</AnalysisMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
