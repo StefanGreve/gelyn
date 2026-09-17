@@ -2,6 +2,13 @@
   "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
   "tasks": [
     {
+      "name": "format",
+      "group": "pre-commit",
+      "command": "dotnet",
+      "args": [ "format", "Gelyn.slnx", "--include", "${staged}" ],
+      "include": [ "**/*.cs" ]
+    },
+    {
       "name": "test",
       "group": "pre-push",
       "command": "dotnet",
