@@ -1,0 +1,11 @@
+{
+  "$schema": "https://alirezanet.github.io/Husky.Net/schema.json",
+  "tasks": [
+    {
+      "name": "test",
+      "group": "pre-push",
+      "command": "dotnet",
+      "args": [ "test" ]
+    }
+  ]
+}

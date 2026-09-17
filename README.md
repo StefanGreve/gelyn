@@ -24,11 +24,18 @@ dotnet-suggest register --command-path "$HOME/.dotnet/tools/gelyn"
 
 ## Developer Notes
 
+Install the development dependencies and register the `git` hooks:
+
+```sh
+dotnet tool restore
+dotnet tool run husky install
+```
+
 Build and run this project:
 
 ```sh
 dotnet build
-dotnet run --project src/Gelyn -- <command>     # e.g. substitute <command> with build
+dotnet run --project src/Gelyn -- <command>     # e.g. build
 ```
 
 Run the test suite:
@@ -38,6 +45,7 @@ dotnet test
 ```
 
 Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp].
+A [`Husky.Net`][husky] `pre-push` hook runs the same suite before every push.
 
 To install this project locally, pack the tool and install it from the local package output:
 
@@ -61,5 +69,6 @@ dotnet tool uninstall --global Gelyn
 <!-- References -->
 
 [tunit]: https://tunit.dev
+[husky]: https://alirezanet.github.io/Husky.Net
 [mtp]:https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [tab-completion]: https://learn.microsoft.com/en-us/dotnet/standard/commandline/how-to-enable-tab-completion
