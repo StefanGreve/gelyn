@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "editorconfig.editorconfig",
+    "redhat.vscode-xml",
+    "yzhang.markdown-all-in-one",
+    "github.vscode-github-actions",
+    "usernamehw.errorlens"
+  ]
+}
