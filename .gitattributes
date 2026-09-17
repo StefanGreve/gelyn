@@ -1,0 +1,96 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+###############################################################################
+# Dotnet
+#
+# The diff option is needed for earlier builds of msysgit that does not have it
+# on by default for csharp files. (Note: This is only used by command line)
+###############################################################################
+*.cs            text eol=lf diff=csharp
+*.cshtml        text eol=lf diff=html
+*.csx           text eol=lf diff=csharp
+*.slnx          text eol=lf
+*.csproj        text eol=lf
+*.props         text eol=lf
+*.targets       text eol=lf
+
+###############################################################################
+# Text files
+###############################################################################
+*.config        text eol=lf
+*.json          text eol=lf
+*.ini           text eol=lf
+*.xml           text eol=lf
+*.txt           text eol=lf
+*.pem           text eol=lf
+*.md            text eol=lf diff=markdown
+*.mdx           text eol=lf diff=markdown
+.editorconfig   text eol=lf
+
+###############################################################################
+# Text files without extensions
+###############################################################################
+README          text eol=lf
+LICENSE         text eol=lf
+CHANGELOG       text eol=lf
+
+INSTALL         text eol=lf
+COPYRIGHT       text eol=lf
+CHANGES         text eol=lf
+AUTHORS         text eol=lf
+CONTRIBUTING    text eol=lf
+COPYING         text eol=lf
+
+###############################################################################
+# Text files where line endings should be preserved
+###############################################################################
+*.patch         -text
+
+###############################################################################
+# Scripts
+#
+# Windows adopted Unicode before UTF-8 was recommended by the Unicode Consortium,
+# which is why Windows initially was based on UCS-2. By the time UTF-8 and UTF-16
+# grew in popularity, it was too late for Windows to change over to UTF-8 without
+# breaking a magnitude of existing code, however UTF-16 is backwards
+# compatible with UCS-2 which is the primary reason why Windows PowerShell scripts
+# (Version 5.1) uses UTF-16LE. If necessary, this can be specified here with adding
+# 'working-tree-encoding=UTF-16' to the affected line.
+#
+# If a file with this attribute is added to Git, then Git reencodes the content
+# from the specified encoding to UTF-8. Finally, Git stores the UTF-8 encoded
+# content in its internal data structure (called "the index"). On checkout the
+# content is reencoded back to the specified encoding.
+#
+# Fortunately, PowerShell Core (Version 7) defaults to BOM-less UTF-8, which
+# stays in line with Unix-like platforms.
+###############################################################################
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+*.sh            text eol=lf
+
+###############################################################################
+# Git hooks
+#
+# Hooks carry no file extension, so none of the rules above match them and they
+# fall through to '* text=auto'. A CRLF checkout turns the shebang into
+# '#!/bin/sh\r', which sh rejects as a bad interpreter.
+###############################################################################
+.husky/*        text eol=lf
+
+###############################################################################
+# Binaries
+###############################################################################
+*.dll           binary
+*.exe           binary
+*.pfx           binary
+*.cer           binary
+
+###############################################################################
+# Exclude files from exporting
+###############################################################################
+.gitattributes  export-ignore
+.gitignore      export-ignore
+.gitkeep        export-ignore
