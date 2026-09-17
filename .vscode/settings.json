@@ -1,5 +1,28 @@
 {
   "json.schemaDownload.trustedDomains": {
     "https://alirezanet.github.io/Husky.Net/schema.json": true
-  }
+  },
+  "files.associations": {
+    "*.props": "xml",
+    "*.targets": "xml",
+    "*.slnx": "xml"
+  },
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  },
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.csproj": "packages.lock.json",
+    "*.slnx": "Directory.Build.props, Directory.Packages.props, dotnet-tools.json, global.json, nuget.config"
+  },
+  "dotnet.formatting.organizeImportsOnFormat": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp",
+    "editor.formatOnSave": true
+  },
+  "[xml]": {
+    "editor.defaultFormatter": "redhat.vscode-xml"
+  },
+  "xml.format.maxLineWidth": 120
 }
