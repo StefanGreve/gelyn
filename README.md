@@ -1,6 +1,11 @@
 # Gelyn
 
-A static site generator, packaged as a .NET tool.
+[![Build][build-badge]][build-workflow]
+[![.NET][dotnet-badge]][dotnet-download]
+[![Platform][platform-badge]][known-rids]
+[![License][license-badge]][license]
+
+A simple, high-performance static site generator for Markdown.
 
 ## Usage
 
@@ -74,6 +79,13 @@ dotnet tool install --global Gelyn --prerelease
 
 <!-- References -->
 
+[build-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/dotnet-build.yml/badge.svg
+[build-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/dotnet-build.yml
+[dotnet-badge]: https://img.shields.io/badge/.NET-10.0-512BD4
+[dotnet-download]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
+[license-badge]: https://img.shields.io/github/license/StefanGreve/gelyn?color=green
+[platform-badge]: https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey
+[license]: LICENSE.md
 [tunit]: https://tunit.dev
 [husky]: https://alirezanet.github.io/Husky.Net
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
