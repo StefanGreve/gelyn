@@ -1,6 +1,7 @@
 # Gelyn
 
 [![Build][build-badge]][build-workflow]
+[![CodeQL][codeql-badge]][codeql-workflow]
 [![.NET][dotnet-badge]][dotnet-download]
 [![Platform][platform-badge]][known-rids]
 [![License][license-badge]][license]
@@ -81,6 +82,8 @@ dotnet tool install --global Gelyn --prerelease
 
 [build-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/dotnet-build.yml/badge.svg
 [build-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/dotnet-build.yml
+[codeql-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml/badge.svg
+[codeql-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml
 [dotnet-badge]: https://img.shields.io/badge/.NET-10.0-512BD4
 [dotnet-download]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 [license-badge]: https://img.shields.io/github/license/StefanGreve/gelyn?color=green
