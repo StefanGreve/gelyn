@@ -12,7 +12,25 @@
       "name": "test",
       "group": "pre-push",
       "command": "dotnet",
-      "args": [ "test" ]
+      "args": [
+        "test",
+        "--",
+        "--coverage",
+        "--coverage-output-format", "cobertura",
+        "--coverage-output", "CoverageReport/coverage.cobertura.xml"
+      ]
+    },
+    {
+      "name": "coverage",
+      "group": "pre-push",
+      "command": "dotnet",
+      "args": [
+        "tool", "run", "reportgenerator",
+        "-reports:TestResults/CoverageReport/coverage.cobertura.xml",
+        "-targetdir:TestResults/CoverageReport",
+        "-reporttypes:Html",
+        "-filefilters:-**/obj/**"
+      ]
     }
   ]
 }
