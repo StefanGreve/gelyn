@@ -25,7 +25,7 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
-      - name: Check out the repository
+      - name: Check out Repository
         uses: actions/checkout@v7
 
       - name: Set up the .NET SDK
@@ -36,18 +36,33 @@ jobs:
           cache-dependency-path: |
             Directory.Packages.props
             src/Gelyn/packages.lock.json
+            .config/dotnet-tools.json
 
-      - name: Restore dependencies
+      - name: Restore Dependencies
         run: dotnet restore Gelyn.slnx
+
+      - name: Restore Local Tools
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: dotnet tool restore
 
       - name: Build
         run: dotnet build Gelyn.slnx --configuration Release --no-restore
 
-      - name: Run unit tests
+      - name: Run Unit Tests
         id: test
         run: dotnet test Gelyn.slnx --configuration Release --no-build
 
-      - name: Upload test report
+      - name: Render Coverage Report
+        if: ${{ !cancelled() && steps.test.outcome != 'skipped' && matrix.os == 'ubuntu-latest' }}
+        run: |
+          dotnet tool run reportgenerator \
+            -reports:TestResults/CoverageReport/coverage.cobertura.xml \
+            -targetdir:TestResults/CoverageReport \
+            -reporttypes:'Html;MarkdownSummaryGithub' \
+            '-filefilters:-**/obj/**'
+          cat TestResults/CoverageReport/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Test Report
         if: ${{ !cancelled() && steps.test.outcome != 'skipped' }}
         uses: actions/upload-artifact@v7
         with:
