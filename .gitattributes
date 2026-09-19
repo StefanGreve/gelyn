@@ -90,7 +90,11 @@ COPYING         text eol=lf
 
 ###############################################################################
 # Exclude files from exporting
+#
+# An exported archive carries no '.git' directory, so anything that only works
+# inside a working copy is dead weight there.
 ###############################################################################
 .gitattributes  export-ignore
 .gitignore      export-ignore
 .gitkeep        export-ignore
+.husky          export-ignore
