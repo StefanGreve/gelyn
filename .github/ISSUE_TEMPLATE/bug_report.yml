@@ -1,0 +1,64 @@
+name: Bug report
+description: Report incorrect or unexpected behavior in gelyn
+labels: [ bug ]
+
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before Submitting
+      options:
+        - label: I have searched the existing issues and this has not been reported yet.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `gelyn --version`.
+      placeholder: 0.1.0-alpha.1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: The runtime identifier gelyn was built for.
+      options:
+        - osx-arm64
+        - osx-x64
+        - linux-x64
+        - linux-arm64
+        - win-x64
+        - win-arm64
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed with
+      options:
+        - dotnet tool install
+        - Built from source
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Include the Markdown or front matter block that triggers the problem, if relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
