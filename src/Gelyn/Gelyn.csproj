@@ -39,7 +39,7 @@
 
   <PropertyGroup Label="Package metadata">
     <PackageId>Gelyn</PackageId>
-    <Description>A static site generator.</Description>
+    <Description>A simple, cross-platform, and high-performance static site generator for Markdown.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>

@@ -5,7 +5,7 @@
 [![Platform][platform-badge]][known-rids]
 [![License][license-badge]][license]
 
-A simple, high-performance static site generator for Markdown.
+A simple, cross-platform, and high-performance static site generator for Markdown.
 
 ## Usage
 
