@@ -1,0 +1,7 @@
+{
+  "commandLineOptions": {
+    "coverage": true,
+    "coverage-output-format": "cobertura",
+    "coverage-output": "CoverageReport/coverage.cobertura.xml"
+  }
+}

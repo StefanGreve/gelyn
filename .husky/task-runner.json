@@ -12,13 +12,7 @@
       "name": "test",
       "group": "pre-push",
       "command": "dotnet",
-      "args": [
-        "test",
-        "--",
-        "--coverage",
-        "--coverage-output-format", "cobertura",
-        "--coverage-output", "CoverageReport/coverage.cobertura.xml"
-      ]
+      "args": [ "test" ]
     },
     {
       "name": "coverage",
