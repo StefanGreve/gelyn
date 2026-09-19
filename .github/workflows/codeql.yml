@@ -35,7 +35,7 @@ jobs:
             build-mode: none
 
     steps:
-      - name: Check out the repository
+      - name: Check out Repository
         uses: actions/checkout@v7
 
       - name: Initialize CodeQL
@@ -44,7 +44,7 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      - name: Perform CodeQL analysis
+      - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
         with:
           category: /language:${{ matrix.language }}
