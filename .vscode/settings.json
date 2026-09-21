@@ -1,6 +1,7 @@
 {
   "json.schemaDownload.trustedDomains": {
-    "https://alirezanet.github.io/Husky.Net/schema.json": true
+    "https://alirezanet.github.io/Husky.Net/schema.json": true,
+    "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json": true
   },
   "files.associations": {
     "*.props": "xml",

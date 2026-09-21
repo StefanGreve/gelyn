@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="$(RepositoryRoot)gelyn.schema.json" Link="gelyn.schema.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../Gelyn/Gelyn.csproj" />
   </ItemGroup>
 

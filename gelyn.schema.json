@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "title": "Gelyn configuration",
+  "description": "Settings gelyn reads from appsettings.json. Only the Site section is owned by gelyn; other sections, such as Logging, are left to the host.",
+  "type": "object",
+  "properties": {
+    "Site": {
+      "title": "Site",
+      "description": "Locations and metadata the generator works with.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Title": {
+          "description": "The name shown in the header and the footer, and used as the document title when a page declares no title of its own in its front matter.",
+          "type": "string",
+          "minLength": 1,
+          "default": "Gelyn",
+          "examples": [
+            "Gelyn",
+            "My Notebook"
+          ]
+        },
+        "ContentDirectory": {
+          "description": "The directory holding the Markdown sources. Relative values are resolved against the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "default": "content",
+          "examples": [
+            "content",
+            "src/pages"
+          ]
+        },
+        "OutputDirectory": {
+          "description": "The directory the generated site is written to. Relative values are resolved against the working directory. Existing files are overwritten.",
+          "type": "string",
+          "minLength": 1,
+          "default": "_site",
+          "examples": [
+            "_site",
+            "public"
+          ]
+        }
+      }
+    }
+  }
+}
