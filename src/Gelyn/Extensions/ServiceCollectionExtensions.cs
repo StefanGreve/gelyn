@@ -4,6 +4,7 @@ using Gelyn.Components;
 using Gelyn.Internals;
 using Gelyn.Model.Options;
 using Gelyn.Services;
+using Gelyn.Validators;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,7 +17,7 @@ namespace Gelyn.Extensions;
 /// <summary>
 ///     Composition root for the <c>gelyn</c> tool.
 /// </summary>
-internal static class ServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     /// <summary>
     ///     Registers the tool's commands and the services they depend on.
@@ -27,15 +28,14 @@ internal static class ServiceCollectionExtensions
     /// <returns>
     ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
     /// </returns>
-    internal static IServiceCollection AddGelyn(this IServiceCollection services)
+    public static IServiceCollection AddGelyn(this IServiceCollection services)
     {
         services.TryAddSingleton(AnsiConsole.Console);
 
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<SiteOptions>, SiteOptionsValidator>());
 
         services.AddOptions<SiteOptions>()
-            .BindConfiguration(Sections.Site)
-            .ValidateOnStart();
+            .BindConfiguration(Sections.Site);
 
         services.TryAddSingleton<MarkdownRendererContract, MarkdigRenderer>();
         services.TryAddSingleton<HeaderComponent>();

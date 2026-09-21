@@ -1,10 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Abstractions;
-using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -23,7 +21,7 @@ public sealed class HomePageBuilder : PageBuilderContract
     private readonly MarkdownRendererContract _renderer;
     private readonly PageLayout _layout;
     private readonly IHostEnvironment _environment;
-    private readonly SiteOptions _options;
+    private readonly IOptions<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="HomePageBuilder"/> class.
@@ -40,7 +38,6 @@ public sealed class HomePageBuilder : PageBuilderContract
     /// <param name="options">
     ///     Supplies the content directory.
     /// </param>
-    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public HomePageBuilder(
         MarkdownRendererContract renderer,
         PageLayout layout,
@@ -50,7 +47,7 @@ public sealed class HomePageBuilder : PageBuilderContract
         this._renderer = renderer;
         this._layout = layout;
         this._environment = environment;
-        this._options = options.Value;
+        this._options = options;
     }
 
     /// <inheritdoc/>
@@ -59,7 +56,10 @@ public sealed class HomePageBuilder : PageBuilderContract
     /// <inheritdoc/>
     public override async Task<string> BuildAsync(CancellationToken cancellationToken)
     {
-        string source = Path.Combine(this._environment.ContentRootPath, this._options.ContentDirectory, SourceFileName);
+        string source = Path.Combine(
+            this._environment.ContentRootPath,
+            this._options.Value.ContentDirectory,
+            SourceFileName);
 
         if (!File.Exists(source))
             throw new FileNotFoundException($"No landing page found at '{source}'.", source);

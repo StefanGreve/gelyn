@@ -2,10 +2,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 using Gelyn.Internals;
+using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
 
-namespace Gelyn.Model.Options;
+namespace Gelyn.Validators;
 
 /// <summary>
 ///     Checks that <see cref="SiteOptions"/> carries usable values before anything consumes it.
@@ -14,8 +15,7 @@ namespace Gelyn.Model.Options;
 ///     Written by hand rather than delegated to <c>ValidateDataAnnotations</c>, which is annotated
 ///     <c>RequiresUnreferencedCode</c> and cannot see members the trimmer may have removed.
 /// </remarks>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
+public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
 {
     /// <inheritdoc/>
     [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]

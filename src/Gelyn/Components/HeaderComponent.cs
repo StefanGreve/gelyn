@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using Gelyn.Abstractions;
-using Gelyn.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
@@ -14,7 +12,7 @@ namespace Gelyn.Components;
 /// </summary>
 public sealed class HeaderComponent : ComponentContract
 {
-    private readonly SiteOptions _options;
+    private readonly IOptions<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="HeaderComponent"/> class.
@@ -22,10 +20,9 @@ public sealed class HeaderComponent : ComponentContract
     /// <param name="options">
     ///     Supplies the site title.
     /// </param>
-    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public HeaderComponent(IOptions<SiteOptions> options)
     {
-        this._options = options.Value;
+        this._options = options;
     }
 
     /// <inheritdoc/>
@@ -33,7 +30,7 @@ public sealed class HeaderComponent : ComponentContract
     {
         return $"""
             <header>
-              <a href="/">{WebUtility.HtmlEncode(this._options.Title)}</a>
+              <a href="/">{WebUtility.HtmlEncode(this._options.Value.Title)}</a>
             </header>
         """;
     }

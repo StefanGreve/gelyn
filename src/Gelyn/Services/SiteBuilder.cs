@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Abstractions;
-using Gelyn.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
@@ -16,12 +14,11 @@ namespace Gelyn.Services;
 /// <summary>
 ///     Runs every registered page builder and writes the results to the output directory.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
-internal sealed class SiteBuilder
+public sealed class SiteBuilder
 {
     private readonly IEnumerable<PageBuilderContract> _pageBuilders;
     private readonly IHostEnvironment _environment;
-    private readonly SiteOptions _options;
+    private readonly IOptions<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
@@ -42,7 +39,7 @@ internal sealed class SiteBuilder
     {
         this._pageBuilders = pageBuilders;
         this._environment = environment;
-        this._options = options.Value;
+        this._options = options;
     }
 
     /// <summary>
@@ -57,7 +54,7 @@ internal sealed class SiteBuilder
     public async Task<IReadOnlyList<string>> BuildAsync(CancellationToken cancellationToken)
     {
         List<string> written = [];
-        string outputDirectory = Path.Combine(this._environment.ContentRootPath, this._options.OutputDirectory);
+        string outputDirectory = Path.Combine(this._environment.ContentRootPath, this._options.Value.OutputDirectory);
 
         foreach (PageBuilderContract pageBuilder in this._pageBuilders)
         {

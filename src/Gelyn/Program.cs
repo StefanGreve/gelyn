@@ -1,3 +1,6 @@
+using System;
+using System.CommandLine;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
@@ -15,7 +18,7 @@ namespace Gelyn;
 /// <summary>
 ///     Entry point for the <c>gelyn</c> command line tool.
 /// </summary>
-internal static class Program
+public static class Program
 {
     /// <summary>
     ///     Runs the tool.
@@ -26,7 +29,8 @@ internal static class Program
     /// <returns>
     ///     Zero on success, a non-zero exit code otherwise.
     /// </returns>
-    internal static async Task<int> Main(string[] args)
+    [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = Justifications.ByDesign)]
+    public static async Task<int> Main(string[] args)
     {
         HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
@@ -36,21 +40,27 @@ internal static class Program
 
         try
         {
-            host.Services.GetRequiredService<IStartupValidator>().Validate();
+            // Ensures that --help and --version execute regardless of the configuration state: consumers
+            // read their options lazily, so validation only surfaces here, and only for a real command.
+            InvocationConfiguration configuration = new() { EnableDefaultExceptionHandler = false };
+
+            return await host.Services
+                .GetRequiredService<GelynCommand>()
+                .Parse(args)
+                .InvokeAsync(configuration)
+                .ConfigureAwait(false);
         }
-        catch (OptionsValidationException exception)
+        catch (Exception exception)
         {
             host.Services
                 .GetRequiredService<IAnsiConsole>()
                 .MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
-            return ExitCodes.Error;
+            return exception switch
+            {
+                OptionsValidationException => ExitCodes.ConfigurationError,
+                _ => ExitCodes.Error,
+            };
         }
-
-        return await host.Services
-            .GetRequiredService<GelynCommand>()
-            .Parse(args)
-            .InvokeAsync()
-            .ConfigureAwait(false);
     }
 }

@@ -1,8 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using Gelyn.Components;
-using Gelyn.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Options;
@@ -16,7 +14,7 @@ public sealed class PageLayout
 {
     private readonly HeaderComponent _header;
     private readonly FooterComponent _footer;
-    private readonly SiteOptions _options;
+    private readonly IOptions<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PageLayout"/> class.
@@ -30,12 +28,11 @@ public sealed class PageLayout
     /// <param name="options">
     ///     Supplies the fallback title.
     /// </param>
-    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
     public PageLayout(HeaderComponent header, FooterComponent footer, IOptions<SiteOptions> options)
     {
         this._header = header;
         this._footer = footer;
-        this._options = options.Value;
+        this._options = options;
     }
 
     /// <summary>
@@ -53,7 +50,7 @@ public sealed class PageLayout
     public string Render(string? title, string content)
     {
         // Titles come from front matter, which is untrusted input flowing straight into the document head.
-        string encodedTitle = WebUtility.HtmlEncode(title ?? this._options.Title);
+        string encodedTitle = WebUtility.HtmlEncode(title ?? this._options.Value.Title);
 
         string header = this._header.Render();
         string footer = this._footer.Render();
