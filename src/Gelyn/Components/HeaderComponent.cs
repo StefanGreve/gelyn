@@ -12,7 +12,7 @@ namespace Gelyn.Components;
 /// </summary>
 public sealed class HeaderComponent : ComponentContract
 {
-    private readonly IOptions<SiteOptions> _options;
+    private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="HeaderComponent"/> class.
@@ -20,7 +20,7 @@ public sealed class HeaderComponent : ComponentContract
     /// <param name="options">
     ///     Supplies the site title.
     /// </param>
-    public HeaderComponent(IOptions<SiteOptions> options)
+    public HeaderComponent(IOptionsMonitor<SiteOptions> options)
     {
         this._options = options;
     }
@@ -28,9 +28,11 @@ public sealed class HeaderComponent : ComponentContract
     /// <inheritdoc/>
     public override string Render()
     {
+        SiteOptions options = this._options.CurrentValue;
+
         return $"""
             <header>
-              <a href="/">{WebUtility.HtmlEncode(this._options.Value.Title)}</a>
+              <a href="/">{WebUtility.HtmlEncode(options.Title)}</a>
             </header>
         """;
     }

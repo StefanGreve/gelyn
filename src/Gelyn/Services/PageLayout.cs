@@ -14,7 +14,7 @@ public sealed class PageLayout
 {
     private readonly HeaderComponent _header;
     private readonly FooterComponent _footer;
-    private readonly IOptions<SiteOptions> _options;
+    private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PageLayout"/> class.
@@ -28,7 +28,7 @@ public sealed class PageLayout
     /// <param name="options">
     ///     Supplies the fallback title.
     /// </param>
-    public PageLayout(HeaderComponent header, FooterComponent footer, IOptions<SiteOptions> options)
+    public PageLayout(HeaderComponent header, FooterComponent footer, IOptionsMonitor<SiteOptions> options)
     {
         this._header = header;
         this._footer = footer;
@@ -49,8 +49,10 @@ public sealed class PageLayout
     /// </returns>
     public string Render(string? title, string content)
     {
+        SiteOptions options = this._options.CurrentValue;
+
         // Titles come from front matter, which is untrusted input flowing straight into the document head.
-        string encodedTitle = WebUtility.HtmlEncode(title ?? this._options.Value.Title);
+        string encodedTitle = WebUtility.HtmlEncode(title ?? options.Title);
 
         string header = this._header.Render();
         string footer = this._footer.Render();

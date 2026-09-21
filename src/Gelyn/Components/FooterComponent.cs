@@ -12,7 +12,7 @@ namespace Gelyn.Components;
 /// </summary>
 public sealed class FooterComponent : ComponentContract
 {
-    private readonly IOptions<SiteOptions> _options;
+    private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="FooterComponent"/> class.
@@ -20,7 +20,7 @@ public sealed class FooterComponent : ComponentContract
     /// <param name="options">
     ///     Supplies the site title.
     /// </param>
-    public FooterComponent(IOptions<SiteOptions> options)
+    public FooterComponent(IOptionsMonitor<SiteOptions> options)
     {
         this._options = options;
     }
@@ -28,9 +28,11 @@ public sealed class FooterComponent : ComponentContract
     /// <inheritdoc/>
     public override string Render()
     {
+        SiteOptions options = this._options.CurrentValue;
+
         return $"""
             <footer>
-              <p>{WebUtility.HtmlEncode(this._options.Value.Title)}</p>
+              <p>{WebUtility.HtmlEncode(options.Title)}</p>
             </footer>
         """;
     }

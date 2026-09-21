@@ -18,7 +18,7 @@ public sealed class SiteBuilder
 {
     private readonly IEnumerable<PageBuilderContract> _pageBuilders;
     private readonly IHostEnvironment _environment;
-    private readonly IOptions<SiteOptions> _options;
+    private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
@@ -35,7 +35,7 @@ public sealed class SiteBuilder
     public SiteBuilder(
         IEnumerable<PageBuilderContract> pageBuilders,
         IHostEnvironment environment,
-        IOptions<SiteOptions> options)
+        IOptionsMonitor<SiteOptions> options)
     {
         this._pageBuilders = pageBuilders;
         this._environment = environment;
@@ -53,8 +53,10 @@ public sealed class SiteBuilder
     /// </returns>
     public async Task<IReadOnlyList<string>> BuildAsync(CancellationToken cancellationToken)
     {
+        SiteOptions options = this._options.CurrentValue;
+
         List<string> written = [];
-        string outputDirectory = Path.Combine(this._environment.ContentRootPath, this._options.Value.OutputDirectory);
+        string outputDirectory = Path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
 
         foreach (PageBuilderContract pageBuilder in this._pageBuilders)
         {

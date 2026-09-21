@@ -21,7 +21,7 @@ public sealed class HomePageBuilder : PageBuilderContract
     private readonly MarkdownRendererContract _renderer;
     private readonly PageLayout _layout;
     private readonly IHostEnvironment _environment;
-    private readonly IOptions<SiteOptions> _options;
+    private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="HomePageBuilder"/> class.
@@ -42,7 +42,7 @@ public sealed class HomePageBuilder : PageBuilderContract
         MarkdownRendererContract renderer,
         PageLayout layout,
         IHostEnvironment environment,
-        IOptions<SiteOptions> options)
+        IOptionsMonitor<SiteOptions> options)
     {
         this._renderer = renderer;
         this._layout = layout;
@@ -56,9 +56,11 @@ public sealed class HomePageBuilder : PageBuilderContract
     /// <inheritdoc/>
     public override async Task<string> BuildAsync(CancellationToken cancellationToken)
     {
+        SiteOptions options = this._options.CurrentValue;
+
         string source = Path.Combine(
             this._environment.ContentRootPath,
-            this._options.Value.ContentDirectory,
+            options.ContentDirectory,
             SourceFileName);
 
         if (!File.Exists(source))
