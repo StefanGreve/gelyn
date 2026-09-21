@@ -33,7 +33,7 @@ public sealed class FooterComponent : ComponentContract
     {
         return $"""
             <footer>
-              <p>{WebUtility.HtmlEncode(this._options.SiteTitle)}</p>
+              <p>{WebUtility.HtmlEncode(this._options.Title)}</p>
             </footer>
         """;
     }

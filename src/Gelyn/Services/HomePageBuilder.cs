@@ -8,6 +8,7 @@ using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Services;
@@ -21,6 +22,7 @@ public sealed class HomePageBuilder : PageBuilderContract
 
     private readonly MarkdownRendererContract _renderer;
     private readonly PageLayout _layout;
+    private readonly IHostEnvironment _environment;
     private readonly SiteOptions _options;
 
     /// <summary>
@@ -32,14 +34,22 @@ public sealed class HomePageBuilder : PageBuilderContract
     /// <param name="layout">
     ///     Wraps the rendered content in the document shell.
     /// </param>
+    /// <param name="environment">
+    ///     Supplies the root that a relative content directory is resolved against.
+    /// </param>
     /// <param name="options">
-    ///     Supplies the content root.
+    ///     Supplies the content directory.
     /// </param>
     [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
-    public HomePageBuilder(MarkdownRendererContract renderer, PageLayout layout, IOptions<SiteOptions> options)
+    public HomePageBuilder(
+        MarkdownRendererContract renderer,
+        PageLayout layout,
+        IHostEnvironment environment,
+        IOptions<SiteOptions> options)
     {
         this._renderer = renderer;
         this._layout = layout;
+        this._environment = environment;
         this._options = options.Value;
     }
 
@@ -49,7 +59,7 @@ public sealed class HomePageBuilder : PageBuilderContract
     /// <inheritdoc/>
     public override async Task<string> BuildAsync(CancellationToken cancellationToken)
     {
-        string source = Path.Combine(this._options.ContentDirectory, SourceFileName);
+        string source = Path.Combine(this._environment.ContentRootPath, this._options.ContentDirectory, SourceFileName);
 
         if (!File.Exists(source))
             throw new FileNotFoundException($"No landing page found at '{source}'.", source);

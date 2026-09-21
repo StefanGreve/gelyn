@@ -2,9 +2,13 @@ using System.Threading.Tasks;
 
 using Gelyn.Commands;
 using Gelyn.Extensions;
+using Gelyn.Internals;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+
+using Spectre.Console;
 
 namespace Gelyn;
 
@@ -29,6 +33,19 @@ internal static class Program
         builder.Services.AddGelyn();
 
         using IHost host = builder.Build();
+
+        try
+        {
+            host.Services.GetRequiredService<IStartupValidator>().Validate();
+        }
+        catch (OptionsValidationException exception)
+        {
+            host.Services
+                .GetRequiredService<IAnsiConsole>()
+                .MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+
+            return ExitCodes.Error;
+        }
 
         return await host.Services
             .GetRequiredService<GelynCommand>()

@@ -8,7 +8,7 @@ public sealed class SiteOptions
     /// <summary>
     ///     The name shown in the header and used when a page declares no title.
     /// </summary>
-    public string SiteTitle { get; set; } = "Gelyn";
+    public string Title { get; set; } = "Gelyn";
 
     /// <summary>
     ///     The directory holding the Markdown sources. Relative values are resolved against the working directory.

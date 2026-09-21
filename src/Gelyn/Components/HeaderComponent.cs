@@ -33,7 +33,7 @@ public sealed class HeaderComponent : ComponentContract
     {
         return $"""
             <header>
-              <a href="/">{WebUtility.HtmlEncode(this._options.SiteTitle)}</a>
+              <a href="/">{WebUtility.HtmlEncode(this._options.Title)}</a>
             </header>
         """;
     }

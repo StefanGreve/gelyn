@@ -8,6 +8,7 @@ using Gelyn.Abstractions;
 using Gelyn.Internals;
 using Gelyn.Model.Options;
 
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Services;
@@ -19,6 +20,7 @@ namespace Gelyn.Services;
 internal sealed class SiteBuilder
 {
     private readonly IEnumerable<PageBuilderContract> _pageBuilders;
+    private readonly IHostEnvironment _environment;
     private readonly SiteOptions _options;
 
     /// <summary>
@@ -27,12 +29,19 @@ internal sealed class SiteBuilder
     /// <param name="pageBuilders">
     ///     Every page the site is made of.
     /// </param>
-    /// <param name="options">
-    ///     Supplies the output root.
+    /// <param name="environment">
+    ///     Supplies the root that a relative output directory is resolved against.
     /// </param>
-    public SiteBuilder(IEnumerable<PageBuilderContract> pageBuilders, IOptions<SiteOptions> options)
+    /// <param name="options">
+    ///     Supplies the output directory.
+    /// </param>
+    public SiteBuilder(
+        IEnumerable<PageBuilderContract> pageBuilders,
+        IHostEnvironment environment,
+        IOptions<SiteOptions> options)
     {
         this._pageBuilders = pageBuilders;
+        this._environment = environment;
         this._options = options.Value;
     }
 
@@ -48,13 +57,14 @@ internal sealed class SiteBuilder
     public async Task<IReadOnlyList<string>> BuildAsync(CancellationToken cancellationToken)
     {
         List<string> written = [];
+        string outputDirectory = Path.Combine(this._environment.ContentRootPath, this._options.OutputDirectory);
 
         foreach (PageBuilderContract pageBuilder in this._pageBuilders)
         {
             string html = await pageBuilder.BuildAsync(cancellationToken).ConfigureAwait(false);
-            string destination = Path.Combine(this._options.OutputDirectory, pageBuilder.OutputPath);
+            string destination = Path.Combine(outputDirectory, pageBuilder.OutputPath);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? this._options.OutputDirectory);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? outputDirectory);
             await File.WriteAllTextAsync(destination, html, cancellationToken).ConfigureAwait(false);
 
             written.Add(pageBuilder.OutputPath);

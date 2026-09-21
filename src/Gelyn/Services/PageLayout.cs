@@ -53,7 +53,7 @@ public sealed class PageLayout
     public string Render(string? title, string content)
     {
         // Titles come from front matter, which is untrusted input flowing straight into the document head.
-        string encodedTitle = WebUtility.HtmlEncode(title ?? this._options.SiteTitle);
+        string encodedTitle = WebUtility.HtmlEncode(title ?? this._options.Title);
 
         string header = this._header.Render();
         string footer = this._footer.Render();
