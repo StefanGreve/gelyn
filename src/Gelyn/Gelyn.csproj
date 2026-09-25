@@ -29,6 +29,7 @@
     <StripSymbols>true</StripSymbols>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+    <OptimizationPreference>Size</OptimizationPreference>
   </PropertyGroup>
 
   <PropertyGroup Label="Tool packaging">
