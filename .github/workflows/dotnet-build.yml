@@ -45,6 +45,10 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: dotnet tool restore
 
+      - name: Verify Formatting
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: dotnet format Gelyn.slnx --verify-no-changes --no-restore
+
       - name: Build
         run: dotnet build Gelyn.slnx --configuration Release --no-restore
 
