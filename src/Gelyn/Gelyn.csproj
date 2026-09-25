@@ -53,6 +53,10 @@
     <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts" />
   </Target>
 
+  <Target Name="CleanPublishDirectory" BeforeTargets="PrepareForPublish">
+    <RemoveDir Directories="$(PublishDir)" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
