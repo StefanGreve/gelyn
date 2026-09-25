@@ -41,8 +41,11 @@
   <PropertyGroup Label="Package metadata">
     <PackageId>Gelyn</PackageId>
     <Description>A simple, cross-platform, and high-performance static site generator for Markdown.</Description>
+    <PackageProjectUrl>https://github.com/StefanGreve/gelyn</PackageProjectUrl>
+    <PackageTags>dotnet;dotnet-tool;markdown-to-html;ssg;static-site-generator</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

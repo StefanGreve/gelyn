@@ -26,6 +26,7 @@
 
   <PropertyGroup Label="Shared package metadata">
     <Authors>Stefan Greve</Authors>
+    <Copyright>Copyright (c) 2026 Stefan Greve</Copyright>
     <Version>0.1.0-alpha.1</Version>
   </PropertyGroup>
 
