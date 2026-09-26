@@ -1,13 +1,16 @@
 using System;
 using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
 using Gelyn.Extensions;
 using Gelyn.Internals;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -32,16 +35,26 @@ public static class Program
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = Justifications.ByDesign)]
     public static async Task<int> Main(string[] args)
     {
-        HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-
-        builder.Services.AddGelyn();
-
-        using IHost host = builder.Build();
+        IAnsiConsole console = AnsiConsole.Console;
 
         try
         {
-            // Ensures that --help and --version execute regardless of the configuration state: consumers
-            // read their options lazily, so validation only surfaces here, and only for a real command.
+            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            AddConfigurationFile(builder.Configuration, args);
+
+            // Third-party registrations
+            builder.Services.TryAddSingleton(console);
+
+            // First-party registrations
+            builder.Services.AddSiteOptions();
+            builder.Services.AddServices();
+            builder.Services.AddCommands();
+
+            using IHost host = builder.Build();
+
+            // Ensures that --help and --version execute even when the configuration holds invalid values:
+            // consumers read their options lazily, so validation surfaces here and only for a real command.
+            // A configuration file that cannot be parsed is the exception, because loading it is eager.
             InvocationConfiguration configuration = new() { EnableDefaultExceptionHandler = false };
 
             return await host.Services
@@ -52,15 +65,32 @@ public static class Program
         }
         catch (Exception exception)
         {
-            host.Services
-                .GetRequiredService<IAnsiConsole>()
-                .MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+            console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
             return exception switch
             {
-                OptionsValidationException => ExitCodes.ConfigurationError,
+                OptionsValidationException or FileNotFoundException or InvalidDataException
+                    => ExitCodes.ConfigurationError,
                 _ => ExitCodes.Error,
             };
         }
     }
+
+    #region Helpers
+
+    private static void AddConfigurationFile(ConfigurationManager configuration, string[] args)
+    {
+        string? requested = configuration[ConfigurationFile.PathKey];
+
+        configuration.AddJsonFile(
+            requested ?? ConfigurationFile.DefaultFileName,
+            optional: requested is null,
+            reloadOnChange: true);
+
+        configuration
+            .AddEnvironmentVariables()
+            .AddCommandLine(args);
+    }
+
+    #endregion
 }

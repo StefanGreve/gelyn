@@ -1,7 +1,6 @@
 using System;
-using System.Globalization;
+using System.Linq;
 using System.Net;
-using System.Text;
 
 using Gelyn.Model;
 
@@ -25,14 +24,9 @@ public static class HeaderComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        StringBuilder navigation = new();
-
-        foreach (ContentPage page in context.Pages)
-        {
-            navigation.AppendLine(
-                CultureInfo.InvariantCulture,
-                $"""<a href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>""");
-        }
+        var navItems = context.Pages.Select(static page =>
+            $"""<a href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>"""
+        );
 
         // Pages is ordered landing page first
         string home = WebUtility.HtmlEncode(context.Pages[0].Href);
@@ -41,7 +35,7 @@ public static class HeaderComponent
             <header>
               <a href="{home}">{WebUtility.HtmlEncode(context.Options.Title)}</a>
               <nav>
-                {navigation.ToString().TrimEnd()}
+                {string.Join(Environment.NewLine, navItems)}
               </nav>
             </header>
         """;

@@ -1,0 +1,6 @@
+{
+  "$schema": "./gelyn.schema.json",
+  "Title": "Gelyn",
+  "ContentDirectory": "content",
+  "OutputDirectory": "_site"
+}

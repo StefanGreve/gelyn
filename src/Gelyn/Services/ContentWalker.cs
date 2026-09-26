@@ -68,7 +68,7 @@ public sealed class ContentWalker
         if (!File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
-        List<ContentPage> pages = [];
+        var pages = new List<ContentPage>();
 
         foreach (ContentSource source in EnumerateSources(root))
         {
@@ -96,8 +96,7 @@ public sealed class ContentWalker
 
     private static IEnumerable<ContentSource> EnumerateSources(string root)
     {
-        // Seeding the landing page before the walk is what makes it the first navigation entry structurally,
-        // rather than by a sort rule an added content file could dislodge.
+        // Seed the landing page before the walk
         yield return new ContentSource
         {
             SourcePath = Path.Combine(root, IndexFileName),

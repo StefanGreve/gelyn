@@ -12,10 +12,7 @@
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
-      "stopAtEntry": false,
-      "env": {
-        "DOTNET_ENVIRONMENT": "Development"
-      }
+      "stopAtEntry": false
     }
   ]
 }

@@ -32,9 +32,10 @@ public partial class SiteOptionsSchemaTests
             .Order();
 
         // Act
-        IEnumerable<string> documented = ReadSiteProperties()
+        IEnumerable<string> documented = ReadDocumentedProperties()
             .EnumerateObject()
             .Select(property => property.Name)
+            .Where(name => !name.StartsWith('$'))
             .Order();
 
         // Assert
@@ -49,7 +50,7 @@ public partial class SiteOptionsSchemaTests
     {
         // Arrange
         SiteOptions options = new();
-        JsonElement documented = ReadSiteProperties();
+        JsonElement documented = ReadDocumentedProperties();
 
         foreach (PropertyInfo property in typeof(SiteOptions).GetProperties())
         {
@@ -69,7 +70,7 @@ public partial class SiteOptionsSchemaTests
 
     #region Helpers
 
-    private static JsonElement ReadSiteProperties()
+    private static JsonElement ReadDocumentedProperties()
     {
         string path = Path.Combine(AppContext.BaseDirectory, SchemaFileName);
 
@@ -77,8 +78,6 @@ public partial class SiteOptionsSchemaTests
 
         // Cloned because every JsonElement is invalidated once the owning document is disposed.
         return document.RootElement
-            .GetProperty("properties")
-            .GetProperty("Site")
             .GetProperty("properties")
             .Clone();
     }

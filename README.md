@@ -27,6 +27,31 @@ python3 -m http.server -d _site -b 127.0.0.1 8000
 > documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
 > every interface.
 
+## Configuration
+
+Optional. Without a configuration file the defaults below apply. To change them, drop a `gelyn.json` next to
+`content/` in the directory you run `gelyn` from:
+
+```json
+{
+  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "Title": "My Notebook",
+  "ContentDirectory": "content",
+  "OutputDirectory": "_site"
+}
+```
+
+Referencing the schema gives completion and validation in any editor that understands JSON Schema, and rejects
+misspelled keys, which configuration binding would otherwise ignore in silence.
+
+Pass `--config <path>` to read a different file; unlike `gelyn.json`, a path given explicitly must exist. Every
+setting can also be supplied as an environment variable of the same name, which takes precedence over the file:
+
+```sh
+Title="My Notebook" gelyn build
+gelyn build --config config/production.json
+```
+
 ## Tab completion
 
 Built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
