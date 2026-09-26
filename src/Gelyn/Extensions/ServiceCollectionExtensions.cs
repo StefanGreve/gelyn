@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Registration groups the composition root in <see cref="Gelyn.Program"/> is assembled from.
+///     Registration groups the composition root in <see cref="Program"/> is assembled from.
 /// </summary>
 public static class ServiceCollectionExtensions
 {

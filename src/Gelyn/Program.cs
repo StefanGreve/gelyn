@@ -8,7 +8,6 @@ using Gelyn.Commands;
 using Gelyn.Extensions;
 using Gelyn.Internals;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -40,7 +39,7 @@ public static class Program
         try
         {
             HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
-            AddConfigurationFile(builder.Configuration, args);
+            builder.Configuration.AddSiteConfiguration(args);
 
             // Third-party registrations
             builder.Services.TryAddSingleton(console);
@@ -75,22 +74,4 @@ public static class Program
             };
         }
     }
-
-    #region Helpers
-
-    private static void AddConfigurationFile(ConfigurationManager configuration, string[] args)
-    {
-        string? requested = configuration[ConfigurationFile.PathKey];
-
-        configuration.AddJsonFile(
-            requested ?? ConfigurationFile.DefaultFileName,
-            optional: requested is null,
-            reloadOnChange: true);
-
-        configuration
-            .AddEnvironmentVariables()
-            .AddCommandLine(args);
-    }
-
-    #endregion
 }

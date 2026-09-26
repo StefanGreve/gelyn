@@ -28,6 +28,25 @@ internal sealed class BuildCommand : Command
     public BuildCommand(SiteBuilder siteBuilder, IAnsiConsole console)
         : base("build", "Generate the site into the output directory.")
     {
+        // Never read here: the values reach SiteOptions through AddSiteConfiguration.
+        this.Options.Add(new Option<string>($"--{OverrideOptions.Title}")
+        {
+            Description = "The name shown in the header and the footer.",
+            HelpName = "name",
+        });
+
+        this.Options.Add(new Option<string>($"--{OverrideOptions.Content}")
+        {
+            Description = "The directory holding the Markdown sources.",
+            HelpName = "directory",
+        });
+
+        this.Options.Add(new Option<string>($"--{OverrideOptions.Output}")
+        {
+            Description = "The directory the generated site is written to.",
+            HelpName = "directory",
+        });
+
         this.SetAction(async (_, cancellationToken) =>
         {
             try

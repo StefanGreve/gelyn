@@ -19,8 +19,7 @@ internal sealed class GelynCommand : RootCommand
     /// </param>
     public GelynCommand(BuildCommand buildCommand) : base("A static site generator.")
     {
-        // Declared for the help text and so that a misspelling is rejected. The value is consumed before the
-        // host exists, in Program.AddConfigurationFile, because it selects a configuration source.
+        // Read by AddSiteConfiguration before the host exists, because it selects a configuration source.
         Option<string> configuration = new(ConfigurationFile.OptionName)
         {
             Description = $"Path to the configuration file. Defaults to {ConfigurationFile.DefaultFileName}.",
