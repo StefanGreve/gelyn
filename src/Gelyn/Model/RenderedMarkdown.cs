@@ -6,12 +6,13 @@ namespace Gelyn.Model;
 public sealed record RenderedMarkdown
 {
     /// <summary>
-    ///     Front matter parsed from the block at the top of the file.
+    ///     Front matter parsed from the block at the top of the file, or <see cref="FrontMatter.Empty"/> when
+    ///     the file declares none.
     /// </summary>
-    public FrontMatter? MetaData { get; init; }
+    public required FrontMatter FrontMatter { get; init; }
 
     /// <summary>
     ///     The rendered HTML body, excluding the front matter block.
     /// </summary>
-    public string? Html { get; init; }
+    public required string Html { get; init; }
 }

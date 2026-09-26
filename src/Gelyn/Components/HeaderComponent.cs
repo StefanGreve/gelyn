@@ -1,38 +1,48 @@
+using System;
+using System.Globalization;
 using System.Net;
+using System.Text;
 
-using Gelyn.Abstractions;
-using Gelyn.Model.Options;
-
-using Microsoft.Extensions.Options;
+using Gelyn.Model;
 
 namespace Gelyn.Components;
 
 /// <summary>
-///     The banner rendered at the top of every page.
+///     The banner rendered at the top of every page, including the site navigation.
 /// </summary>
-public sealed class HeaderComponent : ComponentContract
+public static class HeaderComponent
 {
-    private readonly IOptionsMonitor<SiteOptions> _options;
-
     /// <summary>
-    ///     Initializes a new instance of the <see cref="HeaderComponent"/> class.
+    ///     Renders the banner.
     /// </summary>
-    /// <param name="options">
-    ///     Supplies the site title.
+    /// <param name="context">
+    ///     Supplies the site title and every page to link.
     /// </param>
-    public HeaderComponent(IOptionsMonitor<SiteOptions> options)
+    /// <returns>
+    ///     The HTML of the fragment.
+    /// </returns>
+    public static string Render(RenderContext context)
     {
-        this._options = options;
-    }
+        ArgumentNullException.ThrowIfNull(context);
 
-    /// <inheritdoc/>
-    public override string Render()
-    {
-        SiteOptions options = this._options.CurrentValue;
+        StringBuilder navigation = new();
+
+        foreach (ContentPage page in context.Pages)
+        {
+            navigation.AppendLine(
+                CultureInfo.InvariantCulture,
+                $"""<a href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>""");
+        }
+
+        // Pages is ordered landing page first
+        string home = WebUtility.HtmlEncode(context.Pages[0].Href);
 
         return $"""
             <header>
-              <a href="/">{WebUtility.HtmlEncode(options.Title)}</a>
+              <a href="{home}">{WebUtility.HtmlEncode(context.Options.Title)}</a>
+              <nav>
+                {navigation.ToString().TrimEnd()}
+              </nav>
             </header>
         """;
     }

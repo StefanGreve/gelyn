@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Abstractions;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
@@ -12,19 +12,19 @@ using Microsoft.Extensions.Options;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Runs every registered page builder and writes the results to the output directory.
+///     Renders every discovered page and writes the results to the output directory.
 /// </summary>
 public sealed class SiteBuilder
 {
-    private readonly IEnumerable<PageBuilderContract> _pageBuilders;
+    private readonly ContentWalker _walker;
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
     /// </summary>
-    /// <param name="pageBuilders">
-    ///     Every page the site is made of.
+    /// <param name="walker">
+    ///     Discovers and renders the pages the site is made of.
     /// </param>
     /// <param name="environment">
     ///     Supplies the root that a relative output directory is resolved against.
@@ -33,11 +33,11 @@ public sealed class SiteBuilder
     ///     Supplies the output directory.
     /// </param>
     public SiteBuilder(
-        IEnumerable<PageBuilderContract> pageBuilders,
+        ContentWalker walker,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options)
     {
-        this._pageBuilders = pageBuilders;
+        this._walker = walker;
         this._environment = environment;
         this._options = options;
     }
@@ -55,18 +55,29 @@ public sealed class SiteBuilder
     {
         SiteOptions options = this._options.CurrentValue;
 
-        List<string> written = [];
-        string outputDirectory = Path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
+        IReadOnlyList<ContentPage> pages = await this._walker
+            .WalkAsync(options, cancellationToken)
+            .ConfigureAwait(false);
 
-        foreach (PageBuilderContract pageBuilder in this._pageBuilders)
+        string outputDirectory = Path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
+        var written = new List<string>(pages.Count);
+
+        foreach (ContentPage page in pages)
         {
-            string html = await pageBuilder.BuildAsync(cancellationToken).ConfigureAwait(false);
-            string destination = Path.Combine(outputDirectory, pageBuilder.OutputPath);
+            var context = new RenderContext
+            {
+                Options = options,
+                Pages = pages,
+                Page = page,
+            };
+
+            string html = PageLayout.Render(context);
+            string destination = Path.Combine(outputDirectory, page.OutputPath);
 
             Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? outputDirectory);
             await File.WriteAllTextAsync(destination, html, cancellationToken).ConfigureAwait(false);
 
-            written.Add(pageBuilder.OutputPath);
+            written.Add(page.OutputPath);
         }
 
         return written;

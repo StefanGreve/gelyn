@@ -1,6 +1,5 @@
 using Gelyn.Abstractions;
 using Gelyn.Commands;
-using Gelyn.Components;
 using Gelyn.Internals;
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -38,11 +37,7 @@ public static class ServiceCollectionExtensions
             .BindConfiguration(Sections.Site);
 
         services.TryAddSingleton<MarkdownRendererContract, MarkdigRenderer>();
-        services.TryAddSingleton<HeaderComponent>();
-        services.TryAddSingleton<FooterComponent>();
-        services.TryAddSingleton<PageLayout>();
-
-        services.TryAddSingleton<PageBuilderContract, HomePageBuilder>();
+        services.TryAddSingleton<ContentWalker>();
         services.TryAddSingleton<SiteBuilder>();
 
         services.TryAddSingleton<BuildCommand>();

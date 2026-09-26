@@ -1,61 +1,32 @@
+using System;
 using System.Net;
 
 using Gelyn.Components;
-using Gelyn.Model.Options;
-
-using Microsoft.Extensions.Options;
+using Gelyn.Model;
 
 namespace Gelyn.Services;
 
 /// <summary>
 ///     Wraps rendered page content in the shared document shell.
 /// </summary>
-public sealed class PageLayout
+public static class PageLayout
 {
-    private readonly HeaderComponent _header;
-    private readonly FooterComponent _footer;
-    private readonly IOptionsMonitor<SiteOptions> _options;
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="PageLayout"/> class.
-    /// </summary>
-    /// <param name="header">
-    ///     The header fragment.
-    /// </param>
-    /// <param name="footer">
-    ///     The footer fragment.
-    /// </param>
-    /// <param name="options">
-    ///     Supplies the fallback title.
-    /// </param>
-    public PageLayout(HeaderComponent header, FooterComponent footer, IOptionsMonitor<SiteOptions> options)
-    {
-        this._header = header;
-        this._footer = footer;
-        this._options = options;
-    }
-
     /// <summary>
     ///     Renders a complete HTML document.
     /// </summary>
-    /// <param name="title">
-    ///     The page title, or <see langword="null"/> to fall back to the site title.
-    /// </param>
-    /// <param name="content">
-    ///     The rendered page body.
+    /// <param name="context">
+    ///     Supplies the page to render and the pages the navigation links to.
     /// </param>
     /// <returns>
     ///     The complete HTML document.
     /// </returns>
-    public string Render(string? title, string content)
+    public static string Render(RenderContext context)
     {
-        SiteOptions options = this._options.CurrentValue;
+        ArgumentNullException.ThrowIfNull(context);
 
-        // Titles come from front matter, which is untrusted input flowing straight into the document head.
-        string encodedTitle = WebUtility.HtmlEncode(title ?? options.Title);
-
-        string header = this._header.Render();
-        string footer = this._footer.Render();
+        string encodedTitle = WebUtility.HtmlEncode(context.Page.Title);
+        string header = HeaderComponent.Render(context);
+        string footer = FooterComponent.Render(context);
 
         return $"""
             <!DOCTYPE html>
@@ -68,7 +39,7 @@ public sealed class PageLayout
             <body>
                 {header}
                 <main>
-                    {content}
+                    {context.Page.Html}
                 </main>
                 {footer}
             </body>

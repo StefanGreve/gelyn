@@ -16,6 +16,17 @@ Write Markdown into `content/`, then generate the site:
 gelyn build
 ```
 
+Preview the result over HTTP:
+
+```sh
+python3 -m http.server -d _site -b 127.0.0.1 8000
+```
+
+> [!NOTE]
+> Serves the site at <http://localhost:8000> for local development only. Python's [`http.server`][http-server]
+> documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
+> every interface.
+
 ## Tab completion
 
 Built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
@@ -94,3 +105,4 @@ dotnet tool install --global Gelyn --prerelease
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [tab-completion]: https://learn.microsoft.com/en-us/dotnet/standard/commandline/how-to-enable-tab-completion
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
+[http-server]: https://docs.python.org/3/library/http.server.html

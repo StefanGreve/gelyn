@@ -1,38 +1,31 @@
+using System;
 using System.Net;
 
-using Gelyn.Abstractions;
-using Gelyn.Model.Options;
-
-using Microsoft.Extensions.Options;
+using Gelyn.Model;
 
 namespace Gelyn.Components;
 
 /// <summary>
 ///     The block rendered at the bottom of every page.
 /// </summary>
-public sealed class FooterComponent : ComponentContract
+public static class FooterComponent
 {
-    private readonly IOptionsMonitor<SiteOptions> _options;
-
     /// <summary>
-    ///     Initializes a new instance of the <see cref="FooterComponent"/> class.
+    ///     Renders the block.
     /// </summary>
-    /// <param name="options">
+    /// <param name="context">
     ///     Supplies the site title.
     /// </param>
-    public FooterComponent(IOptionsMonitor<SiteOptions> options)
+    /// <returns>
+    ///     The HTML of the fragment.
+    /// </returns>
+    public static string Render(RenderContext context)
     {
-        this._options = options;
-    }
-
-    /// <inheritdoc/>
-    public override string Render()
-    {
-        SiteOptions options = this._options.CurrentValue;
+        ArgumentNullException.ThrowIfNull(context);
 
         return $"""
             <footer>
-              <p>{WebUtility.HtmlEncode(options.Title)}</p>
+              <p>{WebUtility.HtmlEncode(context.Options.Title)}</p>
             </footer>
         """;
     }
