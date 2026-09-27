@@ -24,19 +24,29 @@ public static class HeaderComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var navItems = context.Pages.Select(static page =>
-            $"""<a href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>"""
-        );
+        var navItems = context.Pages.Select(page =>
+        {
+            bool isCurrent = string.Equals(context.Page.Href, page.Href, StringComparison.Ordinal);
+            string current = isCurrent ? "aria-current=\"page\"" : string.Empty;
+
+            return $"""
+                <li>
+                    <a {current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>
+                </li>
+            """;
+        });
 
         // Pages is ordered landing page first
         string home = WebUtility.HtmlEncode(context.Pages[0].Href);
 
         return $"""
             <header>
-              <a href="{home}">{WebUtility.HtmlEncode(context.Options.Title)}</a>
-              <nav>
-                {string.Join(Environment.NewLine, navItems)}
-              </nav>
+                <a href="{home}">{WebUtility.HtmlEncode(context.Options.Title)}</a>
+                <nav>
+                    <ul>
+                        {string.Join(Environment.NewLine, navItems)}
+                    </ul>
+                </nav>
             </header>
         """;
     }
