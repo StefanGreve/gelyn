@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,7 @@ public sealed class ContentWalker
 
     private readonly MarkdownRendererContract _renderer;
     private readonly IHostEnvironment _environment;
+    private readonly IFileSystem _fileSystem;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ContentWalker"/> class.
@@ -37,10 +39,14 @@ public sealed class ContentWalker
     /// <param name="environment">
     ///     Supplies the root that a relative content directory is resolved against.
     /// </param>
-    public ContentWalker(MarkdownRendererContract renderer, IHostEnvironment environment)
+    /// <param name="fileSystem">
+    ///     Reads the content tree.
+    /// </param>
+    public ContentWalker(MarkdownRendererContract renderer, IHostEnvironment environment, IFileSystem fileSystem)
     {
         this._renderer = renderer;
         this._environment = environment;
+        this._fileSystem = fileSystem;
     }
 
     /// <summary>
@@ -62,19 +68,20 @@ public sealed class ContentWalker
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        string root = Path.Combine(this._environment.ContentRootPath, options.ContentDirectory);
-        string home = Path.Combine(root, IndexFileName);
+        IPath path = this._fileSystem.Path;
+        string root = path.Combine(this._environment.ContentRootPath, options.ContentDirectory);
+        string home = path.Combine(root, IndexFileName);
 
-        if (!File.Exists(home))
+        if (!this._fileSystem.File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
         var pages = new List<ContentPage>();
 
-        foreach (ContentSource source in EnumerateSources(root))
+        foreach (ContentSource source in this.EnumerateSources(root))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            string markdown = await File
+            string markdown = await this._fileSystem.File
                 .ReadAllTextAsync(source.SourcePath, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -82,7 +89,7 @@ public sealed class ContentWalker
 
             pages.Add(new ContentPage
             {
-                OutputPath = Path.Combine(source.Segments),
+                OutputPath = path.Combine(source.Segments),
                 Href = $"/{string.Join('/', source.Segments)}",
                 Title = rendered.FrontMatter.Title ?? source.FallbackTitle,
                 Html = rendered.Html,
@@ -95,36 +102,38 @@ public sealed class ContentWalker
 
     #region Helpers
 
-    private static IEnumerable<ContentSource> EnumerateSources(string root)
+    private IEnumerable<ContentSource> EnumerateSources(string root)
     {
         // Seed the landing page before the walk
         yield return new ContentSource
         {
-            SourcePath = Path.Combine(root, IndexFileName),
+            SourcePath = this._fileSystem.Path.Combine(root, IndexFileName),
             Segments = [IndexOutputFileName],
-            FallbackTitle = Path.GetFileNameWithoutExtension(IndexFileName),
+            FallbackTitle = this._fileSystem.Path.GetFileNameWithoutExtension(IndexFileName),
             InNavigation = true,
         };
 
-        foreach (ContentSource source in EnumerateDirectory(new DirectoryInfo(root), []))
+        IDirectoryInfo directory = this._fileSystem.DirectoryInfo.New(root);
+
+        foreach (ContentSource source in this.EnumerateDirectory(directory, []))
             yield return source;
     }
 
-    private static IEnumerable<ContentSource> EnumerateDirectory(DirectoryInfo directory, string[] prefix)
+    private IEnumerable<ContentSource> EnumerateDirectory(IDirectoryInfo directory, string[] prefix)
     {
-        IEnumerable<FileSystemInfo> entries = directory
+        IEnumerable<IFileSystemInfo> entries = directory
             .EnumerateFileSystemInfos()
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal);
 
-        foreach (FileSystemInfo entry in entries)
+        foreach (IFileSystemInfo entry in entries)
         {
-            if (entry is DirectoryInfo child)
+            if (entry is IDirectoryInfo child)
             {
                 // Descending into a symlink would let the walk leave the content directory entirely,
                 // and a link that resolves to an ancestor makes the walk unbounded.
                 if (child.LinkTarget is null)
                 {
-                    foreach (ContentSource source in EnumerateDirectory(child, [.. prefix, child.Name]))
+                    foreach (ContentSource source in this.EnumerateDirectory(child, [.. prefix, child.Name]))
                         yield return source;
                 }
 
@@ -140,7 +149,7 @@ public sealed class ContentWalker
             if (isIndex && prefix.Length == 0)
                 continue;
 
-            string slug = Path.GetFileNameWithoutExtension(entry.Name);
+            string slug = this._fileSystem.Path.GetFileNameWithoutExtension(entry.Name);
             string[] segments = [.. prefix, isIndex ? IndexOutputFileName : $"{slug}.html"];
 
             yield return new ContentSource

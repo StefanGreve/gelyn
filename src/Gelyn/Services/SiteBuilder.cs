@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +20,7 @@ public sealed class SiteBuilder
     private readonly ContentWalker _walker;
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
+    private readonly IFileSystem _fileSystem;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
@@ -33,14 +34,19 @@ public sealed class SiteBuilder
     /// <param name="options">
     ///     Supplies the output directory.
     /// </param>
+    /// <param name="fileSystem">
+    ///     Writes the generated pages.
+    /// </param>
     public SiteBuilder(
         ContentWalker walker,
         IHostEnvironment environment,
-        IOptionsMonitor<SiteOptions> options)
+        IOptionsMonitor<SiteOptions> options,
+        IFileSystem fileSystem)
     {
         this._walker = walker;
         this._environment = environment;
         this._options = options;
+        this._fileSystem = fileSystem;
     }
 
     /// <summary>
@@ -62,7 +68,8 @@ public sealed class SiteBuilder
 
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
 
-        string outputDirectory = Path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
+        IPath path = this._fileSystem.Path;
+        string outputDirectory = path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
         var written = new List<string>(pages.Count);
 
         foreach (ContentPage page in pages)
@@ -75,10 +82,13 @@ public sealed class SiteBuilder
             };
 
             string html = PageLayout.Render(context);
-            string destination = Path.Combine(outputDirectory, page.OutputPath);
+            string destination = path.Combine(outputDirectory, page.OutputPath);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(destination) ?? outputDirectory);
-            await File.WriteAllTextAsync(destination, html, cancellationToken).ConfigureAwait(false);
+            this._fileSystem.Directory.CreateDirectory(path.GetDirectoryName(destination) ?? outputDirectory);
+
+            await this._fileSystem.File
+                .WriteAllTextAsync(destination, html, cancellationToken)
+                .ConfigureAwait(false);
 
             written.Add(page.OutputPath);
         }

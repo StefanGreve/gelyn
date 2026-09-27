@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -24,7 +23,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_LandingPage_IsWrittenFirst()
     {
         // Arrange
-        using ContentFixture fixture = ContentFixture.Create();
+        ContentFixture fixture = ContentFixture.Create();
 
         // Act
         IReadOnlyList<string> written = await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -52,7 +51,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Navigation_LinksTopLevelPagesOnly()
     {
         // Arrange
-        using ContentFixture fixture = ContentFixture.Create();
+        ContentFixture fixture = ContentFixture.Create();
         string[] expected = ["/index.html", "/about.html", "/blog/index.html"];
 
         // Act
@@ -61,7 +60,7 @@ public partial class SiteBuilderTests
         // Assert
         foreach (string page in fixture.EnumerateOutput())
         {
-            string[] navigation = [.. ReadNavigation(page)];
+            string[] navigation = [.. ReadNavigation(fixture, page)];
 
             using (Assert.Multiple())
             {
@@ -81,9 +80,9 @@ public partial class SiteBuilderTests
     [GeneratedRegex("href=\"(?<href>[^\"]*)\"")]
     private static partial Regex NavigationLink();
 
-    private static IEnumerable<string> ReadNavigation(string path)
+    private static IEnumerable<string> ReadNavigation(ContentFixture fixture, string path)
     {
-        string navigation = NavigationBlock().Match(File.ReadAllText(path)).Value;
+        string navigation = NavigationBlock().Match(fixture.ReadOutput(path)).Value;
 
         return NavigationLink()
             .Matches(navigation)

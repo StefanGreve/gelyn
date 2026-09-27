@@ -67,6 +67,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.IO.Abstractions" />
   </ItemGroup>
 
 </Project>

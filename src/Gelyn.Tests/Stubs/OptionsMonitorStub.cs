@@ -12,8 +12,16 @@ namespace Gelyn.Tests.Stubs;
 /// </summary>
 internal sealed class OptionsMonitorStub : IOptionsMonitor<SiteOptions>
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="OptionsMonitorStub"/> class.
+    /// </summary>
+    /// <param name="options">
+    ///     The options to report, or <see langword="null"/> to report the defaults.
+    /// </param>
+    public OptionsMonitorStub(SiteOptions? options = null) => this.CurrentValue = options ?? new SiteOptions();
+
     /// <inheritdoc/>
-    public SiteOptions CurrentValue { get; } = new();
+    public SiteOptions CurrentValue { get; }
 
     /// <inheritdoc/>
     public SiteOptions Get(string? name) => this.CurrentValue;

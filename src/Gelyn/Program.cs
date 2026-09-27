@@ -2,6 +2,7 @@ using System;
 using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.IO.Abstractions;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
@@ -43,6 +44,7 @@ public static class Program
 
             // Third-party registrations
             builder.Services.TryAddSingleton(console);
+            builder.Services.TryAddSingleton<IFileSystem, FileSystem>();
 
             // First-party registrations
             builder.Services.AddSiteOptions();
