@@ -24,4 +24,10 @@ public sealed record ContentPage
     ///     The rendered HTML body, excluding the document shell.
     /// </summary>
     public required string Html { get; init; }
+
+    /// <summary>
+    ///     Indicates whether the site navigation links the page. The landing page, root-level pages
+    ///     and section indexes are linked; pages inside a section are not.
+    /// </summary>
+    public required bool InNavigation { get; init; }
 }

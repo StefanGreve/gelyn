@@ -86,6 +86,7 @@ public sealed class ContentWalker
                 Href = $"/{string.Join('/', source.Segments)}",
                 Title = rendered.FrontMatter.Title ?? source.FallbackTitle,
                 Html = rendered.Html,
+                InNavigation = source.InNavigation,
             });
         }
 
@@ -102,45 +103,63 @@ public sealed class ContentWalker
             SourcePath = Path.Combine(root, IndexFileName),
             Segments = [IndexOutputFileName],
             FallbackTitle = Path.GetFileNameWithoutExtension(IndexFileName),
+            InNavigation = true,
         };
 
-        IEnumerable<FileSystemInfo> entries = new DirectoryInfo(root)
+        foreach (ContentSource source in EnumerateDirectory(new DirectoryInfo(root), []))
+            yield return source;
+    }
+
+    private static IEnumerable<ContentSource> EnumerateDirectory(DirectoryInfo directory, string[] prefix)
+    {
+        IEnumerable<FileSystemInfo> entries = directory
             .EnumerateFileSystemInfos()
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal);
 
         foreach (FileSystemInfo entry in entries)
         {
-            if (entry is DirectoryInfo)
+            if (entry is DirectoryInfo child)
             {
-                string index = Path.Combine(entry.FullName, IndexFileName);
-
-                if (File.Exists(index))
+                // Descending into a symlink would let the walk leave the content directory entirely,
+                // and a link that resolves to an ancestor makes the walk unbounded.
+                if (child.LinkTarget is null)
                 {
-                    yield return new ContentSource
-                    {
-                        SourcePath = index,
-                        Segments = [entry.Name, IndexOutputFileName],
-                        FallbackTitle = entry.Name,
-                    };
+                    foreach (ContentSource source in EnumerateDirectory(child, [.. prefix, child.Name]))
+                        yield return source;
                 }
 
                 continue;
             }
 
-            if (entry.Name.Equals(IndexFileName, StringComparison.Ordinal)
-                || !entry.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase))
+            if (!entry.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            bool isIndex = entry.Name.Equals(IndexFileName, StringComparison.Ordinal);
+
+            // The root index.md is the landing page, which EnumerateSources has already yielded
+            if (isIndex && prefix.Length == 0)
                 continue;
 
             string slug = Path.GetFileNameWithoutExtension(entry.Name);
+            string[] segments = [.. prefix, isIndex ? IndexOutputFileName : $"{slug}.html"];
 
             yield return new ContentSource
             {
                 SourcePath = entry.FullName,
-                Segments = [$"{slug}.html"],
-                FallbackTitle = slug,
+                Segments = segments,
+                FallbackTitle = isIndex ? prefix[^1] : slug,
+                InNavigation = IsInNavigation(segments),
             };
         }
     }
+
+    // The navigation stays flat by design: root-level pages and the index of a top-level section only.
+    private static bool IsInNavigation(string[] segments) => segments.Length switch
+    {
+        1 => true,
+        2 => segments[^1].Equals(IndexOutputFileName, StringComparison.Ordinal),
+        _ => false,
+    };
 
     private sealed record ContentSource
     {
@@ -149,6 +168,8 @@ public sealed class ContentWalker
         public required string[] Segments { get; init; }
 
         public required string FallbackTitle { get; init; }
+
+        public required bool InNavigation { get; init; }
     }
 
     #endregion

@@ -15,9 +15,9 @@ public sealed record RenderContext
     public required SiteOptions Options { get; init; }
 
     /// <summary>
-    ///     Every page of the site, landing page first.
+    ///     The pages the site navigation links, landing page first.
     /// </summary>
-    public required IReadOnlyList<ContentPage> Pages { get; init; }
+    public required IReadOnlyList<ContentPage> Navigation { get; init; }
 
     /// <summary>
     ///     The page currently being rendered.

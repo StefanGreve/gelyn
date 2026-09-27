@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -59,6 +60,8 @@ public sealed class SiteBuilder
             .WalkAsync(options, cancellationToken)
             .ConfigureAwait(false);
 
+        IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
+
         string outputDirectory = Path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
         var written = new List<string>(pages.Count);
 
@@ -67,7 +70,7 @@ public sealed class SiteBuilder
             var context = new RenderContext
             {
                 Options = options,
-                Pages = pages,
+                Navigation = navigation,
                 Page = page,
             };
 

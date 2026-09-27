@@ -24,7 +24,7 @@ public static class HeaderComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var navItems = context.Pages.Select(page =>
+        var navItems = context.Navigation.Select(page =>
         {
             bool isCurrent = string.Equals(context.Page.Href, page.Href, StringComparison.Ordinal);
             string current = isCurrent ? "aria-current=\"page\"" : string.Empty;
@@ -36,8 +36,8 @@ public static class HeaderComponent
             """;
         });
 
-        // Pages is ordered landing page first
-        string home = WebUtility.HtmlEncode(context.Pages[0].Href);
+        // Navigation is ordered landing page first
+        string home = WebUtility.HtmlEncode(context.Navigation[0].Href);
 
         return $"""
             <header>
