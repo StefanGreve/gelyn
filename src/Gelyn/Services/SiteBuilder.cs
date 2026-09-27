@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO.Abstractions;
 using System.Linq;
@@ -21,6 +22,7 @@ public sealed class SiteBuilder
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
+    private readonly TimeProvider _timeProvider;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
@@ -37,16 +39,21 @@ public sealed class SiteBuilder
     /// <param name="fileSystem">
     ///     Writes the generated pages.
     /// </param>
+    /// <param name="timeProvider">
+    ///     Supplies the date the generated pages are stamped with.
+    /// </param>
     public SiteBuilder(
         ContentWalker walker,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
-        IFileSystem fileSystem)
+        IFileSystem fileSystem,
+        TimeProvider timeProvider)
     {
         this._walker = walker;
         this._environment = environment;
         this._options = options;
         this._fileSystem = fileSystem;
+        this._timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -67,6 +74,7 @@ public sealed class SiteBuilder
             .ConfigureAwait(false);
 
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
+        DateOnly generatedAt = DateOnly.FromDateTime(this._timeProvider.GetUtcNow().UtcDateTime);
 
         IPath path = this._fileSystem.Path;
         string outputDirectory = path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
@@ -79,6 +87,7 @@ public sealed class SiteBuilder
                 Options = options,
                 Navigation = navigation,
                 Page = page,
+                GeneratedAt = generatedAt,
             };
 
             string html = PageLayout.Render(context);

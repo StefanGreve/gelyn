@@ -21,4 +21,9 @@ public sealed record FrontMatter
     ///     The publication date, or <see langword="null"/> when the block omits it.
     /// </summary>
     public DateOnly? Date { get; init; }
+
+    /// <summary>
+    ///     The page description, or <see langword="null"/> when the block omits it.
+    /// </summary>
+    public string? Description { get; init; }
 }

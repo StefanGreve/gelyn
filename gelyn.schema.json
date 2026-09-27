@@ -20,6 +20,33 @@
         "My Notebook"
       ]
     },
+    "Language": {
+      "description": "The language of the generated pages, written to the lang attribute of every document as a BCP 47 tag.",
+      "type": "string",
+      "minLength": 1,
+      "default": "en",
+      "examples": [
+        "en",
+        "en-US",
+        "de-DE"
+      ]
+    },
+    "Author": {
+      "description": "The name written to the author meta tag. Omitted from the document when absent.",
+      "type": ["string", "null"],
+      "default": null,
+      "examples": [
+        "Stefan Greve"
+      ]
+    },
+    "Description": {
+      "description": "The description written to the description meta tag by any page whose front matter declares none. Omitted from the document when absent.",
+      "type": ["string", "null"],
+      "default": null,
+      "examples": [
+        "Notes on software engineering."
+      ]
+    },
     "ContentDirectory": {
       "description": "The directory holding the Markdown sources. Relative values are resolved against the working directory.",
       "type": "string",

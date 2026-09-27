@@ -96,6 +96,52 @@ public partial class FrontMatterParserTests
     }
 
     /// <summary>
+    ///     Verifies that a description is read, including one containing the separator.
+    /// </summary>
+    [Test]
+    public async Task Parse_Test_Description_ReturnsValue()
+    {
+        // Arrange
+        const string block = """
+            ---
+            title: Home
+            description: Notes: mostly about software
+            ---
+        """;
+
+        // Act
+        FrontMatter result = FrontMatterParser.Parse(block);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Title).IsEqualTo("Home");
+            await Assert.That(result.Description).IsEqualTo("Notes: mostly about software");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a description on its own is enough to produce front matter, so that a page can
+    ///     declare one without also declaring a title.
+    /// </summary>
+    [Test]
+    public async Task Parse_Test_DescriptionOnly_ReturnsValue()
+    {
+        // Arrange
+        const string line = "description: Standalone";
+
+        // Act
+        FrontMatter result = FrontMatterParser.Parse(line);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result).IsNotSameReferenceAs(FrontMatter.Empty);
+            await Assert.That(result.Description).IsEqualTo("Standalone");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a block supplying only one key leaves the other unset.
     /// </summary>
     [Test]

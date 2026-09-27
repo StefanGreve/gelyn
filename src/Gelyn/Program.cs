@@ -47,6 +47,7 @@ public static class Program
             builder.Services.TryAddSingleton<IFileSystem, FileSystem>();
 
             // First-party registrations
+            builder.Services.TryAddSingleton(TimeProvider.System);
             builder.Services.AddSiteOptions();
             builder.Services.AddServices();
             builder.Services.AddCommands();

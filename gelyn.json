@@ -1,6 +1,9 @@
 {
   "$schema": "./gelyn.schema.json",
   "Title": "Gelyn",
+  "Language": "en",
+  "Author": "Stefan Greve",
+  "Description": "A static site generator that turns a folder of Markdown into a website.",
   "ContentDirectory": "content",
   "OutputDirectory": "_site"
 }

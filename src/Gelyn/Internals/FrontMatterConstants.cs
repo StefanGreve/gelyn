@@ -24,4 +24,9 @@ internal static class FrontMatterConstants
     ///     The key supplying the publication date.
     /// </summary>
     internal const string Date = "date";
+
+    /// <summary>
+    ///     The key supplying the page description.
+    /// </summary>
+    internal const string Description = "description";
 }

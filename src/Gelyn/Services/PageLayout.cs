@@ -24,23 +24,23 @@ public static class PageLayout
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        string encodedTitle = WebUtility.HtmlEncode(context.Page.Title);
+        string language = WebUtility.HtmlEncode(context.Options.Language);
+        string head = HeadComponent.Render(context);
         string header = HeaderComponent.Render(context);
         string footer = FooterComponent.Render(context);
 
         return $"""
             <!DOCTYPE html>
-            <html lang="en">
+            <html lang="{language}">
             <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>{encodedTitle}</title>
+                {head}
             </head>
             <body>
                 {header}
                 <main>
                     {context.Page.Html}
                 </main>
+                <hr />
                 {footer}
             </body>
             </html>

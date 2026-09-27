@@ -1,3 +1,5 @@
+using System;
+
 namespace Gelyn.Model;
 
 /// <summary>
@@ -19,6 +21,17 @@ public sealed record ContentPage
     ///     The page title, falling back to the file or folder name when the front matter omits it.
     /// </summary>
     public required string Title { get; init; }
+
+    /// <summary>
+    ///     The description declared in the front matter, or <see langword="null"/> to fall back to the
+    ///     description configured for the site.
+    /// </summary>
+    public required string? Description { get; init; }
+
+    /// <summary>
+    ///     The publication date declared in the front matter, or <see langword="null"/> when it declares none.
+    /// </summary>
+    public required DateOnly? Date { get; init; }
 
     /// <summary>
     ///     The rendered HTML body, excluding the document shell.

@@ -92,6 +92,8 @@ public sealed class ContentWalker
                 OutputPath = path.Combine(source.Segments),
                 Href = $"/{string.Join('/', source.Segments)}",
                 Title = rendered.FrontMatter.Title ?? source.FallbackTitle,
+                Description = rendered.FrontMatter.Description,
+                Date = rendered.FrontMatter.Date,
                 Html = rendered.Html,
                 InNavigation = source.InNavigation,
             });

@@ -26,6 +26,10 @@ public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(options.Title))
             failures.Add($"{nameof(SiteOptions.Title)} must not be empty.");
 
+        // Author and Description are optional, but an empty lang attribute is worse than none at all.
+        if (string.IsNullOrWhiteSpace(options.Language))
+            failures.Add($"{nameof(SiteOptions.Language)} must not be empty.");
+
         if (string.IsNullOrWhiteSpace(options.ContentDirectory))
             failures.Add($"{nameof(SiteOptions.ContentDirectory)} must not be empty.");
 

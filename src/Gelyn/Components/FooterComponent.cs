@@ -1,6 +1,8 @@
 using System;
+using System.Globalization;
 using System.Net;
 
+using Gelyn.Internals;
 using Gelyn.Model;
 
 namespace Gelyn.Components;
@@ -10,11 +12,13 @@ namespace Gelyn.Components;
 /// </summary>
 public static class FooterComponent
 {
+    private const string DateFormat = "MMM d, yyyy";
+
     /// <summary>
     ///     Renders the block.
     /// </summary>
     /// <param name="context">
-    ///     Supplies the site title.
+    ///     Supplies the date the build started.
     /// </param>
     /// <returns>
     ///     The HTML of the fragment.
@@ -23,9 +27,12 @@ public static class FooterComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
+        string version = WebUtility.HtmlEncode(ToolVersion.Current);
+        string generated = context.GeneratedAt.ToString(DateFormat, CultureInfo.InvariantCulture);
+
         return $"""
             <footer>
-              <p>{WebUtility.HtmlEncode(context.Options.Title)}</p>
+                <em>Built with Gelyn v{version} on {generated}</em>
             </footer>
         """;
     }

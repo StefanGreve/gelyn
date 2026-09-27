@@ -29,6 +29,7 @@ public static class FrontMatterParser
     {
         string? title = null;
         DateOnly? date = null;
+        string? description = null;
 
         foreach (ReadOnlySpan<char> line in block.EnumerateLines())
         {
@@ -45,12 +46,16 @@ public static class FrontMatterParser
                     if (DateOnly.TryParse(value, CultureInfo.InvariantCulture, out DateOnly parsed))
                         date = parsed;
                     break;
+
+                case FrontMatterConstants.Description:
+                    description = value.IsEmpty ? null : value.ToString();
+                    break;
             }
         }
 
-        return title is null && date is null
+        return title is null && date is null && description is null
             ? FrontMatter.Empty
-            : new FrontMatter { Title = title, Date = date };
+            : new FrontMatter { Title = title, Date = date, Description = description };
     }
 
     #region Helpers
