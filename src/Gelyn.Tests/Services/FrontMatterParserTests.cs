@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Gelyn.Model;
 using Gelyn.Services;
 
-namespace Gelyn.Tests;
+namespace Gelyn.Tests.Services;
 
 /// <summary>
 ///     Unit tests for the <see cref="FrontMatterParser"/> class.
