@@ -15,7 +15,7 @@ public static class PageLayout
     ///     Renders a complete HTML document.
     /// </summary>
     /// <param name="context">
-    ///     Supplies the page to render and the pages the navigation links to.
+    ///     The context the page is rendered against.
     /// </param>
     /// <returns>
     ///     The complete HTML document.

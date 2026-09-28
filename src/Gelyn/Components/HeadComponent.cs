@@ -20,7 +20,7 @@ public static class HeadComponent
     ///     Renders the metadata.
     /// </summary>
     /// <param name="context">
-    ///     Supplies the site metadata and the page being rendered.
+    ///     The context the page is rendered against.
     /// </param>
     /// <returns>
     ///     The HTML of the fragment, without the enclosing <c>head</c> element.

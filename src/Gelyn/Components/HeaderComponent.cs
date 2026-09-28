@@ -15,7 +15,7 @@ public static class HeaderComponent
     ///     Renders the banner.
     /// </summary>
     /// <param name="context">
-    ///     Supplies the site title and every page to link.
+    ///     The context the page is rendered against.
     /// </param>
     /// <returns>
     ///     The HTML of the fragment.

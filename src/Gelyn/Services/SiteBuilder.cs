@@ -34,7 +34,7 @@ public sealed class SiteBuilder
     ///     Supplies the root that a relative output directory is resolved against.
     /// </param>
     /// <param name="options">
-    ///     Supplies the output directory.
+    ///     Supplies the site configuration the build is rendered against.
     /// </param>
     /// <param name="fileSystem">
     ///     Writes the generated pages.

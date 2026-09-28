@@ -18,7 +18,7 @@ public static class FooterComponent
     ///     Renders the block.
     /// </summary>
     /// <param name="context">
-    ///     Supplies the date the build started.
+    ///     The context the page is rendered against.
     /// </param>
     /// <returns>
     ///     The HTML of the fragment.
