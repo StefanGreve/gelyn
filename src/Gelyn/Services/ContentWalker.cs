@@ -172,16 +172,5 @@ public sealed class ContentWalker
         _ => false,
     };
 
-    private sealed record ContentSource
-    {
-        public required string SourcePath { get; init; }
-
-        public required string[] Segments { get; init; }
-
-        public required string FallbackTitle { get; init; }
-
-        public required bool InNavigation { get; init; }
-    }
-
     #endregion
 }
