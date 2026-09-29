@@ -72,8 +72,7 @@ public static class Program
 
             return exception switch
             {
-                OptionsValidationException or FileNotFoundException or InvalidDataException
-                    => ExitCodes.ConfigurationError,
+                OptionsValidationException or FileNotFoundException or InvalidDataException => ExitCodes.ConfigurationError,
                 _ => ExitCodes.Error,
             };
         }

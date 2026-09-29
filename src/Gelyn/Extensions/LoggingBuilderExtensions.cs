@@ -19,18 +19,11 @@ public static class LoggingBuilderExtensions
     ///     Replaces the providers the host installs by default with a single console provider that writes to
     ///     standard error, at the level <c>--verbosity</c> selects.
     /// </summary>
-    /// <remarks>
-    ///     Diagnostics are kept off standard output because that stream carries the result of the command,
-    ///     which <see cref="Spectre.Console.IAnsiConsole"/> writes and a caller may redirect or parse.
-    ///     <see cref="ConsoleLoggerOptions.LogToStandardErrorThreshold"/> defaults to
-    ///     <see cref="LogLevel.None"/>, which would put every record on standard output instead.
-    /// </remarks>
     /// <param name="logging">
     ///     The builder to configure.
     /// </param>
     /// <param name="configuration">
-    ///     Supplies the requested level, which is read from here rather than from the parsed command line
-    ///     because the providers have to be configured before the host is built.
+    ///     The configuration to read from.
     /// </param>
     /// <returns>
     ///     The same <see cref="ILoggingBuilder"/> instance, so that calls can be chained.
@@ -51,6 +44,7 @@ public static class LoggingBuilderExtensions
         if (level == LogLevel.None)
             return logging;
 
+        // Standard output carries the command's result, and this threshold defaults to None, meaning stdout.
         logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);
 
         logging.AddSimpleConsole(static options =>

@@ -35,19 +35,19 @@ public sealed class SiteBuilder
     ///     Discovers and renders the pages the site is made of.
     /// </param>
     /// <param name="environment">
-    ///     Supplies the root that a relative output directory is resolved against.
+    ///     The host environment relative paths are resolved against.
     /// </param>
     /// <param name="options">
     ///     Supplies the site configuration the build is rendered against.
     /// </param>
     /// <param name="fileSystem">
-    ///     Writes the generated pages.
+    ///     The file system to work against.
     /// </param>
     /// <param name="timeProvider">
-    ///     Supplies the date the generated pages are stamped with.
+    ///     Supplies the current date and time.
     /// </param>
     /// <param name="logger">
-    ///     Receives the counters the build reports.
+    ///     Receives the records the build writes.
     /// </param>
     public SiteBuilder(
         ContentWalker walker,

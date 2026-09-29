@@ -28,14 +28,12 @@ internal sealed class ContentFixture
     /// </summary>
     public static readonly DateTimeOffset GeneratedAt = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly string _root;
-
     private ContentFixture(MockFileSystem fileSystem, string root, SiteOptions options, LogLevel verbosity)
     {
-        this._root = root;
         this.FileSystem = fileSystem;
         this.Options = options;
         this.ContentRoot = fileSystem.Path.Combine(root, options.ContentDirectory);
+        this.OutputRoot = fileSystem.Path.Combine(root, options.OutputDirectory);
         this.Logger = new FakeLogger<SiteBuilder>();
 
         // Every level is enabled by default, so the requested minimum has to be applied one level at a time.
@@ -64,6 +62,11 @@ internal sealed class ContentFixture
     ///     The directory the content tree is written to.
     /// </summary>
     public string ContentRoot { get; }
+
+    /// <summary>
+    ///     The directory the generated site is written to.
+    /// </summary>
+    public string OutputRoot { get; }
 
     /// <summary>
     ///     The options both the walker and the builder are driven by.
@@ -163,6 +166,24 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Applies a base URL to the fixture's options, so that a test can exercise the path prefix and the
+    ///     canonical reference that derive from it.
+    /// </summary>
+    /// <param name="baseUrl">
+    ///     The absolute URL the site is served from. Only values the validator would accept are useful here,
+    ///     because every consumer trusts it to have run.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithBaseUrl(string baseUrl)
+    {
+        this.Options.BaseUrl = new Uri(baseUrl, UriKind.Absolute);
+
+        return this;
+    }
+
+    /// <summary>
     ///     Reads a page the builder has written.
     /// </summary>
     /// <param name="path">
@@ -179,12 +200,8 @@ internal sealed class ContentFixture
     /// <returns>
     ///     The absolute path of each generated HTML file.
     /// </returns>
-    public IEnumerable<string> EnumerateOutput()
-    {
-        string output = this.FileSystem.Path.Combine(this._root, this.Options.OutputDirectory);
-
-        return this.FileSystem.Directory.EnumerateFiles(output, "*.html", SearchOption.AllDirectories);
-    }
+    public IEnumerable<string> EnumerateOutput() =>
+        this.FileSystem.Directory.EnumerateFiles(this.OutputRoot, "*.html", SearchOption.AllDirectories);
 
     #region Helpers
 

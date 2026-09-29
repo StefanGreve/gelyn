@@ -54,6 +54,12 @@ public static class HeadComponent
             tags.Add($"""<meta name="revised" content="{date}">""");
         }
 
+        if (options.BaseUrl is Uri baseUrl)
+        {
+            string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
+            tags.Add($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+        }
+
         tags.Add($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");
 
         return string.Join(Environment.NewLine, tags);

@@ -34,13 +34,13 @@ public sealed class ContentWalker
     ///     Initializes a new instance of the <see cref="ContentWalker"/> class.
     /// </summary>
     /// <param name="renderer">
-    ///     Converts each Markdown source to HTML.
+    ///     Converts Markdown to HTML.
     /// </param>
     /// <param name="environment">
-    ///     Supplies the root that a relative content directory is resolved against.
+    ///     The host environment relative paths are resolved against.
     /// </param>
     /// <param name="fileSystem">
-    ///     Reads the content tree.
+    ///     The file system to work against.
     /// </param>
     public ContentWalker(MarkdownRendererContract renderer, IHostEnvironment environment, IFileSystem fileSystem)
     {
@@ -53,7 +53,7 @@ public sealed class ContentWalker
     ///     Discovers and renders every page of the site.
     /// </summary>
     /// <param name="options">
-    ///     Supplies the content directory.
+    ///     Supplies the site configuration the walk is driven by.
     /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
@@ -75,6 +75,7 @@ public sealed class ContentWalker
         if (!this._fileSystem.File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
+        string prefix = options.BaseUrl is Uri baseUrl ? baseUrl.AbsolutePath.TrimEnd('/') : string.Empty;
         var pages = new List<ContentPage>();
 
         foreach (ContentSource source in this.EnumerateSources(root))
@@ -90,7 +91,7 @@ public sealed class ContentWalker
             pages.Add(new ContentPage
             {
                 OutputPath = path.Combine(source.Segments),
-                Href = $"/{string.Join('/', source.Segments)}",
+                Href = $"{prefix}/{string.Join('/', source.Segments)}",
                 Title = rendered.FrontMatter.Title ?? source.FallbackTitle,
                 Description = rendered.FrontMatter.Description,
                 Date = rendered.FrontMatter.Date,

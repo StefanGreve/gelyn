@@ -81,7 +81,7 @@ internal static partial class ToolLogger
     ///     The number of files the build produced.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The duration of the build, which covers every phase reported separately above.
+    ///     The duration of the build as a whole.
     /// </param>
     [LoggerMessage(
         EventId = EventIds.BUILD_COMPLETED,

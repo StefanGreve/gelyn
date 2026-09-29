@@ -1,12 +1,15 @@
+using System;
+
 namespace Gelyn.Model.Options;
 
 /// <summary>
 ///     Locations and metadata the generator works with, bound from the root of the configuration.
 /// </summary>
+/// <seealso cref="Validators.SiteOptionsValidator"/>
 public sealed class SiteOptions
 {
     /// <summary>
-    ///     The name shown in the header and used when a page declares no title.
+    ///     The name of the site.
     /// </summary>
     public string Title { get; set; } = "Gelyn";
 
@@ -25,6 +28,12 @@ public sealed class SiteOptions
     ///     or <see langword="null"/> to leave such pages without a description.
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    ///     The absolute URL the finished site is served from, such as <c>https://example.com/blog</c>, or
+    ///     <see langword="null"/> when it is served from the root of a domain.
+    /// </summary>
+    public Uri? BaseUrl { get; set; }
 
     /// <summary>
     ///     The directory holding the Markdown sources. Relative values are resolved against the working directory.

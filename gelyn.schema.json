@@ -11,7 +11,7 @@
       "type": "string"
     },
     "Title": {
-      "description": "The name shown in the header and the footer, and used as the document title when a page declares no title of its own in its front matter.",
+      "description": "The name of the site.",
       "type": "string",
       "minLength": 1,
       "default": "Gelyn",
@@ -45,6 +45,15 @@
       "default": null,
       "examples": [
         "Notes on software engineering."
+      ]
+    },
+    "BaseUrl": {
+      "description": "The absolute http or https URL the site is served from. Its path prefixes every link, and its origin gives each page a canonical URL.",
+      "type": ["string", "null"],
+      "format": "uri",
+      "default": null,
+      "examples": [
+        "https://example.com"
       ]
     },
     "ContentDirectory": {

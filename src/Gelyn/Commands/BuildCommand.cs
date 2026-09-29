@@ -32,8 +32,14 @@ internal sealed class BuildCommand : Command
         // Never read here: the values reach SiteOptions through AddSiteConfiguration.
         this.Options.Add(new Option<string>($"--{OverrideOptions.Title}")
         {
-            Description = "The name shown in the header and the footer.",
+            Description = "The name of the site.",
             HelpName = "name",
+        });
+
+        this.Options.Add(new Option<string>($"--{OverrideOptions.BaseUrl}")
+        {
+            Description = "The absolute URL the finished site is served from.",
+            HelpName = "url",
         });
 
         this.Options.Add(new Option<string>($"--{OverrideOptions.Content}")

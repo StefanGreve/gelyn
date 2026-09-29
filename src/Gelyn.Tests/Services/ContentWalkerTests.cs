@@ -181,6 +181,50 @@ public class ContentWalkerTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that the path of the base URL is prefixed to every link however deep the page sits, and
+    ///     that a trailing slash on it does not double up against the slash the link already starts with.
+    /// </summary>
+    [Test]
+    [Arguments("https://example.com/gelyn/docs")]
+    [Arguments("https://example.com/gelyn/docs/")]
+    public async Task WalkAsync_Test_BaseUrlPath_IsPrefixedToEveryHref(string baseUrl)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithBaseUrl(baseUrl);
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(pages[0].Href).IsEqualTo("/gelyn/docs/index.html");
+
+            await Assert.That(pages.Single(page => page.Title == "Deep").Href)
+                .IsEqualTo("/gelyn/docs/blog/2026/q3/deep.html");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a base URL addressing the root of a domain leaves every link exactly as it would be
+    ///     without one, so that configuring one for the canonical reference alone costs nothing.
+    /// </summary>
+    [Test]
+    [Arguments("https://example.com")]
+    [Arguments("https://example.com/")]
+    public async Task WalkAsync_Test_BaseUrlAtDomainRoot_LeavesHrefsUnprefixed(string baseUrl)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithBaseUrl(baseUrl);
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+
+        // Assert
+        await Assert.That(pages[0].Href).IsEqualTo("/index.html");
+    }
+
     #endregion // WalkAsync Tests
 
     #region Helpers

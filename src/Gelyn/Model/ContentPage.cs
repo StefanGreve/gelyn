@@ -10,11 +10,13 @@ public sealed record ContentPage
     /// <summary>
     ///     The path of the generated file, relative to the output root, using the native directory separator.
     /// </summary>
+    /// <seealso cref="Options.SiteOptions.OutputDirectory"/>
     public required string OutputPath { get; init; }
 
     /// <summary>
-    ///     The root-relative URL the page is linked by.
+    ///     The root-relative URL the page is linked by, including the path of the configured base URL.
     /// </summary>
+    /// <seealso cref="Options.SiteOptions.BaseUrl"/>
     public required string Href { get; init; }
 
     /// <summary>
@@ -26,6 +28,7 @@ public sealed record ContentPage
     ///     The description declared in the front matter, or <see langword="null"/> to fall back to the
     ///     description configured for the site.
     /// </summary>
+    /// <seealso cref="Options.SiteOptions.Description"/>
     public required string? Description { get; init; }
 
     /// <summary>

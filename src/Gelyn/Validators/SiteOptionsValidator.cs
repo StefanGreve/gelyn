@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -36,8 +37,20 @@ public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(options.OutputDirectory))
             failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not be empty.");
 
+        if (options.BaseUrl is Uri baseUrl && !IsServable(baseUrl))
+            failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
+
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)
             : ValidateOptionsResult.Success;
     }
+
+    #region Helpers
+
+    // A relative URL carries no origin to resolve a link against, and Scheme throws when read from one.
+    private static bool IsServable(Uri baseUrl) =>
+        baseUrl.IsAbsoluteUri && (baseUrl.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
+            || baseUrl.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
+
+    #endregion
 }

@@ -16,6 +16,11 @@ internal static class OverrideOptions
     internal const string Title = "title";
 
     /// <summary>
+    ///     Overrides the URL the finished site is served from.
+    /// </summary>
+    internal const string BaseUrl = "base-url";
+
+    /// <summary>
     ///     Overrides the content directory.
     /// </summary>
     internal const string Content = "content";

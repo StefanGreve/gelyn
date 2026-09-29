@@ -79,6 +79,58 @@ public partial class SiteBuilderTests
 
     #endregion // BuildAsync Tests
 
+    #region Canonical Tests
+
+    /// <summary>
+    ///     Verifies that each page states its own absolute address once a base URL is configured, and that the
+    ///     address agrees with the path prefix the same base URL puts on every link.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Canonical_AddressesEachPageAbsolutely()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithBaseUrl("https://example.com/gelyn/docs");
+        string deep = fixture.FileSystem.Path.Combine("blog", "2026", "q3", "deep.html");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadCanonical(fixture, "index.html"))
+                .IsEqualTo("https://example.com/gelyn/docs/index.html");
+
+            await Assert.That(ReadCanonical(fixture, deep))
+                .IsEqualTo("https://example.com/gelyn/docs/blog/2026/q3/deep.html");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that no page states a canonical address when no base URL is configured, because a relative
+    ///     one carries no meaning and a guessed one would be worse than none.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Canonical_IsOmittedWithoutABaseUrl()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert: the count is pinned first, because an empty output would satisfy the loop on its own.
+        using (Assert.Multiple())
+        {
+            await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
+
+            foreach (string page in fixture.EnumerateOutput())
+                await Assert.That(Canonical(fixture.ReadOutput(page))).IsNull();
+        }
+    }
+
+    #endregion // Canonical Tests
+
     #region Counter Tests
 
     /// <summary>
@@ -249,6 +301,19 @@ public partial class SiteBuilderTests
 
     private static double Elapsed(ContentFixture fixture, int eventId) =>
         Value<double>(Reported(fixture, eventId), "ElapsedMilliseconds");
+
+    private static string? ReadCanonical(ContentFixture fixture, string outputPath) =>
+        Canonical(fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath)));
+
+    private static string? Canonical(string html)
+    {
+        Match match = CanonicalLink().Match(html);
+
+        return match.Success ? match.Groups["href"].Value : null;
+    }
+
+    [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
+    private static partial Regex CanonicalLink();
 
     [GeneratedRegex("<nav>.*?</nav>", RegexOptions.Singleline)]
     private static partial Regex NavigationBlock();

@@ -59,6 +59,7 @@ public static class ConfigurationManagerExtensions
         (string Option, string Key)[] promotions =
         [
             (OverrideOptions.Title, nameof(SiteOptions.Title)),
+            (OverrideOptions.BaseUrl, nameof(SiteOptions.BaseUrl)),
             (OverrideOptions.Content, nameof(SiteOptions.ContentDirectory)),
             (OverrideOptions.Output, nameof(SiteOptions.OutputDirectory)),
         ];
