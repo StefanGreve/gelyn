@@ -14,20 +14,28 @@ public static class PageLayout
     /// <summary>
     ///     Renders a complete HTML document.
     /// </summary>
+    /// <remarks>
+    ///     The head is rendered here rather than passed in, because its contents depend on the page: a page
+    ///     that declares no description, date or math carries none of the corresponding tags.
+    /// </remarks>
     /// <param name="context">
     ///     The context the page is rendered against.
+    /// </param>
+    /// <param name="header">
+    ///     The rendered banner.
+    /// </param>
+    /// <param name="footer">
+    ///     The rendered footer.
     /// </param>
     /// <returns>
     ///     The complete HTML document.
     /// </returns>
-    public static string Render(RenderContext context)
+    public static string Render(RenderContext context, string header, string footer)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         string language = WebUtility.HtmlEncode(context.Options.Language);
         string head = HeadComponent.Render(context);
-        string header = HeaderComponent.Render(context);
-        string footer = FooterComponent.Render(context);
 
         return $"""
             <!DOCTYPE html>

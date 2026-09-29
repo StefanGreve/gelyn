@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Components;
 using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -97,18 +98,27 @@ public sealed class SiteBuilder
         long renderTicks = 0;
         long writeTicks = 0;
 
+        // The footer is invariant, so one component serves every page. The walk guarantees pages is not empty.
+        string footer = FooterComponent.Render(pages[0].ToRenderContext(options, navigation, generatedAt));
+
+        // The banner differs only in which navigation entry carries aria-current, so it needs one render per
+        // linked page plus one shared by every page the navigation leaves out, however many pages there are.
+        Dictionary<string, string> banners = new(navigation.Count + 1, StringComparer.Ordinal);
+
         foreach (ContentPage page in pages)
         {
-            var context = new RenderContext
-            {
-                Options = options,
-                Navigation = navigation,
-                Page = page,
-                GeneratedAt = generatedAt,
-            };
+            RenderContext context = page.ToRenderContext(options, navigation, generatedAt);
 
             long renderStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = PageLayout.Render(context);
+            string key = page.InNavigation ? page.Href : string.Empty;
+
+            if (!banners.TryGetValue(key, out string? header))
+            {
+                header = HeaderComponent.Render(context);
+                banners[key] = header;
+            }
+
+            string html = PageLayout.Render(context, header, footer);
 
             if (isMeasuring)
                 renderTicks += Stopwatch.GetTimestamp() - renderStarted;

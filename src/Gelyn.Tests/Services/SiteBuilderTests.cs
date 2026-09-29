@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Components;
 using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Services;
@@ -78,6 +79,135 @@ public partial class SiteBuilderTests
     }
 
     #endregion // BuildAsync Tests
+
+    #region Shared Fragment Tests
+
+    /// <summary>
+    ///     Verifies that every page marks its own navigation entry as current and no other, and that a page the
+    ///     navigation leaves out marks none at all.
+    /// </summary>
+    /// <remarks>
+    ///     The banner is rendered once per variant rather than once per page, so this is what prevents one
+    ///     page's current entry from being served to the rest of the site.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Header_MarksTheCurrentPageOnly()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+        string nested = fixture.FileSystem.Path.Combine("blog", "hello.html");
+        string section = fixture.FileSystem.Path.Combine("blog", "index.html");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(CurrentEntry(fixture, "index.html")).IsEqualTo("/index.html");
+            await Assert.That(CurrentEntry(fixture, "about.html")).IsEqualTo("/about.html");
+            await Assert.That(CurrentEntry(fixture, section)).IsEqualTo("/blog/index.html");
+            await Assert.That(CurrentEntry(fixture, nested)).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that every page carries the same footer, which is the invariant that makes rendering it
+    ///     once for the whole build correct.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Footer_IsIdenticalOnEveryPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] footers =
+        [
+            .. fixture.EnumerateOutput().Select(page => FooterBlock().Match(fixture.ReadOutput(page)).Value),
+        ];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(footers.Length).IsEqualTo(6);
+            await Assert.That(footers.Distinct().Count()).IsEqualTo(1);
+            await Assert.That(footers[0]).Contains("Built with Gelyn");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that rendering the footer against any page produces the same markup, which is the invariant
+    ///     that licenses rendering it once for the whole build.
+    /// </summary>
+    /// <remarks>
+    ///     Renders the component directly, because comparing the footers in the output cannot detect this:
+    ///     a footer that did read the page would be rendered once from one page and then reused, so every page
+    ///     would still carry identical markup.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Footer_DoesNotDependOnThePage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+
+        IReadOnlyList<ContentPage> pages =
+            await fixture.Walker.WalkAsync(fixture.Options, CancellationToken.None);
+
+        IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
+
+        // Act
+        string[] footers =
+        [
+            .. pages.Select(page => FooterComponent.Render(new RenderContext
+            {
+                Options = fixture.Options,
+                Navigation = navigation,
+                Page = page,
+                GeneratedAt = DateOnly.FromDateTime(ContentFixture.GeneratedAt.UtcDateTime),
+            })),
+        ];
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(footers.Length).IsEqualTo(6);
+            await Assert.That(footers.Distinct().Count()).IsEqualTo(1);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the banner precedes the content and the footer follows it.
+    /// </summary>
+    /// <remarks>
+    ///     Both fragments are arguments now, so the layout can no longer guarantee their order by construction:
+    ///     passing them the wrong way round compiles and produces a document that is still well formed.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_SharedFragments_SurroundTheContent()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string html = ReadPage(fixture, "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(html.IndexOf("<header>", StringComparison.Ordinal))
+                .IsLessThan(html.IndexOf("<main>", StringComparison.Ordinal));
+
+            await Assert.That(html.IndexOf("<main>", StringComparison.Ordinal))
+                .IsLessThan(html.IndexOf("<footer>", StringComparison.Ordinal));
+        }
+    }
+
+    #endregion // Shared Fragment Tests
 
     #region Canonical Tests
 
@@ -302,8 +432,11 @@ public partial class SiteBuilderTests
     private static double Elapsed(ContentFixture fixture, int eventId) =>
         Value<double>(Reported(fixture, eventId), "ElapsedMilliseconds");
 
+    private static string ReadPage(ContentFixture fixture, string outputPath) =>
+        fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));
+
     private static string? ReadCanonical(ContentFixture fixture, string outputPath) =>
-        Canonical(fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath)));
+        Canonical(ReadPage(fixture, outputPath));
 
     private static string? Canonical(string html)
     {
@@ -312,8 +445,21 @@ public partial class SiteBuilderTests
         return match.Success ? match.Groups["href"].Value : null;
     }
 
+    private static string? CurrentEntry(ContentFixture fixture, string outputPath)
+    {
+        Match match = CurrentLink().Match(ReadPage(fixture, outputPath));
+
+        return match.Success ? match.Groups["href"].Value : null;
+    }
+
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
+
+    [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
+    private static partial Regex CurrentLink();
+
+    [GeneratedRegex("<footer>.*?</footer>", RegexOptions.Singleline)]
+    private static partial Regex FooterBlock();
 
     [GeneratedRegex("<nav>.*?</nav>", RegexOptions.Singleline)]
     private static partial Regex NavigationBlock();
