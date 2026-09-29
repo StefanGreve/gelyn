@@ -1,9 +1,10 @@
-using System.Collections.Generic;
 using System.CommandLine;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 
 using Gelyn.Internals;
+using Gelyn.Model;
 using Gelyn.Services;
 
 using Spectre.Console;
@@ -51,14 +52,18 @@ internal sealed class BuildCommand : Command
         {
             try
             {
-                IReadOnlyList<string> written = await siteBuilder
+                BuildReport report = await siteBuilder
                     .BuildAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                foreach (string page in written)
+                foreach (string page in report.Files)
                     console.MarkupLineInterpolated($"[green]created[/] {page}");
 
-                console.MarkupLineInterpolated($"Generated [bold]{written.Count}[/] page(s).");
+                // Formatted here rather than in the interpolation, so the culture is not left to the console.
+                string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", CultureInfo.InvariantCulture);
+
+                console.MarkupLineInterpolated(
+                    $"Generated [bold]{report.Files.Count}[/] page(s) in [bold]{elapsed}[/] ms.");
 
                 return ExitCodes.Success;
             }

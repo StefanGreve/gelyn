@@ -27,6 +27,21 @@ python3 -m http.server -d _site -b 127.0.0.1 8000
 > documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
 > every interface.
 
+### Diagnostics
+
+Results go to standard output and diagnostics go to standard error, so the two can be separated. Nothing is
+written to standard error unless `--verbosity` asks for it; `debug` reports how long each phase of the build
+took:
+
+```sh
+gelyn build --verbosity debug             # phase timings alongside the result
+gelyn build --verbosity debug 2>/dev/null # result only
+gelyn build > pages.txt 2> timings.txt    # each stream to its own file
+```
+
+Accepts any `LogLevel` name - `trace`, `debug`, `information`, `warning`, `error`, `critical` or `none` - and
+defaults to `warning`, which is why a normal build stays quiet.
+
 ## Configuration
 
 Optional. Without a configuration file the defaults below apply. To change them, drop a `gelyn.json` next to

@@ -3,6 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 
 using Gelyn.Internals;
 
+using Microsoft.Extensions.Logging;
+
 namespace Gelyn.Commands;
 
 /// <summary>
@@ -27,7 +29,17 @@ internal sealed class GelynCommand : RootCommand
             Recursive = true,
         };
 
+        // Read by Program before the host exists, because it selects the minimum level of the log providers.
+        Option<LogLevel> verbosity = new(VerbosityOption.OptionName)
+        {
+            Description = "How much diagnostic output to write to standard error.",
+            HelpName = "level",
+            DefaultValueFactory = static _ => VerbosityOption.DefaultLevel,
+            Recursive = true,
+        };
+
         this.Options.Add(configuration);
+        this.Options.Add(verbosity);
         this.Subcommands.Add(buildCommand);
     }
 }

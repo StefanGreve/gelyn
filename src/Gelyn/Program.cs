@@ -41,6 +41,7 @@ public static class Program
         {
             HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
             builder.Configuration.AddSiteConfiguration(args);
+            builder.Logging.ConfigureDiagnostics(builder.Configuration);
 
             // Third-party registrations
             builder.Services.TryAddSingleton(console);

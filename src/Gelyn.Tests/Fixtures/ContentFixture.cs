@@ -7,6 +7,10 @@ using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Stubs;
 
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
+
 namespace Gelyn.Tests.Fixtures;
 
 /// <summary>
@@ -18,14 +22,25 @@ namespace Gelyn.Tests.Fixtures;
 /// </remarks>
 internal sealed class ContentFixture
 {
+    /// <summary>
+    ///     The instant the fixture's clock is frozen at, so that the footer stamp does not depend on when the
+    ///     test happens to run.
+    /// </summary>
+    public static readonly DateTimeOffset GeneratedAt = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
+
     private readonly string _root;
 
-    private ContentFixture(MockFileSystem fileSystem, string root, SiteOptions options)
+    private ContentFixture(MockFileSystem fileSystem, string root, SiteOptions options, LogLevel verbosity)
     {
         this._root = root;
         this.FileSystem = fileSystem;
         this.Options = options;
         this.ContentRoot = fileSystem.Path.Combine(root, options.ContentDirectory);
+        this.Logger = new FakeLogger<SiteBuilder>();
+
+        // Every level is enabled by default, so the requested minimum has to be applied one level at a time.
+        foreach (LogLevel level in Enum.GetValues<LogLevel>())
+            this.Logger.ControlLevel(level, level != LogLevel.None && level >= verbosity);
 
         HostEnvironmentStub environment = new() { ContentRootPath = root };
 
@@ -36,7 +51,8 @@ internal sealed class ContentFixture
             environment,
             new OptionsMonitorStub(options),
             fileSystem,
-            new TimeProviderStub());
+            new FakeTimeProvider(GeneratedAt),
+            this.Logger);
     }
 
     /// <summary>
@@ -65,6 +81,16 @@ internal sealed class ContentFixture
     public SiteBuilder Builder { get; }
 
     /// <summary>
+    ///     The logger <see cref="Builder"/> reports its counters to.
+    /// </summary>
+    public FakeLogger<SiteBuilder> Logger { get; }
+
+    /// <summary>
+    ///     The records <see cref="Builder"/> has written, in the order it wrote them.
+    /// </summary>
+    public IReadOnlyList<FakeLogRecord> Records => this.Logger.Collector.GetSnapshot();
+
+    /// <summary>
     ///     Creates a fixture holding a tree that nests deeper than the navigation reaches, so that a test
     ///     can tell the pages that are written apart from the pages that are linked.
     /// </summary>
@@ -78,11 +104,14 @@ internal sealed class ContentFixture
     ///     blog/2026/q3/deep.md -> blog/2026/q3/deep.html
     ///     </code>
     /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
     /// <returns>
     ///     The new fixture.
     /// </returns>
-    public static ContentFixture Create() =>
-        CreateEmpty()
+    public static ContentFixture Create(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
             .Write("index.md", "Home")
             .Write("about.md", "About")
             .Write("blog/index.md", "Blog")
@@ -93,16 +122,19 @@ internal sealed class ContentFixture
     /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
     /// <returns>
     ///     The new fixture.
     /// </returns>
-    public static ContentFixture CreateEmpty()
+    public static ContentFixture CreateEmpty(LogLevel verbosity = LogLevel.Debug)
     {
         MockFileSystem fileSystem = new();
         SiteOptions options = new();
         string root = fileSystem.Path.Combine(fileSystem.Path.GetTempPath(), "gelyn");
 
-        ContentFixture fixture = new(fileSystem, root, options);
+        ContentFixture fixture = new(fileSystem, root, options, verbosity);
 
         fileSystem.AddDirectory(fixture.ContentRoot);
 

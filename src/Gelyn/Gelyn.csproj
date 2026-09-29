@@ -53,6 +53,10 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Gelyn.Tests" />
+  </ItemGroup>
+
   <Target Name="CleanGeneratedOutput" AfterTargets="Clean">
     <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts" />
   </Target>
@@ -65,6 +69,7 @@
     <PackageReference Include="Markdig" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="System.IO.Abstractions" />
