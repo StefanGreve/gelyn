@@ -27,69 +27,6 @@ python3 -m http.server -d _site -b 127.0.0.1 8000
 > documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
 > every interface.
 
-### Diagnostics
-
-Results go to standard output and diagnostics go to standard error, so the two can be separated. Nothing is
-written to standard error unless `--verbosity` asks for it; `debug` reports how long each phase of the build
-took:
-
-```sh
-gelyn build --verbosity debug             # phase timings alongside the result
-gelyn build --verbosity debug 2>/dev/null # result only
-gelyn build > pages.txt 2> timings.txt    # each stream to its own file
-```
-
-Accepts any `LogLevel` name - `trace`, `debug`, `information`, `warning`, `error`, `critical` or `none` - and
-defaults to `warning`, which is why a normal build stays quiet.
-
-## Configuration
-
-Optional. Without a configuration file the defaults below apply. To change them, drop a `gelyn.json` next to
-`content/` in the directory you run `gelyn` from:
-
-```json
-{
-  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
-  "Title": "My Blog",
-  "Language": "en",
-  "Author": "Stefan Greve",
-  "ContentDirectory": "content",
-  "OutputDirectory": "_site"
-}
-```
-
-`Language` is written to the `lang` attribute of every document. `Author` and `Description` are written to the
-matching `meta` tags and are omitted when unset. A page can override `Description` in its front matter:
-
-```markdown
----
-title: About
-date: 2026-09-14
-description: Who I am and what I write about
----
-```
-
-Referencing the schema gives completion and validation in any editor that understands JSON Schema, and rejects
-misspelled keys, which configuration binding would otherwise ignore in silence.
-
-Pass `--config <path>` to read a different file; unlike `gelyn.json`, a path given explicitly must exist. Every
-setting can also be supplied as an environment variable of the same name, which takes precedence over the file:
-
-```sh
-Title="My Blog" gelyn build
-gelyn build --config config/production.json
-```
-
-## Tab completion
-
-Built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
-[How to enable tab completion][tab-completion] for the one-time per-machine setup, then register the
-installed executable:
-
-```sh
-dotnet-suggest register --command-path "$HOME/.dotnet/tools/gelyn"
-```
-
 ## Developer Notes
 
 Install the development dependencies and register the `git` hooks:
@@ -156,6 +93,5 @@ dotnet tool install --global Gelyn --prerelease
 [tunit]: https://tunit.dev
 [husky]: https://alirezanet.github.io/Husky.Net
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
-[tab-completion]: https://learn.microsoft.com/en-us/dotnet/standard/commandline/how-to-enable-tab-completion
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
 [http-server]: https://docs.python.org/3/library/http.server.html
