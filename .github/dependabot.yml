@@ -1,0 +1,49 @@
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: "08:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 10
+    groups:
+      testing:
+        patterns:
+          - TUnit*
+          - Microsoft.Testing.*
+          - Microsoft.Extensions.Diagnostics.Testing
+          - Microsoft.Extensions.TimeProvider.Testing
+      runtime-extensions:
+        patterns:
+          - Microsoft.Extensions.*
+        # Both also match Microsoft.Extensions.*, so exclude them here rather than rely on the group order above.
+        exclude-patterns:
+          - Microsoft.Extensions.Diagnostics.Testing
+          - Microsoft.Extensions.TimeProvider.Testing
+      # TestingHelpers ships in lockstep with the library it fakes, so the two have to move in one pull request.
+      io-abstractions:
+        patterns:
+          - System.IO.Abstractions*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: "08:00"
+      timezone: Europe/Berlin
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: dotnet-sdk
+    directory: /
+    schedule:
+      interval: monthly
+      day: friday
+      time: "08:00"
+      timezone: Europe/Berlin
