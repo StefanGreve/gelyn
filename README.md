@@ -49,7 +49,8 @@ Run the test suite:
 dotnet test
 ```
 
-Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp].
+Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp]; its [documentation][tunit-docs]
+covers the authoring conventions this suite follows.
 A [`Husky.Net`][husky] `pre-push` hook runs the same suite before every push.
 
 To use the tool locally, publish it and link the resulting binary onto your `PATH`:
@@ -91,6 +92,7 @@ dotnet tool install --global Gelyn --prerelease
 [platform-badge]: https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey
 [license]: LICENSE.md
 [tunit]: https://tunit.dev
+[tunit-docs]: https://tunit.dev/docs/intro/
 [husky]: https://alirezanet.github.io/Husky.Net
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
