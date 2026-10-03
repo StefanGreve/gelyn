@@ -9,8 +9,8 @@ using Microsoft.Extensions.Configuration;
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Configuration sources the composition root in <see cref="Program"/> layers on top of the
-///     host defaults.
+///     Configuration sources the composition root in <see cref="Program"/> layers on top of the environment
+///     variables and command line it seeds the host configuration with.
 /// </summary>
 public static class ConfigurationManagerExtensions
 {
@@ -22,6 +22,11 @@ public static class ConfigurationManagerExtensions
     ///     <c>gelyn.json</c> is optional, because the defaults on <see cref="SiteOptions"/> are usable on
     ///     their own. The environment variables and the command line are added again so that they keep
     ///     overriding the file, which is added after them and would otherwise win.
+    ///
+    ///     The file is not watched for changes, because no command outlives a single read of it, and
+    ///     establishing the watch costs around 38 ms of a 41 ms startup on macOS. A long-lived command would
+    ///     invert that trade and still be better served by a watcher of its own, because a reload only
+    ///     updates what <c>IOptionsMonitor</c> returns and regenerates nothing.
     /// </remarks>
     /// <param name="configuration">
     ///     The configuration to add the sources to.
@@ -42,7 +47,7 @@ public static class ConfigurationManagerExtensions
         configuration.AddJsonFile(
             requested ?? ConfigurationFile.DefaultFileName,
             optional: requested is null,
-            reloadOnChange: true);
+            reloadOnChange: false);
 
         configuration
             .AddEnvironmentVariables()

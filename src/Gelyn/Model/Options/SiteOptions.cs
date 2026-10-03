@@ -37,7 +37,7 @@ public sealed class SiteOptions
 
     /// <summary>
     ///     The directory holding the Markdown sources. Relative values are resolved against the content root,
-    ///     which is the working directory unless <c>--contentRoot</c> overrides it.
+    ///     which is the working directory unless <c>DOTNET_CONTENTROOT</c> points somewhere else.
     /// </summary>
     public string ContentDirectory { get; set; } = "content";
 

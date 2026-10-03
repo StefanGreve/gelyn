@@ -28,8 +28,9 @@ Optional. Without a configuration file the defaults below apply. To change them,
 | `ContentDirectory` | `content` | The directory holding the Markdown sources. A relative value resolves against the content root.      |
 | `OutputDirectory`  | `_site`   | The directory the site is written to. Resolved the same way, and existing files are overwritten.     |
 
-The content root is the working directory, unless `--contentRoot` or the `DOTNET_CONTENTROOT` environment
-variable points somewhere else.
+The content root is the working directory, unless the `DOTNET_CONTENTROOT` environment variable points
+somewhere else. There is no flag for it: no command declares `--contentRoot`, so passing it is rejected as an
+unrecognized argument.
 
 A page title is separate from the name of the site: it comes from the page's own front matter, falling back to
 the file name, or to the folder name for a section index. `Title` is never used as a page title.

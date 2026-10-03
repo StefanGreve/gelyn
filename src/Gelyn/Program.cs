@@ -42,7 +42,7 @@ public static class Program
 
         try
         {
-            HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+            HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
             builder.Configuration.AddSiteConfiguration(args);
             builder.Logging.ConfigureDiagnostics(builder.Configuration);
 
