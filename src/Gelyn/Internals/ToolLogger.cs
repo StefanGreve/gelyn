@@ -90,4 +90,22 @@ internal static partial class ToolLogger
         SkipEnabledCheck = true,
         Message = "Built {FileCount} file(s) in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogBuildCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
+
+    /// <summary>
+    ///     Reports how long the tool took to become ready to run a command.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="elapsedMilliseconds">
+    ///     The duration from the first statement of <c>Program.Main</c> to the dispatch of the parsed command,
+    ///     which excludes the process and runtime start that precedes it.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.STARTUP_COMPLETED,
+        EventName = nameof(EventIds.STARTUP_COMPLETED),
+        Level = LogLevel.Debug,
+        SkipEnabledCheck = true,
+        Message = "Started in {ElapsedMilliseconds:F2} ms")]
+    internal static partial void LogStartupCompleted(this ILogger logger, double elapsedMilliseconds);
 }

@@ -34,5 +34,10 @@ internal static class EventIds
     /// </summary>
     internal const int BUILD_COMPLETED = 1_003;
 
+    /// <summary>
+    ///     The host has been built and a command is about to be dispatched.
+    /// </summary>
+    internal const int STARTUP_COMPLETED = 1_004;
+
     #endregion
 }

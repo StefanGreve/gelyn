@@ -1,5 +1,6 @@
 using System;
 using System.CommandLine;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Abstractions;
@@ -12,6 +13,7 @@ using Gelyn.Internals;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Spectre.Console;
@@ -35,6 +37,7 @@ public static class Program
     [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = Justifications.ByDesign)]
     public static async Task<int> Main(string[] args)
     {
+        long started = Stopwatch.GetTimestamp();
         IAnsiConsole console = AnsiConsole.Console;
 
         try
@@ -60,9 +63,20 @@ public static class Program
             // A configuration file that cannot be parsed is the exception, because loading it is eager.
             InvocationConfiguration configuration = new() { EnableDefaultExceptionHandler = false };
 
-            return await host.Services
+            ParseResult parsed = host.Services
                 .GetRequiredService<GelynCommand>()
-                .Parse(args)
+                .Parse(args);
+
+            double startupMilliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+
+            ILogger logger = host.Services
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger(typeof(Program));
+
+            if (logger.IsEnabled(LogLevel.Debug))
+                logger.LogStartupCompleted(startupMilliseconds);
+
+            return await parsed
                 .InvokeAsync(configuration)
                 .ConfigureAwait(false);
         }
