@@ -32,24 +32,24 @@ internal static partial class ToolLogger
     internal static partial void LogWalkCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
 
     /// <summary>
-    ///     Reports how long it took to lay the discovered pages out into complete documents.
+    ///     Reports how long it took to compose the discovered pages into complete documents.
     /// </summary>
     /// <param name="logger">
     ///     The logger the record is written to.
     /// </param>
     /// <param name="pageCount">
-    ///     The number of pages that were laid out.
+    ///     The number of pages that were composed.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The accumulated duration of the layout, excluding the time spent writing.
+    ///     The accumulated duration of the composition, excluding the time spent writing.
     /// </param>
     [LoggerMessage(
-        EventId = EventIds.RENDER_COMPLETED,
-        EventName = nameof(EventIds.RENDER_COMPLETED),
+        EventId = EventIds.COMPOSE_COMPLETED,
+        EventName = nameof(EventIds.COMPOSE_COMPLETED),
         Level = LogLevel.Debug,
         SkipEnabledCheck = true,
-        Message = "Rendered {PageCount} page(s) in {ElapsedMilliseconds:F2} ms")]
-    internal static partial void LogRenderCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
+        Message = "Composed {PageCount} page(s) in {ElapsedMilliseconds:F2} ms")]
+    internal static partial void LogComposeCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
 
     /// <summary>
     ///     Reports how long it took to write the generated documents to the output directory.

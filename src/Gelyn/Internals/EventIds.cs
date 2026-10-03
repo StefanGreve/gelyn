@@ -20,9 +20,9 @@ internal static class EventIds
     internal const int WALK_COMPLETED = 1_000;
 
     /// <summary>
-    ///     Every page has been laid out into a complete HTML document.
+    ///     Every page has been composed into a complete HTML document.
     /// </summary>
-    internal const int RENDER_COMPLETED = 1_001;
+    internal const int COMPOSE_COMPLETED = 1_001;
 
     /// <summary>
     ///     Every document has been written to the output directory.

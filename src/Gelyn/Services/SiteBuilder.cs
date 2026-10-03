@@ -95,7 +95,7 @@ public sealed class SiteBuilder
         IPath path = this._fileSystem.Path;
         string outputDirectory = path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
         var written = new List<string>(pages.Count);
-        long renderTicks = 0;
+        long composeTicks = 0;
         long writeTicks = 0;
 
         // The footer is invariant, so one component serves every page. The walk guarantees pages is not empty.
@@ -109,7 +109,7 @@ public sealed class SiteBuilder
         {
             RenderContext context = page.ToRenderContext(options, navigation, generatedAt);
 
-            long renderStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+            long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
             string key = page.InNavigation ? page.Href : string.Empty;
 
             if (!banners.TryGetValue(key, out string? header))
@@ -121,7 +121,7 @@ public sealed class SiteBuilder
             string html = PageLayout.Render(context, header, footer);
 
             if (isMeasuring)
-                renderTicks += Stopwatch.GetTimestamp() - renderStarted;
+                composeTicks += Stopwatch.GetTimestamp() - composeStarted;
 
             string destination = path.Combine(outputDirectory, page.OutputPath);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
@@ -144,12 +144,12 @@ public sealed class SiteBuilder
         if (isMeasuring)
         {
             double walkMs = Stopwatch.GetElapsedTime(0, walkTicks).TotalMilliseconds;
-            double renderMs = Stopwatch.GetElapsedTime(0, renderTicks).TotalMilliseconds;
+            double composeMs = Stopwatch.GetElapsedTime(0, composeTicks).TotalMilliseconds;
             double writeMs = Stopwatch.GetElapsedTime(0, writeTicks).TotalMilliseconds;
             double buildMs = elapsed.TotalMilliseconds;
 
             this._logger.LogWalkCompleted(pages.Count, walkMs);
-            this._logger.LogRenderCompleted(pages.Count, renderMs);
+            this._logger.LogComposeCompleted(pages.Count, composeMs);
             this._logger.LogWriteCompleted(written.Count, writeMs);
             this._logger.LogBuildCompleted(written.Count, buildMs);
         }

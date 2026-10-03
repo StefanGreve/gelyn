@@ -36,12 +36,14 @@ public sealed class SiteOptions
     public Uri? BaseUrl { get; set; }
 
     /// <summary>
-    ///     The directory holding the Markdown sources. Relative values are resolved against the working directory.
+    ///     The directory holding the Markdown sources. Relative values are resolved against the content root,
+    ///     which is the working directory unless <c>--contentRoot</c> overrides it.
     /// </summary>
     public string ContentDirectory { get; set; } = "content";
 
     /// <summary>
-    ///     The directory the generated site is written to. Relative values are resolved against the working directory.
+    ///     The directory the generated site is written to. Relative values are resolved against the content
+    ///     root, in the same way as <see cref="ContentDirectory"/>.
     /// </summary>
     public string OutputDirectory { get; set; } = "_site";
 }

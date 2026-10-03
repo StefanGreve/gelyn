@@ -25,8 +25,11 @@ Optional. Without a configuration file the defaults below apply. To change them,
 | `Author`           | unset     | Written to the `author` meta tag. Omitted from the document while unset.                             |
 | `Description`      | unset     | Written to the `description` meta tag of any page whose front matter declares none.                  |
 | `BaseUrl`          | unset     | The absolute URL the site is served from. See [Base URL](#base-url).                                 |
-| `ContentDirectory` | `content` | The directory holding the Markdown sources. A relative value resolves against the working directory. |
+| `ContentDirectory` | `content` | The directory holding the Markdown sources. A relative value resolves against the content root.      |
 | `OutputDirectory`  | `_site`   | The directory the site is written to. Resolved the same way, and existing files are overwritten.     |
+
+The content root is the working directory, unless `--contentRoot` or the `DOTNET_CONTENTROOT` environment
+variable points somewhere else.
 
 A page title is separate from the name of the site: it comes from the page's own front matter, falling back to
 the file name, or to the folder name for a section index. `Title` is never used as a page title.

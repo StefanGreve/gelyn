@@ -275,7 +275,7 @@ public partial class SiteBuilderTests
         int[] phases =
         [
             EventIds.WALK_COMPLETED,
-            EventIds.RENDER_COMPLETED,
+            EventIds.COMPOSE_COMPLETED,
             EventIds.WRITE_COMPLETED,
             EventIds.BUILD_COMPLETED,
         ];
@@ -311,7 +311,7 @@ public partial class SiteBuilderTests
         using (Assert.Multiple())
         {
             await Assert.That(Count(fixture, EventIds.WALK_COMPLETED, "PageCount")).IsEqualTo(files);
-            await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(files);
+            await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(files);
         }
@@ -377,17 +377,17 @@ public partial class SiteBuilderTests
 
         // Assert
         double walk = Elapsed(fixture, EventIds.WALK_COMPLETED);
-        double render = Elapsed(fixture, EventIds.RENDER_COMPLETED);
+        double compose = Elapsed(fixture, EventIds.COMPOSE_COMPLETED);
         double write = Elapsed(fixture, EventIds.WRITE_COMPLETED);
 
         using (Assert.Multiple())
         {
             await Assert.That(walk).IsGreaterThan(0);
-            await Assert.That(render).IsGreaterThan(0);
+            await Assert.That(compose).IsGreaterThan(0);
             await Assert.That(write).IsGreaterThan(0);
 
             await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED))
-                .IsGreaterThanOrEqualTo(walk + render + write);
+                .IsGreaterThanOrEqualTo(walk + compose + write);
         }
     }
 
