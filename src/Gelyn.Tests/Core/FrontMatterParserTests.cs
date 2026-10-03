@@ -2,10 +2,10 @@ using System;
 using System.Globalization;
 using System.Threading.Tasks;
 
+using Gelyn.Core;
 using Gelyn.Model;
-using Gelyn.Services;
 
-namespace Gelyn.Tests.Services;
+namespace Gelyn.Tests.Core;
 
 /// <summary>
 ///     Unit tests for the <see cref="FrontMatterParser"/> class.

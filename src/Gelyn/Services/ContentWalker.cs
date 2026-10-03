@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Abstractions;
+using Gelyn.Core;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -26,25 +26,20 @@ public sealed class ContentWalker
     private const string IndexOutputFileName = "index.html";
     private const string MarkdownExtension = ".md";
 
-    private readonly MarkdownRendererContract _renderer;
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ContentWalker"/> class.
     /// </summary>
-    /// <param name="renderer">
-    ///     Converts Markdown to HTML.
-    /// </param>
     /// <param name="environment">
     ///     The host environment relative paths are resolved against.
     /// </param>
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    public ContentWalker(MarkdownRendererContract renderer, IHostEnvironment environment, IFileSystem fileSystem)
+    public ContentWalker(IHostEnvironment environment, IFileSystem fileSystem)
     {
-        this._renderer = renderer;
         this._environment = environment;
         this._fileSystem = fileSystem;
     }
@@ -86,7 +81,7 @@ public sealed class ContentWalker
                 .ReadAllTextAsync(source.SourcePath, cancellationToken)
                 .ConfigureAwait(false);
 
-            RenderedMarkdown rendered = this._renderer.Render(markdown);
+            RenderedMarkdown rendered = MarkdownRenderer.Render(markdown);
 
             pages.Add(new ContentPage
             {

@@ -109,7 +109,7 @@ public class ContentWalkerTests
             Directory.CreateSymbolicLink(Path.Combine(content, "loop"), content);
 
             HostEnvironmentStub environment = new() { ContentRootPath = root };
-            ContentWalker walker = new(new MarkdigRenderer(), environment, fileSystem);
+            ContentWalker walker = new(environment, fileSystem);
 
             // Act
             IReadOnlyList<ContentPage> pages = await walker.WalkAsync(options, CancellationToken.None);

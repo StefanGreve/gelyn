@@ -4,7 +4,7 @@ using System.Globalization;
 using Gelyn.Internals;
 using Gelyn.Model;
 
-namespace Gelyn.Services;
+namespace Gelyn.Core;
 
 /// <summary>
 ///     Reads the <c>key: value</c> pairs of a front matter block.

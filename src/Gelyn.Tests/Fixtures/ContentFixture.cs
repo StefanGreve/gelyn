@@ -42,7 +42,7 @@ internal sealed class ContentFixture
 
         HostEnvironmentStub environment = new() { ContentRootPath = root };
 
-        this.Walker = new ContentWalker(new MarkdigRenderer(), environment, fileSystem);
+        this.Walker = new ContentWalker(environment, fileSystem);
 
         this.Builder = new SiteBuilder(
             this.Walker,

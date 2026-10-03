@@ -1,4 +1,3 @@
-using Gelyn.Abstractions;
 using Gelyn.Commands;
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -50,7 +49,6 @@ public static class ServiceCollectionExtensions
     /// </returns>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.TryAddSingleton<MarkdownRendererContract, MarkdigRenderer>();
         services.TryAddSingleton<ContentWalker>();
         services.TryAddSingleton<SiteBuilder>();
 
