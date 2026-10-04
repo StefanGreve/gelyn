@@ -20,7 +20,7 @@ namespace Gelyn.Services;
 /// <remarks>
 ///     The landing page is always the first result, so that callers can rely on the order without sorting.
 /// </remarks>
-public sealed class ContentWalker
+public sealed class ContentPipeline
 {
     private const string IndexFileName = "index.md";
     private const string IndexOutputFileName = "index.html";
@@ -30,7 +30,7 @@ public sealed class ContentWalker
     private readonly IFileSystem _fileSystem;
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="ContentWalker"/> class.
+    ///     Initializes a new instance of the <see cref="ContentPipeline"/> class.
     /// </summary>
     /// <param name="environment">
     ///     The host environment relative paths are resolved against.
@@ -38,7 +38,7 @@ public sealed class ContentWalker
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    public ContentWalker(IHostEnvironment environment, IFileSystem fileSystem)
+    public ContentPipeline(IHostEnvironment environment, IFileSystem fileSystem)
     {
         this._environment = environment;
         this._fileSystem = fileSystem;

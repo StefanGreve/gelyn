@@ -23,7 +23,7 @@ namespace Gelyn.Services;
 /// </summary>
 public sealed class SiteBuilder
 {
-    private readonly ContentWalker _walker;
+    private readonly ContentPipeline _pipeline;
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
@@ -33,7 +33,7 @@ public sealed class SiteBuilder
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
     /// </summary>
-    /// <param name="walker">
+    /// <param name="pipeline">
     ///     Discovers and renders the pages the site is made of.
     /// </param>
     /// <param name="environment">
@@ -52,14 +52,14 @@ public sealed class SiteBuilder
     ///     Receives the records the build writes.
     /// </param>
     public SiteBuilder(
-        ContentWalker walker,
+        ContentPipeline pipeline,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
         TimeProvider timeProvider,
         ILogger<SiteBuilder> logger)
     {
-        this._walker = walker;
+        this._pipeline = pipeline;
         this._environment = environment;
         this._options = options;
         this._fileSystem = fileSystem;
@@ -84,7 +84,7 @@ public sealed class SiteBuilder
         // The total is reported either way, so only the per-page detail is worth guarding.
         bool isMeasuring = this._logger.IsEnabled(LogLevel.Debug);
 
-        IReadOnlyList<ContentPage> pages = await this._walker
+        IReadOnlyList<ContentPage> pages = await this._pipeline
             .WalkAsync(options, cancellationToken)
             .ConfigureAwait(false);
 

@@ -154,7 +154,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.Create();
 
         IReadOnlyList<ContentPage> pages =
-            await fixture.Walker.WalkAsync(fixture.Options, CancellationToken.None);
+            await fixture.Pipeline.WalkAsync(fixture.Options, CancellationToken.None);
 
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
 

@@ -49,7 +49,7 @@ public static class ServiceCollectionExtensions
     /// </returns>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.TryAddSingleton<ContentWalker>();
+        services.TryAddSingleton<ContentPipeline>();
         services.TryAddSingleton<SiteBuilder>();
 
         return services;

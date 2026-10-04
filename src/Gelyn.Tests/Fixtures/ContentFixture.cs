@@ -14,7 +14,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Gelyn.Tests.Fixtures;
 
 /// <summary>
-///     An in-memory content tree, together with the walker and the builder that read it.
+///     An in-memory content tree, together with the pipeline and the builder that read it.
 /// </summary>
 /// <remarks>
 ///     Nothing touches the real file system, so there is no temporary directory to clean up and no test
@@ -42,10 +42,10 @@ internal sealed class ContentFixture
 
         HostEnvironmentStub environment = new() { ContentRootPath = root };
 
-        this.Walker = new ContentWalker(environment, fileSystem);
+        this.Pipeline = new ContentPipeline(environment, fileSystem);
 
         this.Builder = new SiteBuilder(
-            this.Walker,
+            this.Pipeline,
             environment,
             new OptionsMonitorStub(options),
             fileSystem,
@@ -54,7 +54,7 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
-    ///     The file system both the walker and the builder are wired to.
+    ///     The file system both the pipeline and the builder are wired to.
     /// </summary>
     public MockFileSystem FileSystem { get; }
 
@@ -69,14 +69,14 @@ internal sealed class ContentFixture
     public string OutputRoot { get; }
 
     /// <summary>
-    ///     The options both the walker and the builder are driven by.
+    ///     The options both the pipeline and the builder are driven by.
     /// </summary>
     public SiteOptions Options { get; }
 
     /// <summary>
     ///     Discovers and renders the fixture's content.
     /// </summary>
-    public ContentWalker Walker { get; }
+    public ContentPipeline Pipeline { get; }
 
     /// <summary>
     ///     Generates the fixture's content into the fixture's output directory.

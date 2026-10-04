@@ -15,9 +15,9 @@ using Gelyn.Tests.Stubs;
 namespace Gelyn.Tests.Services;
 
 /// <summary>
-///     Unit tests for the <see cref="ContentWalker"/> class.
+///     Unit tests for the <see cref="ContentPipeline"/> class.
 /// </summary>
-public class ContentWalkerTests
+public class ContentPipelineTests
 {
     #region WalkAsync Tests
 
@@ -109,10 +109,10 @@ public class ContentWalkerTests
             Directory.CreateSymbolicLink(Path.Combine(content, "loop"), content);
 
             HostEnvironmentStub environment = new() { ContentRootPath = root };
-            ContentWalker walker = new(environment, fileSystem);
+            ContentPipeline pipeline = new(environment, fileSystem);
 
             // Act
-            IReadOnlyList<ContentPage> pages = await walker.WalkAsync(options, CancellationToken.None);
+            IReadOnlyList<ContentPage> pages = await pipeline.WalkAsync(options, CancellationToken.None);
 
             // Assert
             await Assert.That(pages.Select(page => page.Href))
@@ -230,7 +230,7 @@ public class ContentWalkerTests
     #region Helpers
 
     private static Task<IReadOnlyList<ContentPage>> Walk(ContentFixture fixture) =>
-        fixture.Walker.WalkAsync(fixture.Options, CancellationToken.None);
+        fixture.Pipeline.WalkAsync(fixture.Options, CancellationToken.None);
 
     #endregion
 }
