@@ -33,9 +33,9 @@ public sealed class MarkdownRenderer
 
         // UseYamlFrontMatter only marks the block, it does not parse it, and the parser rejects front
         // matter anywhere but the first block.
-        FrontMatter frontMatter = document.Count > 0 && document[0] is YamlFrontMatterBlock block
+        FrontMatter? frontMatter = document.Count > 0 && document[0] is YamlFrontMatterBlock block
             ? FrontMatterParser.Parse(markdown.AsSpan(block.Span.Start, block.Span.Length))
-            : FrontMatter.Empty;
+            : null;
 
         return new RenderedMarkdown
         {

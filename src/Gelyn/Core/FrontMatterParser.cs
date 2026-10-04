@@ -28,9 +28,9 @@ public static class FrontMatterParser
     ///     The raw text of the block.
     /// </param>
     /// <returns>
-    ///     The recognized front matter, or <see cref="FrontMatter.Empty"/> when none was found.
+    ///     The recognized front matter, or <see langword="null"/> when the block declares none.
     /// </returns>
-    public static FrontMatter Parse(ReadOnlySpan<char> block)
+    public static FrontMatter? Parse(ReadOnlySpan<char> block)
     {
         string? title = null;
         DateOnly? date = null;
@@ -59,7 +59,7 @@ public static class FrontMatterParser
         }
 
         return title is null && date is null && description is null
-            ? FrontMatter.Empty
+            ? null
             : new FrontMatter { Title = title, Date = date, Description = description };
     }
 

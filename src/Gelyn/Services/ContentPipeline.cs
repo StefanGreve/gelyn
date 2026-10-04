@@ -87,9 +87,9 @@ public sealed class ContentPipeline
             {
                 OutputPath = path.Combine(source.Segments),
                 Href = $"{prefix}/{string.Join('/', source.Segments)}",
-                Title = rendered.FrontMatter.Title ?? source.FallbackTitle,
-                Description = rendered.FrontMatter.Description,
-                Date = rendered.FrontMatter.Date,
+                Title = rendered.FrontMatter?.Title ?? source.FallbackTitle,
+                Description = rendered.FrontMatter?.Description,
+                Date = rendered.FrontMatter?.Date,
                 Html = rendered.Html,
                 InNavigation = source.InNavigation,
             });

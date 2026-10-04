@@ -18,23 +18,23 @@ public partial class FrontMatterParserTests
     ///     Verifies that an empty block yields no front matter.
     /// </summary>
     [Test]
-    public async Task Parse_Test_EmptyBlock_ReturnsEmpty()
+    public async Task Parse_Test_EmptyBlock_ReturnsNull()
     {
         // Arrange
         const string block = "";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
     ///     Verifies that a block containing nothing but its delimiters yields no front matter.
     /// </summary>
     [Test]
-    public async Task Parse_Test_DelimitersOnly_ReturnsEmpty()
+    public async Task Parse_Test_DelimitersOnly_ReturnsNull()
     {
         // Arrange
         const string block = """
@@ -43,17 +43,17 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
     ///     Verifies that keys outside the recognized vocabulary are ignored.
     /// </summary>
     [Test]
-    public async Task Parse_Test_UnrecognizedKeys_ReturnsEmpty()
+    public async Task Parse_Test_UnrecognizedKeys_ReturnsNull()
     {
         // Arrange
         const string block = """
@@ -64,10 +64,10 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
@@ -85,13 +85,13 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Title).IsEqualTo("Home");
-            await Assert.That(result.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
         }
     }
 
@@ -110,13 +110,13 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Title).IsEqualTo("Home");
-            await Assert.That(result.Description).IsEqualTo("Notes: mostly about software");
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(result?.Description).IsEqualTo("Notes: mostly about software");
         }
     }
 
@@ -131,13 +131,13 @@ public partial class FrontMatterParserTests
         const string line = "description: Standalone";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result).IsNotSameReferenceAs(FrontMatter.Empty);
-            await Assert.That(result.Description).IsEqualTo("Standalone");
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result?.Description).IsEqualTo("Standalone");
         }
     }
 
@@ -155,13 +155,13 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Title).IsEqualTo("Home");
-            await Assert.That(result.Date).IsNull();
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(result?.Date).IsNull();
         }
     }
 
@@ -181,10 +181,10 @@ public partial class FrontMatterParserTests
         // Arrange
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo("Home");
+        await Assert.That(result?.Title).IsEqualTo("Home");
     }
 
     /// <summary>
@@ -205,10 +205,10 @@ public partial class FrontMatterParserTests
         string line = $"title: {value}";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo(expected);
+        await Assert.That(result?.Title).IsEqualTo(expected);
     }
 
     /// <summary>
@@ -238,10 +238,10 @@ public partial class FrontMatterParserTests
         string line = $"title: {value}";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo(expected);
+        await Assert.That(result?.Title).IsEqualTo(expected);
     }
 
     /// <summary>
@@ -254,10 +254,10 @@ public partial class FrontMatterParserTests
         const string line = "title: Gelyn: a static site generator";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo("Gelyn: a static site generator");
+        await Assert.That(result?.Title).IsEqualTo("Gelyn: a static site generator");
     }
 
     /// <summary>
@@ -271,15 +271,15 @@ public partial class FrontMatterParserTests
     [Arguments("title:   ")]
     [Arguments("title: \"\"")]
     [Arguments("title: ''")]
-    public async Task Parse_Test_EmptyValue_ReturnsEmpty(string line)
+    public async Task Parse_Test_EmptyValue_ReturnsNull(string line)
     {
         // Arrange
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
@@ -291,15 +291,15 @@ public partial class FrontMatterParserTests
     [Test]
     [Arguments("Title: Home")]
     [Arguments("TITLE: Home")]
-    public async Task Parse_Test_KeyCaseMismatch_ReturnsEmpty(string line)
+    public async Task Parse_Test_KeyCaseMismatch_ReturnsNull(string line)
     {
         // Arrange
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
@@ -317,10 +317,10 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo("Second");
+        await Assert.That(result?.Title).IsEqualTo("Second");
     }
 
     /// <summary>
@@ -341,10 +341,10 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo("Home");
+        await Assert.That(result?.Title).IsEqualTo("Home");
     }
 
     /// <summary>
@@ -362,10 +362,10 @@ public partial class FrontMatterParserTests
         // Arrange
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
-        await Assert.That(result.Title).IsEqualTo("Home");
+        await Assert.That(result?.Title).IsEqualTo("Home");
     }
 
     /// <summary>
@@ -384,10 +384,10 @@ public partial class FrontMatterParserTests
         string line = $"date: {value}";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+        await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
     }
 
     /// <summary>
@@ -400,16 +400,16 @@ public partial class FrontMatterParserTests
     [Arguments("13/09/2026")]
     [Arguments("not a date")]
     [Arguments("2026-13-13")]
-    public async Task Parse_Test_UnparsableDate_ReturnsEmpty(string value)
+    public async Task Parse_Test_UnparsableDate_ReturnsNull(string value)
     {
         // Arrange
         string line = $"date: {value}";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result).IsSameReferenceAs(FrontMatter.Empty);
+        await Assert.That(result).IsNull();
     }
 
     /// <summary>
@@ -422,10 +422,10 @@ public partial class FrontMatterParserTests
         const string line = "date: \"2026-09-13\"";
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(line);
+        FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+        await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
     }
 
     /// <summary>
@@ -443,13 +443,13 @@ public partial class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter result = FrontMatterParser.Parse(block);
+        FrontMatter? result = FrontMatterParser.Parse(block);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Title).IsEqualTo("Home");
-            await Assert.That(result.Date).IsNull();
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(result?.Date).IsNull();
         }
     }
 
@@ -468,14 +468,14 @@ public partial class FrontMatterParserTests
         try
         {
             // Act
-            FrontMatter iso = FrontMatterParser.Parse("date: 2026-09-13");
-            FrontMatter dayFirst = FrontMatterParser.Parse("date: 13/09/2026");
+            FrontMatter? iso = FrontMatterParser.Parse("date: 2026-09-13");
+            FrontMatter? dayFirst = FrontMatterParser.Parse("date: 13/09/2026");
 
             // Assert
             using (Assert.Multiple())
             {
-                await Assert.That(iso.Date).IsEqualTo(new DateOnly(2026, 9, 13));
-                await Assert.That(dayFirst.Date).IsNull();
+                await Assert.That(iso?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+                await Assert.That(dayFirst).IsNull();
             }
         }
         finally
