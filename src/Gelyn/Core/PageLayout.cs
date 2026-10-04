@@ -4,7 +4,7 @@ using System.Net;
 using Gelyn.Components;
 using Gelyn.Model;
 
-namespace Gelyn.Services;
+namespace Gelyn.Core;
 
 /// <summary>
 ///     Wraps rendered page content in the shared document shell.

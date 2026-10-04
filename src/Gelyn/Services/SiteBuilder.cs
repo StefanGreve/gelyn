@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
+using Gelyn.Core;
 using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
