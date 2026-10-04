@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 
-using Gelyn.Internals;
 using Gelyn.Model;
 
 namespace Gelyn.Core;
@@ -16,6 +15,12 @@ namespace Gelyn.Core;
 /// </remarks>
 public static class FrontMatterParser
 {
+    private const string Delimiter = "---";
+    private const char Separator = ':';
+    private const string TitleKey = "title";
+    private const string DateKey = "date";
+    private const string DescriptionKey = "description";
+
     /// <summary>
     ///     Parses a front matter block, including its surrounding delimiters.
     /// </summary>
@@ -38,16 +43,16 @@ public static class FrontMatterParser
 
             switch (key)
             {
-                case FrontMatterConstants.Title:
+                case TitleKey:
                     title = value.IsEmpty ? null : value.ToString();
                     break;
 
-                case FrontMatterConstants.Date:
+                case DateKey:
                     if (DateOnly.TryParse(value, CultureInfo.InvariantCulture, out DateOnly parsed))
                         date = parsed;
                     break;
 
-                case FrontMatterConstants.Description:
+                case DescriptionKey:
                     description = value.IsEmpty ? null : value.ToString();
                     break;
             }
@@ -67,10 +72,10 @@ public static class FrontMatterParser
 
         ReadOnlySpan<char> trimmed = line.Trim();
 
-        if (trimmed.IsEmpty || trimmed.SequenceEqual(FrontMatterConstants.Delimiter))
+        if (trimmed.IsEmpty || trimmed.SequenceEqual(Delimiter))
             return false;
 
-        int separator = trimmed.IndexOf(FrontMatterConstants.Separator);
+        int separator = trimmed.IndexOf(Separator);
 
         if (separator < 0)
             return false;
