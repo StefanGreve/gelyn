@@ -32,6 +32,11 @@ The content root is the working directory, unless the `DOTNET_CONTENTROOT` envir
 somewhere else. There is no flag for it: no command declares `--contentRoot`, so passing it is rejected as an
 unrecognized argument.
 
+`OutputDirectory` must not resolve to `ContentDirectory` or to a directory inside it, because the build would
+then publish its own output as content. A sibling is fine, including one whose name merely begins the same way,
+such as `content-old`. Both `--output content/dist` and `--content .` are therefore rejected before the build
+starts, with exit code 2.
+
 A page title is separate from the name of the site: it comes from the page's own front matter, falling back to
 the file name, or to the folder name for a section index. `Title` is never used as a page title.
 

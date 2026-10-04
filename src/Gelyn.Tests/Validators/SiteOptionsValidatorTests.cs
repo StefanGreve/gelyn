@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Model.Options;
+using Gelyn.Tests.Stubs;
 using Gelyn.Validators;
 
 using Microsoft.Extensions.Options;
@@ -80,12 +82,61 @@ public class SiteOptionsValidatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that an output directory resolving outside the content directory is accepted, including a
+    ///     sibling whose name merely starts with it.
+    /// </summary>
+    [Test]
+    [Arguments("content", "_site")]
+    [Arguments("content", "content-old")]
+    [Arguments("content", "../out")]
+    public async Task Validate_Test_OutputDirectoryBesideContentDirectory_Succeeds(string content, string output)
+    {
+        // Arrange
+        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that an output directory resolving to or inside the content directory is rejected under a
+    ///     message naming the setting at fault, because the build would otherwise publish its own output as
+    ///     content.
+    /// </summary>
+    [Test]
+    [Arguments("content", "content/_site")]
+    [Arguments("content", "content")]
+    [Arguments("content/", "content")]
+    [Arguments(".", "_site")]
+    public async Task Validate_Test_OutputDirectoryInsideContentDirectory_Fails(string content, string output)
+    {
+        // Arrange
+        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.OutputDirectory));
+        }
+    }
+
     #endregion // Validate Tests
 
     #region Helpers
 
+    // An explicit content root is required: the stub defaults it to string.Empty, which would leave
+    // GetFullPath resolving the relative settings against the working directory.
     private static ValidateOptionsResult Validate(SiteOptions options) =>
-        new SiteOptionsValidator().Validate(name: null, options);
+        new SiteOptionsValidator(new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") })
+            .Validate(name: null, options);
 
     #endregion
 }
