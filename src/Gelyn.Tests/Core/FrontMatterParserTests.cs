@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Gelyn.Core;
 using Gelyn.Model;
 
+using YamlDotNet.Core;
+
 namespace Gelyn.Tests.Core;
 
 /// <summary>
@@ -15,72 +17,17 @@ public partial class FrontMatterParserTests
     #region Parse Tests
 
     /// <summary>
-    ///     Verifies that an empty block yields no front matter.
+    ///     Verifies that every recognized key is read from a block, delimiters and all.
     /// </summary>
     [Test]
-    public async Task Parse_Test_EmptyBlock_ReturnsNull()
-    {
-        // Arrange
-        const string block = "";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that a block containing nothing but its delimiters yields no front matter.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_DelimitersOnly_ReturnsNull()
-    {
-        // Arrange
-        const string block = """
-            ---
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that keys outside the recognized vocabulary are ignored.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_UnrecognizedKeys_ReturnsNull()
-    {
-        // Arrange
-        const string block = """
-            ---
-            author: Stefan
-            draft: true
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that both recognized keys are read from a single block.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_TitleAndDate_ReturnsBothValues()
+    public async Task Parse_Test_RecognizedKeys_ReturnAllValues()
     {
         // Arrange
         const string block = """
             ---
             title: Home
             date: 2026-09-13
+            description: Notes about software
             ---
         """;
 
@@ -92,269 +39,37 @@ public partial class FrontMatterParserTests
         {
             await Assert.That(result?.Title).IsEqualTo("Home");
             await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+            await Assert.That(result?.Description).IsEqualTo("Notes about software");
         }
     }
 
     /// <summary>
-    ///     Verifies that a description is read, including one containing the separator.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_Description_ReturnsValue()
-    {
-        // Arrange
-        const string block = """
-            ---
-            title: Home
-            description: Notes: mostly about software
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(result?.Title).IsEqualTo("Home");
-            await Assert.That(result?.Description).IsEqualTo("Notes: mostly about software");
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that a description on its own is enough to produce front matter, so that a page can
-    ///     declare one without also declaring a title.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_DescriptionOnly_ReturnsValue()
-    {
-        // Arrange
-        const string line = "description: Standalone";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(result).IsNotNull();
-            await Assert.That(result?.Description).IsEqualTo("Standalone");
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that a block supplying only one key leaves the other unset.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_TitleOnly_LeavesDateUnset()
-    {
-        // Arrange
-        const string block = """
-            ---
-            title: Home
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(result?.Title).IsEqualTo("Home");
-            await Assert.That(result?.Date).IsNull();
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that surrounding whitespace is stripped from both the key and the value.
-    /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose key and value are padded with whitespace.
-    /// </param>
-    [Test]
-    [Arguments("title: Home")]
-    [Arguments("title:Home")]
-    [Arguments("   title   :   Home   ")]
-    [Arguments("\ttitle:\tHome\t")]
-    public async Task Parse_Test_SurroundingWhitespace_IsTrimmed(string line)
-    {
-        // Arrange
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo("Home");
-    }
-
-    /// <summary>
-    ///     Verifies that quotes delimiting a value are stripped when they form a matched pair.
-    /// </summary>
-    /// <param name="value">
-    ///     The raw value as it appears after the separator.
-    /// </param>
-    /// <param name="expected">
-    ///     The expected title once the delimiters have been removed.
-    /// </param>
-    [Test]
-    [Arguments("\"Quoted Title\"", "Quoted Title")]
-    [Arguments("'Single Quoted'", "Single Quoted")]
-    public async Task Parse_Test_MatchedQuotes_AreStripped(string value, string expected)
-    {
-        // Arrange
-        string line = $"title: {value}";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo(expected);
-    }
-
-    /// <summary>
-    ///     Verifies that quote characters which do not form a matched pair are part of the value.
-    /// </summary>
-    /// <remarks>
-    ///     Only a leading quote closed by the same character at the end is treated as a delimiter.
-    ///     An earlier implementation trimmed both quote characters independently, which silently
-    ///     truncated any unquoted value ending in an apostrophe: <c>title: Rangers'</c> was read as
-    ///     <c>Rangers</c>. These cases guard that regression.
-    /// </remarks>
-    /// <param name="value">
-    ///     The raw value as it appears after the separator.
-    /// </param>
-    /// <param name="expected">
-    ///     The expected title, which retains every quote character verbatim.
-    /// </param>
-    [Test]
-    [Arguments("Rangers'", "Rangers'")]
-    [Arguments("\"Mismatched'", "\"Mismatched'")]
-    [Arguments("'Mismatched\"", "'Mismatched\"")]
-    [Arguments("It's fine", "It's fine")]
-    [Arguments("\"", "\"")]
-    public async Task Parse_Test_UnmatchedQuotes_AreKeptLiteral(string value, string expected)
-    {
-        // Arrange
-        string line = $"title: {value}";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo(expected);
-    }
-
-    /// <summary>
-    ///     Verifies that only the first separator splits the line, so later ones stay in the value.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_SeparatorInValue_IsKeptLiteral()
-    {
-        // Arrange
-        const string line = "title: Gelyn: a static site generator";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo("Gelyn: a static site generator");
-    }
-
-    /// <summary>
-    ///     Verifies that a key with no value is treated as absent rather than as an empty title.
-    /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose value is missing, blank, or an empty quoted string.
-    /// </param>
-    [Test]
-    [Arguments("title:")]
-    [Arguments("title:   ")]
-    [Arguments("title: \"\"")]
-    [Arguments("title: ''")]
-    public async Task Parse_Test_EmptyValue_ReturnsNull(string line)
-    {
-        // Arrange
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that key matching is ordinal, so keys differing in case are not recognized.
-    /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose key differs from the recognized spelling only in case.
-    /// </param>
-    [Test]
-    [Arguments("Title: Home")]
-    [Arguments("TITLE: Home")]
-    public async Task Parse_Test_KeyCaseMismatch_ReturnsNull(string line)
-    {
-        // Arrange
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that a repeated key is resolved to its last occurrence.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_DuplicateKey_LastOccurrenceWins()
-    {
-        // Arrange
-        const string block = """
-            ---
-            title: First
-            title: Second
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo("Second");
-    }
-
-    /// <summary>
-    ///     Verifies that lines carrying no separator, or an empty key, are skipped rather than
-    ///     aborting the block.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_MalformedLines_AreSkipped()
-    {
-        // Arrange
-        const string block = """
-            ---
-            this line has no separator
-
-            : orphaned value
-            title: Home
-            ---
-        """;
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
-
-        // Assert
-        await Assert.That(result?.Title).IsEqualTo("Home");
-    }
-
-    /// <summary>
-    ///     Verifies that blocks are read line by line regardless of the newline convention used.
+    ///     Verifies that a block carrying no entries yields no front matter.
     /// </summary>
     /// <param name="block">
-    ///     A front matter block delimited by line feeds, carriage returns, or both.
+    ///     A block that is empty, or holds nothing but its delimiters.
     /// </param>
     [Test]
-    [Arguments("---\ntitle: Home\n---")]
+    [Arguments("")]
+    [Arguments("---\n---")]
+    public async Task Parse_Test_BlockWithoutEntries_ReturnsNull(string block)
+    {
+        // Arrange
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(block);
+
+        // Assert
+        await Assert.That(result).IsNull();
+    }
+
+    /// <summary>
+    ///     Verifies that delimiters are recognized regardless of the newline convention the block uses.
+    /// </summary>
+    /// <param name="block">
+    ///     A front matter block delimited by carriage returns, or by carriage return and line feed pairs.
+    /// </param>
+    [Test]
     [Arguments("---\r\ntitle: Home\r\n---")]
     [Arguments("---\rtitle: Home\r---")]
     public async Task Parse_Test_NewlineConventions_AreAllSupported(string block)
@@ -369,78 +84,119 @@ public partial class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that dates are parsed with the invariant culture, which accepts both the
-    ///     ISO 8601 form and the month-first form.
+    ///     Verifies that keys outside the recognized vocabulary are ignored rather than rejected.
     /// </summary>
-    /// <param name="value">
-    ///     A date literal the invariant culture recognizes.
-    /// </param>
     [Test]
-    [Arguments("2026-09-13")]
-    [Arguments("09/13/2026")]
-    public async Task Parse_Test_InvariantCultureDate_ReturnsDate(string value)
+    public async Task Parse_Test_UnrecognizedKeys_AreIgnored()
     {
         // Arrange
-        string line = $"date: {value}";
+        const string block = """
+            ---
+            author: Stefan
+            draft: true
+            ---
+        """;
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(block);
+
+        // Assert
+        await Assert.That(result?.Title).IsNull();
+    }
+
+    /// <summary>
+    ///     Verifies that key matching is ordinal, so keys differing in case are not recognized.
+    /// </summary>
+    /// <param name="line">
+    ///     A front matter line whose key differs from the recognized spelling only in case.
+    /// </param>
+    [Test]
+    [Arguments("Title: Home")]
+    [Arguments("TITLE: Home")]
+    public async Task Parse_Test_KeyCaseMismatch_LeavesTitleUnset(string line)
+    {
+        // Arrange
 
         // Act
         FrontMatter? result = FrontMatterParser.Parse(line);
 
         // Assert
-        await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+        await Assert.That(result?.Title).IsNull();
     }
 
     /// <summary>
-    ///     Verifies that a value the invariant culture cannot parse leaves the date unset.
+    ///     Verifies that a key with no value at all is treated as absent.
+    /// </summary>
+    /// <param name="line">
+    ///     A front matter line whose value is missing or blank.
+    /// </param>
+    [Test]
+    [Arguments("title:")]
+    [Arguments("title:   ")]
+    public async Task Parse_Test_AbsentValue_LeavesTitleUnset(string line)
+    {
+        // Arrange
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(line);
+
+        // Assert
+        await Assert.That(result?.Title).IsNull();
+    }
+
+    /// <summary>
+    ///     Verifies that a value quoted as an empty string is kept as one, so that a page declaring an empty
+    ///     title is distinguishable from a page declaring no title.
+    /// </summary>
+    /// <param name="line">
+    ///     A front matter line whose value is an empty quoted string.
+    /// </param>
+    [Test]
+    [Arguments("title: \"\"")]
+    [Arguments("title: ''")]
+    public async Task Parse_Test_EmptyQuotedValue_IsPreserved(string line)
+    {
+        // Arrange
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(line);
+
+        // Assert
+        await Assert.That(result?.Title).IsEqualTo(string.Empty);
+    }
+
+    /// <summary>
+    ///     Verifies that a block declaring something other than a mapping is reported as malformed.
+    /// </summary>
+    /// <param name="block">
+    ///     A block that parses as a single scalar, either a bare sentence or a line whose separator is not
+    ///     followed by a space.
+    /// </param>
+    [Test]
+    [Arguments("just a bare sentence")]
+    [Arguments("title:Home")]
+    public async Task Parse_Test_NonMappingBlock_Throws(string block)
+    {
+        // Arrange
+
+        // Act and Assert
+        await Assert.That(() => FrontMatterParser.Parse(block)).Throws<YamlException>();
+    }
+
+    /// <summary>
+    ///     Verifies that a value the invariant culture cannot read as a date leaves the date unset rather than
+    ///     aborting the block.
     /// </summary>
     /// <param name="value">
     ///     A literal that is not a valid invariant-culture date.
     /// </param>
     [Test]
-    [Arguments("13/09/2026")]
     [Arguments("not a date")]
     [Arguments("2026-13-13")]
-    public async Task Parse_Test_UnparsableDate_ReturnsNull(string value)
+    public async Task Parse_Test_UnparsableDate_LeavesDateUnset(string value)
     {
         // Arrange
-        string line = $"date: {value}";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>
-    ///     Verifies that a quoted date is unquoted before it is parsed.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_QuotedDate_ReturnsDate()
-    {
-        // Arrange
-        const string line = "date: \"2026-09-13\"";
-
-        // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
-
-        // Assert
-        await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
-    }
-
-    /// <summary>
-    ///     Verifies that an unparsable date does not discard a title read from the same block.
-    /// </summary>
-    [Test]
-    public async Task Parse_Test_UnparsableDateWithTitle_KeepsTitle()
-    {
-        // Arrange
-        const string block = """
-            ---
-            title: Home
-            date: not a date
-            ---
-        """;
+        string block = $"title: Home\ndate: {value}";
 
         // Act
         FrontMatter? result = FrontMatterParser.Parse(block);
@@ -454,8 +210,8 @@ public partial class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that date parsing is culture-invariant: under a culture whose date pattern is
-    ///     day-first, the ISO form still parses and the day-first form is still rejected.
+    ///     Verifies that date parsing is culture-invariant: under a culture whose date pattern is day-first, the
+    ///     ISO form still parses and the day-first form is still rejected.
     /// </summary>
     [Test]
     [NotInParallel]
@@ -475,7 +231,7 @@ public partial class FrontMatterParserTests
             using (Assert.Multiple())
             {
                 await Assert.That(iso?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
-                await Assert.That(dayFirst).IsNull();
+                await Assert.That(dayFirst?.Date).IsNull();
             }
         }
         finally

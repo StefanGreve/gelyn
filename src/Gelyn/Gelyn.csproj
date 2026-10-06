@@ -21,6 +21,8 @@
   <PropertyGroup Label="Analyzers">
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>all</AnalysisMode>
+    <!-- The YamlDotNet static generator emits public members without XML comments -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Native AOT">
@@ -73,6 +75,8 @@
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="System.IO.Abstractions" />
+    <PackageReference Include="Vecc.YamlDotNet.Analyzers.StaticGenerator" PrivateAssets="all" />
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
 </Project>

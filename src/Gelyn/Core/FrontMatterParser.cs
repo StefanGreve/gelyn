@@ -1,25 +1,28 @@
 using System;
-using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
+using Gelyn.Internals;
 using Gelyn.Model;
+
+using YamlDotNet.Core;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Gelyn.Core;
 
 /// <summary>
-///     Reads the <c>key: value</c> pairs of a front matter block.
+///     Reads a front matter block.
 /// </summary>
-/// <remarks>
-///     Only the flat subset of YAML that front matter blocks actually use is supported. A full YAML parser
-///     would pull in reflection-based deserialization, which Native AOT does not tolerate without a static
-///     serialization context.
-/// </remarks>
 public static class FrontMatterParser
 {
     private const string Delimiter = "---";
-    private const char Separator = ':';
-    private const string TitleKey = "title";
-    private const string DateKey = "date";
-    private const string DescriptionKey = "description";
+
+    private static readonly IDeserializer YamlDeserializer = new StaticDeserializerBuilder(new YamlContext())
+        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+        .WithTypeConverter(new DateOnlyConverter())
+        .IgnoreUnmatchedProperties()
+        .Build();
 
     /// <summary>
     ///     Parses a front matter block, including its surrounding delimiters.
@@ -28,71 +31,38 @@ public static class FrontMatterParser
     ///     The raw text of the block.
     /// </param>
     /// <returns>
-    ///     The recognized front matter, or <see langword="null"/> when the block declares none.
+    ///     The front matter the block declares, or <see langword="null"/> when the block is empty. A key whose
+    ///     value is quoted but empty yields an empty string, which is distinct from the key being absent.
     /// </returns>
+    /// <exception cref="YamlException">
+    ///     The block is not well-formed YAML, or declares something other than a mapping.
+    /// </exception>
+    [SuppressMessage("Maintainability", "CA2263:Prefer generic overload", Justification = Justifications.ByDesign)]
     public static FrontMatter? Parse(ReadOnlySpan<char> block)
     {
-        string? title = null;
-        DateOnly? date = null;
-        string? description = null;
-
-        foreach (ReadOnlySpan<char> line in block.EnumerateLines())
+        return YamlDeserializer.Deserialize(StripDelimiters(block), typeof(FrontMatter)) switch
         {
-            if (!TryReadPair(line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value))
-                continue;
-
-            switch (key)
-            {
-                case TitleKey:
-                    title = value.IsEmpty ? null : value.ToString();
-                    break;
-
-                case DateKey:
-                    if (DateOnly.TryParse(value, CultureInfo.InvariantCulture, out DateOnly parsed))
-                        date = parsed;
-                    break;
-
-                case DescriptionKey:
-                    description = value.IsEmpty ? null : value.ToString();
-                    break;
-            }
-        }
-
-        return title is null && date is null && description is null
-            ? null
-            : new FrontMatter { Title = title, Date = date, Description = description };
+            null => null,
+            FrontMatter frontMatter => frontMatter,
+            _ => throw new YamlException("Front matter must be a mapping of key-value pairs."),
+        };
     }
 
     #region Helpers
 
-    private static bool TryReadPair(ReadOnlySpan<char> line, out ReadOnlySpan<char> key, out ReadOnlySpan<char> value)
+    // A delimiter line would otherwise open a second YAML document, which Deserialize rejects outright.
+    private static string StripDelimiters(ReadOnlySpan<char> block)
     {
-        key = default;
-        value = default;
+        StringBuilder body = new(block.Length);
 
-        ReadOnlySpan<char> trimmed = line.Trim();
+        foreach (ReadOnlySpan<char> line in block.EnumerateLines())
+        {
+            if (line.Trim().SequenceEqual(Delimiter)) continue;
 
-        if (trimmed.IsEmpty || trimmed.SequenceEqual(Delimiter))
-            return false;
+            body.Append(line).AppendLine();
+        }
 
-        int separator = trimmed.IndexOf(Separator);
-
-        if (separator < 0)
-            return false;
-
-        key = trimmed[..separator].Trim();
-        value = Unquote(trimmed[(separator + 1)..].Trim());
-
-        return !key.IsEmpty;
-    }
-
-    // Quotes are only stripped as a matched pair, so an unquoted value may end in an apostrophe.
-    private static ReadOnlySpan<char> Unquote(ReadOnlySpan<char> value)
-    {
-        if (value.Length < 2 || value[0] is not ('"' or '\''))
-            return value;
-
-        return value[^1] == value[0] ? value[1..^1] : value;
+        return body.ToString();
     }
 
     #endregion
