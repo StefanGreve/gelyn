@@ -9,7 +9,7 @@ namespace Gelyn.Internals;
 ///     <see cref="LoggerMessageAttribute"/>.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal static partial class ToolLogger
+internal static partial class LogMessages
 {
     /// <summary>
     ///     Reports how long it took to discover the content tree and render its Markdown.

@@ -1,5 +1,7 @@
 using System;
 
+using Gelyn.Internals;
+
 namespace Gelyn.Model.Options;
 
 /// <summary>
@@ -11,7 +13,7 @@ public sealed class SiteOptions
     /// <summary>
     ///     The name of the site.
     /// </summary>
-    public string Title { get; set; } = "Gelyn";
+    public string Title { get; set; } = Tool.Name;
 
     /// <summary>
     ///     The language of the generated pages, written to the <c>lang</c> attribute of every document.

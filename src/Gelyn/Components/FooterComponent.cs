@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Net;
+using System.Text;
 
 using Gelyn.Internals;
 using Gelyn.Model;
@@ -27,13 +28,15 @@ public static class FooterComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        string version = WebUtility.HtmlEncode(ToolVersion.Current);
+        var footer = new StringBuilder();
+
+        string version = WebUtility.HtmlEncode(Tool.Version);
         string generated = context.GeneratedAt.ToString(DateFormat, CultureInfo.InvariantCulture);
 
-        return $"""
-            <footer>
-                <em>Built with Gelyn v{version} on {generated}</em>
-            </footer>
-        """;
+        footer.AppendLine("<footer>");
+        footer.AppendLine($"<em>Built with {Tool.Name} v{version} on {generated}</em>");
+        footer.AppendLine("</footer>");
+
+        return footer.ToString();
     }
 }
