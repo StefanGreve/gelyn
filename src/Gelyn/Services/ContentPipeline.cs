@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace Gelyn.Services;
 ///     The content pipeline is processed in this order:
 ///     <list type="number">
 ///         <item>
-///             <description><see cref="Scan"/> locates the pages without reading their contents.</description>
+///             <description><see cref="Scan"/> locates the files without reading their contents.</description>
 ///         </item>
 ///         <item>
 ///             <description><see cref="RenderAsync"/> reads and renders what the scan located.</description>
@@ -34,6 +35,9 @@ public sealed class ContentPipeline
     private const string IndexFileName = "index.md";
     private const string IndexOutputFileName = "index.html";
     private const string MarkdownExtension = ".md";
+
+    private static readonly string[] DeniedPatterns =
+        [".git", "node_modules", "bin", "obj", ".DS_Store", "Thumbs.db", "*~", "*.swp", "*.orig", "*.html"];
 
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
@@ -54,13 +58,14 @@ public sealed class ContentPipeline
     }
 
     /// <summary>
-    ///     Locates every page of the site and resolves the paths and URLs it is published under.
+    ///     Locates every file the site is published from, classifies it and resolves the path and URL it is
+    ///     published under.
     /// </summary>
     /// <param name="options">
     ///     Supplies the site configuration the scan is driven by.
     /// </param>
     /// <returns>
-    ///     Every page, landing page first.
+    ///     Every file, landing page first, with the files the build has no use for left out.
     /// </returns>
     /// <exception cref="FileNotFoundException">
     ///     The content directory declares no <c>index.md</c>.
@@ -88,7 +93,7 @@ public sealed class ContentPipeline
     ///     Reads each located page and renders its Markdown.
     /// </summary>
     /// <param name="pages">
-    ///     The pages a scan located, in the order they are to be rendered.
+    ///     The <see cref="ContentKind.Page"/> items a scan located, in the order they are to be rendered.
     /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
@@ -125,39 +130,48 @@ public sealed class ContentPipeline
     {
         IFileSystemInfo[] entries = [.. directory
             .EnumerateFileSystemInfos()
+            .Where(static entry => !IsDenied(entry))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
         IEnumerable<IFileInfo> files = entries
             .OfType<IFileInfo>()
-            .Where(static file => file.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(static file => file.Name.Equals(IndexFileName, StringComparison.Ordinal));
 
         foreach (IFileInfo file in files)
         {
+            bool isPage = file.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase);
             bool isIndex = file.Name.Equals(IndexFileName, StringComparison.Ordinal);
             string slug = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
-            string[] segments = [.. prefix, isIndex ? IndexOutputFileName : $"{slug}.html"];
+
+            // A copy keeps its own name, so only a rendered page is renamed to the extension it is served as.
+            string name = isPage
+                ? isIndex ? IndexOutputFileName : $"{slug}.html"
+                : file.Name;
+
+            string[] segments = [.. prefix, name];
 
             items.Add(new ContentItem
             {
                 SourcePath = file.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
                 Href = Href(hrefPrefix, segments),
+                Kind = isPage ? ContentKind.Page : ContentKind.MiscFile,
                 FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
-                InNavigation = IsInNavigation(segments),
+                InNavigation = isPage && IsInNavigation(segments),
             });
         }
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
-        {
-            // Descending into a symlink would let the walk leave the content directory entirely,
-            // and a link that resolves to an ancestor makes the walk unbounded.
-            if (child.LinkTarget is null)
-                this.Collect(child, [.. prefix, child.Name], hrefPrefix, items);
-        }
+            this.Collect(child, [.. prefix, child.Name], hrefPrefix, items);
     }
+
+    // A symlink lets the walk leave the content directory, a link resolving to an ancestor makes the walk
+    // unbounded, and File.Copy would publish the target's bytes rather than the link.
+    private static bool IsDenied(IFileSystemInfo entry) =>
+        entry.LinkTarget is not null
+        || Array.Exists(DeniedPatterns, pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
 
     private static string Href(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";

@@ -34,7 +34,6 @@ public static class HeadComponent
 
         head.AppendLine("""<meta charset="utf-8">""");
         head.AppendLine("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
-        head.AppendLine("""<meta name="robots" content="index,follow">""");
         head.AppendLine($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
 
         if (!string.IsNullOrWhiteSpace(options.Author))

@@ -23,14 +23,21 @@ public sealed record ContentItem
     public required string Href { get; init; }
 
     /// <summary>
+    ///     The classification the scan assigned to the file.
+    /// </summary>
+    public required ContentKind Kind { get; init; }
+
+    /// <summary>
     ///     The title to fall back to when the front matter declares none: the file name, or the name of the
-    ///     containing folder when the file is a section index.
+    ///     containing folder when the file is a section index. Meaningful for a
+    ///     <see cref="ContentKind.Page"/> only.
     /// </summary>
     public required string FallbackTitle { get; init; }
 
     /// <summary>
     ///     Indicates whether the site navigation links the page. The landing page, root-level pages and
-    ///     section indexes are linked; pages inside a section are not.
+    ///     section indexes are linked; pages inside a section are not, and nor is a
+    ///     <see cref="ContentKind.MiscFile"/>.
     /// </summary>
     public required bool InNavigation { get; init; }
 }

@@ -62,14 +62,20 @@ internal sealed class BuildCommand : Command
                     .BuildAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                foreach (string page in report.Files)
+                foreach (string page in report.Pages)
                     console.MarkupLineInterpolated($"[green]created[/] {page}");
+
+                foreach (string copy in report.Copies)
+                    console.MarkupLineInterpolated($"[green]copied[/] {copy}");
 
                 // Formatted here rather than in the interpolation, so the culture is not left to the console.
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", CultureInfo.InvariantCulture);
 
+                // One umbrella total, so that a later kind which is neither rendered nor copied adds no clause.
+                int processed = report.Pages.Count + report.Copies.Count;
+
                 console.MarkupLineInterpolated(
-                    $"Generated [bold]{report.Files.Count}[/] page(s) in [bold]{elapsed}[/] ms.");
+                    $"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
 
                 return ExitCodes.Success;
             }

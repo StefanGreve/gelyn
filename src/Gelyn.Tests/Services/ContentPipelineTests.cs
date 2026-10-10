@@ -116,22 +116,162 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that files which are not Markdown are left out of the scan.
+    ///     Verifies that files which are not Markdown are located for copying rather than rendered, keeping
+    ///     the name they were authored under instead of being renamed to an HTML extension.
     /// </summary>
     [Test]
-    public async Task Scan_Test_NonMarkdownFiles_AreIgnored()
+    public async Task Scan_Test_UnsupportedFiles_AreCopiedNotRendered()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
             .Write("index.md", "Home")
-            .Write("style.css")
-            .Write("blog/photo.png");
+            .WriteFile("style.css")
+            .WriteBytes("blog/photo.png", [0x89, 0x50, 0x4E, 0x47]);
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(items.Where(item => item.Kind is ContentKind.Page).Select(item => item.Href))
+                .IsEquivalentTo(new[] { "/index.html" });
+
+            await Assert.That(items.Where(item => item.Kind is ContentKind.MiscFile).Select(item => item.Href))
+                .IsEquivalentTo(new[] { "/style.css", "/blog/photo.png" });
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a file the build has no special treatment for is still located, so that a site can
+    ///     publish the files a host expects to find beside its pages.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_MiscFile_IsLocatedAtTheMirroredPath()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("robots.txt", "User-agent: *");
+
+        // Act
+        ContentItem robots = Scan(fixture).Single(item => item.Kind is ContentKind.MiscFile);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(robots.OutputPath).IsEqualTo("robots.txt");
+            await Assert.That(robots.Href).IsEqualTo("/robots.txt");
+            await Assert.That(robots.InNavigation).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the files the build has no use for are left out, which is what keeps editor and tool
+    ///     droppings from being published alongside the site.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_DeniedFiles_AreLeftOut()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile(".DS_Store")
+            .WriteFile("notes.md~")
+            .WriteFile("obj/build.log");
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
         await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(new[] { "/index.html" });
+    }
+
+    /// <summary>
+    ///     Verifies that HTML in the content tree is left out, since the page rendered from the Markdown
+    ///     beside it claims the same output path and the copy would overwrite it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Html_IsLeftOut()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write("about.md", "About")
+            .WriteFile("about.html", "<p>stale</p>");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(items.Select(item => item.Href))
+                .IsEquivalentTo(new[] { "/index.html", "/about.html" });
+
+            await Assert.That(items.Single(item => item.Href == "/about.html").Kind)
+                .IsEqualTo(ContentKind.Page);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a root-level file which is not a page stays out of the navigation, which the shared
+    ///     item type would otherwise mark for it on depth alone.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_RootLevelMiscFile_IsNotInTheNavigation()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteBytes("logo.png", [0x89, 0x50, 0x4E, 0x47]);
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(items.Single(item => item.InNavigation).Href).IsEqualTo("/index.html");
+    }
+
+    /// <summary>
+    ///     Verifies that a file symbolic link is skipped, including one pointing at Markdown, so that a copy
+    ///     cannot publish the bytes of a target outside the content directory.
+    /// </summary>
+    /// <remarks>
+    ///     Driven against the real file system, because <c>MockFileSystem</c> does not model links.
+    /// </remarks>
+    [Test]
+    public async Task Scan_Test_FileSymlink_IsNotFollowed()
+    {
+        // Arrange
+        Skip.Unless(!OperatingSystem.IsWindows(), "Creating a symbolic link needs elevation on Windows.");
+
+        FileSystem fileSystem = new();
+        SiteOptions options = new();
+        string root = Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}");
+        string content = Path.Combine(root, options.ContentDirectory);
+        string outside = Path.Combine(root, "secret.md");
+
+        try
+        {
+            Directory.CreateDirectory(content);
+            await File.WriteAllTextAsync(Path.Combine(content, "index.md"), "---\ntitle: Home\n---");
+            await File.WriteAllTextAsync(outside, "# Secret");
+            File.CreateSymbolicLink(Path.Combine(content, "leak.md"), outside);
+
+            HostEnvironmentStub environment = new() { ContentRootPath = root };
+            ContentPipeline pipeline = new(environment, fileSystem);
+
+            // Act
+            IReadOnlyList<ContentItem> items = pipeline.Scan(options);
+
+            // Assert
+            await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(new[] { "/index.html" });
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
     }
 
     /// <summary>

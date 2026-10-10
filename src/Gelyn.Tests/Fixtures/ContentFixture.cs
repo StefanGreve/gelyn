@@ -156,11 +156,44 @@ internal sealed class ContentFixture
     /// <returns>
     ///     The same fixture, so that calls can be chained.
     /// </returns>
-    public ContentFixture Write(string relativePath, string? title = null)
+    public ContentFixture Write(string relativePath, string? title = null) => this.WriteFile(
+        relativePath,
+        title is null ? "# Untitled" : $"---{Environment.NewLine}title: {title}{Environment.NewLine}---");
+
+    /// <summary>
+    ///     Adds one file verbatim, creating the directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="contents">
+    ///     The exact text to write.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteFile(string relativePath, string contents = "")
     {
-        this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(title is null
-            ? "# Untitled"
-            : $"---{Environment.NewLine}title: {title}{Environment.NewLine}---"));
+        this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(contents));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Adds one binary file, creating the directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="contents">
+    ///     The exact bytes to write.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteBytes(string relativePath, byte[] contents)
+    {
+        this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(contents));
 
         return this;
     }
@@ -195,13 +228,16 @@ internal sealed class ContentFixture
     public string ReadOutput(string path) => this.FileSystem.File.ReadAllText(path);
 
     /// <summary>
-    ///     Enumerates every page the builder has written.
+    ///     Enumerates the files the builder has produced.
     /// </summary>
+    /// <param name="pattern">
+    ///     The search pattern to match against, which defaults to the generated pages alone.
+    /// </param>
     /// <returns>
-    ///     The absolute path of each generated HTML file.
+    ///     The absolute path of each matching file.
     /// </returns>
-    public IEnumerable<string> EnumerateOutput() =>
-        this.FileSystem.Directory.EnumerateFiles(this.OutputRoot, "*.html", SearchOption.AllDirectories);
+    public IEnumerable<string> EnumerateOutput(string pattern = "*.html") =>
+        this.FileSystem.Directory.EnumerateFiles(this.OutputRoot, pattern, SearchOption.AllDirectories);
 
     #region Helpers
 

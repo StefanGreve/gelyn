@@ -42,7 +42,7 @@ public static class ConfigurationManagerExtensions
         ArgumentNullException.ThrowIfNull(configuration);
 
         string? requested = configuration[ConfigurationFile.PathKey];
-        Dictionary<string, string?> overrides = configuration.ReadOverrides();
+        IReadOnlyDictionary<string, string?> overrides = configuration.ReadOverrides();
 
         configuration.AddJsonFile(
             requested ?? ConfigurationFile.DefaultFileName,

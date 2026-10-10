@@ -9,9 +9,14 @@ namespace Gelyn.Model;
 public sealed record BuildReport
 {
     /// <summary>
-    ///     The output-relative paths that were written, landing page first.
+    ///     The output-relative paths that were rendered and written, landing page first.
     /// </summary>
-    public required IReadOnlyList<string> Files { get; init; }
+    public required IReadOnlyList<string> Pages { get; init; }
+
+    /// <summary>
+    ///     The output-relative paths that were copied unchanged.
+    /// </summary>
+    public required IReadOnlyList<string> Copies { get; init; }
 
     /// <summary>
     ///     How long the build took, covering discovery, layout and writing, but not the startup that precedes

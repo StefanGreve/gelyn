@@ -7,7 +7,7 @@ using Gelyn.Model.Options;
 namespace Gelyn.Internals;
 
 /// <summary>
-///     Conversions between the model types the generator passes around.
+///     Extension methods for the model types the generator passes around.
 /// </summary>
 internal static class Mapper
 {
@@ -15,15 +15,14 @@ internal static class Mapper
     ///     Projects a located file onto the page rendered from it.
     /// </summary>
     /// <param name="item">
-    ///     The file the scan located, which supplies the output path, the URL and the title to fall back to.
+    ///     The file the scan located.
     /// </param>
     /// <param name="document">
-    ///     The front matter and the HTML body read out of that file.
+    ///     The result of rendering that file.
     /// </param>
     /// <returns>
     ///     The new page, titled by the front matter when it declares a title and by
-    ///     <see cref="ContentItem.FallbackTitle"/> when it does not, which is what keeps
-    ///     <see cref="ContentPage.Title"/> free of nulls.
+    ///     <see cref="ContentItem.FallbackTitle"/> when it does not.
     /// </returns>
     internal static ContentPage ToContentPage(this ContentItem item, RenderedMarkdown document) =>
         new()

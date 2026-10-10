@@ -19,8 +19,19 @@ using Microsoft.Extensions.Options;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Renders every discovered page and writes the results to the output directory.
+///     Writes the finished site to the output directory.
 /// </summary>
+/// <remarks>
+///     The build is processed in this order:
+///     <list type="number">
+///         <item>
+///             <description><see cref="WritePagesAsync"/> composes and writes the rendered pages.</description>
+///         </item>
+///         <item>
+///             <description><see cref="CopyAssets"/> copies every located file that is not a page.</description>
+///         </item>
+///     </list>
+/// </remarks>
 public sealed class SiteBuilder
 {
     private readonly ContentPipeline _pipeline;
@@ -74,7 +85,7 @@ public sealed class SiteBuilder
     ///     Token used to cancel the operation.
     /// </param>
     /// <returns>
-    ///     The files that were written and how long writing them took.
+    ///     The files that were written, the files that were copied, and how long producing them took.
     /// </returns>
     public async Task<BuildReport> BuildAsync(CancellationToken cancellationToken)
     {
@@ -87,17 +98,62 @@ public sealed class SiteBuilder
         IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
         long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
 
+        IReadOnlyList<ContentItem> sources = [.. items.Where(static item => item.Kind is ContentKind.Page)];
+
         IReadOnlyList<ContentPage> pages = await this._pipeline
-            .RenderAsync(items, cancellationToken)
+            .RenderAsync(sources, cancellationToken)
             .ConfigureAwait(false);
 
         long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
 
+        string outputDirectory = this._fileSystem.Path.Combine(
+            this._environment.ContentRootPath,
+            options.OutputDirectory);
+
+        (IReadOnlyList<string> written, long composeTicks, long writeTicks) = await this
+            .WritePagesAsync(pages, options, outputDirectory, isMeasuring, cancellationToken)
+            .ConfigureAwait(false);
+
+        long copyStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        List<string> copied = this.CopyAssets(items, outputDirectory, cancellationToken);
+
+        if (isMeasuring)
+            writeTicks += Stopwatch.GetTimestamp() - copyStarted;
+
+        // Taken before the reports below, whose console writes would otherwise be counted in the build total.
+        TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
+
+        if (isMeasuring)
+        {
+            this.ReportCounters(
+                items.Count,
+                pages.Count,
+                written.Count + copied.Count,
+                (scanTicks, renderTicks, composeTicks, writeTicks),
+                elapsed);
+        }
+
+        return new BuildReport
+        {
+            Pages = written,
+            Copies = copied,
+            Elapsed = elapsed,
+        };
+    }
+
+    #region Helpers
+
+    private async Task<(List<string> Written, long ComposeTicks, long WriteTicks)> WritePagesAsync(
+        IReadOnlyList<ContentPage> pages,
+        SiteOptions options,
+        string outputDirectory,
+        bool isMeasuring,
+        CancellationToken cancellationToken)
+    {
+        IPath path = this._fileSystem.Path;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         DateOnly generatedAt = DateOnly.FromDateTime(this._timeProvider.GetUtcNow().UtcDateTime);
 
-        IPath path = this._fileSystem.Path;
-        string outputDirectory = path.Combine(this._environment.ContentRootPath, options.OutputDirectory);
         var written = new List<string>(pages.Count);
         long composeTicks = 0;
         long writeTicks = 0;
@@ -134,32 +190,8 @@ public sealed class SiteBuilder
             written.Add(page.OutputPath);
         }
 
-        // Taken before the reports below, whose console writes would otherwise be counted in the build total.
-        TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
-
-        if (isMeasuring)
-        {
-            double scanMs = ElapsedMilliseconds(scanTicks);
-            double renderMs = ElapsedMilliseconds(renderTicks);
-            double composeMs = ElapsedMilliseconds(composeTicks);
-            double writeMs = ElapsedMilliseconds(writeTicks);
-            double buildMs = elapsed.TotalMilliseconds;
-
-            this._logger.LogScanCompleted(items.Count, scanMs);
-            this._logger.LogRenderCompleted(pages.Count, renderMs);
-            this._logger.LogComposeCompleted(pages.Count, composeMs);
-            this._logger.LogWriteCompleted(written.Count, writeMs);
-            this._logger.LogBuildCompleted(written.Count, buildMs);
-        }
-
-        return new BuildReport
-        {
-            Files = written,
-            Elapsed = elapsed,
-        };
+        return (written, composeTicks, writeTicks);
     }
-
-    #region Helpers
 
     private static string ComposeDocument(
         RenderContext context,
@@ -175,6 +207,48 @@ public sealed class SiteBuilder
         }
 
         return PageLayout.Render(context, header, footer);
+    }
+
+    private List<string> CopyAssets(
+        IReadOnlyList<ContentItem> items,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        IPath path = this._fileSystem.Path;
+        List<string> copied = [];
+
+        foreach (ContentItem item in items.Where(static item => item.Kind is not ContentKind.Page))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string destination = path.Combine(outputDirectory, item.OutputPath);
+            this._fileSystem.Directory.CreateDirectory(path.GetDirectoryName(destination) ?? outputDirectory);
+            this._fileSystem.File.Copy(item.SourcePath, destination, overwrite: true);
+
+            copied.Add(item.OutputPath);
+        }
+
+        return copied;
+    }
+
+    private void ReportCounters(
+        int itemCount,
+        int pageCount,
+        int fileCount,
+        (long Scan, long Render, long Compose, long Write) ticks,
+        TimeSpan elapsed)
+    {
+        double scanMs = ElapsedMilliseconds(ticks.Scan);
+        double renderMs = ElapsedMilliseconds(ticks.Render);
+        double composeMs = ElapsedMilliseconds(ticks.Compose);
+        double writeMs = ElapsedMilliseconds(ticks.Write);
+        double buildMs = elapsed.TotalMilliseconds;
+
+        this._logger.LogScanCompleted(itemCount, scanMs);
+        this._logger.LogRenderCompleted(pageCount, renderMs);
+        this._logger.LogComposeCompleted(pageCount, composeMs);
+        this._logger.LogWriteCompleted(fileCount, writeMs);
+        this._logger.LogBuildCompleted(fileCount, buildMs);
     }
 
     private static double ElapsedMilliseconds(long ticks) =>

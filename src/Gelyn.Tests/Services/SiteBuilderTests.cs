@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -39,9 +40,61 @@ public partial class SiteBuilderTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(report.Files.Count).IsEqualTo(6);
-            await Assert.That(report.Files[0]).IsEqualTo("index.html");
+            await Assert.That(report.Pages.Count).IsEqualTo(6);
+            await Assert.That(report.Pages[0]).IsEqualTo("index.html");
         }
+    }
+
+    /// <summary>
+    ///     Verifies that a file which is not Markdown is copied to the mirrored output path with its text
+    ///     intact, and reported apart from the pages that were rendered.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MiscFile_IsCopiedToTheMirroredPath()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteFile("robots.txt", "User-agent: *")
+            .WriteFile("blog/notice.txt", "Archived.");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Copies)
+                .IsEquivalentTo(new[] { "robots.txt", Path.Combine("blog", "notice.txt") });
+
+            await Assert.That(report.Pages.Count).IsEqualTo(6);
+
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "robots.txt")))
+                .IsEqualTo("User-agent: *");
+
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "blog", "notice.txt")))
+                .IsEqualTo("Archived.");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a binary file survives the copy byte for byte, which is what the copy buys over
+    ///     reading the file as text and writing it back out.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_BinaryFile_IsCopiedByteForByte()
+    {
+        // Arrange
+        byte[] expected = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF];
+        ContentFixture fixture = ContentFixture.Create().WriteBytes("logo.png", expected);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        byte[] actual = await fixture.FileSystem.File
+            .ReadAllBytesAsync(Path.Combine(fixture.OutputRoot, "logo.png"), CancellationToken.None);
+
+        await Assert.That(actual).IsEquivalentTo(expected);
     }
 
     /// <summary>
@@ -295,8 +348,9 @@ public partial class SiteBuilderTests
     ///     them can drift from the result the command returns.
     /// </summary>
     /// <remarks>
-    ///     Cannot tell the item count, the page count and the file count apart: every file the scan locates
-    ///     is a page and every page is written, so all three are always equal.
+    ///     Cannot tell the item count, the page count and the file count apart, because this tree holds
+    ///     nothing to copy. <see cref="BuildAsync_Test_Counters_CountCopiesApartFromPages"/> is the case
+    ///     that separates them.
     /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_ReportTheNumberOfFiles()
@@ -306,7 +360,7 @@ public partial class SiteBuilderTests
 
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
-        int files = report.Files.Count;
+        int files = report.Pages.Count;
 
         // Assert
         using (Assert.Multiple())
@@ -316,6 +370,37 @@ public partial class SiteBuilderTests
             await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(files);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the render and compose counters report the pages alone while the scan, write and
+    ///     build counters report the copies alongside them, so that each counter means what its message says.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Counters_CountCopiesApartFromPages()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteFile("robots.txt", "User-agent: *")
+            .WriteFile("blog/notice.txt", "Archived.");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        int pages = report.Pages.Count;
+        int total = pages + report.Copies.Count;
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(pages).IsEqualTo(6);
+            await Assert.That(total).IsEqualTo(8);
+
+            await Assert.That(Count(fixture, EventIds.SCAN_COMPLETED, "ItemCount")).IsEqualTo(total);
+            await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(pages);
+            await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(pages);
+            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(total);
+            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(total);
         }
     }
 
