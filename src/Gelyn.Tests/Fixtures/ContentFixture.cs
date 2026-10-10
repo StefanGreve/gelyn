@@ -123,6 +123,39 @@ internal sealed class ContentFixture
             .Write("blog/2026/q3/deep.md", "Deep");
 
     /// <summary>
+    ///     Creates a fixture holding a stylesheet at each of three levels, so that a test can tell a
+    ///     stylesheet a page inherits apart from the one declared beside it.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     styles.css
+    ///     index.md             -> index.html             styles.css
+    ///     about.md             -> about.html             styles.css
+    ///     blog/blog.css
+    ///     blog/index.md        -> blog/index.html        styles.css + blog.css
+    ///     blog/hello.md        -> blog/hello.html        styles.css + blog.css
+    ///     blog/2026/year.css
+    ///     blog/2026/index.md   -> blog/2026/index.html   styles.css + blog.css + year.css
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateStyled(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteFile("styles.css", "body{margin:0}")
+            .Write("index.md", "Home")
+            .Write("about.md", "About")
+            .WriteFile("blog/blog.css", "article{max-width:70ch}")
+            .Write("blog/index.md", "Blog")
+            .Write("blog/hello.md", "Hello")
+            .WriteFile("blog/2026/year.css", "h1{color:teal}")
+            .Write("blog/2026/index.md", "2026");
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">

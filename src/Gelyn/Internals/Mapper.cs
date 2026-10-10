@@ -34,6 +34,7 @@ internal static class Mapper
             Date = document.FrontMatter?.Date,
             Html = document.Html,
             InNavigation = item.InNavigation,
+            Stylesheets = item.Stylesheets,
         };
 
     /// <summary>

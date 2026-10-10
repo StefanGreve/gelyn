@@ -137,7 +137,7 @@ public class ContentPipelineTests
             await Assert.That(items.Where(item => item.Kind is ContentKind.Page).Select(item => item.Href))
                 .IsEquivalentTo(["/index.html"]);
 
-            await Assert.That(items.Where(item => item.Kind is ContentKind.MiscFile).Select(item => item.Href))
+            await Assert.That(items.Where(item => item.Kind is not ContentKind.Page).Select(item => item.Href))
                 .IsEquivalentTo(["/style.css", "/blog/photo.png"]);
         }
     }
@@ -350,6 +350,182 @@ public class ContentPipelineTests
         await Assert.That(items[0].Href).IsEqualTo("/index.html");
     }
 
+    /// <summary>
+    ///     Verifies that a stylesheet at the root of the content tree applies to every page, because the root
+    ///     is every page's ancestor rather than because it is treated as a special case.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_RootStylesheet_AppliesToEveryPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        IReadOnlyList<string> outermost = [.. items
+            .Where(item => item.Kind is ContentKind.Page)
+            .Select(item => item.Stylesheets.FirstOrDefault() ?? string.Empty)];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(outermost.Count).IsEqualTo(5);
+            await Assert.That(outermost.Distinct()).IsEquivalentTo(["/styles.css"]);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page links the stylesheet of every directory above it as well as its own, ordered
+    ///     outermost first so that the deepest one wins the cascade.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Stylesheets_CascadeOutermostFirst()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/styles.css");
+            await Assert.That(Cascade(items, "/about.html")).IsEqualTo("/styles.css");
+            await Assert.That(Cascade(items, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
+            await Assert.That(Cascade(items, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
+
+            await Assert.That(Cascade(items, "/blog/2026/index.html"))
+                .IsEqualTo("/styles.css,/blog/blog.css,/blog/2026/year.css");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a stylesheet applies below the directory declaring it and nowhere else, so that a
+    ///     section can style itself without reaching the pages beside it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Stylesheet_DoesNotReachASiblingBranch()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(items.Single(item => item.Href == "/about.html").Stylesheets)
+            .DoesNotContain("/blog/blog.css");
+    }
+
+    /// <summary>
+    ///     Verifies that a stylesheet is located as a copy in its own right, carrying no cascade of its own,
+    ///     so that the file the links point at is published beside the pages that link it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Stylesheet_IsLocatedAsACopy()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem stylesheet = items.Single(item => item.Href == "/styles.css");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(stylesheet.Kind).IsEqualTo(ContentKind.Stylesheet);
+            await Assert.That(stylesheet.OutputPath).IsEqualTo("styles.css");
+            await Assert.That(stylesheet.Stylesheets).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that two sections styling themselves independently never see each other's stylesheet,
+    ///     while both still inherit the one above them.
+    /// </summary>
+    /// <remarks>
+    ///     Distinct from the sibling page above: this is the case that would break if the accumulator were
+    ///     mutated in place rather than rebuilt per directory, because the first branch walked would leak
+    ///     into every branch walked after it.
+    /// </remarks>
+    [Test]
+    public async Task Scan_Test_SiblingDirectories_DoNotShareAStylesheet()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("root.css", "body{margin:0}")
+            .Write("index.md", "Home")
+            .WriteFile("blog/styles1.css", "article{max-width:70ch}")
+            .Write("blog/index.md", "Blog")
+            .WriteFile("foo/styles2.css", "h1{color:teal}")
+            .Write("foo/index.md", "Foo");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/root.css");
+            await Assert.That(Cascade(items, "/blog/index.html")).IsEqualTo("/root.css,/blog/styles1.css");
+            await Assert.That(Cascade(items, "/foo/index.html")).IsEqualTo("/root.css,/foo/styles2.css");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an extension is recognized whatever its case, so that a file is handled by what it
+    ///     is rather than by how its name happens to be typed.
+    /// </summary>
+    /// <remarks>
+    ///     Reachable on every platform, not only a case-insensitive one: the extension is read back as it was
+    ///     written, so a file arriving from elsewhere carries whatever case it was created with.
+    /// </remarks>
+    [Test]
+    public async Task Scan_Test_ExtensionCase_DoesNotChangeTheClassification()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write("About.MD", "About")
+            .WriteFile("Styles.CSS", "body{margin:0}");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(items.Single(item => item.Href == "/About.html").Kind)
+                .IsEqualTo(ContentKind.Page);
+
+            await Assert.That(items.Single(item => item.Href == "/Styles.CSS").Kind)
+                .IsEqualTo(ContentKind.Stylesheet);
+
+            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/Styles.CSS");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the path of the base URL reaches a stylesheet link as well as a page link, so that
+    ///     the two cannot disagree about where the site is served from.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_BaseUrlPath_IsPrefixedToEveryStylesheet()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled().WithBaseUrl("https://example.com/gelyn");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(Cascade(items, "/gelyn/blog/2026/index.html"))
+            .IsEqualTo("/gelyn/styles.css,/gelyn/blog/blog.css,/gelyn/blog/2026/year.css");
+    }
+
     #endregion // Scan Tests
 
     #region RenderAsync Tests
@@ -411,6 +587,11 @@ public class ContentPipelineTests
 
     private static IReadOnlyList<ContentItem> Scan(ContentFixture fixture) =>
         fixture.Pipeline.Scan(fixture.Options);
+
+    // Joined rather than compared as a sequence, because the assertion is about order and IsEquivalentTo
+    // ignores it.
+    private static string Cascade(IReadOnlyList<ContentItem> items, string href) =>
+        string.Join(',', items.Single(item => item.Href == href).Stylesheets);
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
         fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);

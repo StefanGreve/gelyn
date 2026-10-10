@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Gelyn.Model;
 
 /// <summary>
@@ -40,4 +42,11 @@ public sealed record ContentItem
     ///     <see cref="ContentKind.MiscFile"/>.
     /// </summary>
     public required bool InNavigation { get; init; }
+
+    /// <summary>
+    ///     The root-relative URLs of the stylesheets that apply to the file, outermost first, so that a
+    ///     stylesheet deeper in the tree overrides one above it. Empty when no stylesheet applies, and
+    ///     always empty for anything but a <see cref="ContentKind.Page"/>.
+    /// </summary>
+    public required IReadOnlyList<string> Stylesheets { get; init; }
 }

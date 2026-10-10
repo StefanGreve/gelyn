@@ -35,6 +35,7 @@ public sealed class ContentPipeline
     private const string IndexFileName = "index.md";
     private const string IndexOutputFileName = "index.html";
     private const string MarkdownExtension = ".md";
+    private const string StylesheetExtension = ".css";
 
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
@@ -82,7 +83,8 @@ public sealed class ContentPipeline
 
         return this.Collect(
             this._fileSystem.DirectoryInfo.New(root),
-            [],
+            prefix: [],
+            inherited: [],
             hrefPrefix,
             options.ExcludePatterns);
     }
@@ -127,6 +129,7 @@ public sealed class ContentPipeline
     private List<ContentItem> Collect(
         IDirectoryInfo directory,
         string[] prefix,
+        IReadOnlyList<string> inherited,
         string hrefPrefix,
         IReadOnlyList<string> excluded)
     {
@@ -134,6 +137,13 @@ public sealed class ContentPipeline
             .EnumerateFileSystemInfos()
             .Where(entry => !IsDenied(entry, excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
+
+        // Resolved ahead of the items, because a page links the stylesheets beside it as well as those above
+        // it, and shared by reference with every page at this level rather than copied per page.
+        IReadOnlyList<string> cascade = [.. inherited, .. entries
+            .OfType<IFileInfo>()
+            .Where(static file => Classify(file) is ContentKind.Stylesheet)
+            .Select(file => Href(hrefPrefix, [.. prefix, file.Name]))];
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -145,7 +155,8 @@ public sealed class ContentPipeline
 
         foreach (IFileInfo file in files)
         {
-            bool isPage = file.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase);
+            ContentKind kind = Classify(file);
+            bool isPage = kind is ContentKind.Page;
             bool isIndex = file.Name.Equals(IndexFileName, StringComparison.Ordinal);
             string slug = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
 
@@ -161,14 +172,15 @@ public sealed class ContentPipeline
                 SourcePath = file.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
                 Href = Href(hrefPrefix, segments),
-                Kind = isPage ? ContentKind.Page : ContentKind.MiscFile,
+                Kind = kind,
                 FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
                 InNavigation = isPage && IsInNavigation(segments),
+                Stylesheets = isPage ? cascade : [],
             });
         }
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
-            items.AddRange(this.Collect(child, [.. prefix, child.Name], hrefPrefix, excluded));
+            items.AddRange(this.Collect(child, [.. prefix, child.Name], cascade, hrefPrefix, excluded));
 
         return items;
     }
@@ -178,6 +190,13 @@ public sealed class ContentPipeline
     private static bool IsDenied(IFileSystemInfo entry, IReadOnlyList<string> excluded) =>
         entry.LinkTarget is not null
         || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
+
+    private static ContentKind Classify(IFileInfo file) => file.Extension switch
+    {
+        var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
+        var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
+        _ => ContentKind.MiscFile,
+    };
 
     private static string Href(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";

@@ -98,6 +98,56 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a page links every stylesheet that applies to it, in the order the cascade requires,
+    ///     and that a page above them links only what applies at its own level.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_StylesheetLinks_AreEmittedOutermostFirst()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadStylesheets(fixture, "index.html")).IsEqualTo("/styles.css");
+
+            await Assert.That(ReadStylesheets(fixture, Path.Combine("blog", "2026", "index.html")))
+                .IsEqualTo("/styles.css,/blog/blog.css,/blog/2026/year.css");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a stylesheet is published alongside the pages linking it, which the copy loop has to
+    ///     cover for the links to resolve to anything.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Stylesheet_IsCopiedBesideThePagesThatLinkIt()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Copies).IsEquivalentTo([
+                "styles.css",
+                Path.Combine("blog", "blog.css"),
+                Path.Combine("blog", "2026", "year.css"),
+            ]);
+
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "styles.css")))
+                .IsEqualTo("body{margin:0}");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that the navigation links the landing page, every root-level page and the index of
     ///     each top-level section, that nothing nested more deeply is linked, and that the landing page
     ///     comes first.
@@ -541,8 +591,19 @@ public partial class SiteBuilderTests
         return match.Success ? match.Groups["href"].Value : null;
     }
 
+    // Joined rather than returned as a sequence, because the assertion is about order and IsEquivalentTo
+    // ignores it.
+    private static string ReadStylesheets(ContentFixture fixture, string outputPath) => string.Join(
+        ',',
+        StylesheetLink()
+            .Matches(ReadPage(fixture, outputPath))
+            .Select(match => match.Groups["href"].Value));
+
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
+
+    [GeneratedRegex("""<link rel="stylesheet" href="(?<href>[^"]*)">""")]
+    private static partial Regex StylesheetLink();
 
     [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
     private static partial Regex CurrentLink();

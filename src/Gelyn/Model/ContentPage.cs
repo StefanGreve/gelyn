@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Gelyn.Model;
 
@@ -50,4 +51,10 @@ public sealed record ContentPage
     ///     and section indexes are linked; pages inside a section are not.
     /// </summary>
     public required bool InNavigation { get; init; }
+
+    /// <summary>
+    ///     The root-relative URLs of the stylesheets that apply to the page, outermost first, so that a
+    ///     stylesheet deeper in the tree overrides one above it.
+    /// </summary>
+    public required IReadOnlyList<string> Stylesheets { get; init; }
 }

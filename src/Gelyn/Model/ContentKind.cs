@@ -11,6 +11,11 @@ public enum ContentKind
     Page,
 
     /// <summary>
+    ///     A stylesheet, copied like any other file and additionally linked by the pages it applies to.
+    /// </summary>
+    Stylesheet,
+
+    /// <summary>
     ///     Anything else, copied to the output directory byte for byte.
     /// </summary>
     MiscFile,
