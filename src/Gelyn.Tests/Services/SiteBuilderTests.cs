@@ -153,8 +153,10 @@ public partial class SiteBuilderTests
         // Arrange
         ContentFixture fixture = ContentFixture.Create();
 
-        IReadOnlyList<ContentPage> pages =
-            await fixture.Pipeline.WalkAsync(fixture.Options, CancellationToken.None);
+        IReadOnlyList<ContentPage> pages = await fixture.Pipeline.RenderAsync(
+            fixture.Pipeline.Scan(fixture.Options),
+            fixture.Options,
+            CancellationToken.None);
 
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
 
@@ -274,7 +276,8 @@ public partial class SiteBuilderTests
 
         int[] phases =
         [
-            EventIds.WALK_COMPLETED,
+            EventIds.SCAN_COMPLETED,
+            EventIds.RENDER_COMPLETED,
             EventIds.COMPOSE_COMPLETED,
             EventIds.WRITE_COMPLETED,
             EventIds.BUILD_COMPLETED,
@@ -290,12 +293,12 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that all four counters report the number of files the build produced, so that none of
+    ///     Verifies that all five counters report the number of files the build produced, so that none of
     ///     them can drift from the result the command returns.
     /// </summary>
     /// <remarks>
-    ///     Cannot tell the page count and the file count apart, because every discovered page is written and
-    ///     the two counts are therefore always equal.
+    ///     Cannot tell the item count, the page count and the file count apart: every file the scan locates
+    ///     is a page and every page is written, so all three are always equal.
     /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_ReportTheNumberOfFiles()
@@ -310,7 +313,8 @@ public partial class SiteBuilderTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(Count(fixture, EventIds.WALK_COMPLETED, "PageCount")).IsEqualTo(files);
+            await Assert.That(Count(fixture, EventIds.SCAN_COMPLETED, "ItemCount")).IsEqualTo(files);
+            await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(files);
@@ -333,7 +337,7 @@ public partial class SiteBuilderTests
         // Assert: the count is pinned first, because an empty list would satisfy the loop on its own.
         using (Assert.Multiple())
         {
-            await Assert.That(fixture.Records.Count).IsEqualTo(4);
+            await Assert.That(fixture.Records.Count).IsEqualTo(5);
 
             foreach (FakeLogRecord record in fixture.Records)
                 await Assert.That(record.Level).IsEqualTo(LogLevel.Debug);
@@ -376,18 +380,20 @@ public partial class SiteBuilderTests
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
-        double walk = Elapsed(fixture, EventIds.WALK_COMPLETED);
+        double scan = Elapsed(fixture, EventIds.SCAN_COMPLETED);
+        double render = Elapsed(fixture, EventIds.RENDER_COMPLETED);
         double compose = Elapsed(fixture, EventIds.COMPOSE_COMPLETED);
         double write = Elapsed(fixture, EventIds.WRITE_COMPLETED);
 
         using (Assert.Multiple())
         {
-            await Assert.That(walk).IsGreaterThan(0);
+            await Assert.That(scan).IsGreaterThan(0);
+            await Assert.That(render).IsGreaterThan(0);
             await Assert.That(compose).IsGreaterThan(0);
             await Assert.That(write).IsGreaterThan(0);
 
             await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED))
-                .IsGreaterThanOrEqualTo(walk + compose + write);
+                .IsGreaterThanOrEqualTo(scan + render + compose + write);
         }
     }
 

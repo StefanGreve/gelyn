@@ -15,10 +15,18 @@ using Microsoft.Extensions.Hosting;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Walks the content directory and renders every page it finds.
+///     Discovers the files the site is built from, and renders the Markdown among them.
 /// </summary>
 /// <remarks>
-///     The landing page is always the first result, so that callers can rely on the order without sorting.
+///     The content pipeline is processed in this order:
+///     <list type="number">
+///         <item>
+///             <description><see cref="Scan"/> locates the pages without reading their contents.</description>
+///         </item>
+///         <item>
+///             <description><see cref="RenderAsync"/> reads and renders what the scan located.</description>
+///         </item>
+///     </list>
 /// </remarks>
 public sealed class ContentPipeline
 {
@@ -45,13 +53,10 @@ public sealed class ContentPipeline
     }
 
     /// <summary>
-    ///     Discovers and renders every page of the site.
+    ///     Locates every page of the site and resolves the paths and URLs it is published under.
     /// </summary>
     /// <param name="options">
-    ///     Supplies the site configuration the walk is driven by.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
+    ///     Supplies the site configuration the scan is driven by.
     /// </param>
     /// <returns>
     ///     Every page, landing page first.
@@ -59,7 +64,7 @@ public sealed class ContentPipeline
     /// <exception cref="FileNotFoundException">
     ///     The content directory declares no <c>index.md</c>.
     /// </exception>
-    public async Task<IReadOnlyList<ContentPage>> WalkAsync(SiteOptions options, CancellationToken cancellationToken)
+    internal IReadOnlyList<ContentItem> Scan(SiteOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -70,95 +75,105 @@ public sealed class ContentPipeline
         if (!this._fileSystem.File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
-        string prefix = options.BaseUrl is Uri baseUrl ? baseUrl.AbsolutePath.TrimEnd('/') : string.Empty;
-        var pages = new List<ContentPage>();
+        string hrefPrefix = options.BaseUrl is Uri baseUrl ? baseUrl.AbsolutePath.TrimEnd('/') : string.Empty;
+        List<ContentItem> items = [];
 
-        foreach (ContentSource source in this.EnumerateSources(root))
+        this.Collect(this._fileSystem.DirectoryInfo.New(root), [], hrefPrefix, items);
+
+        return items;
+    }
+
+    /// <summary>
+    ///     Reads each located page and renders its Markdown.
+    /// </summary>
+    /// <param name="pages">
+    ///     The pages a scan located, in the order they are to be rendered.
+    /// </param>
+    /// <param name="options">
+    ///     Supplies the site configuration the render is driven by.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     Every page, in the order it was given.
+    /// </returns>
+    internal async Task<IReadOnlyList<ContentPage>> RenderAsync(
+        IReadOnlyList<ContentItem> pages,
+        SiteOptions options,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(pages);
+
+        var rendered = new List<ContentPage>(pages.Count);
+
+        foreach (ContentItem item in pages)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             string markdown = await this._fileSystem.File
-                .ReadAllTextAsync(source.SourcePath, cancellationToken)
+                .ReadAllTextAsync(item.SourcePath, cancellationToken)
                 .ConfigureAwait(false);
 
-            RenderedMarkdown rendered = MarkdownRenderer.Render(markdown);
+            RenderedMarkdown document = MarkdownRenderer.Render(markdown);
 
-            pages.Add(new ContentPage
+            rendered.Add(new ContentPage
             {
-                OutputPath = path.Combine(source.Segments),
-                Href = $"{prefix}/{string.Join('/', source.Segments)}",
-                Title = rendered.FrontMatter?.Title ?? source.FallbackTitle,
-                Description = rendered.FrontMatter?.Description,
-                Date = rendered.FrontMatter?.Date,
-                Html = rendered.Html,
-                InNavigation = source.InNavigation,
+                OutputPath = item.OutputPath,
+                Href = item.Href,
+                Title = document.FrontMatter?.Title ?? item.FallbackTitle,
+                Description = document.FrontMatter?.Description,
+                Date = document.FrontMatter?.Date,
+                Html = document.Html,
+                InNavigation = item.InNavigation,
             });
         }
 
-        return pages;
+        return rendered;
     }
 
     #region Helpers
 
-    private IEnumerable<ContentSource> EnumerateSources(string root)
+    private void Collect(IDirectoryInfo directory, string[] prefix, string hrefPrefix, List<ContentItem> items)
     {
-        // Seed the landing page before the walk
-        yield return new ContentSource
-        {
-            SourcePath = this._fileSystem.Path.Combine(root, IndexFileName),
-            Segments = [IndexOutputFileName],
-            FallbackTitle = this._fileSystem.Path.GetFileNameWithoutExtension(IndexFileName),
-            InNavigation = true,
-        };
-
-        IDirectoryInfo directory = this._fileSystem.DirectoryInfo.New(root);
-
-        foreach (ContentSource source in this.EnumerateDirectory(directory, []))
-            yield return source;
-    }
-
-    private IEnumerable<ContentSource> EnumerateDirectory(IDirectoryInfo directory, string[] prefix)
-    {
-        IEnumerable<IFileSystemInfo> entries = directory
+        IFileSystemInfo[] entries = [.. directory
             .EnumerateFileSystemInfos()
-            .OrderBy(static entry => entry.Name, StringComparer.Ordinal);
+            .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
-        foreach (IFileSystemInfo entry in entries)
+        // Files before subdirectories, index first among files, which is what makes the root index the
+        // first result without the walk having to seed it ahead of itself.
+        IEnumerable<IFileInfo> files = entries
+            .OfType<IFileInfo>()
+            .Where(static file => file.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(static file => file.Name.Equals(IndexFileName, StringComparison.Ordinal));
+
+        foreach (IFileInfo file in files)
         {
-            if (entry is IDirectoryInfo child)
-            {
-                // Descending into a symlink would let the walk leave the content directory entirely,
-                // and a link that resolves to an ancestor makes the walk unbounded.
-                if (child.LinkTarget is null)
-                {
-                    foreach (ContentSource source in this.EnumerateDirectory(child, [.. prefix, child.Name]))
-                        yield return source;
-                }
-
-                continue;
-            }
-
-            if (!entry.Extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            bool isIndex = entry.Name.Equals(IndexFileName, StringComparison.Ordinal);
-
-            // The root index.md is the landing page, which EnumerateSources has already yielded
-            if (isIndex && prefix.Length == 0)
-                continue;
-
-            string slug = this._fileSystem.Path.GetFileNameWithoutExtension(entry.Name);
+            bool isIndex = file.Name.Equals(IndexFileName, StringComparison.Ordinal);
+            string slug = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
             string[] segments = [.. prefix, isIndex ? IndexOutputFileName : $"{slug}.html"];
 
-            yield return new ContentSource
+            items.Add(new ContentItem
             {
-                SourcePath = entry.FullName,
-                Segments = segments,
-                FallbackTitle = isIndex ? prefix[^1] : slug,
+                SourcePath = file.FullName,
+                OutputPath = this._fileSystem.Path.Combine(segments),
+                Href = Href(hrefPrefix, segments),
+                FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
                 InNavigation = IsInNavigation(segments),
-            };
+            });
+        }
+
+        foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
+        {
+            // Descending into a symlink would let the walk leave the content directory entirely,
+            // and a link that resolves to an ancestor makes the walk unbounded.
+            if (child.LinkTarget is null)
+                this.Collect(child, [.. prefix, child.Name], hrefPrefix, items);
         }
     }
+
+    // Output-relative segments to a root-relative URL: always forward slashes, whatever the platform uses.
+    private static string Href(string prefix, string[] segments) => $"{prefix}/{string.Join('/', segments)}";
 
     // The navigation stays flat by design: root-level pages and the index of a top-level section only.
     private static bool IsInNavigation(string[] segments) => segments.Length switch

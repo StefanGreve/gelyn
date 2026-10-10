@@ -84,11 +84,14 @@ public sealed class SiteBuilder
         // The total is reported either way, so only the per-page detail is worth guarding.
         bool isMeasuring = this._logger.IsEnabled(LogLevel.Debug);
 
+        IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
+        long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
+
         IReadOnlyList<ContentPage> pages = await this._pipeline
-            .WalkAsync(options, cancellationToken)
+            .RenderAsync(items, options, cancellationToken)
             .ConfigureAwait(false);
 
-        long walkTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
+        long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
 
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         DateOnly generatedAt = DateOnly.FromDateTime(this._timeProvider.GetUtcNow().UtcDateTime);
@@ -99,7 +102,7 @@ public sealed class SiteBuilder
         long composeTicks = 0;
         long writeTicks = 0;
 
-        // The footer is invariant, so one component serves every page. The walk guarantees pages is not empty.
+        // The footer is invariant, so one component serves every page. The scan guarantees pages is not empty.
         string footer = FooterComponent.Render(pages[0].ToRenderContext(options, navigation, generatedAt));
 
         // The banner differs only in which navigation entry carries aria-current, so it needs one render per
@@ -111,15 +114,7 @@ public sealed class SiteBuilder
             RenderContext context = page.ToRenderContext(options, navigation, generatedAt);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string key = page.InNavigation ? page.Href : string.Empty;
-
-            if (!banners.TryGetValue(key, out string? header))
-            {
-                header = HeaderComponent.Render(context);
-                banners[key] = header;
-            }
-
-            string html = PageLayout.Render(context, header, footer);
+            string html = ComposeDocument(context, footer, banners);
 
             if (isMeasuring)
                 composeTicks += Stopwatch.GetTimestamp() - composeStarted;
@@ -144,12 +139,14 @@ public sealed class SiteBuilder
 
         if (isMeasuring)
         {
-            double walkMs = Stopwatch.GetElapsedTime(0, walkTicks).TotalMilliseconds;
+            double scanMs = Stopwatch.GetElapsedTime(0, scanTicks).TotalMilliseconds;
+            double renderMs = Stopwatch.GetElapsedTime(0, renderTicks).TotalMilliseconds;
             double composeMs = Stopwatch.GetElapsedTime(0, composeTicks).TotalMilliseconds;
             double writeMs = Stopwatch.GetElapsedTime(0, writeTicks).TotalMilliseconds;
             double buildMs = elapsed.TotalMilliseconds;
 
-            this._logger.LogWalkCompleted(pages.Count, walkMs);
+            this._logger.LogScanCompleted(items.Count, scanMs);
+            this._logger.LogRenderCompleted(pages.Count, renderMs);
             this._logger.LogComposeCompleted(pages.Count, composeMs);
             this._logger.LogWriteCompleted(written.Count, writeMs);
             this._logger.LogBuildCompleted(written.Count, buildMs);
@@ -161,4 +158,24 @@ public sealed class SiteBuilder
             Elapsed = elapsed,
         };
     }
+
+    #region Helpers
+
+    private static string ComposeDocument(
+        RenderContext context,
+        string footer,
+        Dictionary<string, string> banners)
+    {
+        string key = context.Page.InNavigation ? context.Page.Href : string.Empty;
+
+        if (!banners.TryGetValue(key, out string? header))
+        {
+            header = HeaderComponent.Render(context);
+            banners[key] = header;
+        }
+
+        return PageLayout.Render(context, header, footer);
+    }
+
+    #endregion
 }

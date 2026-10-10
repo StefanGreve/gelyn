@@ -12,24 +12,44 @@ namespace Gelyn.Internals;
 internal static partial class LogMessages
 {
     /// <summary>
-    ///     Reports how long it took to discover the content tree and render its Markdown.
+    ///     Reports how long it took to locate the files the site is built from.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="itemCount">
+    ///     The number of files the scan located.
+    /// </param>
+    /// <param name="elapsedMilliseconds">
+    ///     The duration of the scan, which reads directory metadata only.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.SCAN_COMPLETED,
+        EventName = nameof(EventIds.SCAN_COMPLETED),
+        Level = LogLevel.Debug,
+        SkipEnabledCheck = true,
+        Message = "Scanned {ItemCount} file(s) in {ElapsedMilliseconds:F2} ms")]
+    internal static partial void LogScanCompleted(this ILogger logger, int itemCount, double elapsedMilliseconds);
+
+    /// <summary>
+    ///     Reports how long it took to read the located pages and render their Markdown.
     /// </summary>
     /// <param name="logger">
     ///     The logger the record is written to.
     /// </param>
     /// <param name="pageCount">
-    ///     The number of pages the walk discovered.
+    ///     The number of pages that were rendered.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The duration of the walk.
+    ///     The duration of the render, including the time spent reading the files.
     /// </param>
     [LoggerMessage(
-        EventId = EventIds.WALK_COMPLETED,
-        EventName = nameof(EventIds.WALK_COMPLETED),
+        EventId = EventIds.RENDER_COMPLETED,
+        EventName = nameof(EventIds.RENDER_COMPLETED),
         Level = LogLevel.Debug,
         SkipEnabledCheck = true,
-        Message = "Walked {PageCount} page(s) in {ElapsedMilliseconds:F2} ms")]
-    internal static partial void LogWalkCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
+        Message = "Rendered {PageCount} page(s) in {ElapsedMilliseconds:F2} ms")]
+    internal static partial void LogRenderCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
 
     /// <summary>
     ///     Reports how long it took to compose the discovered pages into complete documents.

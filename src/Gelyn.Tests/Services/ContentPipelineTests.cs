@@ -19,44 +19,22 @@ namespace Gelyn.Tests.Services;
 /// </summary>
 public class ContentPipelineTests
 {
-    #region WalkAsync Tests
+    #region Scan Tests
 
     /// <summary>
     ///     Verifies that the landing page is the first result, which callers rely on instead of sorting.
     /// </summary>
     [Test]
-    public async Task WalkAsync_Test_LandingPage_IsTheFirstResult()
+    public async Task Scan_Test_LandingPage_IsTheFirstResult()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create();
 
         // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+        IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        await Assert.That(pages[0].Href).IsEqualTo("/index.html");
-    }
-
-    /// <summary>
-    ///     Verifies that Markdown nested below a section is rendered however deep it sits, and that the
-    ///     output path uses the native separator while the URL uses forward slashes.
-    /// </summary>
-    [Test]
-    public async Task WalkAsync_Test_NestedContent_IsRendered()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.Create();
-
-        // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
-        ContentPage deep = pages.Single(page => page.Title == "Deep");
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(deep.Href).IsEqualTo("/blog/2026/q3/deep.html");
-            await Assert.That(deep.OutputPath).IsEqualTo(Path.Combine("blog", "2026", "q3", "deep.html"));
-        }
+        await Assert.That(items[0].Href).IsEqualTo("/index.html");
     }
 
     /// <summary>
@@ -64,19 +42,19 @@ public class ContentPipelineTests
     ///     marked for the navigation.
     /// </summary>
     [Test]
-    public async Task WalkAsync_Test_Navigation_CoversTheFirstTwoLevelsOnly()
+    public async Task Scan_Test_Navigation_CoversTheFirstTwoLevelsOnly()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create();
         string[] expected = ["/index.html", "/about.html", "/blog/index.html"];
 
         // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+        IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        IEnumerable<string> linked = pages
-            .Where(page => page.InNavigation)
-            .Select(page => page.Href);
+        IEnumerable<string> linked = items
+            .Where(item => item.InNavigation)
+            .Select(item => item.Href);
 
         await Assert.That(linked).IsEquivalentTo(expected);
     }
@@ -91,7 +69,7 @@ public class ContentPipelineTests
     ///     mocked test cannot tell a guarded walk from an unguarded one.
     /// </remarks>
     [Test]
-    public async Task WalkAsync_Test_DirectorySymlink_IsNotFollowed()
+    public async Task Scan_Test_DirectorySymlink_IsNotFollowed()
     {
         // Arrange
         Skip.Unless(!OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
@@ -112,10 +90,10 @@ public class ContentPipelineTests
             ContentPipeline pipeline = new(environment, fileSystem);
 
             // Act
-            IReadOnlyList<ContentPage> pages = await pipeline.WalkAsync(options, CancellationToken.None);
+            IReadOnlyList<ContentItem> items = pipeline.Scan(options);
 
             // Assert
-            await Assert.That(pages.Select(page => page.Href))
+            await Assert.That(items.Select(item => item.Href))
                 .IsEquivalentTo(new[] { "/index.html", "/posts/note.html" });
         }
         finally
@@ -125,24 +103,23 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that a content directory without a landing page is rejected, and that the failure
-    ///     surfaces from the call rather than from enumerating the result.
+    ///     Verifies that a content directory without a landing page is rejected.
     /// </summary>
     [Test]
-    public async Task WalkAsync_Test_MissingLandingPage_Throws()
+    public async Task Scan_Test_MissingLandingPage_Throws()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty().Write("about.md", "About");
 
         // Act & Assert
-        await Assert.That(async () => await Walk(fixture)).Throws<FileNotFoundException>();
+        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
     }
 
     /// <summary>
-    ///     Verifies that files which are not Markdown are left out of the walk.
+    ///     Verifies that files which are not Markdown are left out of the scan.
     /// </summary>
     [Test]
-    public async Task WalkAsync_Test_NonMarkdownFiles_AreIgnored()
+    public async Task Scan_Test_NonMarkdownFiles_AreIgnored()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
@@ -151,34 +128,10 @@ public class ContentPipelineTests
             .Write("blog/photo.png");
 
         // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+        IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        await Assert.That(pages.Select(page => page.Href)).IsEquivalentTo(new[] { "/index.html" });
-    }
-
-    /// <summary>
-    ///     Verifies that a source declaring no title falls back to its file name, or to the folder name
-    ///     when it is a section index.
-    /// </summary>
-    [Test]
-    public async Task WalkAsync_Test_MissingFrontMatterTitle_FallsBackToTheName()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.CreateEmpty()
-            .Write("index.md", "Home")
-            .Write("colophon.md")
-            .Write("blog/index.md");
-
-        // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(pages.Single(page => page.Href == "/colophon.html").Title).IsEqualTo("colophon");
-            await Assert.That(pages.Single(page => page.Href == "/blog/index.html").Title).IsEqualTo("blog");
-        }
+        await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(new[] { "/index.html" });
     }
 
     /// <summary>
@@ -188,21 +141,20 @@ public class ContentPipelineTests
     [Test]
     [Arguments("https://example.com/gelyn/docs")]
     [Arguments("https://example.com/gelyn/docs/")]
-    public async Task WalkAsync_Test_BaseUrlPath_IsPrefixedToEveryHref(string baseUrl)
+    public async Task Scan_Test_BaseUrlPath_IsPrefixedToEveryHref(string baseUrl)
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WithBaseUrl(baseUrl);
 
         // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem deep = items.Single(item => item.OutputPath.EndsWith("deep.html", StringComparison.Ordinal));
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(pages[0].Href).IsEqualTo("/gelyn/docs/index.html");
-
-            await Assert.That(pages.Single(page => page.Title == "Deep").Href)
-                .IsEqualTo("/gelyn/docs/blog/2026/q3/deep.html");
+            await Assert.That(items[0].Href).IsEqualTo("/gelyn/docs/index.html");
+            await Assert.That(deep.Href).IsEqualTo("/gelyn/docs/blog/2026/q3/deep.html");
         }
     }
 
@@ -213,24 +165,82 @@ public class ContentPipelineTests
     [Test]
     [Arguments("https://example.com")]
     [Arguments("https://example.com/")]
-    public async Task WalkAsync_Test_BaseUrlAtDomainRoot_LeavesHrefsUnprefixed(string baseUrl)
+    public async Task Scan_Test_BaseUrlAtDomainRoot_LeavesHrefsUnprefixed(string baseUrl)
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WithBaseUrl(baseUrl);
 
         // Act
-        IReadOnlyList<ContentPage> pages = await Walk(fixture);
+        IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        await Assert.That(pages[0].Href).IsEqualTo("/index.html");
+        await Assert.That(items[0].Href).IsEqualTo("/index.html");
     }
 
-    #endregion // WalkAsync Tests
+    #endregion // Scan Tests
+
+    #region RenderAsync Tests
+
+    /// <summary>
+    ///     Verifies that Markdown nested below a section is rendered however deep it sits, and that the
+    ///     output path uses the native separator while the URL uses forward slashes.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_NestedContent_IsRendered()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        ContentPage deep = pages.Single(page => page.Title == "Deep");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(deep.Href).IsEqualTo("/blog/2026/q3/deep.html");
+            await Assert.That(deep.OutputPath).IsEqualTo(Path.Combine("blog", "2026", "q3", "deep.html"));
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page declaring no title falls back to its file name, or to the folder name when it
+    ///     is a section index.
+    /// </summary>
+    /// <remarks>
+    ///     The landing page is the case with no folder to fall back to, so it resolves to the file name like
+    ///     any other root-level page rather than to the name of the content directory.
+    /// </remarks>
+    [Test]
+    public async Task RenderAsync_Test_MissingFrontMatterTitle_FallsBackToTheName()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md")
+            .Write("colophon.md")
+            .Write("blog/index.md");
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(pages.Single(page => page.Href == "/index.html").Title).IsEqualTo("index");
+            await Assert.That(pages.Single(page => page.Href == "/colophon.html").Title).IsEqualTo("colophon");
+            await Assert.That(pages.Single(page => page.Href == "/blog/index.html").Title).IsEqualTo("blog");
+        }
+    }
+
+    #endregion // RenderAsync Tests
 
     #region Helpers
 
-    private static Task<IReadOnlyList<ContentPage>> Walk(ContentFixture fixture) =>
-        fixture.Pipeline.WalkAsync(fixture.Options, CancellationToken.None);
+    private static IReadOnlyList<ContentItem> Scan(ContentFixture fixture) =>
+        fixture.Pipeline.Scan(fixture.Options);
+
+    private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
+        fixture.Pipeline.RenderAsync(Scan(fixture), fixture.Options, CancellationToken.None);
 
     #endregion
 }

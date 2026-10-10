@@ -15,29 +15,34 @@ internal static class EventIds
     #region Monitoring (1_000 - 1_099)
 
     /// <summary>
-    ///     The content tree has been walked and every page rendered from Markdown.
+    ///     The content tree has been scanned and every page it holds located.
     /// </summary>
-    internal const int WALK_COMPLETED = 1_000;
+    internal const int SCAN_COMPLETED = 1_000;
+
+    /// <summary>
+    ///     Every located page has been rendered from Markdown.
+    /// </summary>
+    internal const int RENDER_COMPLETED = 1_001;
 
     /// <summary>
     ///     Every page has been composed into a complete HTML document.
     /// </summary>
-    internal const int COMPOSE_COMPLETED = 1_001;
+    internal const int COMPOSE_COMPLETED = 1_002;
 
     /// <summary>
     ///     Every document has been written to the output directory.
     /// </summary>
-    internal const int WRITE_COMPLETED = 1_002;
+    internal const int WRITE_COMPLETED = 1_003;
 
     /// <summary>
     ///     The build has finished.
     /// </summary>
-    internal const int BUILD_COMPLETED = 1_003;
+    internal const int BUILD_COMPLETED = 1_004;
 
     /// <summary>
     ///     The host has been built and a command is about to be dispatched.
     /// </summary>
-    internal const int STARTUP_COMPLETED = 1_004;
+    internal const int STARTUP_COMPLETED = 1_005;
 
     #endregion
 }
