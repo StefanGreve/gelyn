@@ -19,7 +19,11 @@ internal sealed class GelynCommand : RootCommand
     /// <param name="buildCommand">
     ///     The <c>build</c> subcommand.
     /// </param>
-    public GelynCommand(BuildCommand buildCommand) : base("A static site generator.")
+    /// <param name="cleanCommand">
+    ///     The <c>clean</c> subcommand.
+    /// </param>
+    public GelynCommand(BuildCommand buildCommand, CleanCommand cleanCommand)
+        : base("A static site generator.")
     {
         // Read by AddSiteConfiguration before the host exists, because it selects a configuration source.
         Option<string> configuration = new(ConfigurationFile.OptionName)
@@ -41,5 +45,6 @@ internal sealed class GelynCommand : RootCommand
         this.Options.Add(configuration);
         this.Options.Add(verbosity);
         this.Subcommands.Add(buildCommand);
+        this.Subcommands.Add(cleanCommand);
     }
 }

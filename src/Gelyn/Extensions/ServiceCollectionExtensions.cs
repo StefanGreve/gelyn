@@ -71,6 +71,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCommands(this IServiceCollection services)
     {
         services.TryAddSingleton<BuildCommand>();
+        services.TryAddSingleton<CleanCommand>();
         services.TryAddSingleton<GelynCommand>();
 
         return services;
