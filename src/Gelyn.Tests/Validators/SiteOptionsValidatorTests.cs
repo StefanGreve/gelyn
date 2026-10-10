@@ -128,6 +128,30 @@ public class SiteOptionsValidatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that an output directory containing the content directory is rejected, which is the
+    ///     direction that matters to <c>gelyn clean</c>: removing the output would take the sources with it.
+    /// </summary>
+    [Test]
+    [Arguments("content", ".")]
+    [Arguments("content", "..")]
+    [Arguments("content/pages", "content")]
+    public async Task Validate_Test_OutputDirectoryAboveContentDirectory_Fails(string content, string output)
+    {
+        // Arrange
+        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.OutputDirectory));
+        }
+    }
+
     #endregion // Validate Tests
 
     #region Helpers

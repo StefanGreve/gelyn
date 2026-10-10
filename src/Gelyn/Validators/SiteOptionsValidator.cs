@@ -56,9 +56,9 @@ public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 
         if (!string.IsNullOrWhiteSpace(options.ContentDirectory) && !string.IsNullOrWhiteSpace(options.OutputDirectory)
-            && IsNested(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
+            && Overlaps(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
         {
-            failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not resolve to or inside {nameof(SiteOptions.ContentDirectory)}.");
+            failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.");
         }
 
         return failures.Count > 0
@@ -73,13 +73,16 @@ public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         baseUrl.IsAbsoluteUri && (baseUrl.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
             || baseUrl.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
 
-    private static bool IsNested(string root, string content, string output)
+    // The build would publish an output inside the content directory as content, and `gelyn clean` would
+    // remove a content directory inside the output, so neither may contain the other.
+    private static bool Overlaps(string root, string content, string output)
     {
         string contentPath = Normalize(root, content);
         string outputPath = Normalize(root, output);
 
         return outputPath.Equals(contentPath, StringComparison.OrdinalIgnoreCase)
-            || outputPath.StartsWith(contentPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            || outputPath.StartsWith(contentPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || contentPath.StartsWith(outputPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string Normalize(string root, string directory) =>
