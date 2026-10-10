@@ -89,9 +89,6 @@ public sealed class ContentPipeline
     /// <param name="pages">
     ///     The pages a scan located, in the order they are to be rendered.
     /// </param>
-    /// <param name="options">
-    ///     Supplies the site configuration the render is driven by.
-    /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
     /// </param>
@@ -100,7 +97,6 @@ public sealed class ContentPipeline
     /// </returns>
     internal async Task<IReadOnlyList<ContentPage>> RenderAsync(
         IReadOnlyList<ContentItem> pages,
-        SiteOptions options,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(pages);
@@ -172,10 +168,9 @@ public sealed class ContentPipeline
         }
     }
 
-    // Output-relative segments to a root-relative URL: always forward slashes, whatever the platform uses.
-    private static string Href(string prefix, string[] segments) => $"{prefix}/{string.Join('/', segments)}";
+    private static string Href(string prefix, string[] segments) =>
+        $"{prefix}/{string.Join('/', segments)}";
 
-    // The navigation stays flat by design: root-level pages and the index of a top-level section only.
     private static bool IsInNavigation(string[] segments) => segments.Length switch
     {
         1 => true,

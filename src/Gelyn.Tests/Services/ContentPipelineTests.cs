@@ -240,7 +240,7 @@ public class ContentPipelineTests
         fixture.Pipeline.Scan(fixture.Options);
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
-        fixture.Pipeline.RenderAsync(Scan(fixture), fixture.Options, CancellationToken.None);
+        fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);
 
     #endregion
 }

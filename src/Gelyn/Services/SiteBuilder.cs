@@ -88,7 +88,7 @@ public sealed class SiteBuilder
         long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
 
         IReadOnlyList<ContentPage> pages = await this._pipeline
-            .RenderAsync(items, options, cancellationToken)
+            .RenderAsync(items, cancellationToken)
             .ConfigureAwait(false);
 
         long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
@@ -139,10 +139,10 @@ public sealed class SiteBuilder
 
         if (isMeasuring)
         {
-            double scanMs = Stopwatch.GetElapsedTime(0, scanTicks).TotalMilliseconds;
-            double renderMs = Stopwatch.GetElapsedTime(0, renderTicks).TotalMilliseconds;
-            double composeMs = Stopwatch.GetElapsedTime(0, composeTicks).TotalMilliseconds;
-            double writeMs = Stopwatch.GetElapsedTime(0, writeTicks).TotalMilliseconds;
+            double scanMs = ElapsedMilliseconds(scanTicks);
+            double renderMs = ElapsedMilliseconds(renderTicks);
+            double composeMs = ElapsedMilliseconds(composeTicks);
+            double writeMs = ElapsedMilliseconds(writeTicks);
             double buildMs = elapsed.TotalMilliseconds;
 
             this._logger.LogScanCompleted(items.Count, scanMs);
@@ -176,6 +176,9 @@ public sealed class SiteBuilder
 
         return PageLayout.Render(context, header, footer);
     }
+
+    private static double ElapsedMilliseconds(long ticks) =>
+        Stopwatch.GetElapsedTime(0, ticks).TotalMilliseconds;
 
     #endregion
 }
