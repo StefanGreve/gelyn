@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
+using Gelyn.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -64,7 +65,7 @@ public sealed class ContentPipeline
     /// <exception cref="FileNotFoundException">
     ///     The content directory declares no <c>index.md</c>.
     /// </exception>
-    internal IReadOnlyList<ContentItem> Scan(SiteOptions options)
+    public IReadOnlyList<ContentItem> Scan(SiteOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -95,7 +96,7 @@ public sealed class ContentPipeline
     /// <returns>
     ///     Every page, in the order it was given.
     /// </returns>
-    internal async Task<IReadOnlyList<ContentPage>> RenderAsync(
+    public async Task<IReadOnlyList<ContentPage>> RenderAsync(
         IReadOnlyList<ContentItem> pages,
         CancellationToken cancellationToken)
     {
@@ -112,17 +113,7 @@ public sealed class ContentPipeline
                 .ConfigureAwait(false);
 
             RenderedMarkdown document = MarkdownRenderer.Render(markdown);
-
-            rendered.Add(new ContentPage
-            {
-                OutputPath = item.OutputPath,
-                Href = item.Href,
-                Title = document.FrontMatter?.Title ?? item.FallbackTitle,
-                Description = document.FrontMatter?.Description,
-                Date = document.FrontMatter?.Date,
-                Html = document.Html,
-                InNavigation = item.InNavigation,
-            });
+            rendered.Add(item.ToContentPage(document));
         }
 
         return rendered;

@@ -5,6 +5,10 @@ namespace Gelyn.Model;
 /// <summary>
 ///     A discovered content file, rendered and ready to be laid out.
 /// </summary>
+/// <remarks>
+///     A <see cref="ContentItem"/> becomes a page once its Markdown has been read. The output path and the
+///     URL are copied across unchanged, while the front matter and the body are added by the render.
+/// </remarks>
 public sealed record ContentPage
 {
     /// <summary>
