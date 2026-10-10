@@ -8,7 +8,7 @@
 
 A simple, cross-platform, and high-performance static site generator for Markdown.
 
-## Usage
+## Basic Usage
 
 Write Markdown into `content/`, then generate the site:
 
