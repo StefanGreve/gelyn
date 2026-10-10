@@ -8,7 +8,7 @@ namespace Gelyn.Model;
 /// <summary>
 ///     Everything a renderer needs to lay out one page of the site.
 /// </summary>
-public sealed record RenderContext
+internal sealed record RenderContext
 {
     /// <summary>
     ///     The configuration snapshot the whole build is rendered against.

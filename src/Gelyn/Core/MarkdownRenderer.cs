@@ -17,7 +17,7 @@ namespace Gelyn.Core;
 /// </summary>
 /// <seealso href="https://github.com/xoofx/markdig"/>
 /// <seealso href="https://xoofx.github.io/markdig/docs/extensions/"/>
-public sealed class MarkdownRenderer
+internal sealed class MarkdownRenderer
 {
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseAlertBlocks()

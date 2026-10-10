@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
@@ -18,7 +18,7 @@ namespace Gelyn.Validators;
 ///     Written by hand rather than delegated to <c>ValidateDataAnnotations</c>, which is annotated
 ///     <c>RequiresUnreferencedCode</c> and cannot see members the trimmer may have removed.
 /// </remarks>
-public sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
+internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
 {
     private readonly IHostEnvironment _environment;
 

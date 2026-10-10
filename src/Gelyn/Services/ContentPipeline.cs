@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -30,7 +30,7 @@ namespace Gelyn.Services;
 ///         </item>
 ///     </list>
 /// </remarks>
-public sealed class ContentPipeline
+internal sealed class ContentPipeline
 {
     private const string IndexFileName = "index.md";
     private const string IndexOutputFileName = "index.html";

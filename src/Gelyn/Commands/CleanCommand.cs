@@ -1,9 +1,8 @@
 using System.CommandLine;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Abstractions;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
@@ -16,7 +15,6 @@ namespace Gelyn.Commands;
 /// <summary>
 ///     Removes the generated site.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
 internal sealed class CleanCommand : Command
 {
     /// <summary>

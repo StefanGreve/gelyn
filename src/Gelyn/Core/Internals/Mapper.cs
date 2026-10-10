@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     Extension methods for the model types the generator passes around.

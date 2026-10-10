@@ -1,7 +1,6 @@
 using System.CommandLine;
-using System.Diagnostics.CodeAnalysis;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +9,6 @@ namespace Gelyn.Commands;
 /// <summary>
 ///     The root command of the <c>gelyn</c> tool.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
 internal sealed class GelynCommand : RootCommand
 {
     /// <summary>

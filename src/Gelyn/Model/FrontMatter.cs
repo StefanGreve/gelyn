@@ -11,7 +11,7 @@ namespace Gelyn.Model;
 ///     than an <c>init</c> accessor because the generated deserialization code assigns them from an ordinary
 ///     statement, which C# permits only inside an object initializer or a constructor.
 /// </remarks>
-public sealed record FrontMatter
+internal sealed record FrontMatter
 {
     /// <summary>
     ///     The page title, or <see langword="null"/> when the block omits it.

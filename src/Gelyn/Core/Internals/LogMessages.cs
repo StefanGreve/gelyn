@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
 
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     Every record the tool writes, as methods generated at compile time by

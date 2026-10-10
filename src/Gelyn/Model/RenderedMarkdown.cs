@@ -3,7 +3,7 @@ namespace Gelyn.Model;
 /// <summary>
 ///     The result of rendering a content file: its front matter and the HTML body it produced.
 /// </summary>
-public sealed record RenderedMarkdown
+internal sealed record RenderedMarkdown
 {
     /// <summary>
     ///     Front matter parsed from the block at the top of the file, or <see langword="null"/> when the file

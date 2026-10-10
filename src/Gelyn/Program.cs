@@ -7,8 +7,8 @@ using System.IO.Abstractions;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
+using Gelyn.Core.Internals;
 using Gelyn.Extensions;
-using Gelyn.Internals;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -23,7 +23,7 @@ namespace Gelyn;
 /// <summary>
 ///     Entry point for the <c>gelyn</c> command line tool.
 /// </summary>
-public static class Program
+internal static class Program
 {
     /// <summary>
     ///     Runs the tool.

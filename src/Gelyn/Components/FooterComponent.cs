@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 
 namespace Gelyn.Components;
@@ -11,7 +11,7 @@ namespace Gelyn.Components;
 /// <summary>
 ///     The block rendered at the bottom of every page.
 /// </summary>
-public static class FooterComponent
+internal static class FooterComponent
 {
     private const string DateFormat = "MMM d, yyyy";
 

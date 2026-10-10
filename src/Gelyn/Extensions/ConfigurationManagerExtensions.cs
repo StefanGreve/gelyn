@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
@@ -12,7 +12,7 @@ namespace Gelyn.Extensions;
 ///     Configuration sources the composition root in <see cref="Program"/> layers on top of the environment
 ///     variables and command line it seeds the host configuration with.
 /// </summary>
-public static class ConfigurationManagerExtensions
+internal static class ConfigurationManagerExtensions
 {
     /// <summary>
     ///     Adds the tool's configuration file and re-applies the sources that outrank it.

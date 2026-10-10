@@ -3,7 +3,7 @@ namespace Gelyn.Model;
 /// <summary>
 ///     How the build treats a file the scan located.
 /// </summary>
-public enum ContentKind
+internal enum ContentKind
 {
     /// <summary>
     ///     Markdown, rendered into an HTML document.

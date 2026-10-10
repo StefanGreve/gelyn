@@ -1,4 +1,4 @@
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     Options that override a configured setting for the duration of one run.

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     The identity of the running tool.

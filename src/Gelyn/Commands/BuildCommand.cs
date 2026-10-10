@@ -1,9 +1,8 @@
 using System.CommandLine;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Services;
 
@@ -14,7 +13,6 @@ namespace Gelyn.Commands;
 /// <summary>
 ///     Generates the site.
 /// </summary>
-[SuppressMessage("Performance", "CA1812", Justification = Justifications.ByDesign)]
 internal sealed class BuildCommand : Command
 {
     /// <summary>

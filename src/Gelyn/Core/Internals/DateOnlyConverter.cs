@@ -5,7 +5,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     Converts the calendar dates a front matter block declares to and from <see cref="DateOnly"/>.

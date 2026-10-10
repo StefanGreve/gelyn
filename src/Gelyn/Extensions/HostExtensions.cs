@@ -9,7 +9,7 @@ namespace Gelyn.Extensions;
 /// <summary>
 ///     The host the composition root in <see cref="Program"/> builds the tool on.
 /// </summary>
-public static class HostExtensions
+internal static class HostExtensions
 {
     private const string HostVariablePrefix = "DOTNET_";
 

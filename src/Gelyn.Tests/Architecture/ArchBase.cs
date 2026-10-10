@@ -7,7 +7,7 @@ namespace Gelyn.Tests.Architecture;
 /// </summary>
 public abstract class ArchBase
 {
-    private protected const string InternalsNamespace = "Gelyn.Internals";
+    private protected const string InternalsNamespace = "Gelyn.Core.Internals";
     private protected const string ModelNamespace = "Gelyn.Model";
     private protected const string OptionsNamespace = "Gelyn.Model.Options";
     private protected const string ServicesNamespace = "Gelyn.Services";

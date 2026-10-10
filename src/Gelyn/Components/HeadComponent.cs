@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -12,7 +12,7 @@ namespace Gelyn.Components;
 /// <summary>
 ///     The document metadata written to the head of every page.
 /// </summary>
-public static class HeadComponent
+internal static class HeadComponent
 {
     private const string DateFormat = "yyyy-MM-dd";
 

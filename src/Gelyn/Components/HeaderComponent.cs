@@ -9,7 +9,7 @@ namespace Gelyn.Components;
 /// <summary>
 ///     The banner rendered at the top of every page, including the site navigation.
 /// </summary>
-public static class HeaderComponent
+internal static class HeaderComponent
 {
     /// <summary>
     ///     Renders the banner.

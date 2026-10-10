@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;

@@ -9,7 +9,7 @@ namespace Gelyn.Core;
 /// <summary>
 ///     Wraps rendered page content in the shared document shell.
 /// </summary>
-public static class PageLayout
+internal static class PageLayout
 {
     /// <summary>
     ///     Renders a complete HTML document.

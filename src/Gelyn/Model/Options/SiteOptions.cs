@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 
 namespace Gelyn.Model.Options;
 
@@ -9,7 +9,7 @@ namespace Gelyn.Model.Options;
 ///     Locations and metadata the generator works with, bound from the root of the configuration.
 /// </summary>
 /// <seealso cref="Validators.SiteOptionsValidator"/>
-public sealed class SiteOptions
+internal sealed class SiteOptions
 {
     /// <summary>
     ///     The name of the site.

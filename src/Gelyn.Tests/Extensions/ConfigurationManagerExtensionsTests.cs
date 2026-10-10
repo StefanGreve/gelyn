@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Gelyn.Core.Internals;
 using Gelyn.Extensions;
-using Gelyn.Internals;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;

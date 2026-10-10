@@ -1,6 +1,6 @@
 using System;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ namespace Gelyn.Extensions;
 /// <summary>
 ///     The logging setup the composition root in <see cref="Program"/> applies.
 /// </summary>
-public static class LoggingBuilderExtensions
+internal static class LoggingBuilderExtensions
 {
     private const string TimestampFormat = "HH:mm:ss.fff ";
 

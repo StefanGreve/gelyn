@@ -1,4 +1,4 @@
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     Process exit codes returned by the tool's commands.

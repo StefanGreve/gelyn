@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 
 using YamlDotNet.Core;
@@ -14,7 +14,7 @@ namespace Gelyn.Core;
 /// <summary>
 ///     Reads a front matter block.
 /// </summary>
-public static class FrontMatterParser
+internal static class FrontMatterParser
 {
     private const string Delimiter = "---";
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core;
-using Gelyn.Internals;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -32,7 +32,7 @@ namespace Gelyn.Services;
 ///         </item>
 ///     </list>
 /// </remarks>
-public sealed class SiteBuilder
+internal sealed class SiteBuilder
 {
     private readonly ContentPipeline _pipeline;
     private readonly IHostEnvironment _environment;

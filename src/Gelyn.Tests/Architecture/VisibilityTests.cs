@@ -34,14 +34,14 @@ public class VisibilityTests : ArchBase
     #region Model Tests
 
     /// <summary>
-    ///     Verifies that every type in the model namespace is public.
+    ///     Verifies that every type in the model namespace is internal.
     /// </summary>
     /// <remarks>
     ///     <c>ResideInNamespace</c> matches a namespace by its full name rather than as a prefix, so the
     ///     options namespace has to be named in its own right to be covered at all.
     /// </remarks>
     [Test]
-    public void Visibility_Test_EveryTypeInModelIsPublic()
+    public void Visibility_Test_EveryTypeInModelIsInternal()
     {
         // Arrange
         IArchRule rule = Types()
@@ -50,7 +50,7 @@ public class VisibilityTests : ArchBase
             .Or()
             .ResideInNamespace(OptionsNamespace)
             .Should()
-            .BePublic();
+            .BeInternal();
 
         // Act and Assert
         rule.Check(Architecture);
@@ -61,17 +61,17 @@ public class VisibilityTests : ArchBase
     #region Services Tests
 
     /// <summary>
-    ///     Verifies that every type in the services namespace is public.
+    ///     Verifies that every type in the services namespace is internal.
     /// </summary>
     [Test]
-    public void Visibility_Test_EveryTypeInServicesIsPublic()
+    public void Visibility_Test_EveryTypeInServicesIsInternal()
     {
         // Arrange
         IArchRule rule = Types()
             .That()
             .ResideInNamespace(ServicesNamespace)
             .Should()
-            .BePublic();
+            .BeInternal();
 
         // Act and Assert
         rule.Check(Architecture);

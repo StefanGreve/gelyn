@@ -6,7 +6,7 @@ namespace Gelyn.Model;
 /// <summary>
 ///     What one run of the generator produced.
 /// </summary>
-public sealed record BuildReport
+internal sealed record BuildReport
 {
     /// <summary>
     ///     The output-relative paths that were rendered and written, landing page first.

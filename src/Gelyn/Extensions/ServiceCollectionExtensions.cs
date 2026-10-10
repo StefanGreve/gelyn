@@ -12,7 +12,7 @@ namespace Gelyn.Extensions;
 /// <summary>
 ///     Registration groups the composition root in <see cref="Program"/> is assembled from.
 /// </summary>
-public static class ServiceCollectionExtensions
+internal static class ServiceCollectionExtensions
 {
     /// <summary>
     ///     Registers <see cref="SiteOptions"/> together with the validator that checks it.
@@ -59,8 +59,8 @@ public static class ServiceCollectionExtensions
     ///     Registers the root command and every subcommand it dispatches to.
     /// </summary>
     /// <remarks>
-    ///     The commands are resolved by <see cref="Gelyn.Program"/> rather than injected anywhere, so each one
-    ///     carries a <c>CA1812</c> suppression to stop the analyzer reporting it as never instantiated.
+    ///     <see cref="Gelyn.Program"/> resolves only the root command, and the subcommands reach it through its
+    ///     constructor, so each one is registered here rather than constructed by hand.
     /// </remarks>
     /// <param name="services">
     ///     The collection to add the registrations to.

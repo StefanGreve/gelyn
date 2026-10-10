@@ -5,7 +5,7 @@ namespace Gelyn.Model;
 /// <summary>
 ///     A content file the scan has located, before its contents are read.
 /// </summary>
-public sealed record ContentItem
+internal sealed record ContentItem
 {
     /// <summary>
     ///     The absolute path of the file on disk.

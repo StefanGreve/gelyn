@@ -1,4 +1,4 @@
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     The configuration file the generator reads its options from.

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Gelyn.Internals;
+namespace Gelyn.Core.Internals;
 
 /// <summary>
 ///     The option that selects how much diagnostic output the tool writes.
