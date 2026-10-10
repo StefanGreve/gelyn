@@ -94,7 +94,7 @@ public class ContentPipelineTests
 
             // Assert
             await Assert.That(items.Select(item => item.Href))
-                .IsEquivalentTo(new[] { "/index.html", "/posts/note.html" });
+                .IsEquivalentTo(["/index.html", "/posts/note.html"]);
         }
         finally
         {
@@ -135,10 +135,10 @@ public class ContentPipelineTests
         using (Assert.Multiple())
         {
             await Assert.That(items.Where(item => item.Kind is ContentKind.Page).Select(item => item.Href))
-                .IsEquivalentTo(new[] { "/index.html" });
+                .IsEquivalentTo(["/index.html"]);
 
             await Assert.That(items.Where(item => item.Kind is ContentKind.MiscFile).Select(item => item.Href))
-                .IsEquivalentTo(new[] { "/style.css", "/blog/photo.png" });
+                .IsEquivalentTo(["/style.css", "/blog/photo.png"]);
         }
     }
 
@@ -170,11 +170,16 @@ public class ContentPipelineTests
     ///     Verifies that the files the build has no use for are left out, which is what keeps editor and tool
     ///     droppings from being published alongside the site.
     /// </summary>
+    /// <remarks>
+    ///     The patterns are configured rather than built in, so a project without them publishes these files.
+    ///     <c>gelyn.json</c> in this repository carries the set a project is expected to start from.
+    /// </remarks>
     [Test]
     public async Task Scan_Test_DeniedFiles_AreLeftOut()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WithExcludePatterns(".DS_Store", "*~", "obj")
             .Write("index.md", "Home")
             .WriteFile(".DS_Store")
             .WriteFile("notes.md~")
@@ -184,18 +189,46 @@ public class ContentPipelineTests
         IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(new[] { "/index.html" });
+        await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(["/index.html"]);
+    }
+
+    /// <summary>
+    ///     Verifies that a configured exclude pattern leaves matching files and directories out, so that an
+    ///     author can skip something the built-in list does not know about.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_ConfiguredExcludePatterns_AreHonoured()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WithExcludePatterns("*.xcf", "drafts")
+            .Write("index.md", "Home")
+            .WriteFile("logo.xcf")
+            .Write("drafts/wip.md", "WIP")
+            .WriteFile("robots.txt", "User-agent: *");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(items.Select(item => item.Href))
+            .IsEquivalentTo(["/index.html", "/robots.txt"]);
     }
 
     /// <summary>
     ///     Verifies that HTML in the content tree is left out, since the page rendered from the Markdown
     ///     beside it claims the same output path and the copy would overwrite it.
     /// </summary>
+    /// <remarks>
+    ///     Only while <c>*.html</c> is configured. Without it the copy runs after the render and publishes
+    ///     the stale file over the generated page, which is why <c>gelyn.json</c> ships the pattern.
+    /// </remarks>
     [Test]
     public async Task Scan_Test_Html_IsLeftOut()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WithExcludePatterns("*.html")
             .Write("index.md", "Home")
             .Write("about.md", "About")
             .WriteFile("about.html", "<p>stale</p>");
@@ -207,7 +240,7 @@ public class ContentPipelineTests
         using (Assert.Multiple())
         {
             await Assert.That(items.Select(item => item.Href))
-                .IsEquivalentTo(new[] { "/index.html", "/about.html" });
+                .IsEquivalentTo(["/index.html", "/about.html"]);
 
             await Assert.That(items.Single(item => item.Href == "/about.html").Kind)
                 .IsEqualTo(ContentKind.Page);
@@ -266,7 +299,7 @@ public class ContentPipelineTests
             IReadOnlyList<ContentItem> items = pipeline.Scan(options);
 
             // Assert
-            await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(new[] { "/index.html" });
+            await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(["/index.html"]);
         }
         finally
         {

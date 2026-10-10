@@ -29,4 +29,25 @@ internal static class OverrideOptions
     ///     Overrides the output directory.
     /// </summary>
     internal const string Output = "output";
+
+    /// <summary>
+    ///     Adds to the configured exclude patterns, as one value holding
+    ///     <see cref="ExcludeSeparator"/>-separated patterns.
+    /// </summary>
+    internal const string Exclude = "exclude";
+
+    /// <summary>
+    ///     Separates the patterns within a single <see cref="Exclude"/> value.
+    /// </summary>
+    internal const char ExcludeSeparator = ',';
+
+    /// <summary>
+    ///     The configuration index the first promoted exclude pattern is written at.
+    /// </summary>
+    /// <remarks>
+    ///     Configuration merges an array per index rather than replacing it, so writing at index zero would
+    ///     overwrite the first configured pattern and leave the rest of the configured list in place. Keys
+    ///     are ordered numerically, so an offset no configured list will reach appends instead.
+    /// </remarks>
+    internal const int ExcludeOffset = 1_000;
 }

@@ -77,6 +77,17 @@ public static class ConfigurationManagerExtensions
                 overrides[key] = value;
         }
 
+        if (configuration[OverrideOptions.Exclude] is string patterns)
+        {
+            string[] split = patterns.Split(OverrideOptions.ExcludeSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            for (int index = 0; index < split.Length; index++)
+            {
+                string key = $"{nameof(SiteOptions.ExcludePatterns)}:{OverrideOptions.ExcludeOffset + index}";
+                overrides[key] = split[index];
+            }
+        }
+
         return overrides;
     }
 

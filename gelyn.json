@@ -5,5 +5,17 @@
   "Author": "Stefan Greve",
   "Description": "A static site generator that turns a folder of Markdown into a website.",
   "ContentDirectory": "content",
-  "OutputDirectory": "_site"
+  "OutputDirectory": "_site",
+  "ExcludePatterns": [
+    ".git",
+    "node_modules",
+    "bin",
+    "obj",
+    ".DS_Store",
+    "Thumbs.db",
+    "*~",
+    "*.swp",
+    "*.orig",
+    "*.html"
+  ]
 }

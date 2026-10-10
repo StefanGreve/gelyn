@@ -54,6 +54,12 @@ internal sealed class BuildCommand : Command
             HelpName = "directory",
         });
 
+        this.Options.Add(new Option<string>($"--{OverrideOptions.Exclude}")
+        {
+            Description = $"Further name patterns to skip, separated by '{OverrideOptions.ExcludeSeparator}'.",
+            HelpName = "patterns",
+        });
+
         this.SetAction(async (_, cancellationToken) =>
         {
             try

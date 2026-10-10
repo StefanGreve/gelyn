@@ -75,6 +75,23 @@
         "_site",
         "public"
       ]
+    },
+    "ExcludePatterns": {
+      "description": "Patterns naming the entries the build leaves out, matched case insensitively against the name of each file and directory rather than against its path, with * and ? as the only wildcards. A directory that matches is not descended into. Nothing is excluded by default.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true,
+      "default": [],
+      "examples": [
+        [
+          "*.tmp",
+          "drafts",
+          "*.xcf"
+        ]
+      ]
     }
   }
 }

@@ -36,9 +36,6 @@ public sealed class ContentPipeline
     private const string IndexOutputFileName = "index.html";
     private const string MarkdownExtension = ".md";
 
-    private static readonly string[] DeniedPatterns =
-        [".git", "node_modules", "bin", "obj", ".DS_Store", "Thumbs.db", "*~", "*.swp", "*.orig", "*.html"];
-
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
 
@@ -82,11 +79,12 @@ public sealed class ContentPipeline
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
         string hrefPrefix = options.BaseUrl is Uri baseUrl ? baseUrl.AbsolutePath.TrimEnd('/') : string.Empty;
-        List<ContentItem> items = [];
 
-        this.Collect(this._fileSystem.DirectoryInfo.New(root), [], hrefPrefix, items);
-
-        return items;
+        return this.Collect(
+            this._fileSystem.DirectoryInfo.New(root),
+            [],
+            hrefPrefix,
+            options.ExcludePatterns);
     }
 
     /// <summary>
@@ -126,11 +124,15 @@ public sealed class ContentPipeline
 
     #region Helpers
 
-    private void Collect(IDirectoryInfo directory, string[] prefix, string hrefPrefix, List<ContentItem> items)
+    private List<ContentItem> Collect(
+        IDirectoryInfo directory,
+        string[] prefix,
+        string hrefPrefix,
+        IReadOnlyList<string> excluded)
     {
         IFileSystemInfo[] entries = [.. directory
             .EnumerateFileSystemInfos()
-            .Where(static entry => !IsDenied(entry))
+            .Where(entry => !IsDenied(entry, excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
         // Files before subdirectories, index first among files, which is what makes the root index the
@@ -138,6 +140,8 @@ public sealed class ContentPipeline
         IEnumerable<IFileInfo> files = entries
             .OfType<IFileInfo>()
             .OrderByDescending(static file => file.Name.Equals(IndexFileName, StringComparison.Ordinal));
+
+        List<ContentItem> items = [];
 
         foreach (IFileInfo file in files)
         {
@@ -164,14 +168,16 @@ public sealed class ContentPipeline
         }
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
-            this.Collect(child, [.. prefix, child.Name], hrefPrefix, items);
+            items.AddRange(this.Collect(child, [.. prefix, child.Name], hrefPrefix, excluded));
+
+        return items;
     }
 
-    // A symlink lets the walk leave the content directory, a link resolving to an ancestor makes the walk
-    // unbounded, and File.Copy would publish the target's bytes rather than the link.
-    private static bool IsDenied(IFileSystemInfo entry) =>
+    // The symlink rule is not configurable: a link lets the walk leave the content directory, one resolving
+    // to an ancestor makes the walk unbounded, and File.Copy would publish the target's bytes, not the link.
+    private static bool IsDenied(IFileSystemInfo entry, IReadOnlyList<string> excluded) =>
         entry.LinkTarget is not null
-        || Array.Exists(DeniedPatterns, pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
+        || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
 
     private static string Href(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";

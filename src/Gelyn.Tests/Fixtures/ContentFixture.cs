@@ -217,6 +217,23 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Applies exclude patterns to the fixture's options, as a configuration file or the
+    ///     <c>--exclude</c> flag would.
+    /// </summary>
+    /// <param name="patterns">
+    ///     The patterns to match against each file and directory name.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithExcludePatterns(params string[] patterns)
+    {
+        this.Options.ExcludePatterns = patterns;
+
+        return this;
+    }
+
+    /// <summary>
     ///     Reads a page the builder has written.
     /// </summary>
     /// <param name="path">

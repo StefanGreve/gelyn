@@ -64,7 +64,7 @@ public partial class SiteBuilderTests
         using (Assert.Multiple())
         {
             await Assert.That(report.Copies)
-                .IsEquivalentTo(new[] { "robots.txt", Path.Combine("blog", "notice.txt") });
+                .IsEquivalentTo(["robots.txt", Path.Combine("blog", "notice.txt")]);
 
             await Assert.That(report.Pages.Count).IsEqualTo(6);
 

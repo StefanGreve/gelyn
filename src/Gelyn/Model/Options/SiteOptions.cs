@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Gelyn.Internals;
 
@@ -48,4 +49,11 @@ public sealed class SiteOptions
     ///     root, in the same way as <see cref="ContentDirectory"/>.
     /// </summary>
     public string OutputDirectory { get; set; } = "_site";
+
+    /// <summary>
+    ///     Patterns naming the entries the build leaves out, matched case insensitively against the name of
+    ///     each file and directory rather than against its path, with <c>*</c> and <c>?</c> as the only
+    ///     wildcards. A directory that matches is not descended into.
+    /// </summary>
+    public IReadOnlyList<string> ExcludePatterns { get; set; } = [];
 }
