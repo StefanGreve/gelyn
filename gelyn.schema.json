@@ -57,7 +57,7 @@
       ]
     },
     "ContentDirectory": {
-      "description": "The directory holding the Markdown sources. Relative values are resolved against the working directory.",
+      "description": "The directory the site is built from, holding the Markdown sources and anything published beside them. Relative values are resolved against the working directory.",
       "type": "string",
       "minLength": 1,
       "default": "content",

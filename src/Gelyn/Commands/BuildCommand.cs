@@ -44,7 +44,7 @@ internal sealed class BuildCommand : Command
 
         this.Options.Add(new Option<string>($"--{OverrideOptions.Content}")
         {
-            Description = "The directory holding the Markdown sources.",
+            Description = "The directory the site is built from.",
             HelpName = "directory",
         });
 

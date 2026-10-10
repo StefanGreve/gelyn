@@ -15,7 +15,7 @@ internal static class EventIds
     #region Monitoring (1_000 - 1_099)
 
     /// <summary>
-    ///     The content tree has been scanned and every page it holds located.
+    ///     The content tree has been scanned and every file it holds located.
     /// </summary>
     internal const int SCAN_COMPLETED = 1_000;
 
@@ -30,7 +30,7 @@ internal static class EventIds
     internal const int COMPOSE_COMPLETED = 1_002;
 
     /// <summary>
-    ///     Every document has been written to the output directory.
+    ///     Every document has been written and every other located file copied to the output directory.
     /// </summary>
     internal const int WRITE_COMPLETED = 1_003;
 

@@ -45,7 +45,7 @@ public sealed class SiteBuilder
     ///     Initializes a new instance of the <see cref="SiteBuilder"/> class.
     /// </summary>
     /// <param name="pipeline">
-    ///     Discovers and renders the pages the site is made of.
+    ///     Discovers the files the site is built from, and renders the Markdown among them.
     /// </param>
     /// <param name="environment">
     ///     The host environment relative paths are resolved against.

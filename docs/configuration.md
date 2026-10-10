@@ -26,7 +26,7 @@ Optional. Without a configuration file the defaults below apply. To change them,
 | `Author`           | unset     | Written to the `author` meta tag. Omitted from the document while unset.                             |
 | `Description`      | unset     | Written to the `description` meta tag of any page whose front matter declares none.                  |
 | `BaseUrl`          | unset     | The absolute URL the site is served from. See [Base URL](#base-url).                                 |
-| `ContentDirectory` | `content` | The directory holding the Markdown sources. A relative value resolves against the content root.      |
+| `ContentDirectory` | `content` | The directory the site is built from, Markdown and copies alike. Relative to the content root.       |
 | `OutputDirectory`  | `_site`   | The directory the site is written to. Resolved the same way, and existing files are overwritten.     |
 | `ExcludePatterns`  | `[]`      | Names to skip while walking the content tree. See [Exclude patterns](#exclude-patterns).             |
 

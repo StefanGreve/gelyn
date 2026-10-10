@@ -39,8 +39,9 @@ public sealed class SiteOptions
     public Uri? BaseUrl { get; set; }
 
     /// <summary>
-    ///     The directory holding the Markdown sources. Relative values are resolved against the content root,
-    ///     which is the working directory unless <c>DOTNET_CONTENTROOT</c> points somewhere else.
+    ///     The directory the site is built from, holding the Markdown sources and anything published beside
+    ///     them. Relative values are resolved against the content root, which is the working directory unless
+    ///     <c>DOTNET_CONTENTROOT</c> points somewhere else.
     /// </summary>
     public string ContentDirectory { get; set; } = "content";
 

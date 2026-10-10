@@ -16,7 +16,7 @@ public static class PageLayout
     /// </summary>
     /// <remarks>
     ///     The head is rendered here rather than passed in, because its contents depend on the page: a page
-    ///     that declares no description, date or math carries none of the corresponding tags.
+    ///     that declares no description or date carries none of the corresponding tags.
     /// </remarks>
     /// <param name="context">
     ///     The context the page is rendered against.
