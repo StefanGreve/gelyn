@@ -36,21 +36,23 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare up to three keys:
+Open a Markdown file with a YAML block to declare any of four keys:
 
 ```markdown
 ---
 title: About
 date: 2026-09-14
 description: Who I am and what I write about
+enableMathRendering: true
 ---
 ```
 
-| Key           | Description                                                                           |
-| ------------- | ------------------------------------------------------------------------------------- |
-| `title`       | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`        | Fills the `revised` meta tag, in `yyyy-MM-dd` form.                                   |
-| `description` | Fills the `description` meta tag, in place of the one configured for your site.       |
+| Key                   | Description                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| `title`               | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
+| `date`                | Fills the `revised` meta tag, in `yyyy-MM-dd` form.                                   |
+| `description`         | Fills the `description` meta tag, in place of the one configured for your site.       |
+| `enableMathRendering` | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 
 Three rules are worth knowing, because none of them produces a warning:
 
@@ -132,10 +134,10 @@ Raw HTML passes through, blocks and inline alike, and Gelyn still renders Markdo
 long as a blank line separates the two.
 
 > [!NOTE]
-> Mathematics and diagrams emit markup for a client-side renderer that Gelyn doesn't supply, so both reach the
-> browser as literal text until you load one. The delimiters are the ones [KaTeX][katex] and [Mermaid][mermaid]
-> look for, so drop the renderer's `.js` into the directory whose pages need it and the cascade loads it. See
-> [Scripts](#scripts).
+> Mathematics and diagrams emit markup for a client-side renderer, so both reach the browser as literal text
+> until one loads. Math has a front matter key that loads [KaTeX][katex] for you, described under
+> [Mathematics](#mathematics). Diagrams have no equivalent, so drop [Mermaid][mermaid] into the directory
+> whose pages need it and let the cascade load it. See [Scripts](#scripts).
 
 Fenced code blocks carry their info string as a `language-*` class on the `<code>` element. Nothing tokenizes
 the code, so color it by styling the block as a whole, or load a highlighter the same way.
@@ -254,9 +256,53 @@ copied whether any page loads it or not.
 > it first.
 
 > [!NOTE]
-> There's no way to load a script from a CDN, because placement is the only mechanism. To use a library, put
-> its `.js` in your content tree and let the cascade pick it up. That costs a file in your repository and buys
-> a site with no third-party requests.
+> The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
+> content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
+> third-party requests. KaTeX is the one library Gelyn fetches for you, through the key described next.
+
+## Mathematics
+
+Markdown that carries math renders to markup a browser shows as literal text, so a page with math needs a
+renderer. Declare one key to get [KaTeX][katex]:
+
+```markdown
+---
+title: Euler
+enableMathRendering: true
+---
+
+Everyone loves $\pi$. Have a look at this beautiful equation:
+
+$$
+e^{i\pi} + 1 = 0
+$$
+```
+
+Gelyn writes three tags into the head of that page, which are the ones KaTeX's own
+[browser documentation][katex-browser] prescribes:
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+```
+
+The last one scans the document once it has loaded and typesets everything between the delimiters, which are
+already the delimiters Markdig emits. You configure nothing else.
+
+`KaTeXVersion` in `gelyn.json` sets the version in all three URLs, so you can move to a newer KaTeX without
+waiting for a release of Gelyn. It defaults to `0.19.0`.
+
+Unlike a stylesheet or a script, this key doesn't cascade. Declare it on each page that carries math, and a
+page that doesn't carries no KaTeX and makes no request for it. Nothing inherits it from the section index
+above it.
+
+> [!NOTE]
+> Gelyn writes no `integrity` attribute, because a Subresource Integrity hash pins one exact file and the
+> version is yours to change. If you'd rather your site made no third-party request at all, leave the key
+> unset, put `katex.min.css`, `katex.min.js`, and `auto-render.min.js` in your content tree, and let
+> [Scripts](#scripts) and [Stylesheets](#stylesheets) load them. Mind the load order that section warns about,
+> and remember that vendoring needs one line of your own to call `renderMathInElement`.
 
 ## Rebuilds
 
@@ -273,5 +319,6 @@ deploy it by diff.
 [markdig]: https://github.com/xoofx/markdig
 [markdig-extensions]: https://xoofx.github.io/markdig/docs/extensions/
 [katex]: https://katex.org
+[katex-browser]: https://katex.org/docs/browser
 [mermaid]: https://mermaid.js.org
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current

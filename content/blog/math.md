@@ -2,6 +2,7 @@
 title: Math
 date: 2026-10-10
 description: The second entry, something about math.
+enableMathRendering: true
 ---
 
 # Code

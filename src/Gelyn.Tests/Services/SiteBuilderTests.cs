@@ -173,6 +173,102 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a page enabling math rendering loads the KaTeX stylesheet, the library and the
+    ///     auto-render extension that activates it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MathRenderer_IsLoadedByThePageThatEnablesIt()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateMathematical();
+        string katex = Package(fixture.Options.KaTeXVersion);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = Path.Combine("blog", "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadMathAssets(fixture, page))
+                .IsEqualTo($"{katex}/katex.min.css,{katex}/katex.min.js,{katex}/contrib/auto-render.min.js");
+
+            await Assert.That(ReadPage(fixture, page))
+                .Contains("""onload="renderMathInElement(document.body);"></script>""");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that math rendering applies to the page declaring it alone, neither to the pages beside it
+    ///     nor to the pages below it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MathRenderer_IsInheritedByNoPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateMathematical();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadMathAssets(fixture, "index.html")).IsEmpty();
+            await Assert.That(ReadMathAssets(fixture, Path.Combine("blog", "hello.html"))).IsEmpty();
+            await Assert.That(ReadMathAssets(fixture, Path.Combine("blog", "2026", "index.html"))).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the configured version is the one requested, so that a newer KaTeX needs no new build
+    ///     of the tool.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MathRenderer_RequestsTheConfiguredVersion()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateMathematical();
+        fixture.Options.KaTeXVersion = "1.2.3";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(ReadMathAssets(fixture, Path.Combine("blog", "index.html")))
+            .DoesNotContain("0.19.0")
+            .And.StartsWith(Package("1.2.3"));
+    }
+
+    /// <summary>
+    ///     Verifies that the math renderer precedes the resources the content tree supplies, so that a
+    ///     stylesheet of the author's overrides KaTeX and a script of the author's runs once it has loaded.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MathRenderer_PrecedesTheCascadedResources()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateMathematical()
+            .WriteFile("styles.css", "body{margin:0}")
+            .WriteFile("app.js", "globalThis.app = 1");
+
+        string katex = Package(fixture.Options.KaTeXVersion);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = Path.Combine("blog", "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadStylesheets(fixture, page)).IsEqualTo($"{katex}/katex.min.css,/styles.css");
+            await Assert.That(ReadScripts(fixture, page)).IsEqualTo($"{katex}/katex.min.js,/app.js");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a stylesheet is published alongside the pages linking it, which the copy loop has to
     ///     cover for the links to resolve to anything.
     /// </summary>
@@ -657,6 +753,15 @@ public partial class SiteBuilderTests
             .Matches(ReadPage(fixture, outputPath))
             .Select(match => match.Groups["src"].Value));
 
+    // Matched across both tag shapes, because ScriptTag passes over the auto-render tag's onload attribute.
+    private static string ReadMathAssets(ContentFixture fixture, string outputPath) => string.Join(
+        ',',
+        MathAsset()
+            .Matches(ReadPage(fixture, outputPath))
+            .Select(match => match.Groups["url"].Value));
+
+    private static string Package(string version) => $"https://cdn.jsdelivr.net/npm/katex@{version}/dist";
+
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
 
@@ -665,6 +770,9 @@ public partial class SiteBuilderTests
 
     [GeneratedRegex("""<link rel="stylesheet" href="(?<href>[^"]*)">""")]
     private static partial Regex StylesheetLink();
+
+    [GeneratedRegex("(?:href|src)=\"(?<url>https://cdn\\.jsdelivr\\.net/npm/katex@[^\"]*)\"")]
+    private static partial Regex MathAsset();
 
     [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
     private static partial Regex CurrentLink();

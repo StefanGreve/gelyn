@@ -15,6 +15,7 @@ namespace Gelyn.Components;
 internal static class HeadComponent
 {
     private const string DateFormat = "yyyy-MM-dd";
+    private const string MathRenderer = "renderMathInElement(document.body);";
 
     /// <summary>
     ///     Renders the metadata.
@@ -58,6 +59,17 @@ internal static class HeadComponent
         }
 
         head.AppendLine($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");
+
+        if (context.Page.EnableMathRendering)
+        {
+            string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(options.KaTeXVersion)}/dist";
+
+            head.AppendLine($"""<link rel="stylesheet" href="{katex}/katex.min.css">""");
+            // The loading of KaTeX is deferred to speed up page rendering
+            head.AppendLine($"""<script defer src="{katex}/katex.min.js"></script>""");
+            // To automatically render math in text elements, include the auto-render extension
+            head.AppendLine($"""<script defer src="{katex}/contrib/auto-render.min.js" onload="{MathRenderer}"></script>""");
+        }
 
         // Outermost first, so the deepest stylesheet wins the cascade.
         foreach (string stylesheet in context.Page.Stylesheets)

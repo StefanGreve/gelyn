@@ -19,7 +19,7 @@ internal static class FrontMatterParser
     private const string Delimiter = "---";
 
     private static readonly IDeserializer YamlDeserializer = new StaticDeserializerBuilder(new YamlContext())
-        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+        .WithNamingConvention(CamelCaseNamingConvention.Instance)
         .WithTypeConverter(new DateOnlyConverter())
         .IgnoreUnmatchedProperties()
         .Build();

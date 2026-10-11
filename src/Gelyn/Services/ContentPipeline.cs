@@ -85,7 +85,8 @@ internal sealed class ContentPipeline
         return this.Collect(
             this._fileSystem.DirectoryInfo.New(root),
             prefix: [],
-            inherited: null,
+            inheritedStylesheets: [],
+            inheritedScripts: [],
             hrefPrefix,
             options.ExcludePatterns);
     }
@@ -130,7 +131,8 @@ internal sealed class ContentPipeline
     private List<ContentItem> Collect(
         IDirectoryInfo directory,
         string[] prefix,
-        Cascade? inherited,
+        IReadOnlyList<string> inheritedStylesheets,
+        IReadOnlyList<string> inheritedScripts,
         string hrefPrefix,
         IReadOnlyList<string> excluded)
     {
@@ -146,11 +148,8 @@ internal sealed class ContentPipeline
 
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
         // it, and shared by reference with every page at this level rather than copied per page.
-        var cascade = new Cascade
-        {
-            Stylesheets = [.. inherited?.Stylesheets ?? [], .. Linked(ContentKind.Stylesheet)],
-            Scripts = [.. inherited?.Scripts ?? [], .. Linked(ContentKind.Script)],
-        };
+        string[] stylesheets = [.. inheritedStylesheets, .. Linked(ContentKind.Stylesheet)];
+        string[] scripts = [.. inheritedScripts, .. Linked(ContentKind.Script)];
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -182,13 +181,21 @@ internal sealed class ContentPipeline
                 Kind = kind,
                 FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
                 InNavigation = isPage && IsInNavigation(segments),
-                Stylesheets = isPage ? cascade.Stylesheets : [],
-                Scripts = isPage ? cascade.Scripts : [],
+                Stylesheets = isPage ? stylesheets : [],
+                Scripts = isPage ? scripts : [],
             });
         }
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
-            items.AddRange(this.Collect(child, [.. prefix, child.Name], cascade, hrefPrefix, excluded));
+        {
+            items.AddRange(this.Collect(
+                child,
+                [.. prefix, child.Name],
+                inheritedStylesheets: stylesheets,
+                inheritedScripts: scripts,
+                hrefPrefix,
+                excluded));
+        }
 
         return items;
     }

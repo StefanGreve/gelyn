@@ -62,6 +62,32 @@ public class SiteOptionsValidatorTests
     }
 
     /// <summary>
+    ///     Verifies that a blank KaTeX version is rejected under a message naming the setting at fault,
+    ///     because it would address no package.
+    /// </summary>
+    /// <param name="version">
+    ///     A version that is empty, or holds nothing but whitespace.
+    /// </param>
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    public async Task Validate_Test_BlankKaTeXVersion_Fails(string version)
+    {
+        // Arrange
+        SiteOptions options = new() { KaTeXVersion = version };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.KaTeXVersion));
+        }
+    }
+
+    /// <summary>
     ///     Verifies that leaving the base URL unset is valid, because a site served from the root of a domain
     ///     needs none.
     /// </summary>

@@ -39,6 +39,11 @@ internal sealed class SiteOptions
     public Uri? BaseUrl { get; set; }
 
     /// <summary>
+    ///     The version of KaTeX requested from jsDelivr, such as <c>0.19.0</c>.
+    /// </summary>
+    public string KaTeXVersion { get; set; } = "0.19.0";
+
+    /// <summary>
     ///     The directory the site is built from, holding the Markdown sources and anything published beside
     ///     them. Relative values are resolved against the content root, which is the working directory unless
     ///     <c>DOTNET_CONTENTROOT</c> points somewhere else.

@@ -27,4 +27,9 @@ internal sealed record FrontMatter
     ///     The page description, or <see langword="null"/> when the block omits it.
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    ///     Indicates whether the page loads a math renderer, or <see langword="null"/> when the block omits it.
+    /// </summary>
+    public bool? EnableMathRendering { get; set; }
 }

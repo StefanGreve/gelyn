@@ -189,6 +189,40 @@ internal sealed class ContentFixture
             .Write("blog/2026/index.md", "2026");
 
     /// <summary>
+    ///     Creates a fixture holding one page that enables math rendering, beside a page and above a page
+    ///     that do not, so that a test can confirm the flag reaches neither.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html             no math
+    ///     blog/index.md        -> blog/index.html        math
+    ///     blog/hello.md        -> blog/hello.html        no math
+    ///     blog/2026/index.md   -> blog/2026/index.html   no math
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateMathematical(LogLevel verbosity = LogLevel.Debug)
+    {
+        const string block = """
+            ---
+            title: Blog
+            enableMathRendering: true
+            ---
+            """;
+
+        return CreateEmpty(verbosity)
+            .Write("index.md", "Home")
+            .WriteFile("blog/index.md", block)
+            .Write("blog/hello.md", "Hello")
+            .Write("blog/2026/index.md", "2026");
+    }
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">

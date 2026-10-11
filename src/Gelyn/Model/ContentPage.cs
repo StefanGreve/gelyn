@@ -42,6 +42,12 @@ internal sealed record ContentPage
     public required DateOnly? Date { get; init; }
 
     /// <summary>
+    ///     Indicates whether the page loads a math renderer, as declared in its front matter. The value applies
+    ///     to the page alone and is inherited by nothing.
+    /// </summary>
+    public required bool EnableMathRendering { get; init; }
+
+    /// <summary>
     ///     The rendered HTML body, excluding the document shell.
     /// </summary>
     public required string Html { get; init; }

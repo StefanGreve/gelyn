@@ -28,6 +28,7 @@ public partial class FrontMatterParserTests
             title: Home
             date: 2026-09-13
             description: Notes about software
+            enableMathRendering: true
             ---
         """;
 
@@ -40,7 +41,33 @@ public partial class FrontMatterParserTests
             await Assert.That(result?.Title).IsEqualTo("Home");
             await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
             await Assert.That(result?.Description).IsEqualTo("Notes about software");
+            await Assert.That(result?.EnableMathRendering).IsTrue();
         }
+    }
+
+    /// <summary>
+    ///     Verifies that both spellings of a boolean are read, and that a block omitting the key is
+    ///     distinguishable from one declaring it false.
+    /// </summary>
+    /// <param name="line">
+    ///     A front matter line declaring math rendering, or a line declaring something else entirely.
+    /// </param>
+    /// <param name="expected">
+    ///     The value the line declares, or <see langword="null"/> when it declares none.
+    /// </param>
+    [Test]
+    [Arguments("enableMathRendering: true", true)]
+    [Arguments("enableMathRendering: false", false)]
+    [Arguments("title: Home", null)]
+    public async Task Parse_Test_MathRendering_IsReadAsADeclaredBoolean(string line, bool? expected)
+    {
+        // Arrange
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(line);
+
+        // Assert
+        await Assert.That(result?.EnableMathRendering).IsEqualTo(expected);
     }
 
     /// <summary>

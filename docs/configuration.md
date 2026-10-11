@@ -11,6 +11,7 @@ Gelyn runs without configuration, so you only need a file to change a default. T
   "Author": "Stefan Greve",
   "Description": "Notes on software engineering.",
   "BaseUrl": "https://example.com/blog",
+  "KaTeXVersion": "0.19.0",
   "ContentDirectory": "content",
   "OutputDirectory": "_site",
   "ExcludePatterns": ["*.tmp", "drafts"]
@@ -29,6 +30,7 @@ rejects a misspelled key, which configuration binding would otherwise ignore in 
 | `Author`           | unset     | Fills the `author` meta tag. While unset, Gelyn omits the tag.                                          |
 | `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
+| `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
 | `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to, overwriting the files already there.                  |
 | `ExcludePatterns`  | `[]`      | Lists the names Gelyn skips while walking your content tree. See [Exclude patterns](#exclude-patterns). |
@@ -142,7 +144,8 @@ usable on their own. Five settings have a flag:
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
-`Language`, `Author`, and `Description` have none, so set them in the file or in the environment.
+`Language`, `Author`, `Description`, and `KaTeXVersion` have none, so set them in the file or in the
+environment.
 
 `ExcludePatterns` is the only collection-valued setting, which makes layer 3 awkward for it. An environment
 variable named exactly like the setting can't carry a list, so each entry needs its own `ExcludePatterns__0`,
