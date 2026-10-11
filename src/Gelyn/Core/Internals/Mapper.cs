@@ -35,6 +35,7 @@ internal static class Mapper
             Html = document.Html,
             InNavigation = item.InNavigation,
             Stylesheets = item.Stylesheets,
+            Scripts = item.Scripts,
         };
 
     /// <summary>

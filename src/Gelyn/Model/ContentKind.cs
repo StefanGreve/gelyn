@@ -16,6 +16,11 @@ internal enum ContentKind
     Stylesheet,
 
     /// <summary>
+    ///     A script, copied like any other file and additionally linked by the pages it applies to.
+    /// </summary>
+    Script,
+
+    /// <summary>
     ///     Anything else, copied to the output directory byte for byte.
     /// </summary>
     MiscFile,

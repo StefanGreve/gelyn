@@ -49,4 +49,11 @@ internal sealed record ContentItem
     ///     always empty for anything but a <see cref="ContentKind.Page"/>.
     /// </summary>
     public required IReadOnlyList<string> Stylesheets { get; init; }
+
+    /// <summary>
+    ///     The root-relative URLs of the scripts that apply to the file, outermost first, which is the order
+    ///     they run in. Empty when no script applies, and always empty for anything but a
+    ///     <see cref="ContentKind.Page"/>.
+    /// </summary>
+    public required IReadOnlyList<string> Scripts { get; init; }
 }

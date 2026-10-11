@@ -156,6 +156,39 @@ internal sealed class ContentFixture
             .Write("blog/2026/index.md", "2026");
 
     /// <summary>
+    ///     Creates a fixture holding a script at each of three levels, so that a test can tell a script a
+    ///     page inherits apart from the one dropped beside it.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     app.js
+    ///     index.md             -> index.html             app.js
+    ///     about.md             -> about.html             app.js
+    ///     blog/blog.js
+    ///     blog/index.md        -> blog/index.html        app.js + blog.js
+    ///     blog/hello.md        -> blog/hello.html        app.js + blog.js
+    ///     blog/2026/year.js
+    ///     blog/2026/index.md   -> blog/2026/index.html   app.js + blog.js + year.js
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateScripted(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteFile("app.js", "globalThis.app = 1")
+            .Write("index.md", "Home")
+            .Write("about.md", "About")
+            .WriteFile("blog/blog.js", "globalThis.blog = 1")
+            .Write("blog/index.md", "Blog")
+            .Write("blog/hello.md", "Hello")
+            .WriteFile("blog/2026/year.js", "globalThis.year = 2026")
+            .Write("blog/2026/index.md", "2026");
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">

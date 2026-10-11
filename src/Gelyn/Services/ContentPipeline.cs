@@ -36,6 +36,7 @@ internal sealed class ContentPipeline
     private const string IndexOutputFileName = "index.html";
     private const string MarkdownExtension = ".md";
     private const string StylesheetExtension = ".css";
+    private const string ScriptExtension = ".js";
 
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
@@ -79,12 +80,12 @@ internal sealed class ContentPipeline
         if (!this._fileSystem.File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
-        string hrefPrefix = options.BaseUrl is Uri baseUrl ? baseUrl.AbsolutePath.TrimEnd('/') : string.Empty;
+        string hrefPrefix = ResolveBaseUrlPath(options.BaseUrl);
 
         return this.Collect(
             this._fileSystem.DirectoryInfo.New(root),
             prefix: [],
-            inherited: [],
+            inherited: null,
             hrefPrefix,
             options.ExcludePatterns);
     }
@@ -129,7 +130,7 @@ internal sealed class ContentPipeline
     private List<ContentItem> Collect(
         IDirectoryInfo directory,
         string[] prefix,
-        IReadOnlyList<string> inherited,
+        Cascade? inherited,
         string hrefPrefix,
         IReadOnlyList<string> excluded)
     {
@@ -138,12 +139,18 @@ internal sealed class ContentPipeline
             .Where(entry => !IsDenied(entry, excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
-        // Resolved ahead of the items, because a page links the stylesheets beside it as well as those above
-        // it, and shared by reference with every page at this level rather than copied per page.
-        IReadOnlyList<string> cascade = [.. inherited, .. entries
+        IEnumerable<string> Linked(ContentKind kind) => entries
             .OfType<IFileInfo>()
-            .Where(static file => Classify(file) is ContentKind.Stylesheet)
-            .Select(file => Href(hrefPrefix, [.. prefix, file.Name]))];
+            .Where(file => Classify(file) == kind)
+            .Select(file => Href(hrefPrefix, [.. prefix, file.Name]));
+
+        // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
+        // it, and shared by reference with every page at this level rather than copied per page.
+        var cascade = new Cascade
+        {
+            Stylesheets = [.. inherited?.Stylesheets ?? [], .. Linked(ContentKind.Stylesheet)],
+            Scripts = [.. inherited?.Scripts ?? [], .. Linked(ContentKind.Script)],
+        };
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -175,7 +182,8 @@ internal sealed class ContentPipeline
                 Kind = kind,
                 FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
                 InNavigation = isPage && IsInNavigation(segments),
-                Stylesheets = isPage ? cascade : [],
+                Stylesheets = isPage ? cascade.Stylesheets : [],
+                Scripts = isPage ? cascade.Scripts : [],
             });
         }
 
@@ -195,11 +203,15 @@ internal sealed class ContentPipeline
     {
         var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
         var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
+        var extension when extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
         _ => ContentKind.MiscFile,
     };
 
     private static string Href(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";
+
+    private static string ResolveBaseUrlPath(Uri? baseUrl) =>
+        baseUrl?.AbsolutePath.TrimEnd('/') ?? string.Empty;
 
     private static bool IsInNavigation(string[] segments) => segments.Length switch
     {

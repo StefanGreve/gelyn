@@ -121,6 +121,58 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a page emits one deferred tag per script that applies to it, in the order the cascade
+    ///     requires, and that a page above them emits only what applies at its own level.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_ScriptTags_AreDeferredAndOutermostFirst()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadScripts(fixture, "index.html")).IsEqualTo("/app.js");
+
+            await Assert.That(ReadScripts(fixture, Path.Combine("blog", "2026", "index.html")))
+                .IsEqualTo("/app.js,/blog/blog.js,/blog/2026/year.js");
+
+            await Assert.That(ReadPage(fixture, "index.html")).Contains("""<script defer src="/app.js">""");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a script is published alongside the pages loading it, which the copy loop has to
+    ///     cover for the tags to resolve to anything.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Script_IsCopiedBesideThePagesThatLoadIt()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Copies).IsEquivalentTo([
+                "app.js",
+                Path.Combine("blog", "blog.js"),
+                Path.Combine("blog", "2026", "year.js"),
+            ]);
+
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "app.js")))
+                .IsEqualTo("globalThis.app = 1");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a stylesheet is published alongside the pages linking it, which the copy loop has to
     ///     cover for the links to resolve to anything.
     /// </summary>
@@ -599,8 +651,17 @@ public partial class SiteBuilderTests
             .Matches(ReadPage(fixture, outputPath))
             .Select(match => match.Groups["href"].Value));
 
+    private static string ReadScripts(ContentFixture fixture, string outputPath) => string.Join(
+        ',',
+        ScriptTag()
+            .Matches(ReadPage(fixture, outputPath))
+            .Select(match => match.Groups["src"].Value));
+
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
+
+    [GeneratedRegex("""<script defer src="(?<src>[^"]*)"></script>""")]
+    private static partial Regex ScriptTag();
 
     [GeneratedRegex("""<link rel="stylesheet" href="(?<href>[^"]*)">""")]
     private static partial Regex StylesheetLink();

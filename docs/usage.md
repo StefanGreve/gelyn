@@ -133,9 +133,9 @@ long as a blank line separates the two.
 
 > [!NOTE]
 > Mathematics and diagrams emit markup for a client-side renderer that Gelyn doesn't supply, so both reach the
-> browser as literal text. The delimiters are the ones [KaTeX][katex] and [Mermaid][mermaid] look for, and a
-> `<script>` you write in the Markdown passes straight through, so a page can load one itself. Nothing emits a
-> tag into the head yet.
+> browser as literal text until you load one. The delimiters are the ones [KaTeX][katex] and [Mermaid][mermaid]
+> look for, so drop the renderer's `.js` into the directory whose pages need it and the cascade loads it. See
+> [Scripts](#scripts).
 
 Fenced code blocks carry their info string as a `language-*` class on the `<code>` element. Nothing tokenizes
 the code, so color it by styling the block as a whole, or load a highlighter the same way.
@@ -148,7 +148,7 @@ Every page is the same document around your own body:
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- charset, viewport, generator, author, description, revised, canonical, title, stylesheet links -->
+    <!-- charset, viewport, generator, author, description, revised, canonical, title, stylesheets, scripts -->
 </head>
 <body>
     <header>
@@ -208,6 +208,55 @@ Gelyn links several stylesheets in one directory in ordinal name order, the same
 uses, and matches the extension without regard to case, so `.CSS` counts.
 
 No stylesheet ships with Gelyn, so a tree with no `.css` in it produces a correct but unstyled site.
+
+## Scripts
+
+A `.js` file cascades exactly as a stylesheet does. Drop `app.js` at the content root and every page loads it;
+drop `blog/charts.js` and every page in `blog/` and below loads both:
+
+```text
+content/
+    app.js
+    index.md
+    blog/
+        charts.js
+        index.md
+        2026/
+            index.md
+```
+
+| Page                   | Loads                           |
+| ---------------------- | ------------------------------- |
+| `index.html`           | `/app.js`                       |
+| `blog/index.html`      | `/app.js`, `/blog/charts.js`    |
+| `blog/2026/index.html` | `/app.js`, `/blog/charts.js`    |
+
+Gelyn writes each one as `<script defer src="...">` in the head, outermost first:
+
+```html
+<script defer src="/app.js"></script>
+<script defer src="/blog/charts.js"></script>
+```
+
+Deferred scripts run in document order, so outermost first means a script at the root runs before one further
+down can depend on it. `defer` is not optional, because a script you placed rather than requested shouldn't
+block the parser.
+
+Everything the stylesheet rule says applies here too: a sibling branch is never reached, several scripts in
+one directory load in ordinal name order, the extension is matched without regard to case, and the file is
+copied whether any page loads it or not.
+
+> [!IMPORTANT]
+> Ordinal name order is the one thing to watch, because it has nothing to do with dependency order. Two
+> scripts in the same directory load alphabetically, so `auto-render.min.js` loads before `katex.min.js` and
+> executes before the library it needs. Name them so the alphabet agrees with the dependency, such as
+> `1-katex.min.js` and `2-auto-render.min.js`, or put the library one directory up where the cascade reaches
+> it first.
+
+> [!NOTE]
+> There's no way to load a script from a CDN, because placement is the only mechanism. To use a library, put
+> its `.js` in your content tree and let the cascade pick it up. That costs a file in your repository and buys
+> a site with no third-party requests.
 
 ## Rebuilds
 

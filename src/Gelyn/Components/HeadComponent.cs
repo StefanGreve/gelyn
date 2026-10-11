@@ -59,9 +59,12 @@ internal static class HeadComponent
 
         head.AppendLine($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");
 
-        // In list order, which is outermost first, so that the deepest stylesheet wins the cascade.
+        // Outermost first, so the deepest stylesheet wins the cascade.
         foreach (string stylesheet in context.Page.Stylesheets)
             head.AppendLine($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
+
+        foreach (string script in context.Page.Scripts)
+            head.AppendLine($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
 
         return head.ToString();
     }

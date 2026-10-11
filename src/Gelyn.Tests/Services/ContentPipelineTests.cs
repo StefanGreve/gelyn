@@ -391,12 +391,12 @@ public class ContentPipelineTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/styles.css");
-            await Assert.That(Cascade(items, "/about.html")).IsEqualTo("/styles.css");
-            await Assert.That(Cascade(items, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
-            await Assert.That(Cascade(items, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
+            await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/styles.css");
+            await Assert.That(Stylesheets(items, "/about.html")).IsEqualTo("/styles.css");
+            await Assert.That(Stylesheets(items, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
+            await Assert.That(Stylesheets(items, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
 
-            await Assert.That(Cascade(items, "/blog/2026/index.html"))
+            await Assert.That(Stylesheets(items, "/blog/2026/index.html"))
                 .IsEqualTo("/styles.css,/blog/blog.css,/blog/2026/year.css");
         }
     }
@@ -469,9 +469,9 @@ public class ContentPipelineTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/root.css");
-            await Assert.That(Cascade(items, "/blog/index.html")).IsEqualTo("/root.css,/blog/styles1.css");
-            await Assert.That(Cascade(items, "/foo/index.html")).IsEqualTo("/root.css,/foo/styles2.css");
+            await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/root.css");
+            await Assert.That(Stylesheets(items, "/blog/index.html")).IsEqualTo("/root.css,/blog/styles1.css");
+            await Assert.That(Stylesheets(items, "/foo/index.html")).IsEqualTo("/root.css,/foo/styles2.css");
         }
     }
 
@@ -490,7 +490,8 @@ public class ContentPipelineTests
         ContentFixture fixture = ContentFixture.CreateEmpty()
             .Write("index.md", "Home")
             .Write("About.MD", "About")
-            .WriteFile("Styles.CSS", "body{margin:0}");
+            .WriteFile("Styles.CSS", "body{margin:0}")
+            .WriteFile("App.JS", "globalThis.app = 1");
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -504,7 +505,11 @@ public class ContentPipelineTests
             await Assert.That(items.Single(item => item.Href == "/Styles.CSS").Kind)
                 .IsEqualTo(ContentKind.Stylesheet);
 
-            await Assert.That(Cascade(items, "/index.html")).IsEqualTo("/Styles.CSS");
+            await Assert.That(items.Single(item => item.Href == "/App.JS").Kind)
+                .IsEqualTo(ContentKind.Script);
+
+            await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/Styles.CSS");
+            await Assert.That(Scripts(items, "/index.html")).IsEqualTo("/App.JS");
         }
     }
 
@@ -522,8 +527,133 @@ public class ContentPipelineTests
         IReadOnlyList<ContentItem> items = Scan(fixture);
 
         // Assert
-        await Assert.That(Cascade(items, "/gelyn/blog/2026/index.html"))
+        await Assert.That(Stylesheets(items, "/gelyn/blog/2026/index.html"))
             .IsEqualTo("/gelyn/styles.css,/gelyn/blog/blog.css,/gelyn/blog/2026/year.css");
+    }
+
+    /// <summary>
+    ///     Verifies that a page links the script of every directory above it as well as its own, ordered
+    ///     outermost first, which is the order a deferred script runs in.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Scripts_CascadeOutermostFirst()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Scripts(items, "/index.html")).IsEqualTo("/app.js");
+            await Assert.That(Scripts(items, "/about.html")).IsEqualTo("/app.js");
+            await Assert.That(Scripts(items, "/blog/index.html")).IsEqualTo("/app.js,/blog/blog.js");
+            await Assert.That(Scripts(items, "/blog/hello.html")).IsEqualTo("/app.js,/blog/blog.js");
+
+            await Assert.That(Scripts(items, "/blog/2026/index.html"))
+                .IsEqualTo("/app.js,/blog/blog.js,/blog/2026/year.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that two sections scripting themselves independently never see each other's script, while
+    ///     both still inherit the one above them.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_SiblingDirectories_DoNotShareAScript()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("app.js", "globalThis.app = 1")
+            .Write("index.md", "Home")
+            .WriteFile("blog/one.js", "globalThis.one = 1")
+            .Write("blog/index.md", "Blog")
+            .WriteFile("foo/two.js", "globalThis.two = 1")
+            .Write("foo/index.md", "Foo");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Scripts(items, "/index.html")).IsEqualTo("/app.js");
+            await Assert.That(Scripts(items, "/blog/index.html")).IsEqualTo("/app.js,/blog/one.js");
+            await Assert.That(Scripts(items, "/foo/index.html")).IsEqualTo("/app.js,/foo/two.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a script is located as a copy in its own right, carrying no cascade of its own, so
+    ///     that the file the tags point at is published beside the pages that load it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Script_IsLocatedAsACopy()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted();
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem script = items.Single(item => item.Href == "/app.js");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(script.Kind).IsEqualTo(ContentKind.Script);
+            await Assert.That(script.OutputPath).IsEqualTo("app.js");
+            await Assert.That(script.Scripts).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the two cascades stay apart, so that a stylesheet is never linked as a script and a
+    ///     script is never linked as a stylesheet.
+    /// </summary>
+    /// <remarks>
+    ///     The case the pair carried by one value exists to rule out: two lists of the same element type, in
+    ///     one walk, which separate parameters would accept in either order.
+    /// </remarks>
+    [Test]
+    public async Task Scan_Test_StylesheetsAndScripts_CascadeIndependently()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("app.js", "globalThis.app = 1")
+            .WriteFile("styles.css", "body{margin:0}")
+            .Write("index.md", "Home")
+            .WriteFile("blog/blog.css", "article{max-width:70ch}")
+            .Write("blog/index.md", "Blog");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Stylesheets(items, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
+            await Assert.That(Scripts(items, "/blog/index.html")).IsEqualTo("/app.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the path of the base URL reaches a script tag as well as a page link, so that the two
+    ///     cannot disagree about where the site is served from.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_BaseUrlPath_IsPrefixedToEveryScript()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted().WithBaseUrl("https://example.com/gelyn");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(Scripts(items, "/gelyn/blog/2026/index.html"))
+            .IsEqualTo("/gelyn/app.js,/gelyn/blog/blog.js,/gelyn/blog/2026/year.js");
     }
 
     #endregion // Scan Tests
@@ -590,8 +720,14 @@ public class ContentPipelineTests
 
     // Joined rather than compared as a sequence, because the assertion is about order and IsEquivalentTo
     // ignores it.
-    private static string Cascade(IReadOnlyList<ContentItem> items, string href) =>
+    private static string Stylesheets(IReadOnlyList<ContentItem> items, string href) =>
         string.Join(',', items.Single(item => item.Href == href).Stylesheets);
+
+    private static string Scripts(IReadOnlyList<ContentItem> items, string href) =>
+        string.Join(',', items.Single(item => item.Href == href).Scripts);
+
+    private static string Scripts(IReadOnlyList<ContentPage> pages, string href) =>
+        string.Join(',', pages.Single(page => page.Href == href).Scripts);
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
         fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);

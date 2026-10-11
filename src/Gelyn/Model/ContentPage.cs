@@ -57,4 +57,10 @@ internal sealed record ContentPage
     ///     stylesheet deeper in the tree overrides one above it.
     /// </summary>
     public required IReadOnlyList<string> Stylesheets { get; init; }
+
+    /// <summary>
+    ///     The root-relative URLs of the scripts that apply to the page, outermost first, which is the order
+    ///     they run in.
+    /// </summary>
+    public required IReadOnlyList<string> Scripts { get; init; }
 }
