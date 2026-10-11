@@ -44,6 +44,11 @@ internal sealed class SiteOptions
     public string KaTeXVersion { get; set; } = "0.19.0";
 
     /// <summary>
+    ///     The version of Mermaid requested from jsDelivr, such as <c>12.1.0</c>.
+    /// </summary>
+    public string MermaidVersion { get; set; } = "12.1.0";
+
+    /// <summary>
     ///     The directory the site is built from, holding the Markdown sources and anything published beside
     ///     them. Relative values are resolved against the content root, which is the working directory unless
     ///     <c>DOTNET_CONTENTROOT</c> points somewhere else.

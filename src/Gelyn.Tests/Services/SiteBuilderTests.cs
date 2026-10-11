@@ -181,7 +181,7 @@ public partial class SiteBuilderTests
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateMathematical();
-        string katex = Package(fixture.Options.KaTeXVersion);
+        string katex = Package("katex", fixture.Options.KaTeXVersion);
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -238,7 +238,7 @@ public partial class SiteBuilderTests
         // Assert
         await Assert.That(ReadMathAssets(fixture, Path.Combine("blog", "index.html")))
             .DoesNotContain("0.19.0")
-            .And.StartsWith(Package("1.2.3"));
+            .And.StartsWith(Package("katex", "1.2.3"));
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ public partial class SiteBuilderTests
             .WriteFile("styles.css", "body{margin:0}")
             .WriteFile("app.js", "globalThis.app = 1");
 
-        string katex = Package(fixture.Options.KaTeXVersion);
+        string katex = Package("katex", fixture.Options.KaTeXVersion);
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -265,6 +265,97 @@ public partial class SiteBuilderTests
         {
             await Assert.That(ReadStylesheets(fixture, page)).IsEqualTo($"{katex}/katex.min.css,/styles.css");
             await Assert.That(ReadScripts(fixture, page)).IsEqualTo($"{katex}/katex.min.js,/app.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page enabling diagram rendering imports Mermaid as a module and initializes it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DiagramRenderer_IsLoadedByThePageThatEnablesIt()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+        string mermaid = Package("mermaid", fixture.Options.MermaidVersion);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = Path.Combine("blog", "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadDiagramImport(fixture, page)).IsEqualTo($"{mermaid}/mermaid.esm.min.mjs");
+
+            await Assert.That(ReadPage(fixture, page))
+                .Contains("""<script type="module">""")
+                .And.Contains("mermaid.initialize({ startOnLoad: true });");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that diagram rendering applies to the page declaring it alone, neither to the pages beside
+    ///     it nor to the pages below it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DiagramRenderer_IsInheritedByNoPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadDiagramImport(fixture, "index.html")).IsNull();
+            await Assert.That(ReadDiagramImport(fixture, Path.Combine("blog", "hello.html"))).IsNull();
+            await Assert.That(ReadDiagramImport(fixture, Path.Combine("blog", "2026", "index.html"))).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the configured version is the one imported, so that a newer Mermaid needs no new build
+    ///     of the tool.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DiagramRenderer_RequestsTheConfiguredVersion()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+        fixture.Options.MermaidVersion = "11.0.0";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(ReadDiagramImport(fixture, Path.Combine("blog", "index.html")))
+            .IsEqualTo($"{Package("mermaid", "11.0.0")}/mermaid.esm.min.mjs");
+    }
+
+    /// <summary>
+    ///     Verifies that each renderer answers to its own key, so that a page carrying math pays nothing for
+    ///     diagrams and the other way round.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Renderers_AreEnabledIndependently()
+    {
+        // Arrange
+        ContentFixture mathematical = ContentFixture.CreateMathematical();
+        ContentFixture diagrammatic = ContentFixture.CreateDiagrammatic();
+        string page = Path.Combine("blog", "index.html");
+
+        // Act
+        await mathematical.Builder.BuildAsync(CancellationToken.None);
+        await diagrammatic.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadDiagramImport(mathematical, page)).IsNull();
+            await Assert.That(ReadMathAssets(diagrammatic, page)).IsEmpty();
         }
     }
 
@@ -760,7 +851,15 @@ public partial class SiteBuilderTests
             .Matches(ReadPage(fixture, outputPath))
             .Select(match => match.Groups["url"].Value));
 
-    private static string Package(string version) => $"https://cdn.jsdelivr.net/npm/katex@{version}/dist";
+    private static string? ReadDiagramImport(ContentFixture fixture, string outputPath)
+    {
+        Match match = DiagramImport().Match(ReadPage(fixture, outputPath));
+
+        return match.Success ? match.Groups["url"].Value : null;
+    }
+
+    private static string Package(string name, string version) =>
+        $"https://cdn.jsdelivr.net/npm/{name}@{version}/dist";
 
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
@@ -773,6 +872,9 @@ public partial class SiteBuilderTests
 
     [GeneratedRegex("(?:href|src)=\"(?<url>https://cdn\\.jsdelivr\\.net/npm/katex@[^\"]*)\"")]
     private static partial Regex MathAsset();
+
+    [GeneratedRegex("import mermaid from \"(?<url>[^\"]*)\"")]
+    private static partial Regex DiagramImport();
 
     [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
     private static partial Regex CurrentLink();

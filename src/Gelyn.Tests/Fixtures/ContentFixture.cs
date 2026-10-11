@@ -206,21 +206,29 @@ internal sealed class ContentFixture
     /// <returns>
     ///     The new fixture.
     /// </returns>
-    public static ContentFixture CreateMathematical(LogLevel verbosity = LogLevel.Debug)
-    {
-        const string block = """
-            ---
-            title: Blog
-            enableMathRendering: true
-            ---
-            """;
+    public static ContentFixture CreateMathematical(LogLevel verbosity = LogLevel.Debug) =>
+        CreateRendered("enableMathRendering", verbosity);
 
-        return CreateEmpty(verbosity)
-            .Write("index.md", "Home")
-            .WriteFile("blog/index.md", block)
-            .Write("blog/hello.md", "Hello")
-            .Write("blog/2026/index.md", "2026");
-    }
+    /// <summary>
+    ///     Creates a fixture holding one page that enables diagram rendering, beside a page and above a page
+    ///     that do not, so that a test can confirm the flag reaches neither.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html             no diagrams
+    ///     blog/index.md        -> blog/index.html        diagrams
+    ///     blog/hello.md        -> blog/hello.html        no diagrams
+    ///     blog/2026/index.md   -> blog/2026/index.html   no diagrams
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateDiagrammatic(LogLevel verbosity = LogLevel.Debug) =>
+        CreateRendered("enableDiagramRendering", verbosity);
 
     /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
@@ -357,6 +365,18 @@ internal sealed class ContentFixture
         this.FileSystem.Directory.EnumerateFiles(this.OutputRoot, pattern, SearchOption.AllDirectories);
 
     #region Helpers
+
+    // One tree for both renderer flags, because what each test asserts is which pages the key reaches.
+    private static ContentFixture CreateRendered(string key, LogLevel verbosity)
+    {
+        string block = string.Join(Environment.NewLine, "---", "title: Blog", $"{key}: true", "---");
+
+        return CreateEmpty(verbosity)
+            .Write("index.md", "Home")
+            .WriteFile("blog/index.md", block)
+            .Write("blog/hello.md", "Hello")
+            .Write("blog/2026/index.md", "2026");
+    }
 
     private string Resolve(string relativePath) => this.FileSystem.Path.Combine(
         this.ContentRoot,

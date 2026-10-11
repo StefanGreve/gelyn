@@ -36,7 +36,7 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of four keys:
+Open a Markdown file with a YAML block to declare any of five keys:
 
 ```markdown
 ---
@@ -44,15 +44,17 @@ title: About
 date: 2026-09-14
 description: Who I am and what I write about
 enableMathRendering: true
+enableDiagramRendering: true
 ---
 ```
 
-| Key                   | Description                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------- |
-| `title`               | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`                | Fills the `revised` meta tag, in `yyyy-MM-dd` form.                                   |
-| `description`         | Fills the `description` meta tag, in place of the one configured for your site.       |
-| `enableMathRendering` | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
+| Key                      | Description                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `title`                  | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
+| `date`                   | Fills the `revised` meta tag, in `yyyy-MM-dd` form.                                   |
+| `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
+| `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
+| `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
 
 Three rules are worth knowing, because none of them produces a warning:
 
@@ -135,9 +137,8 @@ long as a blank line separates the two.
 
 > [!NOTE]
 > Mathematics and diagrams emit markup for a client-side renderer, so both reach the browser as literal text
-> until one loads. Math has a front matter key that loads [KaTeX][katex] for you, described under
-> [Mathematics](#mathematics). Diagrams have no equivalent, so drop [Mermaid][mermaid] into the directory
-> whose pages need it and let the cascade load it. See [Scripts](#scripts).
+> until one loads. Each has a front matter key that loads one for you, [KaTeX][katex] under
+> [Mathematics](#mathematics) and [Mermaid][mermaid] under [Diagrams](#diagrams).
 
 Fenced code blocks carry their info string as a `language-*` class on the `<code>` element. Nothing tokenizes
 the code, so color it by styling the block as a whole, or load a highlighter the same way.
@@ -258,7 +259,8 @@ copied whether any page loads it or not.
 > [!NOTE]
 > The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
 > content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
-> third-party requests. KaTeX is the one library Gelyn fetches for you, through the key described next.
+> third-party requests. KaTeX and Mermaid are the two libraries Gelyn fetches for you, through the keys
+> described next.
 
 ## Mathematics
 
@@ -304,6 +306,43 @@ above it.
 > [Scripts](#scripts) and [Stylesheets](#stylesheets) load them. Mind the load order that section warns about,
 > and remember that vendoring needs one line of your own to call `renderMathInElement`.
 
+## Diagrams
+
+A fenced `mermaid` block renders to `<pre class="mermaid">`, which is the element [Mermaid][mermaid] looks for
+and nothing else acts on. Declare one key to get the renderer:
+
+````markdown
+---
+title: Pipeline
+enableDiagramRendering: true
+---
+
+```mermaid
+flowchart LR
+    A --> B
+    A --> C
+```
+````
+
+Gelyn writes one module script into the head of that page, which is the form Mermaid's own
+[documentation][mermaid-docs] prescribes:
+
+```html
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true });
+</script>
+```
+
+`startOnLoad` is what finds every `<pre class="mermaid">` on the page and replaces it with SVG, so you
+configure nothing else. A module script defers on its own, which is why this one carries no `defer`.
+
+`MermaidVersion` in `gelyn.json` sets the version in that URL. It defaults to `12.1.0`.
+
+The key doesn't cascade, so declare it on each page that carries a diagram, and Gelyn writes no `integrity`
+attribute, because the version is yours to change. Vendoring Mermaid instead isn't an option: it loads as an
+ES module, and [Scripts](#scripts) emits a plain `<script src>`, which can't carry one.
+
 ## Rebuilds
 
 A build overwrites the files it produces and leaves everything else in your output directory alone, so a page
@@ -321,4 +360,5 @@ deploy it by diff.
 [katex]: https://katex.org
 [katex-browser]: https://katex.org/docs/browser
 [mermaid]: https://mermaid.js.org
+[mermaid-docs]: https://mermaid.js.org/intro/getting-started.html
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current

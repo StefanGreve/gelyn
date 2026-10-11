@@ -33,6 +33,7 @@ internal static class Mapper
             Description = document.FrontMatter?.Description,
             Date = document.FrontMatter?.Date,
             EnableMathRendering = document.FrontMatter?.EnableMathRendering ?? false,
+            EnableDiagramRendering = document.FrontMatter?.EnableDiagramRendering ?? false,
             Html = document.Html,
             InNavigation = item.InNavigation,
             Stylesheets = item.Stylesheets,

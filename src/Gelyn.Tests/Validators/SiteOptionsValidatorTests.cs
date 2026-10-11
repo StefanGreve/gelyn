@@ -88,6 +88,31 @@ public class SiteOptionsValidatorTests
     }
 
     /// <summary>
+    ///     Verifies that a blank Mermaid version is rejected the same way a blank KaTeX version is.
+    /// </summary>
+    /// <param name="version">
+    ///     A version that is empty, or holds nothing but whitespace.
+    /// </param>
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    public async Task Validate_Test_BlankMermaidVersion_Fails(string version)
+    {
+        // Arrange
+        SiteOptions options = new() { MermaidVersion = version };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.MermaidVersion));
+        }
+    }
+
+    /// <summary>
     ///     Verifies that leaving the base URL unset is valid, because a site served from the root of a domain
     ///     needs none.
     /// </summary>

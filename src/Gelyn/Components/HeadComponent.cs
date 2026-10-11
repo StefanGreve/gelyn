@@ -16,6 +16,7 @@ internal static class HeadComponent
 {
     private const string DateFormat = "yyyy-MM-dd";
     private const string MathRenderer = "renderMathInElement(document.body);";
+    private const string DiagramRenderer = "mermaid.initialize({ startOnLoad: true });";
 
     /// <summary>
     ///     Renders the metadata.
@@ -69,6 +70,18 @@ internal static class HeadComponent
             head.AppendLine($"""<script defer src="{katex}/katex.min.js"></script>""");
             // To automatically render math in text elements, include the auto-render extension
             head.AppendLine($"""<script defer src="{katex}/contrib/auto-render.min.js" onload="{MathRenderer}"></script>""");
+        }
+
+        if (context.Page.EnableDiagramRendering)
+        {
+            string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(options.MermaidVersion)}/dist";
+
+            // The module entry is smaller then a bundle and fetches only the diagram types the page uses.
+            // A module script defers by itself, so it needs no defer attribute.
+            head.AppendLine("""<script type="module">""");
+            head.AppendLine($"""import mermaid from "{mermaid}/mermaid.esm.min.mjs";""");
+            head.AppendLine(DiagramRenderer);
+            head.AppendLine("</script>");
         }
 
         // Outermost first, so the deepest stylesheet wins the cascade.

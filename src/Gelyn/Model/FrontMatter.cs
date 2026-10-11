@@ -32,4 +32,10 @@ internal sealed record FrontMatter
     ///     Indicates whether the page loads a math renderer, or <see langword="null"/> when the block omits it.
     /// </summary>
     public bool? EnableMathRendering { get; set; }
+
+    /// <summary>
+    ///     Indicates whether the page loads a diagram renderer, or <see langword="null"/> when the block omits
+    ///     it.
+    /// </summary>
+    public bool? EnableDiagramRendering { get; set; }
 }

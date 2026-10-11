@@ -56,6 +56,9 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(options.KaTeXVersion))
             failures.Add($"{nameof(SiteOptions.KaTeXVersion)} must not be empty.");
 
+        if (string.IsNullOrWhiteSpace(options.MermaidVersion))
+            failures.Add($"{nameof(SiteOptions.MermaidVersion)} must not be empty.");
+
         if (options.BaseUrl is Uri baseUrl && !IsServable(baseUrl))
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 

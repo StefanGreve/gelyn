@@ -48,6 +48,12 @@ internal sealed record ContentPage
     public required bool EnableMathRendering { get; init; }
 
     /// <summary>
+    ///     Indicates whether the page loads a diagram renderer, as declared in its front matter. The value
+    ///     applies to the page alone and is inherited by nothing.
+    /// </summary>
+    public required bool EnableDiagramRendering { get; init; }
+
+    /// <summary>
     ///     The rendered HTML body, excluding the document shell.
     /// </summary>
     public required string Html { get; init; }
