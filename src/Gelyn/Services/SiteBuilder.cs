@@ -39,7 +39,6 @@ internal sealed class SiteBuilder
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
-    private readonly TimeProvider _timeProvider;
     private readonly ILogger<SiteBuilder> _logger;
 
     /// <summary>
@@ -57,9 +56,6 @@ internal sealed class SiteBuilder
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    /// <param name="timeProvider">
-    ///     Supplies the current date and time.
-    /// </param>
     /// <param name="logger">
     ///     Receives the records the build writes.
     /// </param>
@@ -68,14 +64,12 @@ internal sealed class SiteBuilder
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
-        TimeProvider timeProvider,
         ILogger<SiteBuilder> logger)
     {
         this._pipeline = pipeline;
         this._environment = environment;
         this._options = options;
         this._fileSystem = fileSystem;
-        this._timeProvider = timeProvider;
         this._logger = logger;
     }
 
@@ -153,14 +147,10 @@ internal sealed class SiteBuilder
     {
         IPath path = this._fileSystem.Path;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
-        DateOnly generatedAt = DateOnly.FromDateTime(this._timeProvider.GetUtcNow().UtcDateTime);
 
         var written = new List<string>(pages.Count);
         long composeTicks = 0;
         long writeTicks = 0;
-
-        // The footer is invariant, so one component serves every page. The scan guarantees pages is not empty.
-        string footer = FooterComponent.Render(pages[0].ToRenderContext(options, navigation, generatedAt));
 
         // The banner differs only in which navigation entry carries aria-current, so it needs one render per
         // linked page plus one shared by every page the navigation leaves out, however many pages there are.
@@ -168,10 +158,10 @@ internal sealed class SiteBuilder
 
         foreach (ContentPage page in pages)
         {
-            RenderContext context = page.ToRenderContext(options, navigation, generatedAt);
+            RenderContext context = page.ToRenderContext(options, navigation);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = ComposeDocument(context, footer, banners);
+            string html = ComposeDocument(context, banners);
 
             if (isMeasuring)
                 composeTicks += Stopwatch.GetTimestamp() - composeStarted;
@@ -194,10 +184,7 @@ internal sealed class SiteBuilder
         return (written, composeTicks, writeTicks);
     }
 
-    private static string ComposeDocument(
-        RenderContext context,
-        string footer,
-        Dictionary<string, string> banners)
+    private static string ComposeDocument(RenderContext context, Dictionary<string, string> banners)
     {
         string key = context.Page.InNavigation ? context.Page.Href : string.Empty;
 
@@ -207,7 +194,9 @@ internal sealed class SiteBuilder
             banners[key] = header;
         }
 
-        return PageLayout.Render(context, header, footer);
+        // NOTE: the footer varies only by the page's date, so it could be cached per date.
+        // Only warranted once the footer grows past the few AppendLine calls it costs today.
+        return PageLayout.Render(context, header, FooterComponent.Render(context));
     }
 
     private List<string> CopyAssets(

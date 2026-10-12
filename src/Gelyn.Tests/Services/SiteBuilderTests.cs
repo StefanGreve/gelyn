@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Components;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Services;
@@ -454,69 +453,56 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that every page carries the same footer, which is the invariant that makes rendering it
-    ///     once for the whole build correct.
+    ///     Verifies that a page's footer carries the date that page declares, and that a page declaring none
+    ///     carries no date rather than one taken from elsewhere.
     /// </summary>
     [Test]
-    public async Task BuildAsync_Test_Footer_IsIdenticalOnEveryPage()
+    public async Task BuildAsync_Test_Footer_CarriesThePageDate()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        ContentFixture fixture = ContentFixture.CreateDated();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
-        string[] footers =
-        [
-            .. fixture.EnumerateOutput().Select(page => FooterBlock().Match(fixture.ReadOutput(page)).Value),
-        ];
+        string undated = ReadFooter(fixture, Path.Combine("blog", "hello.html"));
 
         using (Assert.Multiple())
         {
-            await Assert.That(footers.Length).IsEqualTo(6);
-            await Assert.That(footers.Distinct().Count()).IsEqualTo(1);
-            await Assert.That(footers[0]).Contains("Built with Gelyn");
+            await Assert.That(ReadFooter(fixture, "index.html")).Contains("last revised Feb 1, 2026");
+            await Assert.That(ReadFooter(fixture, Path.Combine("blog", "index.html")))
+                .Contains("last revised Mar 15, 2026");
+            await Assert.That(undated).Contains("Built with Gelyn");
+            await Assert.That(undated).DoesNotContain("last revised");
         }
     }
 
     /// <summary>
-    ///     Verifies that rendering the footer against any page produces the same markup, which is the invariant
-    ///     that licenses rendering it once for the whole build.
+    ///     Verifies that two pages declaring the same date carry the same footer while pages declaring
+    ///     different dates do not, so the footer varies by the declared date and by nothing else.
     /// </summary>
-    /// <remarks>
-    ///     Renders the component directly, because comparing the footers in the output cannot detect this:
-    ///     a footer that did read the page would be rendered once from one page and then reused, so every page
-    ///     would still carry identical markup.
-    /// </remarks>
     [Test]
-    public async Task BuildAsync_Test_Footer_DoesNotDependOnThePage()
+    public async Task BuildAsync_Test_Footer_VariesByDateAlone()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
-
-        IReadOnlyList<ContentPage> pages = await fixture.Pipeline
-            .RenderAsync(fixture.Pipeline.Scan(fixture.Options), CancellationToken.None);
-
-        IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
+        ContentFixture fixture = ContentFixture.CreateDated();
 
         // Act
-        string[] footers =
-        [
-            .. pages.Select(page => FooterComponent.Render(new RenderContext
-            {
-                Options = fixture.Options,
-                Navigation = navigation,
-                Page = page,
-                GeneratedAt = DateOnly.FromDateTime(ContentFixture.GeneratedAt.UtcDateTime),
-            })),
-        ];
+        await fixture.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
+        string home = ReadFooter(fixture, "index.html");
+        string about = ReadFooter(fixture, "about.html");
+        string section = ReadFooter(fixture, Path.Combine("blog", "index.html"));
+        string undated = ReadFooter(fixture, Path.Combine("blog", "hello.html"));
+
+        string[] footers = [home, about, section, undated];
+
         using (Assert.Multiple())
         {
-            await Assert.That(footers.Length).IsEqualTo(6);
-            await Assert.That(footers.Distinct().Count()).IsEqualTo(1);
+            await Assert.That(about).IsEqualTo(home);
+            await Assert.That(footers.Distinct().Count()).IsEqualTo(3);
         }
     }
 
@@ -812,6 +798,9 @@ public partial class SiteBuilderTests
 
     private static string ReadPage(ContentFixture fixture, string outputPath) =>
         fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));
+
+    private static string ReadFooter(ContentFixture fixture, string outputPath) =>
+        FooterBlock().Match(ReadPage(fixture, outputPath)).Value;
 
     private static string? ReadCanonical(ContentFixture fixture, string outputPath) =>
         Canonical(ReadPage(fixture, outputPath));

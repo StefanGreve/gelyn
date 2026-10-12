@@ -31,10 +31,12 @@ internal static class FooterComponent
         var footer = new StringBuilder();
 
         string version = WebUtility.HtmlEncode(Tool.Version);
-        string generated = context.GeneratedAt.ToString(DateFormat, CultureInfo.InvariantCulture);
+        string revised = context.Page.Date is DateOnly date
+            ? $" - last revised {date.ToString(DateFormat, CultureInfo.InvariantCulture)}"
+            : string.Empty;
 
         footer.AppendLine("<footer>");
-        footer.AppendLine($"<em>Built with {Tool.Name} v{version} on {generated}</em>");
+        footer.AppendLine($"<em>Built with {Tool.Name} v{version}{revised}</em>");
         footer.AppendLine("</footer>");
 
         return footer.ToString();

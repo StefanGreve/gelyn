@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 using Gelyn.Model.Options;
@@ -24,9 +23,4 @@ internal sealed record RenderContext
     ///     The page currently being rendered.
     /// </summary>
     public required ContentPage Page { get; init; }
-
-    /// <summary>
-    ///     The UTC date the build started.
-    /// </summary>
-    public required DateOnly GeneratedAt { get; init; }
 }

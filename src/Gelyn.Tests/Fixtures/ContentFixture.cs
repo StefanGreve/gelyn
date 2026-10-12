@@ -9,7 +9,6 @@ using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
-using Microsoft.Extensions.Time.Testing;
 
 namespace Gelyn.Tests.Fixtures;
 
@@ -22,12 +21,6 @@ namespace Gelyn.Tests.Fixtures;
 /// </remarks>
 internal sealed class ContentFixture
 {
-    /// <summary>
-    ///     The instant the fixture's clock is frozen at, so that the footer stamp does not depend on when the
-    ///     test happens to run.
-    /// </summary>
-    public static readonly DateTimeOffset GeneratedAt = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
-
     private ContentFixture(MockFileSystem fileSystem, string root, SiteOptions options, LogLevel verbosity)
     {
         this.FileSystem = fileSystem;
@@ -49,7 +42,6 @@ internal sealed class ContentFixture
             environment,
             new OptionsMonitorStub(options),
             fileSystem,
-            new FakeTimeProvider(GeneratedAt),
             this.Logger);
     }
 
@@ -231,6 +223,31 @@ internal sealed class ContentFixture
         CreateRendered("enableDiagramRendering", verbosity);
 
     /// <summary>
+    ///     Creates a fixture holding two pages that declare the same date, one that declares a different date
+    ///     and one that declares none, so that a test can tell the footers apart by the date they carry.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html              2026-02-01
+    ///     about.md             -> about.html              2026-02-01
+    ///     blog/index.md        -> blog/index.html         2026-03-15
+    ///     blog/hello.md        -> blog/hello.html         no date
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateDated(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteDated("index.md", "Home", "2026-02-01")
+            .WriteDated("about.md", "About", "2026-02-01")
+            .WriteDated("blog/index.md", "Blog", "2026-03-15")
+            .Write("blog/hello.md", "Hello");
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">
@@ -377,6 +394,10 @@ internal sealed class ContentFixture
             .Write("blog/hello.md", "Hello")
             .Write("blog/2026/index.md", "2026");
     }
+
+    private ContentFixture WriteDated(string relativePath, string title, string date) => this.WriteFile(
+        relativePath,
+        string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---"));
 
     private string Resolve(string relativePath) => this.FileSystem.Path.Combine(
         this.ContentRoot,

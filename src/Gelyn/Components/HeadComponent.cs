@@ -41,7 +41,6 @@ internal static class HeadComponent
         if (!string.IsNullOrWhiteSpace(options.Author))
             head.AppendLine($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
 
-        // The page speaks for itself where it can, and borrows the site description where it cannot.
         string? description = context.Page.Description ?? options.Description;
 
         if (!string.IsNullOrWhiteSpace(description))

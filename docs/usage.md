@@ -51,7 +51,7 @@ enableDiagramRendering: true
 | Key                      | Description                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------- |
 | `title`                  | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`                   | Fills the `revised` meta tag, in `yyyy-MM-dd` form.                                   |
+| `date`                   | Fills the `revised` meta tag and dates the footer, in `yyyy-MM-dd` form.              |
 | `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
 | `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
@@ -61,7 +61,7 @@ Three rules are worth knowing, because none of them produces a warning:
 - Open the block on the very first line. With one blank line above it, Gelyn no longer reads it as front
   matter. It renders the delimiters and the keys as content, and the title falls back to the file name.
 - Gelyn ignores a key it doesn't know, so `titel:` loses your title in silence.
-- Gelyn drops a `date` it can't parse the same way, and writes the page without a `revised` tag.
+- Gelyn drops a `date` it can't parse the same way, and writes the page as though it declared none.
 
 A block that isn't well-formed YAML, or that holds something other than key-value pairs, does stop the build.
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The
@@ -163,14 +163,14 @@ Every page is the same document around your own body:
     </main>
     <hr />
     <footer>
-        <em>Built with Gelyn v0.1.0 on Oct 10, 2026</em>
+        <em>Built with Gelyn v0.1.0 - last revised Oct 10, 2026</em>
     </footer>
 </body>
 </html>
 ```
 
-Gelyn leaves out a tag whose value it doesn't have rather than writing it empty, so a page with no `date`
-carries no `revised` tag, and a site with no `BaseUrl` no canonical link.
+Gelyn leaves out a value it doesn't have rather than writing it empty, so a page with no `date` carries no
+`revised` tag and no date in its footer, and a site with no `BaseUrl` no canonical link.
 
 The shell declares no classes of its own. Style it through the elements, `aria-current="page"`, and the classes
 Markdig emits: `markdown-alert`, `contains-task-list`, `footnotes`, `math`, `mermaid`, and `language-*`.
@@ -349,9 +349,10 @@ A build overwrites the files it produces and leaves everything else in your outp
 whose source you renamed or deleted stays published under its old name until you remove it. Run `gelyn clean`
 to get an output directory that holds nothing but your current sources.
 
-Every page also carries the build date in its footer and the tool version in its generator tag, so a build on a
-later day rewrites every page even when no source changed. Worth knowing if you commit your output directory or
-deploy it by diff.
+A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources
+and the tool version alone. Upgrading Gelyn moves that version in both the generator tag and the footer, so
+that one rebuild does change every page. Worth knowing if you commit your output directory or deploy it by
+diff.
 
 <!-- References -->
 
