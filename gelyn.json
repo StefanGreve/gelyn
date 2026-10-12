@@ -6,7 +6,7 @@
   "Description": "A static site generator that turns a folder of Markdown into a website.",
   "KaTeXVersion": "0.19.0",
   "MermaidVersion": "12.1.0",
-  "ContentDirectory": "content",
+  "ContentDirectory": "example",
   "OutputDirectory": "_site",
   "ExcludePatterns": [
     ".git",
