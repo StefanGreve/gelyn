@@ -144,7 +144,7 @@ internal sealed class ContentPipeline
         IEnumerable<string> Linked(ContentKind kind) => entries
             .OfType<IFileInfo>()
             .Where(file => Classify(file) == kind)
-            .Select(file => Href(hrefPrefix, [.. prefix, file.Name]));
+            .Select(file => CombineHref(hrefPrefix, [.. prefix, file.Name]));
 
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
         // it, and shared by reference with every page at this level rather than copied per page.
@@ -177,7 +177,7 @@ internal sealed class ContentPipeline
             {
                 SourcePath = file.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
-                Href = Href(hrefPrefix, segments),
+                Href = CombineHref(hrefPrefix, segments),
                 Kind = kind,
                 FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
                 InNavigation = isPage && IsInNavigation(segments),
@@ -214,7 +214,7 @@ internal sealed class ContentPipeline
         _ => ContentKind.MiscFile,
     };
 
-    private static string Href(string prefix, string[] segments) =>
+    private static string CombineHref(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";
 
     private static string ResolveBaseUrlPath(Uri? baseUrl) =>
