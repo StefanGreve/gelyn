@@ -271,7 +271,8 @@ public class ContentPipelineTests
     ///     cannot publish the bytes of a target outside the content directory.
     /// </summary>
     /// <remarks>
-    ///     Driven against the real file system, because <c>MockFileSystem</c> does not model links.
+    ///     Kept on the real file system beside <see cref="Scan_Test_DirectorySymlink_IsNotFollowed"/>, which has
+    ///     no mocked equivalent. <c>MockFileSystem</c> does model a link, so this case alone could be mocked.
     /// </remarks>
     [Test]
     public async Task Scan_Test_FileSymlink_IsNotFollowed()

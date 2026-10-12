@@ -87,14 +87,13 @@
         "resolved": "2.0.12",
         "contentHash": "FpW672e6qqrTd1EfKqsvUtFZaJWlTlszUR1o8tdakXhkzKbnEZVndtpfd4K3fUPCFcIs9UmcswMyYGJP1zp/rg=="
       },
-      "System.IO.Abstractions": {
+      "TestableIO.System.IO.Abstractions.Wrappers": {
         "type": "Direct",
         "requested": "[22.3.0, )",
         "resolved": "22.3.0",
-        "contentHash": "dHMHwd6rl1CFJvdD9jnahy3ZjU67huvUCNhitH+7mzg8ZfLocc5ZQyKmUQMUJiQdElARWJBw0XQQzP6BCKsglA==",
+        "contentHash": "9TsOEcwIGJXHjkZ/lIpg6KnoRjxpZZ/LpMvNddcXEvmcxWKZdbhSy2UWMpy3oN8klbQ3dcpxbp9AddQk0zE+Kg==",
         "dependencies": {
-          "TestableIO.System.IO.Abstractions": "22.3.0",
-          "TestableIO.System.IO.Abstractions.Wrappers": "22.3.0"
+          "Testably.Abstractions.FileSystem.Interface": "10.4.0"
         }
       },
       "Vecc.YamlDotNet.Analyzers.StaticGenerator": {
@@ -348,22 +347,6 @@
         "type": "Transitive",
         "resolved": "10.0.12",
         "contentHash": "sOZM+VyRj1pg/ItlHsvrSbjws6oGqZveTzTNBGZ9ziwRDyKsOF3ub6vhvOdxotCIqtlnyHAIwP5sLNvgiZC+pQ=="
-      },
-      "TestableIO.System.IO.Abstractions": {
-        "type": "Transitive",
-        "resolved": "22.3.0",
-        "contentHash": "2dqQ5AEE61NkQ/0F31mhOXYhgzZOtC+RUuJajwYa7gPgZBqJVe9Mc/hnqXEbBSDOxGZ7hYsmULjzK3yqewB3FA==",
-        "dependencies": {
-          "Testably.Abstractions.FileSystem.Interface": "10.4.0"
-        }
-      },
-      "TestableIO.System.IO.Abstractions.Wrappers": {
-        "type": "Transitive",
-        "resolved": "22.3.0",
-        "contentHash": "9TsOEcwIGJXHjkZ/lIpg6KnoRjxpZZ/LpMvNddcXEvmcxWKZdbhSy2UWMpy3oN8klbQ3dcpxbp9AddQk0zE+Kg==",
-        "dependencies": {
-          "Testably.Abstractions.FileSystem.Interface": "10.4.0"
-        }
       },
       "Testably.Abstractions.FileSystem.Interface": {
         "type": "Transitive",

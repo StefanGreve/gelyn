@@ -11,7 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
-    <PackageReference Include="System.IO.Abstractions.TestingHelpers" />
+    <PackageReference Include="TestableIO.System.IO.Abstractions.TestingHelpers" />
     <PackageReference Include="TngTech.ArchUnitNET.TUnit" />
     <PackageReference Include="TUnit" />
   </ItemGroup>
