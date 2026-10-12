@@ -67,7 +67,7 @@ internal static class Program
                 .GetRequiredService<GelynCommand>()
                 .Parse(args);
 
-            double startupMilliseconds = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            double startupMilliseconds = started.ElapsedMilliseconds;
 
             ILogger logger = host.Services
                 .GetRequiredService<ILoggerFactory>()

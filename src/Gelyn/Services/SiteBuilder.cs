@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Gelyn.Components;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -238,21 +239,12 @@ internal sealed class SiteBuilder
         (long Scan, long Render, long Compose, long Write) ticks,
         TimeSpan elapsed)
     {
-        double scanMs = ElapsedMilliseconds(ticks.Scan);
-        double renderMs = ElapsedMilliseconds(ticks.Render);
-        double composeMs = ElapsedMilliseconds(ticks.Compose);
-        double writeMs = ElapsedMilliseconds(ticks.Write);
-        double buildMs = elapsed.TotalMilliseconds;
-
-        this._logger.LogScanCompleted(itemCount, scanMs);
-        this._logger.LogRenderCompleted(pageCount, renderMs);
-        this._logger.LogComposeCompleted(pageCount, composeMs);
-        this._logger.LogWriteCompleted(fileCount, writeMs);
-        this._logger.LogBuildCompleted(fileCount, buildMs);
+        this._logger.LogScanCompleted(itemCount, ticks.Scan.TotalMilliseconds);
+        this._logger.LogRenderCompleted(pageCount, ticks.Render.TotalMilliseconds);
+        this._logger.LogComposeCompleted(pageCount, ticks.Compose.TotalMilliseconds);
+        this._logger.LogWriteCompleted(fileCount, ticks.Write.TotalMilliseconds);
+        this._logger.LogBuildCompleted(fileCount, elapsed.TotalMilliseconds);
     }
-
-    private static double ElapsedMilliseconds(long ticks) =>
-        Stopwatch.GetElapsedTime(0, ticks).TotalMilliseconds;
 
     #endregion
 }
