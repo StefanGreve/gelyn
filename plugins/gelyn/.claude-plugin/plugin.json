@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "gelyn",
+  "version": "0.1.0",
+  "description": "Companion skills for authoring and configuring a gelyn blog",
+  "author": {
+    "name": "Stefan Greve",
+    "email": "stefan.ohlsen.greve@gmail.com"
+  },
+  "homepage": "https://github.com/StefanGreve/gelyn",
+  "repository": "https://github.com/StefanGreve/gelyn",
+  "license": "MIT",
+  "keywords": [
+    "gelyn",
+    "static-site-generator",
+    "markdown",
+    "scaffolding"
+  ]
+}

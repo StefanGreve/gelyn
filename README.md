@@ -19,13 +19,29 @@ gelyn build
 Preview the result over HTTP:
 
 ```sh
-python3 -m http.server -d _site -b 127.0.0.1 8000
+python3 -m http.server -d _site -b 127.0.0.1 9624
 ```
 
 > [!NOTE]
-> Serves the site at <http://localhost:8000> for local development only. Python's [`http.server`][http-server]
+> Serves the site at <http://localhost:9624> for local development only. Python's [`http.server`][http-server]
 > documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
 > every interface.
+
+## Claude Code Plugin
+
+If you use [Claude Code][claude-code], a plugin sets the blog up for you rather than leaving you with an
+empty directory. Register the marketplace, then install it:
+
+```sh
+claude plugin marketplace add stefangreve/claude-plugins
+claude plugin install gelyn@stefangreve-plugins
+```
+
+Ask Claude to set up a blog, or invoke the skill directly:
+
+```sh
+/gelyn:bootstrap
+```
 
 ## Developer Notes
 
@@ -91,6 +107,8 @@ dotnet tool install --global Gelyn --prerelease
 [license-badge]: https://img.shields.io/github/license/StefanGreve/gelyn?color=green
 [platform-badge]: https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey
 [license]: LICENSE.md
+[claude-code]: https://claude.com/claude-code
+[marketplace]: https://github.com/StefanGreve/claude-plugins
 [tunit]: https://tunit.dev
 [tunit-docs]: https://tunit.dev/docs/intro/
 [husky]: https://alirezanet.github.io/Husky.Net
