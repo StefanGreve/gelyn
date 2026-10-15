@@ -6,7 +6,17 @@
 [![Platform][platform-badge]][known-rids]
 [![License][license-badge]][license]
 
-A simple, cross-platform, and high-performance static site generator for Markdown.
+A simple, cross-platform, and high-performance static site generator (SSG) for Markdown.
+
+Gelyn is a deliberately opinionated SSG that cares about semantically correct HTML output. The HTML
+skeleton is fixed by design, with no plugin system or template engine. Pages can be customized through
+CSS, which is the only supported personalization route. This tool is primarily built for people who care
+more about content creation than about an abundance of customization options. If you need more control
+over the generated output and don't shy away from meddling with web development, I can recommend using
+[11ty][11ty] instead.
+
+> [!WARNING]
+> This project is a work in progress. Things can break and change at any time. Use at your own risk.
 
 ## Basic Usage
 
@@ -107,6 +117,7 @@ dotnet tool install --global Gelyn --prerelease
 [license-badge]: https://img.shields.io/github/license/StefanGreve/gelyn?color=green
 [platform-badge]: https://img.shields.io/badge/platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey
 [license]: LICENSE.md
+[11ty]: https://www.11ty.dev
 [claude-code]: https://claude.com/claude-code
 [marketplace]: https://github.com/StefanGreve/claude-plugins
 [tunit]: https://tunit.dev
