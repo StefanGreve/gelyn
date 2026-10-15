@@ -111,7 +111,7 @@ public class ContentPipelineTests
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty().Write("about.md", "About");
 
-        // Act & Assert
+        // Act and Assert
         await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
     }
 

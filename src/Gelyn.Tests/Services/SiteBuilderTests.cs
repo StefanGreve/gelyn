@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -9,8 +10,10 @@ using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
+using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
+using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -589,6 +592,243 @@ public partial class SiteBuilderTests
 
     #endregion // Canonical Tests
 
+    #region Reconcile Tests
+
+    /// <summary>
+    ///     Verifies that the output of a page whose source is gone is deleted and reported.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_OrphanedPage_IsRemoved()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Delete("about.md");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["about.html"]);
+            await Assert.That(fixture.OutputHolds("about.html")).IsFalse();
+            await Assert.That(fixture.OutputHolds("index.html")).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a colocated file is reconciled in the same way as a page, because every file the scan
+    ///     locates is an output.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_OrphanedCopy_IsRemoved()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WriteFile("robots.txt", "User-agent: *");
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Delete("robots.txt");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["robots.txt"]);
+            await Assert.That(fixture.OutputHolds("robots.txt")).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a source the exclude patterns start matching has its output removed, which is what
+    ///     proves the reconcile subtracts what the scan reports rather than what is still on disk.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_NewlyExcludedSource_HasItsOutputRemoved()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.WithExcludePatterns("about.md");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["about.html"]);
+            await Assert.That(fixture.OutputHolds("about.html")).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a file no build ever wrote is deleted, so that output placed by hand cannot outlive
+    ///     the directory it sits in.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_StrayFile_IsRemoved()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteOutput("leftover.html", "<p>From a build that is no longer the current one.</p>")
+            .WriteOutput("blog/leftover.html", "<p>Nested, so the walk has to reach it.</p>");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert: the nested path is composed rather than written out, because the report uses the native
+        // separator while the fixture takes forward slashes.
+        string nested = fixture.FileSystem.Path.Combine("blog", "leftover.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["leftover.html", nested]);
+            await Assert.That(fixture.OutputHolds("leftover.html")).IsFalse();
+            await Assert.That(fixture.OutputHolds("blog/leftover.html")).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a rebuild over an unchanged tree deletes nothing, which is what keeps the reconcile
+    ///     from being destructive in the ordinary case.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_UnchangedTree_RemovesNothing()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WriteFile("robots.txt", "User-agent: *");
+        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Act
+        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(second.Removed.Count).IsEqualTo(0);
+            await Assert.That(second.Pages).IsEquivalentTo(first.Pages);
+            await Assert.That(second.Copies).IsEquivalentTo(first.Copies);
+            await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a directory the reconcile empties is removed along with the files in it, while the
+    ///     directory above it survives because it still holds a page.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_EmptiedDirectory_IsRemoved()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Delete("blog/2026/q3/deep.md");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed.Count).IsEqualTo(1);
+            await Assert.That(fixture.OutputHoldsDirectory("blog/2026/q3")).IsFalse();
+            await Assert.That(fixture.OutputHoldsDirectory("blog/2026")).IsTrue();
+            await Assert.That(fixture.OutputHolds("blog/2026/index.html")).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a dot-prefixed entry survives at the root and nested, together with everything below
+    ///     it. A <c>_site</c> deployed as a git worktree holds <c>.git</c> and a GitHub Pages site holds
+    ///     <c>.nojekyll</c>, and deleting either would be reported as a feature.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DotPrefixedEntry_Survives()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteOutput(".nojekyll")
+            .WriteOutput(".git/HEAD", "ref: refs/heads/gh-pages")
+            .WriteOutput("blog/.keep");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed.Count).IsEqualTo(0);
+            await Assert.That(fixture.OutputHolds(".nojekyll")).IsTrue();
+            await Assert.That(fixture.OutputHolds(".git/HEAD")).IsTrue();
+            await Assert.That(fixture.OutputHolds("blog/.keep")).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a directory symbolic link in the output is not descended into, so that the reconcile
+    ///     cannot delete a file outside the output directory.
+    /// </summary>
+    /// <remarks>
+    ///     Driven against the real file system, because <c>MockFileSystem</c> does not resolve traversal
+    ///     through a link, so it yields nothing on the far side whether the guard is present or not.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_DirectorySymlinkInOutput_IsNotFollowed()
+    {
+        // Arrange
+        Skip.Unless(!OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
+
+        FileSystem fileSystem = new();
+        SiteOptions options = new();
+        string root = Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}");
+        string content = Path.Combine(root, options.ContentDirectory);
+        string output = Path.Combine(root, options.OutputDirectory);
+        string outside = Path.Combine(root, "outside");
+        string keepsake = Path.Combine(outside, "keepsake.txt");
+
+        try
+        {
+            Directory.CreateDirectory(content);
+            Directory.CreateDirectory(output);
+            Directory.CreateDirectory(outside);
+
+            await File.WriteAllTextAsync(Path.Combine(content, "index.md"), "---\ntitle: Home\n---");
+            await File.WriteAllTextAsync(keepsake, "Not the build's to delete.");
+            Directory.CreateSymbolicLink(Path.Combine(output, "shared"), outside);
+
+            HostEnvironmentStub environment = new() { ContentRootPath = root };
+
+            SiteBuilder builder = new(
+                new ContentPipeline(environment, fileSystem),
+                environment,
+                new OptionsMonitorStub(options),
+                fileSystem,
+                new FakeLogger<SiteBuilder>());
+
+            // Act
+            BuildReport report = await builder.BuildAsync(CancellationToken.None);
+
+            // Assert
+            using (Assert.Multiple())
+            {
+                await Assert.That(File.Exists(keepsake)).IsTrue();
+                await Assert.That(report.Removed.Count).IsEqualTo(0);
+            }
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    #endregion // Reconcile Tests
+
     #region Counter Tests
 
     /// <summary>
@@ -606,6 +846,7 @@ public partial class SiteBuilderTests
             EventIds.RENDER_COMPLETED,
             EventIds.COMPOSE_COMPLETED,
             EventIds.WRITE_COMPLETED,
+            EventIds.REMOVE_COMPLETED,
             EventIds.BUILD_COMPLETED,
         ];
 
@@ -619,13 +860,14 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that all five counters report the number of files the build produced, so that none of
-    ///     them can drift from the result the command returns.
+    ///     Verifies that every counter reports the number of files the build produced, so that none of them
+    ///     can drift from the result the command returns.
     /// </summary>
     /// <remarks>
     ///     Cannot tell the item count, the page count and the file count apart, because this tree holds
     ///     nothing to copy. <see cref="BuildAsync_Test_Counters_CountCopiesApartFromPages"/> is the case
-    ///     that separates them.
+    ///     that separates them, and <see cref="BuildAsync_Test_Counters_CountRemovalsApartFromWrites"/> the
+    ///     case that separates the removals from both.
     /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_ReportTheNumberOfFiles()
@@ -644,6 +886,7 @@ public partial class SiteBuilderTests
             await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(files);
             await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(files);
+            await Assert.That(Count(fixture, EventIds.REMOVE_COMPLETED, "FileCount")).IsEqualTo(0);
             await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(files);
         }
     }
@@ -680,6 +923,37 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that the write counter reports what was produced while the remove counter reports what
+    ///     was deleted, and that the build counter spans both, which is the total the command prints.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Counters_CountRemovalsApartFromWrites()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create();
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Delete("about.md");
+        fixture.Delete("blog/hello.md");
+        fixture.Logger.Collector.Clear();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        int written = report.Pages.Count;
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(written).IsEqualTo(4);
+            await Assert.That(report.Removed.Count).IsEqualTo(2);
+
+            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(4);
+            await Assert.That(Count(fixture, EventIds.REMOVE_COMPLETED, "FileCount")).IsEqualTo(2);
+            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(6);
+        }
+    }
+
+    /// <summary>
     ///     Verifies that every counter is reported at debug level, so that none of them can be promoted into
     ///     the output of a normal build.
     /// </summary>
@@ -695,7 +969,7 @@ public partial class SiteBuilderTests
         // Assert: the count is pinned first, because an empty list would satisfy the loop on its own.
         using (Assert.Multiple())
         {
-            await Assert.That(fixture.Records.Count).IsEqualTo(5);
+            await Assert.That(fixture.Records.Count).IsEqualTo(6);
 
             foreach (FakeLogRecord record in fixture.Records)
                 await Assert.That(record.Level).IsEqualTo(LogLevel.Debug);
@@ -742,6 +1016,7 @@ public partial class SiteBuilderTests
         double render = Elapsed(fixture, EventIds.RENDER_COMPLETED);
         double compose = Elapsed(fixture, EventIds.COMPOSE_COMPLETED);
         double write = Elapsed(fixture, EventIds.WRITE_COMPLETED);
+        double remove = Elapsed(fixture, EventIds.REMOVE_COMPLETED);
 
         using (Assert.Multiple())
         {
@@ -750,8 +1025,11 @@ public partial class SiteBuilderTests
             await Assert.That(compose).IsGreaterThan(0);
             await Assert.That(write).IsGreaterThan(0);
 
+            // Nonzero even on this tree, because the reconcile walks the whole output whether it deletes or not.
+            await Assert.That(remove).IsGreaterThan(0);
+
             await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED))
-                .IsGreaterThanOrEqualTo(scan + render + compose + write);
+                .IsGreaterThanOrEqualTo(scan + render + compose + write + remove);
         }
     }
 

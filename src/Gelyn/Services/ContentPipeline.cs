@@ -82,7 +82,7 @@ internal sealed class ContentPipeline
 
         string hrefPrefix = ResolveBaseUrlPath(options.BaseUrl);
 
-        return this.Collect(
+        return this.CollectItems(
             this._fileSystem.DirectoryInfo.New(root),
             prefix: [],
             inheritedStylesheets: [],
@@ -128,7 +128,35 @@ internal sealed class ContentPipeline
 
     #region Helpers
 
-    private List<ContentItem> Collect(
+    /// <summary>
+    ///     Locates every file in one directory and in the directories below it, classifies each one and
+    ///     resolves the path and URL it is published under.
+    /// </summary>
+    /// <param name="directory">
+    ///     The directory to walk.
+    /// </param>
+    /// <param name="prefix">
+    ///     The output-relative segments leading to <paramref name="directory"/>, empty at the content root.
+    /// </param>
+    /// <param name="inheritedStylesheets">
+    ///     The root-relative URLs of the stylesheets declared above <paramref name="directory"/>, outermost
+    ///     first.
+    /// </param>
+    /// <param name="inheritedScripts">
+    ///     The root-relative URLs of the scripts declared above <paramref name="directory"/>, outermost first.
+    /// </param>
+    /// <param name="hrefPrefix">
+    ///     The path of the configured base URL, or an empty string when the site is served from the root of a
+    ///     domain.
+    /// </param>
+    /// <param name="excluded">
+    ///     The name patterns an entry is left out for.
+    /// </param>
+    /// <returns>
+    ///     Every file at and below <paramref name="directory"/>, landing page first, with the files the build
+    ///     has no use for left out.
+    /// </returns>
+    private List<ContentItem> CollectItems(
         IDirectoryInfo directory,
         string[] prefix,
         IReadOnlyList<string> inheritedStylesheets,
@@ -188,7 +216,7 @@ internal sealed class ContentPipeline
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
         {
-            items.AddRange(this.Collect(
+            items.AddRange(this.CollectItems(
                 child,
                 [.. prefix, child.Name],
                 inheritedStylesheets: stylesheets,

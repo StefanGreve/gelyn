@@ -94,13 +94,35 @@ internal static partial class LogMessages
     internal static partial void LogWriteCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
 
     /// <summary>
+    ///     Reports how long it took to delete the output that no located file accounts for.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="fileCount">
+    ///     The number of files that were deleted, which excludes the directories emptied by deleting them.
+    /// </param>
+    /// <param name="elapsedMilliseconds">
+    ///     The duration of the reconcile, which walks the whole output directory whether or not it deletes
+    ///     anything.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.REMOVE_COMPLETED,
+        EventName = nameof(EventIds.REMOVE_COMPLETED),
+        Level = LogLevel.Debug,
+        SkipEnabledCheck = true,
+        Message = "Removed {FileCount} file(s) in {ElapsedMilliseconds:F2} ms")]
+    internal static partial void LogRemoveCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
+
+    /// <summary>
     ///     Reports how long the whole build took.
     /// </summary>
     /// <param name="logger">
     ///     The logger the record is written to.
     /// </param>
     /// <param name="fileCount">
-    ///     The number of files the build produced.
+    ///     The number of files the build wrote, copied and deleted, which is the same total the command
+    ///     reports to standard output.
     /// </param>
     /// <param name="elapsedMilliseconds">
     ///     The duration of the build as a whole.
@@ -110,7 +132,7 @@ internal static partial class LogMessages
         EventName = nameof(EventIds.BUILD_COMPLETED),
         Level = LogLevel.Debug,
         SkipEnabledCheck = true,
-        Message = "Built {FileCount} file(s) in {ElapsedMilliseconds:F2} ms")]
+        Message = "Processed {FileCount} file(s) in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogBuildCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
 
     /// <summary>

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
@@ -23,11 +22,11 @@ internal sealed class DateOnlyConverter : IYamlTypeConverter
 
     /// <inheritdoc/>
     public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer) =>
-        DateOnly.TryParse(parser.Consume<Scalar>().Value, CultureInfo.InvariantCulture, out DateOnly date)
+        DateOnly.TryParse(parser.Consume<Scalar>().Value, Tool.Culture, out DateOnly date)
             ? date
             : null;
 
     /// <inheritdoc/>
     public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer) =>
-        emitter.Emit(new Scalar(((DateOnly?)value)?.ToString(Format, CultureInfo.InvariantCulture) ?? string.Empty));
+        emitter.Emit(new Scalar(((DateOnly?)value)?.ToString(Format, Tool.Culture) ?? string.Empty));
 }

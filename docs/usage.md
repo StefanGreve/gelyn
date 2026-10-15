@@ -345,9 +345,18 @@ ES module, and [Scripts](#scripts) emits a plain `<script src>`, which can't car
 
 ## Rebuilds
 
-A build overwrites the files it produces and leaves everything else in your output directory alone, so a page
-whose source you renamed or deleted stays published under its old name until you remove it. Run `gelyn clean`
-to get an output directory that holds nothing but your current sources.
+A build reconciles your output directory against your sources: it writes the pages, copies everything beside
+them, then deletes what is left over. Rename or delete a source and its output goes with it on the next build,
+reported as `removed`, and a directory left empty by those deletions is removed as well. Excluding a source
+through `ExcludePatterns` has the same effect, because the build removes whatever it no longer publishes.
+
+An entry whose name starts with a dot is left alone, at every level, along with everything below it. That is
+what keeps a `_site` deployed as a git worktree from losing its `.git`, and a GitHub Pages site from losing its
+`.nojekyll`. A symbolic link is left alone too, and never followed, so a reconcile cannot reach a file outside
+your output directory. The cost of both rules is that such an entry is never reconciled either: delete the
+source of a dot-prefixed file and its output stays published.
+
+`gelyn clean` removes the output directory outright, which is the one way to clear those entries as well.
 
 A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources
 and the tool version alone. Upgrading Gelyn moves that version in both the generator tag and the footer, so

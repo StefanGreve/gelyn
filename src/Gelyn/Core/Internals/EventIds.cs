@@ -35,14 +35,19 @@ internal static class EventIds
     internal const int WRITE_COMPLETED = 1_003;
 
     /// <summary>
+    ///     Every file in the output directory that no located file accounts for has been deleted.
+    /// </summary>
+    internal const int REMOVE_COMPLETED = 1_004;
+
+    /// <summary>
     ///     The build has finished.
     /// </summary>
-    internal const int BUILD_COMPLETED = 1_004;
+    internal const int BUILD_COMPLETED = 1_005;
 
     /// <summary>
     ///     The host has been built and a command is about to be dispatched.
     /// </summary>
-    internal const int STARTUP_COMPLETED = 1_005;
+    internal const int STARTUP_COMPLETED = 1_006;
 
     #endregion
 }

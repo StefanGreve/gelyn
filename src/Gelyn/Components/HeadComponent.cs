@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -48,7 +47,7 @@ internal static class HeadComponent
 
         if (context.Page.Date is DateOnly revised)
         {
-            string date = revised.ToString(DateFormat, CultureInfo.InvariantCulture);
+            string date = revised.ToString(DateFormat, Tool.Culture);
             head.AppendLine($"""<meta name="revised" content="{date}">""");
         }
 

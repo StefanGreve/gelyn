@@ -26,10 +26,19 @@ namespace Gelyn.Services;
 ///     The build is processed in this order:
 ///     <list type="number">
 ///         <item>
-///             <description><see cref="WritePagesAsync"/> composes and writes the rendered pages.</description>
+///             <description>
+///                 <see cref="WritePagesAsync"/> composes and writes the rendered pages.
+///             </description>
 ///         </item>
 ///         <item>
-///             <description><see cref="CopyAssets"/> copies every located file that is not a page.</description>
+///             <description>
+///                 <see cref="CopyAssets"/> copies every located file that is not a page.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
+///                 <see cref="Reconcile"/> deletes the output that no located file accounts for.
+///             </description>
 ///         </item>
 ///     </list>
 /// </remarks>
@@ -80,7 +89,8 @@ internal sealed class SiteBuilder
     ///     Token used to cancel the operation.
     /// </param>
     /// <returns>
-    ///     The files that were written, the files that were copied, and how long producing them took.
+    ///     The files that were written, the files that were copied, the files that were deleted, and how long
+    ///     all of it took.
     /// </returns>
     public async Task<BuildReport> BuildAsync(CancellationToken cancellationToken)
     {
@@ -115,6 +125,10 @@ internal sealed class SiteBuilder
         if (isMeasuring)
             writeTicks += Stopwatch.GetTimestamp() - copyStarted;
 
+        long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        List<string> removed = this.Reconcile(items, outputDirectory, cancellationToken);
+        long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
+
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
         TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
 
@@ -124,7 +138,8 @@ internal sealed class SiteBuilder
                 items.Count,
                 pages.Count,
                 written.Count + copied.Count,
-                (scanTicks, renderTicks, composeTicks, writeTicks),
+                removed.Count,
+                (scanTicks, renderTicks, composeTicks, writeTicks, removeTicks),
                 elapsed);
         }
 
@@ -132,6 +147,7 @@ internal sealed class SiteBuilder
         {
             Pages = written,
             Copies = copied,
+            Removed = removed,
             Elapsed = elapsed,
         };
     }
@@ -221,18 +237,122 @@ internal sealed class SiteBuilder
         return copied;
     }
 
+    private List<string> Reconcile(
+        IReadOnlyList<ContentItem> items,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        HashSet<string> published = new(items.Count, StringComparer.Ordinal);
+
+        foreach (ContentItem item in items)
+            published.Add(item.OutputPath);
+
+        List<string> removed = [];
+
+        this.PruneDirectory(
+            this._fileSystem.DirectoryInfo.New(outputDirectory),
+            prefix: [],
+            published,
+            removed,
+            cancellationToken);
+
+        return removed;
+    }
+
+    /// <summary>
+    ///     Deletes every file in one directory, and in the directories below it, that the scan does not
+    ///     account for, together with the directories those deletions leave empty.
+    /// </summary>
+    /// <remarks>
+    ///     Recursive like <see cref="ContentPipeline.CollectItems"/> rather than a flat enumeration, so a
+    ///     skipped directory is never descended into and a deployed <c>.git</c> keeps its contents.
+    /// </remarks>
+    /// <param name="directory">
+    ///     The directory to walk.
+    /// </param>
+    /// <param name="prefix">
+    ///     The output-relative segments leading to <paramref name="directory"/>, empty at the output root.
+    /// </param>
+    /// <param name="published">
+    ///     The output-relative path of every file the site consists of.
+    /// </param>
+    /// <param name="removed">
+    ///     Receives the output-relative path of each file that was deleted.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     <see langword="true"/> when anything in the directory survived, which is what tells the caller the
+    ///     directory itself is not to be deleted.
+    /// </returns>
+    private bool PruneDirectory(
+        IDirectoryInfo directory,
+        string[] prefix,
+        HashSet<string> published,
+        List<string> removed,
+        CancellationToken cancellationToken)
+    {
+        // Materialized ahead of the first delete. POSIX leaves it unspecified whether a directory stream
+        // still returns an entry removed after the stream was opened, and not every file system keeps the
+        // rest of the iteration stable: https://pubs.opengroup.org/onlinepubs/9799919799/functions/readdir.html
+        IFileSystemInfo[] entries = [.. directory.EnumerateFileSystemInfos()];
+        bool occupied = false;
+
+        foreach (IFileSystemInfo entry in entries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // A dotfile belongs to the deploy target, and deleting through a link would reach past the output root.
+            if (entry.Name.StartsWith('.') || entry.LinkTarget is not null)
+            {
+                occupied = true;
+                continue;
+            }
+
+            string[] segments = [.. prefix, entry.Name];
+
+            if (entry is IDirectoryInfo child)
+            {
+                if (this.PruneDirectory(child, segments, published, removed, cancellationToken))
+                {
+                    occupied = true;
+                    continue;
+                }
+
+                child.Delete();
+                continue;
+            }
+
+            string relativePath = this._fileSystem.Path.Combine(segments);
+
+            if (published.Contains(relativePath))
+            {
+                occupied = true;
+                continue;
+            }
+
+            entry.Delete();
+            removed.Add(relativePath);
+        }
+
+        return occupied;
+    }
+
     private void ReportCounters(
         int itemCount,
         int pageCount,
         int fileCount,
-        (long Scan, long Render, long Compose, long Write) ticks,
+        int removedCount,
+        (long Scan, long Render, long Compose, long Write, long Remove) ticks,
         TimeSpan elapsed)
     {
         this._logger.LogScanCompleted(itemCount, ticks.Scan.TotalMilliseconds);
         this._logger.LogRenderCompleted(pageCount, ticks.Render.TotalMilliseconds);
         this._logger.LogComposeCompleted(pageCount, ticks.Compose.TotalMilliseconds);
         this._logger.LogWriteCompleted(fileCount, ticks.Write.TotalMilliseconds);
-        this._logger.LogBuildCompleted(fileCount, elapsed.TotalMilliseconds);
+        this._logger.LogRemoveCompleted(removedCount, ticks.Remove.TotalMilliseconds);
+        this._logger.LogBuildCompleted(fileCount + removedCount, elapsed.TotalMilliseconds);
     }
 
     #endregion

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -32,7 +31,7 @@ internal static class FooterComponent
 
         string version = WebUtility.HtmlEncode(Tool.Version);
         string revised = context.Page.Date is DateOnly date
-            ? $" - last revised {date.ToString(DateFormat, CultureInfo.InvariantCulture)}"
+            ? $" - last revised {date.ToString(DateFormat, Tool.Culture)}"
             : string.Empty;
 
         footer.AppendLine("<footer>");

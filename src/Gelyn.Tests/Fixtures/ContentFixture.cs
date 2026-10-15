@@ -324,6 +324,66 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Removes one source file, as renaming or deleting it between two builds would.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture Delete(string relativePath)
+    {
+        this.FileSystem.File.Delete(this.Resolve(this.ContentRoot, relativePath));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Adds one file to the output directory, as a deploy target or an earlier build would have left it
+    ///     there, creating the directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="OutputRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="contents">
+    ///     The exact text to write.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteOutput(string relativePath, string contents = "")
+    {
+        this.FileSystem.AddFile(this.Resolve(this.OutputRoot, relativePath), new MockFileData(contents));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Indicates whether the output directory holds a file at the given path.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="OutputRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <returns>
+    ///     <see langword="true"/> when the file is present, <see langword="false"/> otherwise.
+    /// </returns>
+    public bool OutputHolds(string relativePath) =>
+        this.FileSystem.File.Exists(this.Resolve(this.OutputRoot, relativePath));
+
+    /// <summary>
+    ///     Indicates whether the output directory holds a directory at the given path.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the directory relative to <see cref="OutputRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <returns>
+    ///     <see langword="true"/> when the directory is present, <see langword="false"/> otherwise.
+    /// </returns>
+    public bool OutputHoldsDirectory(string relativePath) =>
+        this.FileSystem.Directory.Exists(this.Resolve(this.OutputRoot, relativePath));
+
+    /// <summary>
     ///     Applies a base URL to the fixture's options, so that a test can exercise the path prefix and the
     ///     canonical reference that derive from it.
     /// </summary>
@@ -399,8 +459,10 @@ internal sealed class ContentFixture
         relativePath,
         string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---"));
 
-    private string Resolve(string relativePath) => this.FileSystem.Path.Combine(
-        this.ContentRoot,
+    private string Resolve(string relativePath) => this.Resolve(this.ContentRoot, relativePath);
+
+    private string Resolve(string root, string relativePath) => this.FileSystem.Path.Combine(
+        root,
         relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
 
     #endregion

@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Globalization;
 using System.IO;
 
 using Gelyn.Core.Internals;
@@ -72,14 +71,13 @@ internal sealed class BuildCommand : Command
                 foreach (string copy in report.Copies)
                     console.MarkupLineInterpolated($"[green]copied[/] {copy}");
 
+                foreach (string removal in report.Removed)
+                    console.MarkupLineInterpolated($"[yellow]removed[/] {removal}");
+
                 // Formatted here rather than in the interpolation, so the culture is not left to the console.
-                string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", CultureInfo.InvariantCulture);
-
-                // One umbrella total, so that a later kind which is neither rendered nor copied adds no clause.
-                int processed = report.Pages.Count + report.Copies.Count;
-
-                console.MarkupLineInterpolated(
-                    $"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
+                string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
+                int processed = report.Pages.Count + report.Copies.Count + report.Removed.Count;
+                console.MarkupLineInterpolated($"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
 
                 return ExitCodes.Success;
             }
