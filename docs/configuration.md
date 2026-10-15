@@ -85,8 +85,7 @@ accepts only absolute `http` and `https` URLs, and rejects anything else before 
 ## Exclude patterns
 
 Gelyn copies every file beside your Markdown to the output directory, so name anything the build shouldn't
-publish in `ExcludePatterns`. Nothing is excluded by default. This is the set to start a project from, and the
-one `gelyn.json` in this repository carries:
+publish in `ExcludePatterns`. Nothing is excluded by default. This is the set to start a project from:
 
 ```json
 "ExcludePatterns": [
@@ -99,6 +98,11 @@ one `gelyn.json` in this repository carries:
 > `*.html` is the entry that matters most. HTML isn't an authoring format here, and the copy runs after the
 > render, so without this pattern an `about.html` beside `about.md` is published over the page generated from
 > the Markdown. Keep it unless you know your content tree holds no HTML.
+
+Name your configuration file too if it sits inside the content directory. Gelyn reads `gelyn.json` before the
+scan and has no further knowledge of it, so a config file among your Markdown is copied like any other file.
+This repository does exactly that: `example/gelyn.json` configures the tree it sits in, and so carries
+`gelyn.json` as an eleventh pattern.
 
 Symbolic links are the one exception. Gelyn always skips them, for both files and directories, and no setting
 re-enables them. A link lets the walk leave your content directory, one that resolves to an ancestor makes the

@@ -172,7 +172,7 @@ public class ContentPipelineTests
     /// </summary>
     /// <remarks>
     ///     The patterns are configured rather than built in, so a project without them publishes these files.
-    ///     <c>gelyn.json</c> in this repository carries the set a project is expected to start from.
+    ///     <c>docs/configuration.md</c> carries the set a project is expected to start from.
     /// </remarks>
     [Test]
     public async Task Scan_Test_DeniedFiles_AreLeftOut()
