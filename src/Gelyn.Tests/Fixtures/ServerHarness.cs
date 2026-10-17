@@ -26,10 +26,14 @@ namespace Gelyn.Tests.Fixtures;
 /// </remarks>
 internal sealed class ServerHarness : IAsyncDisposable
 {
+    private const int EntryTimeoutMilliseconds = 10_000;
+    private const int PollMilliseconds = 5;
+
     private readonly CancellationTokenSource _cancellation = new();
     private readonly Task _serving;
 
     private readonly StringWriter _output = new();
+    private readonly TextWriter _writer;
 
     private ServerHarness(OutputFixture fixture, DateTimeOffset now)
     {
@@ -37,13 +41,17 @@ internal sealed class ServerHarness : IAsyncDisposable
         this.Logger = new FakeLogger<FileServer>();
         this.TimeProvider = new FakeTimeProvider(now);
 
+        // Synchronized because the serving task appends entries while a test reads them, which a bare
+        // StringWriter does not order.
+        this._writer = TextWriter.Synchronized(this._output);
+
         // Written to a StringWriter rather than to a TestConsole, which would need a package the suite does
         // not otherwise want. NoColors keeps the captured text free of escape sequences.
         IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings
         {
             Ansi = AnsiSupport.No,
             ColorSystem = ColorSystemSupport.NoColors,
-            Out = new AnsiConsoleOutput(this._output),
+            Out = new AnsiConsoleOutput(this._writer),
         });
 
         FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
@@ -72,7 +80,22 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <summary>
     ///     Everything the server has written to its console, banner included.
     /// </summary>
-    public string Output => this._output.ToString();
+    public string Output
+    {
+        get
+        {
+            // A synchronized writer locks on itself, so the same lock here orders a read against a write.
+            lock (this._writer)
+            {
+                return this._output.ToString();
+            }
+        }
+    }
+
+    /// <summary>
+    ///     What the server has written, one element per line, the banner first.
+    /// </summary>
+    public string[] Lines => this.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
     /// <summary>
     ///     The client the requests are sent through.
@@ -145,6 +168,35 @@ internal sealed class ServerHarness : IAsyncDisposable
     {
         await this._cancellation.CancelAsync().ConfigureAwait(false);
         await this._serving.ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Waits until the log holds a given number of entries.
+    /// </summary>
+    /// <remarks>
+    ///     An entry is written after the response it describes has gone out, so a request that has returned
+    ///     is no guarantee that its line can be read or that its stamp has been taken yet.
+    /// </remarks>
+    /// <param name="count">
+    ///     The number of entries to wait for, the banner excluded.
+    /// </param>
+    /// <returns>
+    ///     A task that completes once that many entries can be read.
+    /// </returns>
+    /// <exception cref="TimeoutException">
+    ///     The entries did not arrive in the time a loopback request needs many times over.
+    /// </exception>
+    public async Task WaitForEntriesAsync(int count)
+    {
+        long deadline = Environment.TickCount64 + EntryTimeoutMilliseconds;
+
+        for (string[] lines = this.Lines; lines.Length <= count; lines = this.Lines)
+        {
+            if (Environment.TickCount64 > deadline)
+                throw new TimeoutException($"Waited for {count} log entries, read {lines.Length - 1}.");
+
+            await Task.Delay(PollMilliseconds).ConfigureAwait(false);
+        }
     }
 
     #region Helpers

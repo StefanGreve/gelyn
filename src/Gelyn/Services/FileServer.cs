@@ -191,6 +191,7 @@ internal sealed class FileServer
 
         string method = request.HttpMethod;
         string path = request.Url?.AbsolutePath ?? "/";
+        string? client = ReadClient(request);
 
         try
         {
@@ -201,7 +202,7 @@ internal sealed class FileServer
                 response.AddHeader(AllowHeader, ReadMethods);
                 response.ContentLength64 = 0;
 
-                this.Report(request, HttpStatusCode.MethodNotAllowed, written: 0);
+                this.Report(request, client, HttpStatusCode.MethodNotAllowed, written: 0);
             }
             else
             {
@@ -214,7 +215,7 @@ internal sealed class FileServer
                     .WriteBodyAsync(response, file, method, cancellationToken)
                     .ConfigureAwait(false);
 
-                this.Report(request, file.StatusCode, written);
+                this.Report(request, client, file.StatusCode, written);
             }
 
             response.Close();
@@ -267,16 +268,19 @@ internal sealed class FileServer
     /// <param name="request">
     ///     The request that was answered.
     /// </param>
+    /// <param name="client">
+    ///     The address the request came from, or <see langword="null"/> when it could not be read.
+    /// </param>
     /// <param name="status">
     ///     The status it was answered under.
     /// </param>
     /// <param name="written">
     ///     The number of bytes written to the body.
     /// </param>
-    private void Report(HttpListenerRequest request, HttpStatusCode status, long written)
+    private void Report(HttpListenerRequest request, string? client, HttpStatusCode status, long written)
     {
         this.Write(CommonLogFormat.BuildMessage(
-            client: request.RemoteEndPoint?.Address.ToString(),
+            client: client,
             identity: null,
             user: null,
             timestamp: this._timeProvider.GetLocalNow(),
@@ -285,6 +289,20 @@ internal sealed class FileServer
             protocol: request.ProtocolVersion,
             status: (int)status,
             bytes: written));
+    }
+
+    // Read while the request is still connected, because the endpoint reaches through to the connection that
+    // Stop disposes, and the getter throws from under the null check once it has.
+    private static string? ReadClient(HttpListenerRequest request)
+    {
+        try
+        {
+            return request.RemoteEndPoint?.Address.ToString();
+        }
+        catch (NullReferenceException)
+        {
+            return null;
+        }
     }
 
     // Bypasses the console, which would wrap the line and read a bracket in a request path as markup.

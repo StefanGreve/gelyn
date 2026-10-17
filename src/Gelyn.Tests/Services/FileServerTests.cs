@@ -300,10 +300,11 @@ public class FileServerTests
         // Act
         using HttpResponseMessage page = await harness.Client.GetAsync(harness.Url("/index.html"), CancellationToken.None);
         using HttpResponseMessage miss = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
+        await harness.WaitForEntriesAsync(2);
         await harness.StopAsync();
 
         // Assert: the banner is line one, so the entries start at line two.
-        string[] lines = harness.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = harness.Lines;
 
         using (Assert.Multiple())
         {
@@ -336,12 +337,17 @@ public class FileServerTests
 
         // Act
         using HttpResponseMessage first = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+
+        // Advanced once the first entry is stamped, which the response it describes does not wait for.
+        await harness.WaitForEntriesAsync(1);
         harness.TimeProvider.Advance(TimeSpan.FromSeconds(4));
+
         using HttpResponseMessage second = await harness.Client.GetAsync(harness.Url("/?v=2"), CancellationToken.None);
+        await harness.WaitForEntriesAsync(2);
         await harness.StopAsync();
 
         // Assert
-        string[] lines = harness.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = harness.Lines;
 
         using (Assert.Multiple())
         {
@@ -367,10 +373,11 @@ public class FileServerTests
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
+        await harness.WaitForEntriesAsync(1);
         await harness.StopAsync();
 
         // Assert
-        string[] lines = harness.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = harness.Lines;
 
         using (Assert.Multiple())
         {
@@ -396,10 +403,11 @@ public class FileServerTests
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
+        await harness.WaitForEntriesAsync(1);
         await harness.StopAsync();
 
         // Assert
-        string[] lines = harness.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = harness.Lines;
 
         using (Assert.Multiple())
         {
