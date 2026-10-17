@@ -22,6 +22,7 @@ namespace Gelyn.Commands;
 internal sealed class ServeCommand : Command
 {
     private const string PortOption = "port";
+    private const string LaunchBrowserOption = "launch-browser";
 
     /// <summary>
     ///     The port served on when <c>--port</c> is absent.
@@ -78,7 +79,13 @@ internal sealed class ServeCommand : Command
                 result.AddError($"--{PortOption} must be between {IPEndPoint.MinPort + 1} and {IPEndPoint.MaxPort}.");
         });
 
+        Option<bool> launchBrowser = new($"--{LaunchBrowserOption}")
+        {
+            Description = "Open the served site in the default browser.",
+        };
+
         this.Options.Add(port);
+        this.Options.Add(launchBrowser);
 
         // Serving implies building, so the build's own options apply here unchanged.
         foreach (Option option in OverrideOptions.Definitions)
@@ -101,10 +108,8 @@ internal sealed class ServeCommand : Command
 
                 console.MarkupLineInterpolated($"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
 
-                // The address is announced by the server rather than here, so that it is reported once the
-                // bind has actually succeeded.
                 await server
-                    .ServeAsync(outputDirectory, chosen, cancellationToken)
+                    .ServeAsync(outputDirectory, chosen, parsed.GetValue(launchBrowser), cancellationToken)
                     .ConfigureAwait(false);
 
                 return ExitCodes.Success;

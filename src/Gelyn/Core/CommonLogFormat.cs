@@ -134,8 +134,6 @@ internal static class CommonLogFormat
         // The request line is one field, which is what the quotes delimit.
         entry.Append(" \"").Append(method);
         entry.Append(' ').Append(target ?? Unavailable);
-        // Only the major and the minor component belong in the request line; a Version that carries a build or a
-        // revision would otherwise be written out in full and yield a token no analyzer accepts.
         entry.Append(" HTTP/").Append(protocol.ToString(2)).Append('"');
 
         entry.Append(' ').Append(status.ToString(Tool.Culture));

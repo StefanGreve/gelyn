@@ -49,8 +49,9 @@ internal sealed class ServerHarness : IAsyncDisposable
         FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
 
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
-        // listening and the request below needs no readiness poll.
-        this._serving = server.ServeAsync(fixture.Root, this.Port, this._cancellation.Token);
+        // listening and the request below needs no readiness poll. No test asks for a browser: the suite runs
+        // headless on CI, and a launch would open one on the machine running it.
+        this._serving = server.ServeAsync(fixture.Root, this.Port, launchBrowser: false, this._cancellation.Token);
     }
 
     /// <summary>

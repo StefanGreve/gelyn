@@ -118,6 +118,9 @@ internal sealed class FileServer
     /// <param name="port">
     ///     The port to serve on.
     /// </param>
+    /// <param name="launchBrowser">
+    ///     Indicates whether the announced address is opened in the default browser.
+    /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
     /// </param>
@@ -127,7 +130,11 @@ internal sealed class FileServer
     /// <exception cref="PlatformNotSupportedException">
     ///     The platform carries no usable <see cref="HttpListener"/> implementation.
     /// </exception>
-    public async Task ServeAsync(string outputDirectory, int port, CancellationToken cancellationToken)
+    public async Task ServeAsync(
+        string outputDirectory,
+        int port,
+        bool launchBrowser,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(outputDirectory);
 
@@ -144,6 +151,9 @@ internal sealed class FileServer
         listener.Start();
         this.Write(CommonLogFormat.BuildHeader(LoopbackAddress, port, address));
         this._logger.LogServerStarted(outputDirectory, address);
+
+        if (launchBrowser && !Browser.TryLaunch(address, out string? errorMessage))
+            this._console.MarkupLineInterpolated($"[yellow]warning:[/] no browser was opened: {errorMessage}");
 
         // GetContextAsync accepts no token, so tearing the listener down is what unblocks a pending accept.
         using CancellationTokenRegistration registration = cancellationToken.Register(listener.Stop);
@@ -184,7 +194,7 @@ internal sealed class FileServer
 
         try
         {
-            if (!IsReadMethod(method))
+            if (!IsSupportedMethod(method))
             {
                 // RFC 9110 requires a 405 to name the methods the target does support.
                 response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
@@ -209,7 +219,7 @@ internal sealed class FileServer
 
             response.Close();
         }
-        catch (Exception exception) when (IsTransportFailure(exception))
+        catch (Exception exception) when (exception is HttpListenerException or IOException or ObjectDisposedException)
         {
             // The browser hung up before the response was written, which a reload mid-response does
             // routinely, or the build replaced the file under the read. Neither is the server's to report.
@@ -230,7 +240,6 @@ internal sealed class FileServer
         if (file.Path is null)
         {
             response.ContentLength64 = 0;
-
             return 0;
         }
 
@@ -278,17 +287,13 @@ internal sealed class FileServer
             bytes: written));
     }
 
-    // Written to the underlying writer rather than through the console, which would wrap a line at the
-    // profile width and read a bracket in a request path as markup. A log line has to survive both.
+    // Bypasses the console, which would wrap the line and read a bracket in a request path as markup.
     private void Write(string line) =>
         this._console.Profile.Out.Writer.WriteLine(line);
 
-    private static bool IsReadMethod(string method) =>
+    private static bool IsSupportedMethod(string method) =>
         method.Equals(WebRequestMethods.Http.Get, StringComparison.Ordinal)
         || method.Equals(WebRequestMethods.Http.Head, StringComparison.Ordinal);
-
-    private static bool IsTransportFailure(Exception exception) =>
-        exception is HttpListenerException or IOException or ObjectDisposedException;
 
     #endregion
 }
