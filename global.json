@@ -3,7 +3,7 @@
     "allowPrerelease": false,
     "errorMessage": "Gelyn requires the .NET SDK version pinned in global.json: https://dotnet.microsoft.com/download/dotnet",
     "rollForward": "disable",
-    "version": "10.0.401"
+    "version": "10.0.402"
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"
