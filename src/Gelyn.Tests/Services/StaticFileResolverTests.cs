@@ -73,48 +73,58 @@ public class StaticFileResolverTests
     #region Extension Tests
 
     /// <summary>
-    ///     Verifies that an extensionless path resolves to the page of that name, because both GitHub Pages
-    ///     and Cloudflare Pages do and a preview that disagrees with the deploy target is worse than none.
+    ///     Verifies that an extensionless path resolves to the page of that name however deep it sits,
+    ///     because both GitHub Pages and Cloudflare Pages do and a preview that disagrees with the deploy
+    ///     target is worse than none.
     /// </summary>
+    /// <param name="requestPath">
+    ///     A path carrying no extension.
+    /// </param>
+    /// <param name="expected">
+    ///     The output-relative path of the page that answers it.
+    /// </param>
     [Test]
-    public async Task Resolve_Test_ExtensionlessPath_ResolvesToTheHtmlFile()
+    [Arguments("/about", "about.html")]
+    [Arguments("/blog/hello", "blog/hello.html")]
+    public async Task Resolve_Test_ExtensionlessPath_ResolvesToTheHtmlFile(string requestPath, string expected)
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create("index.html", "about.html", "blog/hello.html");
 
         // Act
-        ServedFile root = fixture.Resolve("/about");
-        ServedFile nested = fixture.Resolve("/blog/hello");
+        ServedFile file = fixture.Resolve(requestPath);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(root.Path).IsEqualTo(fixture.Locate("about.html"));
-            await Assert.That(nested.Path).IsEqualTo(fixture.Locate("blog/hello.html"));
-            await Assert.That(root.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(file.Path).IsEqualTo(fixture.Locate(expected));
+            await Assert.That(file.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
     }
 
     /// <summary>
-    ///     Verifies that the page is served verbatim when it is requested by name, so that the extensionless
-    ///     rule is an addition rather than a redirection.
+    ///     Verifies that a file is served verbatim when it is requested by name, page or copy, so that the
+    ///     extensionless rule is an addition rather than a redirection.
     /// </summary>
+    /// <param name="requestPath">
+    ///     A path naming a file that exists.
+    /// </param>
+    /// <param name="expected">
+    ///     The output-relative path of the file that answers it.
+    /// </param>
     [Test]
-    public async Task Resolve_Test_NamedFile_ResolvesToItself()
+    [Arguments("/about.html", "about.html")]
+    [Arguments("/robots.txt", "robots.txt")]
+    public async Task Resolve_Test_NamedFile_ResolvesToItself(string requestPath, string expected)
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create("index.html", "about.html", "robots.txt");
 
         // Act
-        ServedFile page = fixture.Resolve("/about.html");
-        ServedFile copy = fixture.Resolve("/robots.txt");
+        ServedFile file = fixture.Resolve(requestPath);
 
         // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(page.Path).IsEqualTo(fixture.Locate("about.html"));
-            await Assert.That(copy.Path).IsEqualTo(fixture.Locate("robots.txt"));
-        }
+        await Assert.That(file.Path).IsEqualTo(fixture.Locate(expected));
     }
 
     /// <summary>

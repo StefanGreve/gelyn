@@ -62,19 +62,38 @@ public class SiteOptionsValidatorTests
     }
 
     /// <summary>
-    ///     Verifies that a blank KaTeX version is rejected under a message naming the setting at fault,
-    ///     because it would address no package.
+    ///     Verifies that every setting the tool cannot work without is rejected when it is blank, under a
+    ///     message naming the setting at fault.
     /// </summary>
-    /// <param name="version">
-    ///     A version that is empty, or holds nothing but whitespace.
+    /// <remarks>
+    ///     An empty version addresses no package, since it reaches the URL as <c>katex@/dist</c>; an empty
+    ///     language yields a <c>lang</c> attribute worse than none; and an empty directory would leave the
+    ///     settings resolving against the working directory. The setting is named rather than assigned, so
+    ///     that a property renamed on the options type takes this table with it.
+    /// </remarks>
+    /// <param name="setting">
+    ///     The name of the setting to leave blank, which the failure message is to carry.
+    /// </param>
+    /// <param name="value">
+    ///     A value that is empty, or holds nothing but whitespace.
     /// </param>
     [Test]
-    [Arguments("")]
-    [Arguments("   ")]
-    public async Task Validate_Test_BlankKaTeXVersion_Fails(string version)
+    [Arguments(nameof(SiteOptions.Title), "")]
+    [Arguments(nameof(SiteOptions.Title), "   ")]
+    [Arguments(nameof(SiteOptions.Language), "")]
+    [Arguments(nameof(SiteOptions.Language), "   ")]
+    [Arguments(nameof(SiteOptions.ContentDirectory), "")]
+    [Arguments(nameof(SiteOptions.ContentDirectory), "   ")]
+    [Arguments(nameof(SiteOptions.OutputDirectory), "")]
+    [Arguments(nameof(SiteOptions.OutputDirectory), "   ")]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "")]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "   ")]
+    [Arguments(nameof(SiteOptions.MermaidVersion), "")]
+    [Arguments(nameof(SiteOptions.MermaidVersion), "   ")]
+    public async Task Validate_Test_BlankSetting_Fails(string setting, string value)
     {
         // Arrange
-        SiteOptions options = new() { KaTeXVersion = version };
+        SiteOptions options = Blank(setting, value);
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -83,32 +102,7 @@ public class SiteOptionsValidatorTests
         using (Assert.Multiple())
         {
             await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.KaTeXVersion));
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that a blank Mermaid version is rejected the same way a blank KaTeX version is.
-    /// </summary>
-    /// <param name="version">
-    ///     A version that is empty, or holds nothing but whitespace.
-    /// </param>
-    [Test]
-    [Arguments("")]
-    [Arguments("   ")]
-    public async Task Validate_Test_BlankMermaidVersion_Fails(string version)
-    {
-        // Arrange
-        SiteOptions options = new() { MermaidVersion = version };
-
-        // Act
-        ValidateOptionsResult result = Validate(options);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.MermaidVersion));
+            await Assert.That(result.FailureMessage).Contains(setting);
         }
     }
 
@@ -212,6 +206,17 @@ public class SiteOptionsValidatorTests
     private static ValidateOptionsResult Validate(SiteOptions options) =>
         new SiteOptionsValidator(new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") })
             .Validate(name: null, options);
+
+    // Assigned by name, because the alternative is one test per setting; every setting under test is a
+    // string, so no conversion is involved.
+    private static SiteOptions Blank(string setting, string value)
+    {
+        SiteOptions options = new();
+
+        typeof(SiteOptions).GetProperty(setting)!.SetValue(options, value);
+
+        return options;
+    }
 
     #endregion
 }

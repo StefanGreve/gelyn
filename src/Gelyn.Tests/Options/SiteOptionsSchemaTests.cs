@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 using Gelyn.Model.Options;
 
-namespace Gelyn.Tests;
+namespace Gelyn.Tests.Options;
 
 /// <summary>
 ///     Unit tests that keep <c>gelyn.schema.json</c> in step with <see cref="SiteOptions"/>.
 /// </summary>
-public partial class SiteOptionsSchemaTests
+public class SiteOptionsSchemaTests
 {
     private const string SchemaFileName = "gelyn.schema.json";
 
@@ -45,6 +45,11 @@ public partial class SiteOptionsSchemaTests
     /// <summary>
     ///     Verifies that every documented default matches the value the options type initializes to.
     /// </summary>
+    /// <remarks>
+    ///     Compared as serialized JSON rather than as values, so that a default whose type changed is a
+    ///     failure too. Every property is reported, because a schema that has fallen behind has usually
+    ///     fallen behind in more than one place.
+    /// </remarks>
     [Test]
     public async Task Schema_Test_DefaultsMatchTheOptionsType()
     {
@@ -52,21 +57,23 @@ public partial class SiteOptionsSchemaTests
         SiteOptions options = new();
         JsonElement documented = ReadDocumentedProperties();
 
-        foreach (PropertyInfo property in typeof(SiteOptions).GetProperties())
+        // Act and Assert
+        using (Assert.Multiple())
         {
-            // Act
-            string initialized = JsonSerializer.Serialize(property.GetValue(options));
-            string declared = documented
-                .GetProperty(property.Name)
-                .GetProperty("default")
-                .GetRawText();
+            foreach (PropertyInfo property in typeof(SiteOptions).GetProperties())
+            {
+                string initialized = JsonSerializer.Serialize(property.GetValue(options));
+                string declared = documented
+                    .GetProperty(property.Name)
+                    .GetProperty("default")
+                    .GetRawText();
 
-            // Assert
-            await Assert.That(declared).IsEqualTo(initialized);
+                await Assert.That(declared).IsEqualTo(initialized);
+            }
         }
     }
 
-    #endregion
+    #endregion // Schema Tests
 
     #region Helpers
 

@@ -12,7 +12,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="FrontMatterParser"/> class.
 /// </summary>
-public partial class FrontMatterParserTests
+public class FrontMatterParserTests
 {
     #region Parse Tests
 
@@ -63,8 +63,6 @@ public partial class FrontMatterParserTests
     [Arguments("title: Home", null)]
     public async Task Parse_Test_MathRendering_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(line);
 
@@ -83,8 +81,6 @@ public partial class FrontMatterParserTests
     [Arguments("---\n---")]
     public async Task Parse_Test_BlockWithoutEntries_ReturnsNull(string block)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(block);
 
@@ -103,8 +99,6 @@ public partial class FrontMatterParserTests
     [Arguments("---\rtitle: Home\r---")]
     public async Task Parse_Test_NewlineConventions_AreAllSupported(string block)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(block);
 
@@ -144,8 +138,6 @@ public partial class FrontMatterParserTests
     [Arguments("TITLE: Home")]
     public async Task Parse_Test_KeyCaseMismatch_LeavesTitleUnset(string line)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(line);
 
@@ -164,8 +156,6 @@ public partial class FrontMatterParserTests
     [Arguments("title:   ")]
     public async Task Parse_Test_AbsentValue_LeavesTitleUnset(string line)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(line);
 
@@ -185,8 +175,6 @@ public partial class FrontMatterParserTests
     [Arguments("title: ''")]
     public async Task Parse_Test_EmptyQuotedValue_IsPreserved(string line)
     {
-        // Arrange
-
         // Act
         FrontMatter? result = FrontMatterParser.Parse(line);
 
@@ -206,8 +194,6 @@ public partial class FrontMatterParserTests
     [Arguments("title:Home")]
     public async Task Parse_Test_NonMappingBlock_Throws(string block)
     {
-        // Arrange
-
         // Act and Assert
         await Assert.That(() => FrontMatterParser.Parse(block)).Throws<YamlException>();
     }

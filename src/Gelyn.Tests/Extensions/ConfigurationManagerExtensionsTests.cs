@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,6 +15,49 @@ namespace Gelyn.Tests.Extensions;
 /// </summary>
 public class ConfigurationManagerExtensionsTests
 {
+    #region Override Promotion Tests
+
+    /// <summary>
+    ///     Verifies that each flag standing for one setting reaches that setting, so that a value given on
+    ///     the command line outranks both the configuration file and the defaults.
+    /// </summary>
+    /// <remarks>
+    ///     The promoted values are added after the file and the environment, which is what makes them win.
+    ///     Driven through <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>, because the
+    ///     promotion is what is under test rather than the binding that follows it.
+    /// </remarks>
+    [Test]
+    public async Task Overrides_Test_PromotedFlags_ReachTheSettingsTheyStandFor()
+    {
+        // Arrange
+        ConfigurationManager configuration = new();
+
+        configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            [OverrideOptions.Title] = "From the flag",
+            [OverrideOptions.BaseUrl] = "https://example.com/gelyn",
+            [OverrideOptions.Content] = "pages",
+            [OverrideOptions.Output] = "public",
+        });
+
+        SiteOptions options = new();
+
+        // Act
+        configuration.AddSiteConfiguration([]);
+        configuration.Bind(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Title).IsEqualTo("From the flag");
+            await Assert.That(options.BaseUrl).IsEqualTo(new Uri("https://example.com/gelyn"));
+            await Assert.That(options.ContentDirectory).IsEqualTo("pages");
+            await Assert.That(options.OutputDirectory).IsEqualTo("public");
+        }
+    }
+
+    #endregion // Override Promotion Tests
+
     #region Exclude Promotion Tests
 
     /// <summary>

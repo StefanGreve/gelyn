@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -10,10 +9,8 @@ using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
-using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -571,6 +568,9 @@ public partial class SiteBuilderTests
     ///     Verifies that no page states a canonical address when no base URL is configured, because a relative
     ///     one carries no meaning and a guessed one would be worse than none.
     /// </summary>
+    /// <remarks>
+    ///     The count is pinned before the loop, because an empty output would satisfy the loop on its own.
+    /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Canonical_IsOmittedWithoutABaseUrl()
     {
@@ -580,7 +580,7 @@ public partial class SiteBuilderTests
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
-        // Assert: the count is pinned first, because an empty output would satisfy the loop on its own.
+        // Assert
         using (Assert.Multiple())
         {
             await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
@@ -670,6 +670,10 @@ public partial class SiteBuilderTests
     ///     Verifies that a file no build ever wrote is deleted, so that output placed by hand cannot outlive
     ///     the directory it sits in.
     /// </summary>
+    /// <remarks>
+    ///     The nested path is composed rather than written out, because the report uses the native separator
+    ///     while the fixture takes forward slashes.
+    /// </remarks>
     [Test]
     public async Task BuildAsync_Test_StrayFile_IsRemoved()
     {
@@ -681,8 +685,7 @@ public partial class SiteBuilderTests
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
 
-        // Assert: the nested path is composed rather than written out, because the report uses the native
-        // separator while the fixture takes forward slashes.
+        // Assert
         string nested = fixture.FileSystem.Path.Combine("blog", "leftover.html");
 
         using (Assert.Multiple())
@@ -782,48 +785,21 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_DirectorySymlinkInOutput_IsNotFollowed()
     {
         // Arrange
-        Skip.Unless(!OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
+        Skip.When(OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
 
-        FileSystem fileSystem = new();
-        SiteOptions options = new();
-        string root = Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}");
-        string content = Path.Combine(root, options.ContentDirectory);
-        string output = Path.Combine(root, options.OutputDirectory);
-        string outside = Path.Combine(root, "outside");
-        string keepsake = Path.Combine(outside, "keepsake.txt");
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "---\ntitle: Home\n---")
+            .WriteOutside("outside/keepsake.txt", "Not the build's to delete.")
+            .LinkOutputOutside("shared", "outside");
 
-        try
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
         {
-            Directory.CreateDirectory(content);
-            Directory.CreateDirectory(output);
-            Directory.CreateDirectory(outside);
-
-            await File.WriteAllTextAsync(Path.Combine(content, "index.md"), "---\ntitle: Home\n---");
-            await File.WriteAllTextAsync(keepsake, "Not the build's to delete.");
-            Directory.CreateSymbolicLink(Path.Combine(output, "shared"), outside);
-
-            HostEnvironmentStub environment = new() { ContentRootPath = root };
-
-            SiteBuilder builder = new(
-                new ContentPipeline(environment, fileSystem),
-                environment,
-                new OptionsMonitorStub(options),
-                fileSystem,
-                new FakeLogger<SiteBuilder>());
-
-            // Act
-            BuildReport report = await builder.BuildAsync(CancellationToken.None);
-
-            // Assert
-            using (Assert.Multiple())
-            {
-                await Assert.That(File.Exists(keepsake)).IsTrue();
-                await Assert.That(report.Removed.Count).IsEqualTo(0);
-            }
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
+            await Assert.That(fixture.Holds("outside/keepsake.txt")).IsTrue();
+            await Assert.That(report.Removed.Count).IsEqualTo(0);
         }
     }
 
@@ -834,6 +810,9 @@ public partial class SiteBuilderTests
     /// <summary>
     ///     Verifies that the build reports one counter per phase, in the order the phases run.
     /// </summary>
+    /// <remarks>
+    ///     Compared as a joined string, because <c>IsEquivalentTo</c> disregards the order under test.
+    /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_AreReportedInPhaseOrder()
     {
@@ -853,48 +832,22 @@ public partial class SiteBuilderTests
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
-        // Assert: compared as a joined string because IsEquivalentTo disregards order.
+        // Assert
         string reported = string.Join(',', fixture.Records.Select(static record => record.Id.Id));
 
         await Assert.That(reported).IsEqualTo(string.Join(',', phases));
     }
 
     /// <summary>
-    ///     Verifies that every counter reports the number of files the build produced, so that none of them
-    ///     can drift from the result the command returns.
-    /// </summary>
-    /// <remarks>
-    ///     Cannot tell the item count, the page count and the file count apart, because this tree holds
-    ///     nothing to copy. <see cref="BuildAsync_Test_Counters_CountCopiesApartFromPages"/> is the case
-    ///     that separates them, and <see cref="BuildAsync_Test_Counters_CountRemovalsApartFromWrites"/> the
-    ///     case that separates the removals from both.
-    /// </remarks>
-    [Test]
-    public async Task BuildAsync_Test_Counters_ReportTheNumberOfFiles()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.Create();
-
-        // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
-        int files = report.Pages.Count;
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(Count(fixture, EventIds.SCAN_COMPLETED, "ItemCount")).IsEqualTo(files);
-            await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(files);
-            await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(files);
-            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(files);
-            await Assert.That(Count(fixture, EventIds.REMOVE_COMPLETED, "FileCount")).IsEqualTo(0);
-            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(files);
-        }
-    }
-
-    /// <summary>
     ///     Verifies that the render and compose counters report the pages alone while the scan, write and
     ///     build counters report the copies alongside them, so that each counter means what its message says.
     /// </summary>
+    /// <remarks>
+    ///     Driven against a tree holding something to copy, which is what tells the item count, the page
+    ///     count and the file count apart; a tree of pages alone satisfies every counter with one number.
+    ///     <see cref="BuildAsync_Test_Counters_CountRemovalsApartFromWrites"/> is the case that separates the
+    ///     removals from all three.
+    /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_CountCopiesApartFromPages()
     {
@@ -918,6 +871,7 @@ public partial class SiteBuilderTests
             await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(pages);
             await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(pages);
             await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(total);
+            await Assert.That(Count(fixture, EventIds.REMOVE_COMPLETED, "FileCount")).IsEqualTo(0);
             await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(total);
         }
     }
@@ -957,6 +911,9 @@ public partial class SiteBuilderTests
     ///     Verifies that every counter is reported at debug level, so that none of them can be promoted into
     ///     the output of a normal build.
     /// </summary>
+    /// <remarks>
+    ///     The count is pinned before the loop, because an empty list would satisfy the loop on its own.
+    /// </remarks>
     [Test]
     public async Task BuildAsync_Test_Counters_AreReportedAtDebug()
     {
@@ -966,7 +923,7 @@ public partial class SiteBuilderTests
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
-        // Assert: the count is pinned first, because an empty list would satisfy the loop on its own.
+        // Assert
         using (Assert.Multiple())
         {
             await Assert.That(fixture.Records.Count).IsEqualTo(6);
@@ -974,23 +931,6 @@ public partial class SiteBuilderTests
             foreach (FakeLogRecord record in fixture.Records)
                 await Assert.That(record.Level).IsEqualTo(LogLevel.Debug);
         }
-    }
-
-    /// <summary>
-    ///     Verifies that the build reports nothing when the requested level discards debug records, which is
-    ///     what proves the level is honored rather than merely configured.
-    /// </summary>
-    [Test]
-    public async Task BuildAsync_Test_Counters_AreSuppressedAboveDebug()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.Create(LogLevel.Warning);
-
-        // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
-
-        // Assert
-        await Assert.That(fixture.Records.Count).IsEqualTo(0);
     }
 
     /// <summary>

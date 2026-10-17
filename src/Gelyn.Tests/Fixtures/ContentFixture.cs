@@ -25,6 +25,7 @@ internal sealed class ContentFixture
     {
         this.FileSystem = fileSystem;
         this.Options = options;
+        this.Root = root;
         this.ContentRoot = fileSystem.Path.Combine(root, options.ContentDirectory);
         this.OutputRoot = fileSystem.Path.Combine(root, options.OutputDirectory);
         this.Logger = new FakeLogger<SiteBuilder>();
@@ -49,6 +50,11 @@ internal sealed class ContentFixture
     ///     The file system both the pipeline and the builder are wired to.
     /// </summary>
     public MockFileSystem FileSystem { get; }
+
+    /// <summary>
+    ///     The directory holding both the content tree and the generated site.
+    /// </summary>
+    public string Root { get; }
 
     /// <summary>
     ///     The directory the content tree is written to.
@@ -319,6 +325,47 @@ internal sealed class ContentFixture
     public ContentFixture WriteBytes(string relativePath, byte[] contents)
     {
         this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(contents));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Adds one file outside the content tree, where nothing the build locates may reach it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="Root"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="contents">
+    ///     The exact text to write.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteOutside(string relativePath, string contents = "")
+    {
+        this.FileSystem.AddFile(this.Resolve(this.Root, relativePath), new MockFileData(contents));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Links one entry of the content tree to a file outside it, as a convenience link in a working copy
+    ///     would.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path the link is created at, relative to <see cref="ContentRoot"/>.
+    /// </param>
+    /// <param name="targetPath">
+    ///     The path of the file the link resolves to, relative to <see cref="Root"/>.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture LinkFile(string relativePath, string targetPath)
+    {
+        this.FileSystem.File.CreateSymbolicLink(
+            this.Resolve(relativePath),
+            this.Resolve(this.Root, targetPath));
 
         return this;
     }

@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Model;
-using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
-using Gelyn.Tests.Stubs;
 
 namespace Gelyn.Tests.Services;
 
@@ -72,34 +69,19 @@ public class ContentPipelineTests
     public async Task Scan_Test_DirectorySymlink_IsNotFollowed()
     {
         // Arrange
-        Skip.Unless(!OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
+        Skip.When(OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
 
-        FileSystem fileSystem = new();
-        SiteOptions options = new();
-        string root = Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}");
-        string content = Path.Combine(root, options.ContentDirectory);
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "---\ntitle: Home\n---")
+            .Write("posts/note.md", "# Note")
+            .LoopContentIntoItself("loop");
 
-        try
-        {
-            Directory.CreateDirectory(Path.Combine(content, "posts"));
-            await File.WriteAllTextAsync(Path.Combine(content, "index.md"), "---\ntitle: Home\n---");
-            await File.WriteAllTextAsync(Path.Combine(content, "posts", "note.md"), "# Note");
-            Directory.CreateSymbolicLink(Path.Combine(content, "loop"), content);
+        // Act
+        IReadOnlyList<ContentItem> items = fixture.Pipeline.Scan(fixture.Options);
 
-            HostEnvironmentStub environment = new() { ContentRootPath = root };
-            ContentPipeline pipeline = new(environment, fileSystem);
-
-            // Act
-            IReadOnlyList<ContentItem> items = pipeline.Scan(options);
-
-            // Assert
-            await Assert.That(items.Select(item => item.Href))
-                .IsEquivalentTo(["/index.html", "/posts/note.html"]);
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        // Assert
+        await Assert.That(items.Select(item => item.Href))
+            .IsEquivalentTo(["/index.html", "/posts/note.html"]);
     }
 
     /// <summary>
@@ -167,42 +149,24 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that the files the build has no use for are left out, which is what keeps editor and tool
-    ///     droppings from being published alongside the site.
+    ///     Verifies that an exclude pattern leaves matching files and directories out whether it names an
+    ///     entry exactly, by extension or by suffix, and that a file matching none of them survives.
     /// </summary>
     /// <remarks>
-    ///     The patterns are configured rather than built in, so a project without them publishes these files.
-    ///     <c>docs/configuration.md</c> carries the set a project is expected to start from.
+    ///     The patterns are configured rather than built in, so a project without them publishes the editor
+    ///     and tool droppings below. <c>docs/configuration.md</c> carries the set a project is expected to
+    ///     start from.
     /// </remarks>
     [Test]
-    public async Task Scan_Test_DeniedFiles_AreLeftOut()
+    public async Task Scan_Test_ExcludePatterns_LeaveMatchingEntriesOut()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
-            .WithExcludePatterns(".DS_Store", "*~", "obj")
+            .WithExcludePatterns(".DS_Store", "*~", "obj", "*.xcf", "drafts")
             .Write("index.md", "Home")
             .WriteFile(".DS_Store")
             .WriteFile("notes.md~")
-            .WriteFile("obj/build.log");
-
-        // Act
-        IReadOnlyList<ContentItem> items = Scan(fixture);
-
-        // Assert
-        await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(["/index.html"]);
-    }
-
-    /// <summary>
-    ///     Verifies that a configured exclude pattern leaves matching files and directories out, so that an
-    ///     author can skip something the built-in list does not know about.
-    /// </summary>
-    [Test]
-    public async Task Scan_Test_ConfiguredExcludePatterns_AreHonoured()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.CreateEmpty()
-            .WithExcludePatterns("*.xcf", "drafts")
-            .Write("index.md", "Home")
+            .WriteFile("obj/build.log")
             .WriteFile("logo.xcf")
             .Write("drafts/wip.md", "WIP")
             .WriteFile("robots.txt", "User-agent: *");
@@ -271,41 +235,24 @@ public class ContentPipelineTests
     ///     cannot publish the bytes of a target outside the content directory.
     /// </summary>
     /// <remarks>
-    ///     Kept on the real file system beside <see cref="Scan_Test_DirectorySymlink_IsNotFollowed"/>, which has
-    ///     no mocked equivalent. <c>MockFileSystem</c> does model a link, so this case alone could be mocked.
+    ///     Mocked rather than driven against a disk, because <c>MockFileSystem</c> does model a file link and
+    ///     reports its target. <see cref="Scan_Test_DirectorySymlink_IsNotFollowed"/> is the case with no
+    ///     mocked equivalent, since traversal through a link is what the mock does not resolve.
     /// </remarks>
     [Test]
     public async Task Scan_Test_FileSymlink_IsNotFollowed()
     {
         // Arrange
-        Skip.Unless(!OperatingSystem.IsWindows(), "Creating a symbolic link needs elevation on Windows.");
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteOutside("secret.md", "# Secret")
+            .LinkFile("leak.md", "secret.md");
 
-        FileSystem fileSystem = new();
-        SiteOptions options = new();
-        string root = Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}");
-        string content = Path.Combine(root, options.ContentDirectory);
-        string outside = Path.Combine(root, "secret.md");
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
 
-        try
-        {
-            Directory.CreateDirectory(content);
-            await File.WriteAllTextAsync(Path.Combine(content, "index.md"), "---\ntitle: Home\n---");
-            await File.WriteAllTextAsync(outside, "# Secret");
-            File.CreateSymbolicLink(Path.Combine(content, "leak.md"), outside);
-
-            HostEnvironmentStub environment = new() { ContentRootPath = root };
-            ContentPipeline pipeline = new(environment, fileSystem);
-
-            // Act
-            IReadOnlyList<ContentItem> items = pipeline.Scan(options);
-
-            // Assert
-            await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(["/index.html"]);
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        // Assert
+        await Assert.That(items.Select(item => item.Href)).IsEquivalentTo(["/index.html"]);
     }
 
     /// <summary>
@@ -352,34 +299,14 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that a stylesheet at the root of the content tree applies to every page, because the root
-    ///     is every page's ancestor rather than because it is treated as a special case.
-    /// </summary>
-    [Test]
-    public async Task Scan_Test_RootStylesheet_AppliesToEveryPage()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
-
-        // Act
-        IReadOnlyList<ContentItem> items = Scan(fixture);
-
-        // Assert
-        IReadOnlyList<string> outermost = [.. items
-            .Where(item => item.Kind is ContentKind.Page)
-            .Select(item => item.Stylesheets.FirstOrDefault() ?? string.Empty)];
-
-        using (Assert.Multiple())
-        {
-            await Assert.That(outermost.Count).IsEqualTo(5);
-            await Assert.That(outermost.Distinct()).IsEquivalentTo(["/styles.css"]);
-        }
-    }
-
-    /// <summary>
     ///     Verifies that a page links the stylesheet of every directory above it as well as its own, ordered
-    ///     outermost first so that the deepest one wins the cascade.
+    ///     outermost first so that the deepest one wins the cascade, and that the one at the root reaches
+    ///     every page because the root is every page's ancestor rather than a special case.
     /// </summary>
+    /// <remarks>
+    ///     The page count is pinned first, so that the cascades named below account for the whole tree rather
+    ///     than for the pages this test happens to list.
+    /// </remarks>
     [Test]
     public async Task Scan_Test_Stylesheets_CascadeOutermostFirst()
     {
@@ -392,6 +319,8 @@ public class ContentPipelineTests
         // Assert
         using (Assert.Multiple())
         {
+            await Assert.That(items.Count(item => item.Kind is ContentKind.Page)).IsEqualTo(5);
+
             await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/styles.css");
             await Assert.That(Stylesheets(items, "/about.html")).IsEqualTo("/styles.css");
             await Assert.That(Stylesheets(items, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
@@ -400,24 +329,6 @@ public class ContentPipelineTests
             await Assert.That(Stylesheets(items, "/blog/2026/index.html"))
                 .IsEqualTo("/styles.css,/blog/blog.css,/blog/2026/year.css");
         }
-    }
-
-    /// <summary>
-    ///     Verifies that a stylesheet applies below the directory declaring it and nowhere else, so that a
-    ///     section can style itself without reaching the pages beside it.
-    /// </summary>
-    [Test]
-    public async Task Scan_Test_Stylesheet_DoesNotReachASiblingBranch()
-    {
-        // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
-
-        // Act
-        IReadOnlyList<ContentItem> items = Scan(fixture);
-
-        // Assert
-        await Assert.That(items.Single(item => item.Href == "/about.html").Stylesheets)
-            .DoesNotContain("/blog/blog.css");
     }
 
     /// <summary>
@@ -726,9 +637,6 @@ public class ContentPipelineTests
 
     private static string Scripts(IReadOnlyList<ContentItem> items, string href) =>
         string.Join(',', items.Single(item => item.Href == href).Scripts);
-
-    private static string Scripts(IReadOnlyList<ContentPage> pages, string href) =>
-        string.Join(',', pages.Single(page => page.Href == href).Scripts);
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
         fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);

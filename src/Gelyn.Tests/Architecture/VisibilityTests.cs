@@ -10,45 +10,30 @@ namespace Gelyn.Tests.Architecture;
 /// </summary>
 public class VisibilityTests : ArchBase
 {
-    #region Internals Tests
+    #region Visibility Tests
 
     /// <summary>
-    ///     Verifies that every type in the internals namespace is internal.
-    /// </summary>
-    [Test]
-    public void Visibility_Test_EveryTypeInInternalsIsInternal()
-    {
-        // Arrange
-        IArchRule rule = Types()
-            .That()
-            .ResideInNamespace(InternalsNamespace)
-            .Should()
-            .BeInternal();
-
-        // Act and Assert
-        rule.Check(Architecture);
-    }
-
-    #endregion
-
-    #region Model Tests
-
-    /// <summary>
-    ///     Verifies that every type in the model namespace is internal.
+    ///     Verifies that every type in the namespace is internal.
     /// </summary>
     /// <remarks>
-    ///     <c>ResideInNamespace</c> matches a namespace by its full name rather than as a prefix, so the
-    ///     options namespace has to be named in its own right to be covered at all.
+    ///     <c>ResideInNamespace</c> matches a namespace by its full name rather than as a prefix, so each one
+    ///     has to be named in its own right to be covered at all, the options namespace below the model
+    ///     included.
     /// </remarks>
+    /// <param name="namespaceName">
+    ///     The full name of the namespace whose types are under test.
+    /// </param>
     [Test]
-    public void Visibility_Test_EveryTypeInModelIsInternal()
+    [Arguments(InternalsNamespace)]
+    [Arguments(ModelNamespace)]
+    [Arguments(OptionsNamespace)]
+    [Arguments(ServicesNamespace)]
+    public void Visibility_Test_EveryTypeInTheNamespaceIsInternal(string namespaceName)
     {
         // Arrange
         IArchRule rule = Types()
             .That()
-            .ResideInNamespace(ModelNamespace)
-            .Or()
-            .ResideInNamespace(OptionsNamespace)
+            .ResideInNamespace(namespaceName)
             .Should()
             .BeInternal();
 
@@ -56,26 +41,5 @@ public class VisibilityTests : ArchBase
         rule.Check(Architecture);
     }
 
-    #endregion
-
-    #region Services Tests
-
-    /// <summary>
-    ///     Verifies that every type in the services namespace is internal.
-    /// </summary>
-    [Test]
-    public void Visibility_Test_EveryTypeInServicesIsInternal()
-    {
-        // Arrange
-        IArchRule rule = Types()
-            .That()
-            .ResideInNamespace(ServicesNamespace)
-            .Should()
-            .BeInternal();
-
-        // Act and Assert
-        rule.Check(Architecture);
-    }
-
-    #endregion
+    #endregion // Visibility Tests
 }

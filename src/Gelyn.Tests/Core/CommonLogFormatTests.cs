@@ -102,7 +102,8 @@ public partial class CommonLogFormatTests
     }
 
     /// <summary>
-    ///     Verifies that every status the server can answer under satisfies the grammar.
+    ///     Verifies that a status reaches the entry as three bare digits, whether or not it is the one a
+    ///     successful request is answered under.
     /// </summary>
     /// <param name="status">
     ///     A status code.
@@ -110,8 +111,6 @@ public partial class CommonLogFormatTests
     [Test]
     [Arguments(200)]
     [Arguments(404)]
-    [Arguments(405)]
-    [Arguments(500)]
     public async Task BuildMessage_Test_Status_SatisfiesTheGrammar(int status)
     {
         // Act
@@ -234,6 +233,34 @@ public partial class CommonLogFormatTests
 
     #endregion // Target Tests
 
+    #region Protocol Tests
+
+    /// <summary>
+    ///     Verifies that the request line carries the major and minor version alone, whatever else the
+    ///     version it was given holds.
+    /// </summary>
+    /// <remarks>
+    ///     A <see cref="Version"/> renders every component it carries, so a four-part one would write
+    ///     <c>HTTP/1.1.0.0</c> and take the entry outside the grammar a log analyzer reads.
+    /// </remarks>
+    [Test]
+    public async Task BuildMessage_Test_Protocol_CarriesTheMajorAndMinorOnly()
+    {
+        // Act
+        string entry = Build(protocol: new Version(1, 1, 0, 0));
+
+        // Assert
+        Match match = Entry().Match(entry);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(match.Success).IsTrue();
+            await Assert.That(match.Groups["protocol"].Value).IsEqualTo("1.1");
+        }
+    }
+
+    #endregion // Protocol Tests
+
     #region BuildHeader Tests
 
     /// <summary>
@@ -265,6 +292,24 @@ public partial class CommonLogFormatTests
         {
             await Assert.That(header).Contains("port 60000");
             await Assert.That(header).DoesNotContain("60,000");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a missing host or address is refused rather than written into the banner, which is
+    ///     the line a reader copies to reach the site.
+    /// </summary>
+    [Test]
+    public async Task BuildHeader_Test_MissingArgument_Throws()
+    {
+        // Act and Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(() => CommonLogFormat.BuildHeader(null!, 9_624, "http://127.0.0.1:9624/"))
+                .Throws<ArgumentNullException>();
+
+            await Assert.That(() => CommonLogFormat.BuildHeader("127.0.0.1", 9_624, null!))
+                .Throws<ArgumentNullException>();
         }
     }
 
