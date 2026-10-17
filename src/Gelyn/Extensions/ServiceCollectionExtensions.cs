@@ -51,6 +51,8 @@ internal static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<ContentPipeline>();
         services.TryAddSingleton<SiteBuilder>();
+        services.TryAddSingleton<StaticFileResolver>();
+        services.TryAddSingleton<FileServer>();
 
         return services;
     }
@@ -72,6 +74,7 @@ internal static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<BuildCommand>();
         services.TryAddSingleton<CleanCommand>();
+        services.TryAddSingleton<ServeCommand>();
         services.TryAddSingleton<GelynCommand>();
 
         return services;

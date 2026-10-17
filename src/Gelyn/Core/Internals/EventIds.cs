@@ -50,4 +50,13 @@ internal static class EventIds
     internal const int STARTUP_COMPLETED = 1_006;
 
     #endregion
+
+    #region Serving (1_100 - 1_199)
+
+    /// <summary>
+    ///     The preview server has bound its address and is ready to answer requests.
+    /// </summary>
+    internal const int SERVER_STARTED = 1_100;
+
+    #endregion
 }

@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.CommandLine;
+
 namespace Gelyn.Core.Internals;
 
 /// <summary>
@@ -50,4 +53,42 @@ internal static class OverrideOptions
     ///     are ordered numerically, so an offset no configured list will reach appends instead.
     /// </remarks>
     internal const int ExcludeOffset = 1_000;
+
+    /// <summary>
+    ///     The command line options these overrides arrive through, one per overridable setting.
+    /// </summary>
+    /// <remarks>
+    ///     These options carry values into <c>SiteOptions</c> through <c>AddSiteConfiguration</c>, and no
+    ///     command reads them from the parse result. They are declared here rather than in a command, which
+    ///     keeps the names and the options together. Every read returns new instances, because an
+    ///     <see cref="Option"/> belongs to one command tree.
+    /// </remarks>
+    internal static IReadOnlyList<Option> Definitions =>
+    [
+        new Option<string>($"--{Title}")
+        {
+            Description = "The name of the site.",
+            HelpName = "name",
+        },
+        new Option<string>($"--{BaseUrl}")
+        {
+            Description = "The absolute URL the finished site is served from.",
+            HelpName = "url",
+        },
+        new Option<string>($"--{Content}")
+        {
+            Description = "The directory the site is built from.",
+            HelpName = "directory",
+        },
+        new Option<string>($"--{Output}")
+        {
+            Description = "The directory the generated site is written to.",
+            HelpName = "directory",
+        },
+        new Option<string>($"--{Exclude}")
+        {
+            Description = $"Further name patterns to skip, separated by '{ExcludeSeparator}'.",
+            HelpName = "patterns",
+        },
+    ];
 }

@@ -152,4 +152,28 @@ internal static partial class LogMessages
         SkipEnabledCheck = true,
         Message = "Started in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogStartupCompleted(this ILogger logger, double elapsedMilliseconds);
+
+    /// <summary>
+    ///     Reports the directory the preview server answers from and the address it answers on.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="directory">
+    ///     The absolute path of the output directory, which is the only directory a request can reach.
+    /// </param>
+    /// <param name="address">
+    ///     The bound address, which is a loopback prefix.
+    /// </param>
+    /// <remarks>
+    ///     The one record declared without <c>SkipEnabledCheck</c>, because both arguments are already in
+    ///     hand where it is called and there is therefore no evaluation a guard could spare. Leaving the
+    ///     generated check in place keeps the level enforced here rather than at every call site.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.SERVER_STARTED,
+        EventName = nameof(EventIds.SERVER_STARTED),
+        Level = LogLevel.Debug,
+        Message = "Serving {Directory} at {Address}")]
+    internal static partial void LogServerStarted(this ILogger logger, string directory, string address);
 }

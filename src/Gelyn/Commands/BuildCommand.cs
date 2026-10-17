@@ -26,36 +26,8 @@ internal sealed class BuildCommand : Command
     public BuildCommand(SiteBuilder siteBuilder, IAnsiConsole console)
         : base("build", "Generate the site into the output directory.")
     {
-        // Never read here: the values reach SiteOptions through AddSiteConfiguration.
-        this.Options.Add(new Option<string>($"--{OverrideOptions.Title}")
-        {
-            Description = "The name of the site.",
-            HelpName = "name",
-        });
-
-        this.Options.Add(new Option<string>($"--{OverrideOptions.BaseUrl}")
-        {
-            Description = "The absolute URL the finished site is served from.",
-            HelpName = "url",
-        });
-
-        this.Options.Add(new Option<string>($"--{OverrideOptions.Content}")
-        {
-            Description = "The directory the site is built from.",
-            HelpName = "directory",
-        });
-
-        this.Options.Add(new Option<string>($"--{OverrideOptions.Output}")
-        {
-            Description = "The directory the generated site is written to.",
-            HelpName = "directory",
-        });
-
-        this.Options.Add(new Option<string>($"--{OverrideOptions.Exclude}")
-        {
-            Description = $"Further name patterns to skip, separated by '{OverrideOptions.ExcludeSeparator}'.",
-            HelpName = "patterns",
-        });
+        foreach (Option option in OverrideOptions.Definitions)
+            this.Options.Add(option);
 
         this.SetAction(async (_, cancellationToken) =>
         {

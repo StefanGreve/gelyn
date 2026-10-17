@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
@@ -63,7 +62,7 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 
         if (!string.IsNullOrWhiteSpace(options.ContentDirectory) && !string.IsNullOrWhiteSpace(options.OutputDirectory)
-            && Overlaps(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
+            && ViolatesBoundary(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
         {
             failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.");
         }
@@ -80,20 +79,12 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         baseUrl.IsAbsoluteUri && (baseUrl.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
             || baseUrl.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
 
-    // The build would publish an output inside the content directory as content, and `gelyn clean` would
-    // remove a content directory inside the output, so neither may contain the other.
-    private static bool Overlaps(string root, string content, string output)
-    {
-        string contentPath = Normalize(root, content);
-        string outputPath = Normalize(root, output);
-
-        return outputPath.Equals(contentPath, StringComparison.OrdinalIgnoreCase)
-            || outputPath.StartsWith(contentPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-            || contentPath.StartsWith(outputPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string Normalize(string root, string directory) =>
-        Path.GetFullPath(Path.Combine(root, directory)).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    // The build would publish an output inside the content directory as content, `gelyn clean` would remove
+    // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it
+    // just wrote, so neither may contain the other.
+    private static bool ViolatesBoundary(string root, string content, string output) => PathBoundary.Overlap(
+        PathBoundary.Resolve(root, content),
+        PathBoundary.Resolve(root, output));
 
     #endregion
 }
