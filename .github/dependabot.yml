@@ -9,6 +9,10 @@ updates:
       time: "08:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
     groups:
       testing:
         patterns:
@@ -35,6 +39,10 @@ updates:
       day: friday
       time: "08:00"
       timezone: Europe/Berlin
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-patch
     groups:
       actions:
         patterns:
@@ -44,6 +52,5 @@ updates:
     directory: /
     schedule:
       interval: monthly
-      day: friday
       time: "08:00"
       timezone: Europe/Berlin
