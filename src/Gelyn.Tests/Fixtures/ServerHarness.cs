@@ -102,6 +102,10 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <summary>
     ///     Composes the absolute URL one request path addresses.
     /// </summary>
+    /// <remarks>
+    ///     The default is the literal rather than the name, because <c>localhost</c> resolves to <c>::1</c> on
+    ///     some machines, and the client field of a log entry reports the socket the request arrived on.
+    /// </remarks>
     /// <param name="requestPath">
     ///     The path of the request, opening with a slash.
     /// </param>
@@ -112,7 +116,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <returns>
     ///     The URL.
     /// </returns>
-    public Uri Url(string requestPath, string host = "localhost") =>
+    public Uri Url(string requestPath, string host = "127.0.0.1") =>
         new($"http://{host}:{this.Port}{requestPath}");
 
     /// <summary>
