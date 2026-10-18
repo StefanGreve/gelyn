@@ -235,6 +235,172 @@ public class FileServerTests
 
     #endregion // Request Tests
 
+    #region Refresh Header Tests
+
+    /// <summary>
+    ///     Verifies that a page declares the interval the session was started with, which is what reloads the
+    ///     browser without the reader touching it.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_RefreshInterval_IsDeclaredOnAPage()
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
+        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(ReadRefresh(response)).IsEqualTo("2");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a subresource carries no interval, so that one page reload is one pass rather than
+    ///     one per file the page pulls in.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     A file a page links rather than a page itself.
+    /// </param>
+    [Test]
+    [Arguments("styles.css")]
+    [Arguments("app.js")]
+    [Arguments("logo.png")]
+    [Arguments("robots.txt")]
+    public async Task ServeAsync_Test_RefreshInterval_IsAbsentFromASubresource(string relativePath)
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create(relativePath);
+        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(
+            harness.Url($"/{relativePath}"),
+            CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(ReadRefresh(response)).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a session started without the option declares no interval at all, so that the served
+    ///     bytes and headers are what a deployment would carry.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_NoRefreshInterval_LeavesTheHeaderOff()
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
+        await using ServerHarness harness = ServerHarness.Start(fixture);
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(ReadRefresh(response)).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a declared 404 page carries the interval as any other page does, a reader who landed
+    ///     on one waiting for the file to appear.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_RefreshInterval_ReachesTheNotFoundPage()
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create("index.html").Write("404.html", "<p>Gone</p>");
+        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+            await Assert.That(ReadRefresh(response)).IsEqualTo("2");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a 404 answered without a page carries no interval, the fallback being a bodyless
+    ///     plain-text refusal rather than something a browser would reload into.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_RefreshInterval_IsAbsentFromABodylessNotFound()
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create("index.html");
+        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+            await Assert.That(ReadRefresh(response)).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a HEAD response declares the interval the matching GET would, the two differing in
+    ///     the body alone.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_RefreshInterval_IsDeclaredOnAHeadResponse()
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
+        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+
+        using HttpRequestMessage request = new(HttpMethod.Head, harness.Url("/"));
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(ReadRefresh(response)).IsEqualTo("2");
+        }
+    }
+
+    /// <summary>
+    ///     Reads the <c>Refresh</c> header off one response.
+    /// </summary>
+    /// <remarks>
+    ///     Read by name rather than through a typed accessor, the field being absent from
+    ///     <see cref="System.Net.Http.Headers.HttpResponseHeaders"/> for the same reason it is absent from
+    ///     <see cref="HttpResponseHeader"/>: HTTP never defined it.
+    /// </remarks>
+    /// <param name="response">
+    ///     The response to read.
+    /// </param>
+    /// <returns>
+    ///     The interval the response declares, or <see langword="null"/> when it declares none.
+    /// </returns>
+    private static string? ReadRefresh(HttpResponseMessage response) =>
+        response.Headers.TryGetValues("Refresh", out IEnumerable<string>? values)
+            ? string.Join(", ", values)
+            : null;
+
+    #endregion // Refresh Header Tests
+
     #region Shutdown Tests
 
     /// <summary>

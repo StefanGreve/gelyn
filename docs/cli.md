@@ -19,12 +19,14 @@ dotnet-suggest register --command-path "$HOME/.dotnet/tools/gelyn"
 gelyn serve                  # http://127.0.0.1:9624
 gelyn serve --port 8080      # another port
 gelyn serve --launch-browser # open the address in your default browser
+gelyn serve --refresh 2      # reload the page in the browser every two seconds
 ```
 
-| Option             | Default | Description                                      |
-| ------------------ | ------- | ------------------------------------------------ |
-| `--port`           | `9624`  | The loopback port to serve on, from 1 to 65535.  |
-| `--launch-browser` | off     | Opens the served address in the default browser. |
+| Option             | Default | Description                                         |
+| ------------------ | ------- | --------------------------------------------------- |
+| `--port`           | `9624`  | The loopback port to serve on, from 1 to 65535.     |
+| `--launch-browser` | off     | Opens the served address in the default browser.    |
+| `--refresh`        | off     | Reloads an HTML page every so many seconds, from 1. |
 
 Both `http://127.0.0.1:<port>` and `http://localhost:<port>` are served, so either spelling reaches the same
 site. Every `build` option applies unchanged, because serving implies building. `Ctrl+C` stops the server and

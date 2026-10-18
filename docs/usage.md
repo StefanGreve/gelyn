@@ -376,8 +376,21 @@ rebuilt 8 file(s) in 4.19 ms after content/about.md changed.
 
 A rebuild reports that one line however many files it wrote, where `gelyn build` reports one line per file.
 Several entries changing inside the same window are reported by number rather than by name, as
-`rebuilt 8 file(s) in 5.10 ms after 3 entries changed.` Your browser is not reloaded for you: Gelyn writes the
-output and leaves the reload to you.
+`rebuilt 8 file(s) in 5.10 ms after 3 entries changed.`
+
+A rebuild does not reload your browser. `--refresh` asks the browser to reload itself on a timer instead, so
+that each pass picks up whatever the last rebuild wrote:
+
+```sh
+gelyn serve --refresh 2
+```
+
+The interval is sent as a `Refresh` header on HTML responses alone, so a stylesheet, a script or an image is
+left to the page that links it rather than fetched on a schedule of its own. The response body is untouched,
+which keeps the page you preview byte-identical to the one in `_site`, and without the option nothing carries
+the header at all. A page served from `404.html` carries it as well, which is what you want while writing the
+page that is missing: create the file, and the next pass lands on it. Each pass is a request like any other,
+so the request log grows a line per interval.
 
 A change starts a 150 ms window, and everything reported inside it is rebuilt once. The window opens with that
 first change rather than restarting with each one after it, which has two consequences. A burst is one rebuild,

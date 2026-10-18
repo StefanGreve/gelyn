@@ -26,6 +26,7 @@ internal sealed class ServeCommand : Command
 {
     private const string PortOption = "port";
     private const string LaunchBrowserOption = "launch-browser";
+    private const string RefreshOption = "refresh";
 
     /// <summary>
     ///     The port served on when <c>--port</c> is absent.
@@ -90,8 +91,22 @@ internal sealed class ServeCommand : Command
             Description = "Open the served site in the default browser.",
         };
 
+        Option<int?> refresh = new($"--{RefreshOption}")
+        {
+            Description = "Ask the browser to reload an HTML page every so many seconds. Absent by default.",
+            HelpName = "seconds",
+        };
+
+        // Zero would leave no gap between passes, which is a reload loop rather than a preview.
+        refresh.Validators.Add(static result =>
+        {
+            if (result.GetValueOrDefault<int?>() is < 1)
+                result.AddError($"--{RefreshOption} must be at least 1.");
+        });
+
         this.Options.Add(port);
         this.Options.Add(launchBrowser);
+        this.Options.Add(refresh);
 
         // Serving implies building, so the build's own options apply here unchanged.
         foreach (Option option in OverrideOptions.Definitions)
@@ -114,7 +129,13 @@ internal sealed class ServeCommand : Command
 
                 using CancellationTokenSource session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-                Task serving = server.ServeAsync(outputDirectory, chosen, parsed.GetValue(launchBrowser), session.Token);
+                Task serving = server.ServeAsync(
+                    outputDirectory,
+                    chosen,
+                    parsed.GetValue(launchBrowser),
+                    parsed.GetValue(refresh),
+                    session.Token);
+
                 Task watching = watcher.WatchAsync(session.Token);
 
                 // A faulted rebuild loop has to end the serving too, so the session is cancelled as soon as either side finishes.

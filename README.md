@@ -35,7 +35,8 @@ gelyn serve --config ./example/gelyn.json --launch-browser
 
 > [!NOTE]
 > Serves the site at <http://127.0.0.1:9624> on loopback alone, for local development only, and generates it
-> again whenever a source file or `gelyn.json` changes. `--port` moves it, and <http://localhost:9624> is served as well. Reload the page yourself once a rebuild reports.
+> again whenever a source file or `gelyn.json` changes. `--port` moves it, `--refresh <seconds>` has the
+> browser reload the page for you, and <http://localhost:9624> is served as well.
 
 Your own site needs no `--config`, because `gelyn` reads `gelyn.json` from the working directory, where
 `ContentDirectory` defaults to `content/`.

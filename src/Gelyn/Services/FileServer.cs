@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,7 +27,16 @@ namespace Gelyn.Services;
 /// </remarks>
 internal sealed class FileServer
 {
-    private const string AllowHeader = "Allow";
+    /// <summary>
+    ///     The name of the <c>Refresh</c> header, spelled out because <see cref="HttpResponseHeader"/> covers
+    ///     the fields HTTP defines and this one arrived through Netscape instead. No RFC specifies it: IANA
+    ///     registers it as permanent against the HTML standard, where one algorithm reads both this header and
+    ///     the matching <c>meta</c> pragma.
+    /// </summary>
+    /// <seealso href="https://html.spec.whatwg.org/multipage/semantics.html#shared-declarative-refresh-steps">
+    ///     Shared declarative refresh steps.
+    /// </seealso>
+    private const string RefreshHeader = "Refresh";
 
     /// <summary>
     ///     The methods the server answers, in the form the <c>Allow</c> header of a refusal takes.
@@ -121,6 +131,10 @@ internal sealed class FileServer
     /// <param name="launchBrowser">
     ///     Indicates whether the announced address is opened in the default browser.
     /// </param>
+    /// <param name="refreshSeconds">
+    ///     The interval an HTML response asks the browser to reload itself after, or <see langword="null"/>
+    ///     when no response carries the header.
+    /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
     /// </param>
@@ -134,6 +148,7 @@ internal sealed class FileServer
         string outputDirectory,
         int port,
         bool launchBrowser,
+        int? refreshSeconds,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(outputDirectory);
@@ -142,6 +157,7 @@ internal sealed class FileServer
             throw new PlatformNotSupportedException($"{nameof(HttpListener)} is not available on this platform.");
 
         string address = Address(port);
+        string? refresh = refreshSeconds?.ToString(Tool.Culture);
 
         using HttpListener listener = new();
 
@@ -175,7 +191,7 @@ internal sealed class FileServer
                 break;
             }
 
-            await this.AnswerAsync(context, outputDirectory, cancellationToken).ConfigureAwait(false);
+            await this.AnswerAsync(context, outputDirectory, refresh, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -184,6 +200,7 @@ internal sealed class FileServer
     private async Task AnswerAsync(
         HttpListenerContext context,
         string outputDirectory,
+        string? refresh,
         CancellationToken cancellationToken)
     {
         HttpListenerRequest request = context.Request;
@@ -199,7 +216,7 @@ internal sealed class FileServer
             {
                 // RFC 9110 requires a 405 to name the methods the target does support.
                 response.StatusCode = (int)HttpStatusCode.MethodNotAllowed;
-                response.AddHeader(AllowHeader, ReadMethods);
+                response.Headers[HttpResponseHeader.Allow] = ReadMethods;
                 response.ContentLength64 = 0;
 
                 this.Report(request, client, HttpStatusCode.MethodNotAllowed, written: 0);
@@ -210,6 +227,9 @@ internal sealed class FileServer
 
                 response.StatusCode = (int)file.StatusCode;
                 response.ContentType = file.ContentType;
+
+                if (refresh is not null && file.ContentType.StartsWith(MediaTypeNames.Text.Html, StringComparison.Ordinal))
+                    response.AddHeader(RefreshHeader, refresh);
 
                 long written = await this
                     .WriteBodyAsync(response, file, method, cancellationToken)

@@ -35,7 +35,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     private readonly StringWriter _output = new();
     private readonly TextWriter _writer;
 
-    private ServerHarness(OutputFixture fixture, DateTimeOffset now)
+    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds)
     {
         this.Port = FreePort();
         this.Logger = new FakeLogger<FileServer>();
@@ -59,7 +59,12 @@ internal sealed class ServerHarness : IAsyncDisposable
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
         // listening and the request below needs no readiness poll. No test asks for a browser: the suite runs
         // headless on CI, and a launch would open one on the machine running it.
-        this._serving = server.ServeAsync(fixture.Root, this.Port, launchBrowser: false, this._cancellation.Token);
+        this._serving = server.ServeAsync(
+            fixture.Root,
+            this.Port,
+            launchBrowser: false,
+            refreshSeconds,
+            this._cancellation.Token);
     }
 
     /// <summary>
@@ -116,11 +121,18 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <param name="now">
     ///     The instant the clock reports, which every request is stamped with.
     /// </param>
+    /// <param name="refreshSeconds">
+    ///     The interval an HTML response asks the browser to reload itself after, or <see langword="null"/>
+    ///     when no response carries the header.
+    /// </param>
     /// <returns>
     ///     The new harness.
     /// </returns>
-    public static ServerHarness Start(OutputFixture fixture, DateTimeOffset? now = null) =>
-        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero));
+    public static ServerHarness Start(
+        OutputFixture fixture,
+        DateTimeOffset? now = null,
+        int? refreshSeconds = null) =>
+        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds);
 
     /// <summary>
     ///     Composes the absolute URL one request path addresses.
