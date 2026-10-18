@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Gelyn.Core;
 using Gelyn.Model;
 
-using YamlDotNet.Core;
+using SharpYaml;
 
 namespace Gelyn.Tests.Core;
 

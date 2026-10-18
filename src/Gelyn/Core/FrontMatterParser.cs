@@ -1,13 +1,9 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-using Gelyn.Core.Internals;
 using Gelyn.Model;
 
-using YamlDotNet.Core;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using SharpYaml;
 
 namespace Gelyn.Core;
 
@@ -17,12 +13,6 @@ namespace Gelyn.Core;
 internal static class FrontMatterParser
 {
     private const string Delimiter = "---";
-
-    private static readonly IDeserializer YamlDeserializer = new StaticDeserializerBuilder(new YamlContext())
-        .WithNamingConvention(CamelCaseNamingConvention.Instance)
-        .WithTypeConverter(new DateOnlyConverter())
-        .IgnoreUnmatchedProperties()
-        .Build();
 
     /// <summary>
     ///     Parses a front matter block, including its surrounding delimiters.
@@ -37,16 +27,8 @@ internal static class FrontMatterParser
     /// <exception cref="YamlException">
     ///     The block is not well-formed YAML, or declares something other than a mapping.
     /// </exception>
-    [SuppressMessage("Maintainability", "CA2263:Prefer generic overload", Justification = Justifications.ByDesign)]
-    public static FrontMatter? Parse(ReadOnlySpan<char> block)
-    {
-        return YamlDeserializer.Deserialize(StripDelimiters(block), typeof(FrontMatter)) switch
-        {
-            null => null,
-            FrontMatter frontMatter => frontMatter,
-            _ => throw new YamlException("Front matter must be a mapping of key-value pairs."),
-        };
-    }
+    public static FrontMatter? Parse(ReadOnlySpan<char> block) =>
+        YamlSerializer.Deserialize<FrontMatter>(StripDelimiters(block), YamlContext.Default);
 
     #region Helpers
 

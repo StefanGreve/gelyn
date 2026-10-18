@@ -18,9 +18,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-using Spectre.Console;
+using SharpYaml;
 
-using YamlDotNet.Core;
+using Spectre.Console;
 
 namespace Gelyn.Services;
 

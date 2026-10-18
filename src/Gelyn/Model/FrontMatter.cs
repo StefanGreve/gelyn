@@ -1,5 +1,9 @@
 using System;
 
+using Gelyn.Core.Internals;
+
+using SharpYaml.Serialization;
+
 namespace Gelyn.Model;
 
 /// <summary>
@@ -21,6 +25,7 @@ internal sealed record FrontMatter
     /// <summary>
     ///     The publication date, or <see langword="null"/> when the block omits it.
     /// </summary>
+    [YamlConverter(typeof(DateOnlyConverter))]
     public DateOnly? Date { get; set; }
 
     /// <summary>

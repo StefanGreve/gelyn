@@ -1,8 +1,6 @@
 using System;
 
-using YamlDotNet.Core;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Serialization;
+using SharpYaml.Serialization;
 
 namespace Gelyn.Core.Internals;
 
@@ -10,23 +8,40 @@ namespace Gelyn.Core.Internals;
 ///     Converts the calendar dates a front matter block declares to and from <see cref="DateOnly"/>.
 /// </summary>
 /// <remarks>
-///     A statically generated context resolves no scalar it was not told about, so without this converter a date
-///     reaches the generated property setter as a <see cref="string"/> and fails to cast.
+///     The source generator rejects a <see cref="DateOnly"/> member outright with <c>SHARPYAML002</c> rather than
+///     falling back to reflection, so the type binds only through a converter the member names. Reading a value
+///     the configured culture cannot parse yields <see langword="null"/>, which leaves the rest of the block
+///     readable instead of failing it over one malformed date.
 /// </remarks>
-internal sealed class DateOnlyConverter : IYamlTypeConverter
+internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
 {
     private const string Format = "yyyy-MM-dd";
 
     /// <inheritdoc/>
-    public bool Accepts(Type type) => type == typeof(DateOnly) || type == typeof(DateOnly?);
+    public override DateOnly? Read(YamlReader reader)
+    {
+        string? value = reader.GetScalarValue();
 
-    /// <inheritdoc/>
-    public object? ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer) =>
-        DateOnly.TryParse(parser.Consume<Scalar>().Value, Tool.Culture, out DateOnly date)
+        // The scalar is consumed here rather than by the caller, which would otherwise read the value again as
+        // the next key and fault the mapping.
+        reader.Read();
+
+        return DateOnly.TryParse(value, Tool.Culture, out DateOnly date)
             ? date
             : null;
+    }
 
     /// <inheritdoc/>
-    public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer) =>
-        emitter.Emit(new Scalar(((DateOnly?)value)?.ToString(Format, Tool.Culture) ?? string.Empty));
+    public override void Write(YamlWriter writer, DateOnly? value)
+    {
+        ArgumentNullException.ThrowIfNull(writer);
+
+        if (value is null)
+        {
+            writer.WriteNullValue();
+            return;
+        }
+
+        writer.WriteScalar(value.Value.ToString(Format, Tool.Culture));
+    }
 }
