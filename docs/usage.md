@@ -363,6 +363,47 @@ and the tool version alone. Upgrading Gelyn moves that version in both the gener
 that one rebuild does change every page. Worth knowing if you commit your output directory or deploy it by
 diff.
 
+## Preview
+
+`gelyn serve` builds your site, serves it on loopback, and builds it again as you write. Its options, its
+request log, and its exit codes are covered in `cli.md`; this section is the rebuild loop itself.
+
+```text
+Processed 8 file(s) in 3.52 ms.
+Serving HTTP on 127.0.0.1 port 9624 (http://127.0.0.1:9624/) ...
+rebuilt 8 file(s) in 4.19 ms after content/about.md changed.
+```
+
+A rebuild reports that one line however many files it wrote, where `gelyn build` reports one line per file.
+Several entries changing inside the same window are reported by number rather than by name, as
+`rebuilt 8 file(s) in 5.10 ms after 3 entries changed.` Your browser is not reloaded for you: Gelyn writes the
+output and leaves the reload to you.
+
+A change starts a 150 ms window, and everything reported inside it is rebuilt once. The window opens with that
+first change rather than restarting with each one after it, which has two consequences. A burst is one rebuild,
+so saving ten times in a second collapses into a single pass, as does an editor saving through a temporary file
+and a rename. A steady stream of saves, on the other hand, is rebuilt about once per window rather than once
+you stop typing, because the rebuild is never postponed for as long as the editing lasts.
+
+A rebuild that fails writes one `error:` line and keeps serving what it last built, so the server stays up and
+your browser keeps showing whatever the previous rebuild produced. The next change is rebuilt either way. That
+covers front matter that isn't well-formed YAML, a value in `gelyn.json` the binder can't convert to the type
+of its setting, and a value the validator rejects once it can:
+
+```text
+error: BaseUrl must be an absolute http or https URL, such as 'https://example.com/blog'.
+rebuilt 8 file(s) in 13.04 ms after content/gelyn.json changed.
+```
+
+A change to `gelyn.json` is reloaded before the rebuild that follows it, so a new `Title` reaches the next page
+Gelyn writes. Two settings are the exception, because the watcher and the server are bound to the directories
+the command started against: change `ContentDirectory` or `OutputDirectory` and Gelyn says so rather than
+rebuilding against them.
+
+```text
+warning: ContentDirectory changed. Restart gelyn serve to pick that up.
+```
+
 <!-- References -->
 
 [markdig]: https://github.com/xoofx/markdig

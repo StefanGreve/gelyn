@@ -20,22 +20,25 @@ over the generated output and don't shy away from meddling with web development,
 
 ## Basic Usage
 
-Write Markdown into `content/`, then generate the site:
+The `example/` directory holds a complete site. Generate it from the repository root, which is what
+`example/gelyn.json` resolves its relative paths against:
 
 ```sh
-gelyn build
+gelyn build --config ./example/gelyn.json
 ```
 
-Preview the result over HTTP:
+Preview the result, rebuilt as you write:
 
 ```sh
-python3 -m http.server -d _site -b 127.0.0.1 9624
+gelyn serve --config ./example/gelyn.json --launch-browser
 ```
 
 > [!NOTE]
-> Serves the site at <http://localhost:9624> for local development only. Python's [`http.server`][http-server]
-> documents itself as not recommended for production, and `-b 127.0.0.1` keeps it on loopback rather than on
-> every interface.
+> Serves the site at <http://127.0.0.1:9624> on loopback alone, for local development only, and generates it
+> again whenever a source file or `gelyn.json` changes. `--port` moves it, and <http://localhost:9624> is served as well. Reload the page yourself once a rebuild reports.
+
+Your own site needs no `--config`, because `gelyn` reads `gelyn.json` from the working directory, where
+`ContentDirectory` defaults to `content/`.
 
 ## Claude Code Plugin
 
@@ -125,4 +128,3 @@ dotnet tool install --global Gelyn --prerelease
 [husky]: https://alirezanet.github.io/Husky.Net
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
-[http-server]: https://docs.python.org/3/library/http.server.html
