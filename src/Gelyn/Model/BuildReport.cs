@@ -29,4 +29,10 @@ internal sealed record BuildReport
     ///     precedes it, which for a small site is the larger share of the time the caller waits.
     /// </summary>
     public required TimeSpan Elapsed { get; init; }
+
+    /// <summary>
+    ///     The number of files the build wrote, copied and deleted, which is the total every command reports.
+    /// </summary>
+    public int FileCount =>
+        this.Pages.Count + this.Copies.Count + this.Removed.Count;
 }

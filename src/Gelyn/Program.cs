@@ -10,6 +10,7 @@ using Gelyn.Commands;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -49,6 +50,7 @@ internal static class Program
             // Third-party registrations
             builder.Services.TryAddSingleton(console);
             builder.Services.TryAddSingleton<IFileSystem, FileSystem>();
+            builder.Services.TryAddSingleton<IConfigurationRoot>(builder.Configuration);
 
             // First-party registrations
             builder.Services.TryAddSingleton(TimeProvider.System);

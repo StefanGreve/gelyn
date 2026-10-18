@@ -39,7 +39,7 @@ internal static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     Registers the services that discover content and generate the site.
+    ///     Registers the services that discover content, generate the site and preview it.
     /// </summary>
     /// <param name="services">
     ///     The collection to add the registrations to.
@@ -53,6 +53,7 @@ internal static class ServiceCollectionExtensions
         services.TryAddSingleton<SiteBuilder>();
         services.TryAddSingleton<StaticFileResolver>();
         services.TryAddSingleton<FileServer>();
+        services.TryAddSingleton<SiteWatcher>();
 
         return services;
     }
@@ -61,7 +62,7 @@ internal static class ServiceCollectionExtensions
     ///     Registers the root command and every subcommand it dispatches to.
     /// </summary>
     /// <remarks>
-    ///     <see cref="Gelyn.Program"/> resolves only the root command, and the subcommands reach it through its
+    ///     <see cref="Program"/> resolves only the root command, and the subcommands reach it through its
     ///     constructor, so each one is registered here rather than constructed by hand.
     /// </remarks>
     /// <param name="services">

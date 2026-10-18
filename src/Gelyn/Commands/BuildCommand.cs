@@ -48,8 +48,7 @@ internal sealed class BuildCommand : Command
 
                 // Formatted here rather than in the interpolation, so the culture is not left to the console.
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                int processed = report.Pages.Count + report.Copies.Count + report.Removed.Count;
-                console.MarkupLineInterpolated($"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
+                console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
 
                 return ExitCodes.Success;
             }

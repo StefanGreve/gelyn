@@ -10,7 +10,7 @@ using Gelyn.Model;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Resolves one request path to the file in the output directory that answers it.
+///     Decides which file in the output directory answers a given request path.
 /// </summary>
 /// <remarks>
 ///     Resolution follows the conventions of the targets a generated site is deployed to, so that a preview

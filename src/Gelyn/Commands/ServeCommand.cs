@@ -3,6 +3,8 @@ using System.CommandLine;
 using System.IO;
 using System.IO.Abstractions;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
@@ -17,7 +19,8 @@ using Spectre.Console;
 namespace Gelyn.Commands;
 
 /// <summary>
-///     Generates the site and serves it over HTTP for local preview.
+///     Generates the site, serves it over HTTP for local preview, and generates it again whenever a source
+///     file or the configuration file changes.
 /// </summary>
 internal sealed class ServeCommand : Command
 {
@@ -43,6 +46,9 @@ internal sealed class ServeCommand : Command
     /// <param name="server">
     ///     Answers the requests for what the generation produced.
     /// </param>
+    /// <param name="watcher">
+    ///     Generates the site again whenever a source file or the configuration file changes.
+    /// </param>
     /// <param name="environment">
     ///     The host environment relative paths are resolved against.
     /// </param>
@@ -58,11 +64,12 @@ internal sealed class ServeCommand : Command
     public ServeCommand(
         SiteBuilder siteBuilder,
         FileServer server,
+        SiteWatcher watcher,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
         IAnsiConsole console)
-        : base("serve", "Generate the site and serve it over HTTP for local preview.")
+        : base("serve", "Serve the site over HTTP for local preview, rebuilding it as its sources change.")
     {
         Option<int> port = new($"--{PortOption}")
         {
@@ -71,8 +78,7 @@ internal sealed class ServeCommand : Command
             DefaultValueFactory = static _ => DefaultPort,
         };
 
-        // Rejected here rather than left to bind, because HttpListener cannot take port 0 and reports the
-        // refusal as a platform error code.
+        // Caught at parse time, since the bind would turn a bad port into an opaque HttpListener error code.
         port.Validators.Add(static result =>
         {
             if (result.GetValueOrDefault<int>() is <= IPEndPoint.MinPort or > IPEndPoint.MaxPort)
@@ -104,13 +110,17 @@ internal sealed class ServeCommand : Command
                 int chosen = parsed.GetValue(port);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                int processed = report.Pages.Count + report.Copies.Count + report.Removed.Count;
+                console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
 
-                console.MarkupLineInterpolated($"Processed [bold]{processed}[/] file(s) in [bold]{elapsed}[/] ms.");
+                using CancellationTokenSource session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-                await server
-                    .ServeAsync(outputDirectory, chosen, parsed.GetValue(launchBrowser), cancellationToken)
-                    .ConfigureAwait(false);
+                Task serving = server.ServeAsync(outputDirectory, chosen, parsed.GetValue(launchBrowser), session.Token);
+                Task watching = watcher.WatchAsync(session.Token);
+
+                // A faulted rebuild loop has to end the serving too, so the session is cancelled as soon as either side finishes.
+                await Task.WhenAny(serving, watching).ConfigureAwait(false);
+                await session.CancelAsync().ConfigureAwait(false);
+                await Task.WhenAll(serving, watching).ConfigureAwait(false);
 
                 return ExitCodes.Success;
             }
@@ -122,7 +132,6 @@ internal sealed class ServeCommand : Command
             catch (Exception exception) when (exception is IOException or HttpListenerException or PlatformNotSupportedException)
             {
                 console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
-
                 return ExitCodes.Error;
             }
         });

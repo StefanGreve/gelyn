@@ -34,13 +34,13 @@ internal sealed class ContentFixture
         foreach (LogLevel level in Enum.GetValues<LogLevel>())
             this.Logger.ControlLevel(level, level != LogLevel.None && level >= verbosity);
 
-        HostEnvironmentStub environment = new() { ContentRootPath = root };
+        this.HostEnvironment = new HostEnvironmentStub { ContentRootPath = root };
 
-        this.Pipeline = new ContentPipeline(environment, fileSystem);
+        this.Pipeline = new ContentPipeline(this.HostEnvironment, fileSystem);
 
         this.Builder = new SiteBuilder(
             this.Pipeline,
-            environment,
+            this.HostEnvironment,
             new OptionsMonitorStub(options),
             fileSystem,
             this.Logger);
@@ -70,6 +70,12 @@ internal sealed class ContentFixture
     ///     The options both the pipeline and the builder are driven by.
     /// </summary>
     public SiteOptions Options { get; }
+
+    /// <summary>
+    ///     The host environment every relative path is resolved against, whose content root is
+    ///     <see cref="Root"/>.
+    /// </summary>
+    public HostEnvironmentStub HostEnvironment { get; }
 
     /// <summary>
     ///     Discovers and renders the fixture's content.

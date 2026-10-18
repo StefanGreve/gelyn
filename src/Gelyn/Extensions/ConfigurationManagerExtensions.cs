@@ -23,10 +23,11 @@ internal static class ConfigurationManagerExtensions
     ///     their own. The environment variables and the command line are added again so that they keep
     ///     overriding the file, which is added after them and would otherwise win.
     ///
-    ///     The file is not watched for changes, because no command outlives a single read of it, and
-    ///     establishing the watch costs around 38 ms of a 41 ms startup on macOS. A long-lived command would
-    ///     invert that trade and still be better served by a watcher of its own, because a reload only
-    ///     updates what <c>IOptionsMonitor</c> returns and regenerates nothing.
+    ///     The file is not watched here, because establishing the watch costs around 38 ms of a 41 ms startup
+    ///     on macOS and every command but <c>serve</c> reads it once. <c>serve</c> does outlive that read and
+    ///     runs a watcher of its own in <see cref="Gelyn.Services.SiteWatcher"/>, which reloads the
+    ///     configuration and then regenerates the site, where a reload alone would update what
+    ///     <c>IOptionsMonitor</c> returns and nothing else.
     /// </remarks>
     /// <param name="configuration">
     ///     The configuration to add the sources to.

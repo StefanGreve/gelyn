@@ -58,5 +58,20 @@ internal static class EventIds
     /// </summary>
     internal const int SERVER_STARTED = 1_100;
 
+    /// <summary>
+    ///     The watchers have reported a change and the window collecting the changes beside it has closed.
+    /// </summary>
+    internal const int CHANGE_DETECTED = 1_101;
+
+    /// <summary>
+    ///     The configuration file has been read again, because it is what changed.
+    /// </summary>
+    internal const int CONFIGURATION_RELOADED = 1_102;
+
+    /// <summary>
+    ///     The site has been generated again in answer to the changes that were reported.
+    /// </summary>
+    internal const int REBUILD_COMPLETED = 1_103;
+
     #endregion
 }
