@@ -63,12 +63,7 @@ internal sealed class WatchHarness : IAsyncDisposable
         // does not order.
         this._writer = TextWriter.Synchronized(this._output);
 
-        IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Ansi = AnsiSupport.No,
-            ColorSystem = ColorSystemSupport.NoColors,
-            Out = new AnsiConsoleOutput(this._writer),
-        });
+        IAnsiConsole console = CapturedConsole.Create(this._writer);
 
         this.Watcher = new SiteWatcher(
             content.Builder,

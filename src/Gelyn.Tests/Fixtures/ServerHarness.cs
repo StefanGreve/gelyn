@@ -46,13 +46,8 @@ internal sealed class ServerHarness : IAsyncDisposable
         this._writer = TextWriter.Synchronized(this._output);
 
         // Written to a StringWriter rather than to a TestConsole, which would need a package the suite does
-        // not otherwise want. NoColors keeps the captured text free of escape sequences.
-        IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Ansi = AnsiSupport.No,
-            ColorSystem = ColorSystemSupport.NoColors,
-            Out = new AnsiConsoleOutput(this._writer),
-        });
+        // not otherwise want.
+        IAnsiConsole console = CapturedConsole.Create(this._writer);
 
         FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
 
