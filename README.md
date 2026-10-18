@@ -30,7 +30,7 @@ gelyn build --config ./example/gelyn.json
 Preview the result, rebuilt as you write:
 
 ```sh
-gelyn serve --config ./example/gelyn.json --launch-browser
+gelyn serve --config ./example/gelyn.json --refresh 2 --launch-browser
 ```
 
 > [!NOTE]
@@ -47,8 +47,8 @@ If you use [Claude Code][claude-code], a plugin sets the blog up for you rather 
 empty directory. Register the marketplace, then install it:
 
 ```sh
-claude plugin marketplace add stefangreve/claude-plugins
-claude plugin install gelyn@stefangreve-plugins
+/plugin marketplace add stefangreve/claude-plugins
+/plugin install gelyn@stefangreve-plugins
 ```
 
 Ask Claude to set up a blog, or invoke the skill directly:
@@ -56,59 +56,6 @@ Ask Claude to set up a blog, or invoke the skill directly:
 ```sh
 /gelyn:bootstrap
 ```
-
-## Developer Notes
-
-Install the development dependencies and register the `git` hooks:
-
-```sh
-dotnet tool restore
-dotnet tool run husky install
-```
-
-Build and run this project:
-
-```sh
-dotnet build
-dotnet run --project src/Gelyn -- <command>     # e.g. build
-```
-
-Run the test suite:
-
-```sh
-dotnet test
-```
-
-Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp]; its [documentation][tunit-docs]
-covers the authoring conventions this suite follows.
-A [`Husky.Net`][husky] `pre-push` hook runs the same suite before every push.
-
-To use the tool locally, publish it and link the resulting binary onto your `PATH`:
-
-```sh
-dotnet publish src/Gelyn -r osx-arm64
-ln -sf "$PWD/src/Gelyn/bin/Release/net10.0/osx-arm64/publish/gelyn" ~/.local/bin/gelyn
-```
-
-`PublishAot` makes that a standalone executable, so the link is made once and every later `dotnet publish`
-updates the command in place. Then invoke it by its command name (`gelyn`).
-
-> [!TIP]
-> Use one of the known [RIDs][known-rids] in place of `osx-arm64`; `Gelyn.csproj` lists the set this project
-> targets. Native AOT cannot cross-compile between operating systems, so each one is built on its own.
-
-Packing and installing as a global tool works differently: it rehearses what a consumer gets, including
-the runtime-specific package layout that the publish output alone does not cover.
-
-```sh
-dotnet pack && dotnet pack -r osx-arm64
-dotnet tool install --global Gelyn --prerelease
-```
-
-> [!NOTE]
-> A plain `dotnet pack` emits only the pointer package listing the per-architecture ones, so the matching RID
-> has to be packed as well. `Gelyn` resolves as a package id rather than a path, so `nuget.config` declares
-> `artifacts/nupkg` as the `local` source and maps `Gelyn*` to it.
 
 <!-- References -->
 
@@ -124,8 +71,4 @@ dotnet tool install --global Gelyn --prerelease
 [11ty]: https://www.11ty.dev
 [claude-code]: https://claude.com/claude-code
 [marketplace]: https://github.com/StefanGreve/claude-plugins
-[tunit]: https://tunit.dev
-[tunit-docs]: https://tunit.dev/docs/intro/
-[husky]: https://alirezanet.github.io/Husky.Net
-[mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids
