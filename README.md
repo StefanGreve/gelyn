@@ -2,6 +2,7 @@
 
 [![Build][build-badge]][build-workflow]
 [![CodeQL][codeql-badge]][codeql-workflow]
+[![Documentation][docs-badge]][docs-site]
 [![.NET][dotnet-badge]][dotnet-download]
 [![Platform][platform-badge]][known-rids]
 [![License][license-badge]][license]
@@ -63,6 +64,8 @@ Ask Claude to set up a blog, or invoke the skill directly:
 [build-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/dotnet-build.yml
 [codeql-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml/badge.svg
 [codeql-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml
+[docs-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/gelyn-build.yml/badge.svg
+[docs-site]: https://stefangreve.github.io/gelyn/
 [dotnet-badge]: https://img.shields.io/badge/.NET-10.0-512BD4
 [dotnet-download]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
 [license-badge]: https://img.shields.io/github/license/StefanGreve/gelyn?color=green
