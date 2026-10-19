@@ -1,3 +1,9 @@
+---
+title: CLI
+date: 2026-10-18
+description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
+---
+
 # CLI
 
 ## Tab completion
@@ -33,7 +39,7 @@ site. Every `build` option applies unchanged, because serving implies building. 
 exits with code `0`: interrupting it is how the command is meant to end.
 
 What the rebuild loop does with a change, and what it does with one that fails to build, is covered under
-[Preview](usage.md#preview).
+[Preview](usage.html#preview).
 
 ## Request log
 

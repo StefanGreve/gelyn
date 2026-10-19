@@ -1,3 +1,9 @@
+---
+title: Configuration
+date: 2026-10-15
+description: Every setting gelyn.json accepts, its default, and the order the sources are read in.
+---
+
 # Configuration
 
 Gelyn runs without configuration, so you only need a file to change a default. To change one, create a

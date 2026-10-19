@@ -1,3 +1,9 @@
+---
+title: Usage
+date: 2026-10-19
+description: The content tree, front matter, and the Markdown extensions Gelyn renders.
+---
+
 # Usage
 
 Your content tree is your site: the name and the position of each file decide what it becomes, so you write no
@@ -154,7 +160,6 @@ Every page is the same document around your own body:
 </head>
 <body>
     <header>
-        <a href="/index.html">Site title</a>
         <nav><ul><li><a href="/about.html">About</a></li></ul></nav>
     </header>
     <main>
@@ -162,7 +167,7 @@ Every page is the same document around your own body:
     </main>
     <hr />
     <footer>
-        <em>Built with Gelyn v0.1.0 - last revised Oct 10, 2026</em>
+        Built with Gelyn v0.1.0 - last revised <time datetime="2026-10-10">Oct 10, 2026</time>
     </footer>
 </body>
 </html>

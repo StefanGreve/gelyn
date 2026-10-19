@@ -1,3 +1,9 @@
+---
+title: Development
+date: 2026-10-18
+description: Building Gelyn from source, the git hooks, and the test suite.
+---
+
 # Development
 
 Install the development dependencies and register the `git` hooks:

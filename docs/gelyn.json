@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "Title": "Gelyn",
+  "Language": "en",
+  "Author": "Stefan Greve",
+  "Description": "A static site generator that turns a folder of Markdown into a website.",
+  "ContentDirectory": "docs",
+  "OutputDirectory": "_docs",
+  "ExcludePatterns": [
+    ".DS_Store",
+    "*.html",
+    "gelyn.json"
+  ]
+}
