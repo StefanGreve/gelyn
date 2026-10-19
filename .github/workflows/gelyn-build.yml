@@ -39,17 +39,23 @@ jobs:
       - name: Restore Dependencies
         run: dotnet restore Gelyn.slnx
 
-      - name: Build
-        run: dotnet build Gelyn.slnx --configuration Release --no-restore
+      - name: Publish Gelyn
+        run: |
+          dotnet publish src/Gelyn \
+            --configuration Release \
+            --runtime linux-x64 \
+            --no-restore \
+            --output artifacts/publish
 
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v6
 
       - name: Render the Documentation
-        run: >
-          dotnet run --project src/Gelyn --configuration Release --no-build
-          -- build --config ./docs/gelyn.json --base-url '${{ steps.pages.outputs.base_url }}'
+        run: |
+          artifacts/publish/gelyn build \
+            --config ./docs/gelyn.json \
+            --base-url '${{ steps.pages.outputs.base_url }}'
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v5
