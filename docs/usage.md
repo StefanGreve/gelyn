@@ -118,7 +118,6 @@ Gelyn renders your Markdown with [Markdig][markdig]: CommonMark plus the followi
 | Definition lists  | `Term`, then `:   Text`  | `<dl>`, `<dt>`, `<dd>`                                    |
 | Strikethrough     | `~~text~~`               | `<del>`                                                   |
 | Figures           | `^^^` fences             | `<figure>`, with a `<figcaption>` per fence that is named |
-| Footers           | `^^ text`                | `<footer>`                                                |
 | Footnotes         | `[^1]`                   | A reference, and a back-linked note at the end            |
 | Mathematics       | `$x$`, `$$x$$`           | `<span class="math">`, `<div class="math">`               |
 | Pipe tables       | `a \| b`                 | `<table>`, under GFM rules                                |

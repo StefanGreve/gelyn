@@ -36,12 +36,8 @@ internal static class HeaderComponent
             """;
         });
 
-        // Navigation is ordered landing page first
-        string home = WebUtility.HtmlEncode(context.Navigation[0].Href);
-
         return $"""
             <header>
-                <a href="{home}">{WebUtility.HtmlEncode(context.Options.Title)}</a>
                 <nav>
                     <ul>
                         {string.Join(Environment.NewLine, navItems)}

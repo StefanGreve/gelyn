@@ -27,7 +27,6 @@ internal sealed class MarkdownRenderer
         .UseDefinitionLists()
         .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
         .UseFigures()
-        .UseFooters()
         .UseFootnotes()
         .UseMathematics()
         .UsePipeTables(new PipeTableOptions { UseGfmRules = true })

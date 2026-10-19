@@ -1,0 +1,171 @@
+/* theme */
+
+:root {
+    --primary-color: black;
+    --border-color: var(--primary-color);
+}
+
+/* layout */
+
+body {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0.5rem;
+
+    & > main {
+        flex-grow: 1;
+    }
+
+    & > hr {
+        margin-inline: 0;
+    }
+}
+
+/* navigation */
+
+nav {
+    & > ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+
+        & > li > a {
+            color: var(--primary-color);
+            display: block;
+            padding: 0.25em 1em;
+            border: 1px solid var(--border-color);
+            text-decoration: none;
+
+            &[aria-current="page"] {
+                font-weight: bold;
+            }
+        }
+
+        & > li + li {
+            margin-inline-start: -1px;
+        }
+    }
+}
+
+/* alert extension */
+
+div.markdown-alert {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    margin-block: 1em;
+    border: 1px solid var(--border-color);
+    padding: 0.5em;
+
+    & > * {
+        margin-block: 0;
+    }
+
+    & > .markdown-alert-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        font-weight: bold;
+        line-height: 1;
+        fill: currentColor;
+    }
+}
+
+/* citation extension */
+
+cite {
+    quotes: "\201C" "\201D";
+
+    &::before {
+        content: open-quote;
+    }
+
+    &::after {
+        content: close-quote;
+    }
+}
+
+/* definition list extension */
+
+dl {
+    & > dt {
+        font-weight: bold;
+    }
+
+    & > dd {
+        margin-inline-start: 1em;
+    }
+
+    & > dd + dt {
+        margin-block-start: 0.5em;
+    }
+}
+
+/* figure extension */
+
+figure {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    margin-inline: 0;
+    border: 1px solid var(--border-color);
+    padding: 0.5em;
+
+    & > * {
+        margin-block: 0;
+    }
+
+    & > figcaption {
+        font-style: italic;
+    }
+}
+
+/* footnote extension */
+
+div.footnotes > hr {
+    width: 4em;
+    margin-inline: 0;
+}
+
+/* footer extension */
+
+main footer {
+    margin-block-start: 1em;
+    border-block-start: 1px solid var(--border-color);
+    padding-block-start: 0.5em;
+}
+
+/* table extension */
+
+table {
+    border-collapse: collapse;
+    border: 1px solid var(--border-color);
+
+    & th,
+    & td {
+        border: 1px solid var(--border-color);
+        padding: 0.25em 0.5em;
+    }
+
+    & > thead {
+        text-align: left;
+    }
+}
+
+/* list extras extension */
+
+ol[type] {
+    padding-inline-start: 2em;
+}
+
+/* task list extension */
+
+ul.contains-task-list {
+    list-style-type: none;
+    padding-inline-start: 0;
+}

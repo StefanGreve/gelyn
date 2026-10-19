@@ -19,4 +19,14 @@ Front matter
 
 Gelyn is an SSG, and every later mention of SSG carries the title.
 
+A citation goes in doubled quotation marks, so ""premature optimization is the root of all evil"" becomes a
+`cite` element rather than quoted text.
+
+a. List extras add alpha ordered lists
+b. and `i.`, `A.` or `I.` give the roman and uppercase variants, each setting `type` on the list
+
+^^^
+A figure block takes any content, not only an image.
+^^^ The text after the closing fence becomes the caption.
+
 [^1]: And lands here.
