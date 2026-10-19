@@ -470,9 +470,10 @@ public partial class SiteBuilderTests
 
         using (Assert.Multiple())
         {
-            await Assert.That(ReadFooter(fixture, "index.html")).Contains("last revised Feb 1, 2026");
+            await Assert.That(ReadFooter(fixture, "index.html"))
+                .Contains("""last revised <time datetime="2026-02-01">Feb 1, 2026</time>""");
             await Assert.That(ReadFooter(fixture, Path.Combine("blog", "index.html")))
-                .Contains("last revised Mar 15, 2026");
+                .Contains("""last revised <time datetime="2026-03-15">Mar 15, 2026</time>""");
             await Assert.That(undated).Contains("Built with Gelyn");
             await Assert.That(undated).DoesNotContain("last revised");
         }

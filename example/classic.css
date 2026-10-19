@@ -22,6 +22,10 @@ body {
     & > hr {
         margin-inline: 0;
     }
+
+    & > footer {
+        font-style: italic;
+    }
 }
 
 /* navigation */
