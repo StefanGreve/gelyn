@@ -51,6 +51,9 @@ jobs:
         id: pages
         uses: actions/configure-pages@v6
 
+      - name: Apply the Documentation Theme
+        run: cp plugins/gelyn/skills/bootstrap/themes/modern.css docs/modern.css
+
       - name: Render the Documentation
         run: |
           artifacts/publish/gelyn build \
