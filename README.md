@@ -17,35 +17,22 @@ over the generated output and don't shy away from meddling with web development,
 [11ty][11ty] instead.
 
 > [!WARNING]
-> This project is a work in progress. Things can break and change at any time. Use at your own risk.
+> This project is a work in progress. Things can break and change at any time. Use at your own risk. Gelyn is
+> not published to NuGet yet, so the install command below will not resolve until the first release ships.
 
-## Basic Usage
-
-The `example/` directory holds a complete site. Generate it from the repository root, which is what
-`example/gelyn.json` resolves its relative paths against:
+## Install
 
 ```sh
-gelyn build --config ./example/gelyn.json
+dotnet tool install -g gelyn
 ```
 
-Preview the result, rebuilt as you write:
-
-```sh
-gelyn serve --config ./example/gelyn.json --refresh 2 --launch-browser
-```
-
-> [!NOTE]
-> Serves the site at <http://127.0.0.1:9624> on loopback alone, for local development only, and generates it
-> again whenever a source file or `gelyn.json` changes. `--port` moves it, `--refresh <seconds>` has the
-> browser reload the page for you, and <http://localhost:9624> is served as well.
-
-Your own site needs no `--config`, because `gelyn` reads `gelyn.json` from the working directory, where
-`ContentDirectory` defaults to `content/`.
+Building from source, and linking a local publish onto your `PATH` instead, are covered in
+[Development][docs-dev].
 
 ## Documentation
 
 The documentation is published at [stefangreve.github.io/gelyn][docs-site], which Gelyn generates from the
-`docs/` directory of this repository:
+`docs/` directory of this repository.
 
 ## Claude Code Plugin
 
@@ -70,6 +57,7 @@ Ask Claude to set up a blog, or invoke the skill directly:
 [codeql-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml/badge.svg
 [codeql-workflow]: https://github.com/StefanGreve/gelyn/actions/workflows/codeql.yml
 [docs-badge]: https://github.com/StefanGreve/gelyn/actions/workflows/gelyn-build.yml/badge.svg
+[docs-dev]: https://stefangreve.github.io/gelyn/dev.html
 [docs-site]: https://stefangreve.github.io/gelyn/
 [dotnet-badge]: https://img.shields.io/badge/.NET-10.0-512BD4
 [dotnet-download]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
