@@ -42,6 +42,11 @@ gelyn serve --config ./example/gelyn.json --refresh 2 --launch-browser
 Your own site needs no `--config`, because `gelyn` reads `gelyn.json` from the working directory, where
 `ContentDirectory` defaults to `content/`.
 
+## Documentation
+
+The documentation is published at [stefangreve.github.io/gelyn][docs-site], which Gelyn generates from the
+`docs/` directory of this repository:
+
 ## Claude Code Plugin
 
 If you use [Claude Code][claude-code], a plugin sets the blog up for you rather than leaving you with an
