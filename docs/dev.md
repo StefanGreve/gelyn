@@ -1,10 +1,13 @@
 ---
 title: Development
-date: 2026-10-18
+date: 2026-10-20
 description: Building Gelyn from source, the git hooks, and the test suite.
 ---
 
 # Development
+
+The repository root carries a `Makefile` that collects the commands on this page into named targets. Run
+`make setup` once after cloning.
 
 Install the development dependencies and register the `git` hooks:
 
