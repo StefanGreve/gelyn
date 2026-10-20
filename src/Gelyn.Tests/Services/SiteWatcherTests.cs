@@ -197,7 +197,7 @@ public class SiteWatcherTests
         // Act
         harness.Change("about.md");
 
-        await harness.WaitForRebuildsAsync(1);
+        await harness.WaitForLinesAsync(1);
         await harness.QuietAsync();
 
         // Assert
@@ -222,7 +222,7 @@ public class SiteWatcherTests
         // Act
         harness.Change("about.md").Change("index.md");
 
-        await harness.WaitForRebuildsAsync(1);
+        await harness.WaitForLinesAsync(1);
 
         // Assert
         await Assert.That(harness.Lines[0]).EndsWith("ms after 2 entries changed.");

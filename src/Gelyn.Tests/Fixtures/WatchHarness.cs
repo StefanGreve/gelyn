@@ -260,6 +260,26 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.AdvanceUntilAsync(() => this.Rebuilds >= count, $"{count} rebuild(s)");
 
     /// <summary>
+    ///     Advances the clock until the loop has written a given number of lines.
+    /// </summary>
+    /// <remarks>
+    ///     The loop logs that a rebuild completed before it writes the line reporting it, so a test that waits
+    ///     on <see cref="WaitForRebuildsAsync(int)"/> and then reads <see cref="Lines"/> can reach the
+    ///     assertion while the line is still unwritten. A test asserting on what was written waits here.
+    /// </remarks>
+    /// <param name="count">
+    ///     The number of lines to wait for.
+    /// </param>
+    /// <returns>
+    ///     A task that completes once that many lines have been written.
+    /// </returns>
+    /// <exception cref="TimeoutException">
+    ///     The lines did not arrive in the time an in-memory build needs many times over.
+    /// </exception>
+    public Task WaitForLinesAsync(int count) =>
+        this.AdvanceUntilAsync(() => this.Lines.Length >= count, $"{count} line(s)");
+
+    /// <summary>
     ///     Advances the clock until the loop has reported a given number of failed rebuilds.
     /// </summary>
     /// <param name="count">
