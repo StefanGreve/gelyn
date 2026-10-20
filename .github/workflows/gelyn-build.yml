@@ -52,7 +52,7 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Apply the Documentation Theme
-        run: cp plugins/gelyn/skills/bootstrap/themes/modern.css docs/modern.css
+        run: cp plugins/gelyn/skills/bootstrap/themes/darkmodern.css docs/darkmodern.css
 
       - name: Render the Documentation
         run: |

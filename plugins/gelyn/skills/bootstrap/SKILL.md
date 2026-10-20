@@ -39,15 +39,29 @@ Omit `Author`, `Description` and `BaseUrl` rather than writing an empty value fo
 Keep `*.html`: the copy runs after the render, so without it a stale `about.html` is published over the page
 generated from `about.md`.
 
-## 3. Copy the templates
+## 3. Ask which theme to use
 
-`templates/` into `content/`, keeping the tree: `styles.css`, `index.md`, `blogs/index.md`,
-`blogs/hello.md`. Replace `{{TITLE}}` and `{{AUTHOR}}`, and `{{DATE}}` with today's date as `YYYY-MM-DD`.
+One `AskUserQuestion` call with three options. Copy the chosen file out of `themes/` to `content/styles.css`,
+keeping that name whatever the answer, so a theme can be swapped later without touching anything else.
+
+- `None` - write nothing. Browser defaults apply until the user adds a stylesheet by the rule in step 5.
+- `Classic` - `classic.css`, light, and short enough to read end to end. Suggest it to a user who wants to
+  style the site themselves, because it gives every extension a plain treatment to edit rather than leaving
+  them a blank file to start from.
+- `Dark Modern` - `darkmodern.css`, dark, and ready to use unchanged. Suggest it to a user who would rather
+  not write CSS. It covers the common elements, so a definition list, a footnote block and a task list fall
+  back to browser defaults.
+
+## 4. Copy the templates
+
+`templates/` into `content/`, keeping the tree: `index.md`, `blogs/index.md`, `blogs/hello.md`. Replace
+`{{TITLE}}` and `{{AUTHOR}}`, and `{{DATE}}` with today's date as `YYYY-MM-DD`. The stylesheet is not copied
+from here; step 3 writes it.
 
 Navigation follows depth, so `index.md` and `blogs/index.md` are linked in the banner and `blogs/hello.md` is
 not. Keep further posts beside `hello.md` to inherit that.
 
-## 4. Ask about JavaScript, and write none
+## 5. Ask about JavaScript, and write none
 
 Ask whether the site will carry its own JavaScript. Create no `.js` file either way; explain the placement
 rule instead, so the user writes one where they want it:
@@ -63,7 +77,7 @@ Several files in one directory load in ordinal name order, which has nothing to 
 `1-vendor.js` before `2-app.js`, or put the library one directory up. The cascade reaches no CDN, so a
 library has to sit in the tree.
 
-## 5. Build
+## 6. Build
 
 Run `gelyn build` and report the output directory. Add `_site/` to `.gitignore` when the directory is a git
 repository.
