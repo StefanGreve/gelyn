@@ -57,6 +57,9 @@ jobs:
             --config ./docs/gelyn.json \
             --base-url '${{ steps.pages.outputs.base_url }}'
 
+      - name: Publish the Configuration Schema
+        run: cp gelyn.schema.json _docs/schema.json
+
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v5
         with:

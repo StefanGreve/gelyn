@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "$schema": "https://stefangreve.github.io/gelyn/schema.json",
   "Title": "Gelyn",
   "Language": "en",
   "Author": "Stefan Greve",

@@ -11,7 +11,7 @@ Gelyn runs without configuration, so you only need a file to change a default. T
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "$schema": "https://stefangreve.github.io/gelyn/schema.json",
   "Title": "My Blog",
   "Language": "en",
   "Author": "Stefan Greve",
@@ -25,8 +25,9 @@ Gelyn runs without configuration, so you only need a file to change a default. T
 }
 ```
 
-Reference the schema to get completion and validation in any editor that understands JSON Schema. It also
-rejects a misspelled key, which configuration binding would otherwise ignore in silence.
+Reference [the schema](https://stefangreve.github.io/gelyn/schema.json) to get completion and validation in
+any editor that understands JSON Schema. It also rejects a misspelled key, which configuration binding would
+otherwise ignore in silence.
 
 ## Settings
 

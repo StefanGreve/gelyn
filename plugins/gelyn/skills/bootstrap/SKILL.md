@@ -23,7 +23,7 @@ Omit `Author`, `Description` and `BaseUrl` rather than writing an empty value fo
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/StefanGreve/gelyn/master/gelyn.schema.json",
+  "$schema": "https://stefangreve.github.io/gelyn/schema.json",
   "Title": "...",
   "Language": "en",
   "Author": "...",
