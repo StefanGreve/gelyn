@@ -4,10 +4,23 @@ Gelyn is still in a pre-release stage in which the command surface, the configur
 generated HTML all change without notice, so outside contributions are not being accepted yet. This will
 change once the first stable release ships.
 
+## Before You Contribute
+
+- Every commit has to carry a verified signature. GitHub accepts GPG, SSH, and S/MIME; [About commit
+  signature verification][commit-signing] covers generating a key and registering it with your account.
+- `make setup` enables signing and installs the git hooks that format staged C# before a commit and run the
+  tests before a push. Do not bypass them with `--no-verify`; CI verifies both.
+- [Development][docs-dev] describes the toolchain, the build, and the test suite.
+
 ## Theme Development
 
-- Themes live in `plugins/gelyn/skills/bootstrap/themes`, which is their single source of truth.
-- To preview one, copy it into `docs/` or `example/` and build that site.
-- Edit the copy freely; `docs/*.css` and `example/*.css` are git-ignored, so the preview never lands in a
-  commit.
+- Themes live in `plugins/gelyn/skills/bootstrap/themes`, their single source of truth.
+- `make setup` copies `classic.css` into `example/` and `darkmodern.css` into `docs/`, which those two sites
+  build with. Preview another theme by copying it into either directory and building that site.
+- Edit the copy freely; `docs/*.css` and `example/*.css` are git-ignored, so it never reaches a commit.
 - Copy the finished stylesheet back into `themes/` and push that file alone.
+
+<!-- References -->
+
+[commit-signing]: https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification
+[docs-dev]: https://stefangreve.github.io/gelyn/dev.html

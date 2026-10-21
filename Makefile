@@ -1,7 +1,8 @@
+SOLUTION = Gelyn.slnx
 MAIN_PROJECT = ./src/Gelyn
 THEMES = ./plugins/gelyn/skills/bootstrap/themes
 EXAMPLE = ./example
-DOCS_CONFIG = ./docs/gelyn.json
+DOCS = ./docs
 
 UNAME_S = $(shell uname -s)
 UNAME_M = $(shell uname -m)
@@ -35,34 +36,52 @@ GELYN = $(MAIN_PROJECT)/bin/Release/net10.0/$(RID)/publish/$(BINARY)
 # Absent rather than zero, which the serve command rejects as a reload loop.
 REFRESH = $(if $(refresh),--refresh $(refresh))
 
+# The site to build
+project ?= docs
+
+SITE_CONFIG = ./$(project)/gelyn.json
+
 setup:
 	# local tools, and the git hooks one of them installs
 	dotnet tool restore
 	dotnet tool run husky install
 
-	# the stylesheet the example site builds with, which is git-ignored
+	# restore project packages
+	dotnet restore $(SOLUTION)
+
+	# the stylesheets the example and doc sites build with
 	cp -f $(THEMES)/classic.css $(EXAMPLE)/
+	cp -f $(THEMES)/darkmodern.css $(DOCS)/
+
+	# enforced git settings
+	git config --local commit.gpgsign true
+	git config --local tag.gpgsign true
+	git config --local fetch.prune true
 
 build:
-	dotnet build $(MAIN_PROJECT) --configuration Release --no-restore
+	dotnet build $(SOLUTION) --configuration Release --no-restore
+
+test: build
+	dotnet test $(SOLUTION) --configuration Release --no-build
 
 publish:
 	dotnet publish $(MAIN_PROJECT) --runtime $(RID)
 
-docs: publish
+gelyn: publish
 	if [ "$(serve)" = "true" ]; then \
-		$(GELYN) serve --config $(DOCS_CONFIG) --launch-browser $(REFRESH); \
+		$(GELYN) serve --config $(SITE_CONFIG) --launch-browser $(REFRESH); \
 	else \
-		$(GELYN) build --config $(DOCS_CONFIG); \
+		$(GELYN) build --config $(SITE_CONFIG); \
 	fi
 
 lint:
-	dotnet format
+	dotnet format $(SOLUTION)
 
 clean:
+	dotnet clean
 	dotnet clean --configuration Release
 	@clear
 
-.PHONY: setup build publish docs lint clean
+.PHONY: setup build test publish gelyn lint clean
 
 $(V).SILENT:
