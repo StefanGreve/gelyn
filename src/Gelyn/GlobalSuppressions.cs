@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
 using Gelyn.Core.Internals;
 
 // CA1515 reads the declared accessibility of the types an extension block generates without walking up to

@@ -1,5 +1,3 @@
-using System;
-
 using Gelyn.Core.Internals;
 
 using SharpYaml.Serialization;

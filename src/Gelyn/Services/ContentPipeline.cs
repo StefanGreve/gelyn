@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Abstractions;
 using System.IO.Enumeration;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;

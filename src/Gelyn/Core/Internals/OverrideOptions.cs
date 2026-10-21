@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.CommandLine;
 
 namespace Gelyn.Core.Internals;

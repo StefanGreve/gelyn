@@ -1,5 +1,3 @@
-using System;
-
 using SharpYaml.Serialization;
 
 namespace Gelyn.Core.Internals;
