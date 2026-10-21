@@ -122,7 +122,7 @@ internal sealed class ServeCommand : Command
 
                 SiteOptions site = options.CurrentValue;
                 string outputDirectory = fileSystem.Path.Combine(environment.ContentRootPath, site.OutputDirectory);
-                int chosen = parsed.GetValue(port);
+                int configuredPort = parsed.GetValue(port);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
                 console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
@@ -131,7 +131,7 @@ internal sealed class ServeCommand : Command
 
                 Task serving = server.ServeAsync(
                     outputDirectory,
-                    chosen,
+                    configuredPort,
                     parsed.GetValue(launchBrowser),
                     parsed.GetValue(refresh),
                     session.Token);

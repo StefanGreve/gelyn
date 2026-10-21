@@ -75,8 +75,7 @@ internal static class Program
                 .GetRequiredService<ILoggerFactory>()
                 .CreateLogger(typeof(Program));
 
-            if (logger.IsEnabled(LogLevel.Debug))
-                logger.LogStartupCompleted(startupMilliseconds);
+            logger.LogStartupCompleted(startupMilliseconds);
 
             return await parsed
                 .InvokeAsync(configuration)

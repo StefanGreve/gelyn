@@ -149,7 +149,6 @@ internal static partial class LogMessages
         EventId = EventIds.STARTUP_COMPLETED,
         EventName = nameof(EventIds.STARTUP_COMPLETED),
         Level = LogLevel.Debug,
-        SkipEnabledCheck = true,
         Message = "Started in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogStartupCompleted(this ILogger logger, double elapsedMilliseconds);
 
