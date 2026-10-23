@@ -1,7 +1,6 @@
 /* theme */
 
 :root {
-    /* light-dark() resolves against this; without `dark` here every pair below collapses to its light value */
     color-scheme: light dark;
 
     /* system colors, light and dark appearance */
