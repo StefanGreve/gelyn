@@ -58,10 +58,6 @@
     <InternalsVisibleTo Include="Gelyn.Tests" />
   </ItemGroup>
 
-  <Target Name="CleanGeneratedOutput" AfterTargets="Clean">
-    <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts" />
-  </Target>
-
   <Target Name="CleanPublishDirectory" BeforeTargets="PrepareForPublish">
     <RemoveDir Directories="$(PublishDir)" />
   </Target>

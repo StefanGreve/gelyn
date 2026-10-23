@@ -24,8 +24,4 @@
     <ProjectReference Include="../Gelyn/Gelyn.csproj" />
   </ItemGroup>
 
-  <Target Name="CleanTestResults" AfterTargets="Clean">
-    <RemoveDir Directories="$(RepositoryRoot)TestResults" />
-  </Target>
-
 </Project>

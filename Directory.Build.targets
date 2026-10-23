@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Imported after the project body and after package targets, so a project cannot opt out of these -->
+  <PropertyGroup Label="Analyzers">
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Analyzers" Condition="'$(Configuration)' == 'Release'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <Target Name="CleanRepositoryOutput" AfterTargets="Clean">
+    <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts;$(RepositoryRoot)TestResults" />
+  </Target>
+
+</Project>
