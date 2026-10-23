@@ -15,7 +15,7 @@ change once the first stable release ships.
 ## Theme Development
 
 - Themes live in `plugins/gelyn/skills/bootstrap/themes`, their single source of truth.
-- `make setup` copies `classic.css` into `example/` and `darkmodern.css` into `docs/`, which those two sites
+- `make setup` copies `classic.css` into `example/` and `modern.css` into `docs/`, which those two sites
   build with. Preview another theme by copying it into either directory and building that site.
 - Edit the copy freely; `docs/*.css` and `example/*.css` are git-ignored, so it never reaches a commit.
 - Copy the finished stylesheet back into `themes/` and push that file alone.

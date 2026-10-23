@@ -51,7 +51,7 @@ setup:
 
 	# the stylesheets the example and doc sites build with
 	cp -f $(THEMES)/classic.css $(EXAMPLE)/
-	cp -f $(THEMES)/darkmodern.css $(DOCS)/
+	cp -f $(THEMES)/modern.css $(DOCS)/
 
 	# enforced git settings
 	git config --local commit.gpgsign true

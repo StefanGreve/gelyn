@@ -48,9 +48,9 @@ keeping that name whatever the answer, so a theme can be swapped later without t
 - `Classic` - `classic.css`, light, and short enough to read end to end. Suggest it to a user who wants to
   style the site themselves, because it gives every extension a plain treatment to edit rather than leaving
   them a blank file to start from.
-- `Dark Modern` - `darkmodern.css`, dark, and ready to use unchanged. Suggest it to a user who would rather
-  not write CSS. It covers the common elements, so a definition list, a footnote block and a task list fall
-  back to browser defaults.
+- `Modern` - `modern.css`, light or dark by browser preference, and ready to use unchanged. Suggest it to a
+  user who would rather not write CSS. It covers the common elements, so a definition list, a footnote block
+  and a task list fall back to browser defaults.
 
 ## 4. Copy the templates
 
