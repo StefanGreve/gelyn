@@ -11,6 +11,8 @@ change once the first stable release ships.
 - `make setup` enables signing and installs the git hooks that format staged C# before a commit and run the
   tests before a push. Do not bypass them with `--no-verify`; CI verifies both.
 - [Development][docs-dev] describes the toolchain, the build, and the test suite.
+- Record every new feature and every bug fix in [`CHANGELOG.md`][changelog] once the first release has
+  shipped. Until then the file carries its template alone, a pre-release changing without notice.
 
 ## Theme Development
 
@@ -22,5 +24,6 @@ change once the first stable release ships.
 
 <!-- References -->
 
+[changelog]: CHANGELOG.md
 [commit-signing]: https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification
 [docs-dev]: https://stefangreve.github.io/gelyn/dev.html
