@@ -59,8 +59,7 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.OutputDirectory = PathBoundary.Resolve(content.Root, content.Options.OutputDirectory);
         this.ConfigurationPath = PathBoundary.Resolve(content.Root, ConfigurationFile.DefaultFileName);
 
-        // Synchronized because the loop appends lines while a test reads them, which a bare StringWriter
-        // does not order.
+        // Synchronized because the loop appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
 
         IAnsiConsole console = CapturedConsole.Create(this._writer);

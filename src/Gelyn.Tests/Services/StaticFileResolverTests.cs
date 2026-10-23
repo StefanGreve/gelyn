@@ -19,12 +19,6 @@ public class StaticFileResolverTests
     ///     Verifies that a directory resolves to the index it holds whether or not the request carries a
     ///     trailing slash, and that the site root is the same case.
     /// </summary>
-    /// <param name="requestPath">
-    ///     A path naming a directory rather than a file.
-    /// </param>
-    /// <param name="expected">
-    ///     The output-relative path of the index that answers it.
-    /// </param>
     [Test]
     [Arguments("/", "index.html")]
     [Arguments("/blog/", "blog/index.html")]
@@ -77,12 +71,6 @@ public class StaticFileResolverTests
     ///     because both GitHub Pages and Cloudflare Pages do and a preview that disagrees with the deploy
     ///     target is worse than none.
     /// </summary>
-    /// <param name="requestPath">
-    ///     A path carrying no extension.
-    /// </param>
-    /// <param name="expected">
-    ///     The output-relative path of the page that answers it.
-    /// </param>
     [Test]
     [Arguments("/about", "about.html")]
     [Arguments("/blog/hello", "blog/hello.html")]
@@ -106,12 +94,6 @@ public class StaticFileResolverTests
     ///     Verifies that a file is served verbatim when it is requested by name, page or copy, so that the
     ///     extensionless rule is an addition rather than a redirection.
     /// </summary>
-    /// <param name="requestPath">
-    ///     A path naming a file that exists.
-    /// </param>
-    /// <param name="expected">
-    ///     The output-relative path of the file that answers it.
-    /// </param>
     [Test]
     [Arguments("/about.html", "about.html")]
     [Arguments("/robots.txt", "robots.txt")]
@@ -156,9 +138,6 @@ public class StaticFileResolverTests
     ///     Verifies that a path climbing out of the output directory is refused, however it is spelled, and
     ///     that the file it names is not served even though it exists.
     /// </summary>
-    /// <param name="requestPath">
-    ///     A path that resolves outside the output directory.
-    /// </param>
     [Test]
     [Arguments("/../secret.txt")]
     [Arguments("/../../secret.txt")]
@@ -320,12 +299,6 @@ public class StaticFileResolverTests
     ///     Verifies that each extension the output tree can hold is served under its own media type, that the
     ///     text types declare a charset, and that an unknown extension falls back rather than guessing.
     /// </summary>
-    /// <param name="relativePath">
-    ///     The output-relative path of the file to request.
-    /// </param>
-    /// <param name="expected">
-    ///     The media type the response is to declare.
-    /// </param>
     [Test]
     [Arguments("index.html", "text/html; charset=utf-8")]
     [Arguments("styles.css", "text/css; charset=utf-8")]

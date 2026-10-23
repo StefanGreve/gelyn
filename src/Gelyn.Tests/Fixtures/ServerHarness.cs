@@ -41,19 +41,16 @@ internal sealed class ServerHarness : IAsyncDisposable
         this.Logger = new FakeLogger<FileServer>();
         this.TimeProvider = new FakeTimeProvider(now);
 
-        // Synchronized because the serving task appends entries while a test reads them, which a bare
-        // StringWriter does not order.
+        // Synchronized because the serving task appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
 
-        // Written to a StringWriter rather than to a TestConsole, which would need a package the suite does
-        // not otherwise want.
+        // A StringWriter rather than a TestConsole, which would need a package the suite does not otherwise want.
         IAnsiConsole console = CapturedConsole.Create(this._writer);
 
         FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
 
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
-        // listening and the request below needs no readiness poll. No test asks for a browser: the suite runs
-        // headless on CI, and a launch would open one on the machine running it.
+        // listening and the request below needs no readiness poll.
         this._serving = server.ServeAsync(
             fixture.Root,
             this.Port,

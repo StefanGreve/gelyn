@@ -32,9 +32,6 @@ public class HeadComponentTests
     /// <summary>
     ///     Verifies that an author nobody configured is left out rather than stated as an empty value.
     /// </summary>
-    /// <param name="author">
-    ///     An author that is absent, empty, or holds nothing but whitespace.
-    /// </param>
     [Test]
     [Arguments(null)]
     [Arguments("")]

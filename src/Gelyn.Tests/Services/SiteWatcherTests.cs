@@ -350,9 +350,6 @@ public class SiteWatcherTests
     ///     validates eagerly in one of them. Found by running <c>gelyn serve</c> against a malformed
     ///     <c>BaseUrl</c>, which ended the session in an aggregate that named no failure.
     /// </remarks>
-    /// <param name="failure">
-    ///     The name of the exception type the reload fails with.
-    /// </param>
     [Test]
     [Arguments(nameof(OptionsValidationException))]
     [Arguments(nameof(InvalidOperationException))]
@@ -395,9 +392,6 @@ public class SiteWatcherTests
     ///     settings moved would leave the watchers on one tree and the server on a directory the rebuild no
     ///     longer writes to.
     /// </summary>
-    /// <param name="setting">
-    ///     The name of the setting to move.
-    /// </param>
     [Test]
     [Arguments(nameof(SiteOptions.ContentDirectory))]
     [Arguments(nameof(SiteOptions.OutputDirectory))]
@@ -481,8 +475,7 @@ public class SiteWatcherTests
 
     #region Helpers
 
-    // FakeLogger captures the state already stringified, so the count has to be parsed back rather than
-    // cast. The invariant culture matches what the logger used to render it.
+    // FakeLogger stringifies the state, so the count is parsed back under the culture it was rendered with.
     private static int[] Collected(WatchHarness harness) =>
     [
         .. harness.Records

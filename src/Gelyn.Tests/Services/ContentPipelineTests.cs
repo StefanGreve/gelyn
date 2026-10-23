@@ -595,9 +595,6 @@ public class ContentPipelineTests
             await Assert.That(Favicon(items, "/about.html")).IsEqualTo("/favicon.ico");
             await Assert.That(Favicon(items, "/blog/index.html")).IsEqualTo("/blog/favicon.ico");
             await Assert.That(Favicon(items, "/blog/hello.html")).IsEqualTo("/blog/favicon.ico");
-
-            // Inherited past the directory that declared it, the override being the nearest one rather than
-            // the one sitting beside the page.
             await Assert.That(Favicon(items, "/blog/2026/index.html")).IsEqualTo("/blog/favicon.ico");
         }
     }
@@ -754,8 +751,7 @@ public class ContentPipelineTests
     private static IReadOnlyList<ContentItem> Scan(ContentFixture fixture) =>
         fixture.Pipeline.Scan(fixture.Options);
 
-    // Joined rather than compared as a sequence, because the assertion is about order and IsEquivalentTo
-    // ignores it.
+    // Joined rather than compared as a sequence, because IsEquivalentTo disregards the order under test.
     private static string Stylesheets(IReadOnlyList<ContentItem> items, string href) =>
         string.Join(',', items.Single(item => item.Href == href).Stylesheets);
 

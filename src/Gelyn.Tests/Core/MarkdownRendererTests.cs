@@ -20,12 +20,6 @@ public class MarkdownRendererTests
     /// <summary>
     ///     Verifies that each extension the pipeline enables reaches the rendered output.
     /// </summary>
-    /// <param name="markdown">
-    ///     A document exercising one extension.
-    /// </param>
-    /// <param name="expected">
-    ///     A fragment the rendered HTML is to carry.
-    /// </param>
     [Test]
     [Arguments("## Hello There", """<h2 id="hello-there">Hello There</h2>""")]
     [Arguments("a ~~b~~ c", "<del>b</del>")]

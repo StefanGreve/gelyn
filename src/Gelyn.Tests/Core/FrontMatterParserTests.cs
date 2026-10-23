@@ -51,12 +51,6 @@ public class FrontMatterParserTests
     ///     Verifies that both spellings of a boolean are read, and that a block omitting the key is
     ///     distinguishable from one declaring it false.
     /// </summary>
-    /// <param name="line">
-    ///     A front matter line declaring math rendering, or a line declaring something else entirely.
-    /// </param>
-    /// <param name="expected">
-    ///     The value the line declares, or <see langword="null"/> when it declares none.
-    /// </param>
     [Test]
     [Arguments("enableMathRendering: true", true)]
     [Arguments("enableMathRendering: false", false)]
@@ -73,9 +67,6 @@ public class FrontMatterParserTests
     /// <summary>
     ///     Verifies that a block carrying no entries yields no front matter.
     /// </summary>
-    /// <param name="block">
-    ///     A block that is empty, or holds nothing but its delimiters.
-    /// </param>
     [Test]
     [Arguments("")]
     [Arguments("---\n---")]
@@ -91,9 +82,6 @@ public class FrontMatterParserTests
     /// <summary>
     ///     Verifies that delimiters are recognized regardless of the newline convention the block uses.
     /// </summary>
-    /// <param name="block">
-    ///     A front matter block delimited by carriage returns, or by carriage return and line feed pairs.
-    /// </param>
     [Test]
     [Arguments("---\r\ntitle: Home\r\n---")]
     [Arguments("---\rtitle: Home\r---")]
@@ -130,9 +118,6 @@ public class FrontMatterParserTests
     /// <summary>
     ///     Verifies that key matching is ordinal, so keys differing in case are not recognized.
     /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose key differs from the recognized spelling only in case.
-    /// </param>
     [Test]
     [Arguments("Title: Home")]
     [Arguments("TITLE: Home")]
@@ -148,9 +133,6 @@ public class FrontMatterParserTests
     /// <summary>
     ///     Verifies that a key with no value at all is treated as absent.
     /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose value is missing or blank.
-    /// </param>
     [Test]
     [Arguments("title:")]
     [Arguments("title:   ")]
@@ -167,9 +149,6 @@ public class FrontMatterParserTests
     ///     Verifies that a value quoted as an empty string is kept as one, so that a page declaring an empty
     ///     title is distinguishable from a page declaring no title.
     /// </summary>
-    /// <param name="line">
-    ///     A front matter line whose value is an empty quoted string.
-    /// </param>
     [Test]
     [Arguments("title: \"\"")]
     [Arguments("title: ''")]
@@ -185,10 +164,6 @@ public class FrontMatterParserTests
     /// <summary>
     ///     Verifies that a block declaring something other than a mapping is reported as malformed.
     /// </summary>
-    /// <param name="block">
-    ///     A block that parses as a single scalar, either a bare sentence or a line whose separator is not
-    ///     followed by a space.
-    /// </param>
     [Test]
     [Arguments("just a bare sentence")]
     [Arguments("title:Home")]
@@ -202,9 +177,6 @@ public class FrontMatterParserTests
     ///     Verifies that a value the invariant culture cannot read as a date leaves the date unset rather than
     ///     aborting the block.
     /// </summary>
-    /// <param name="value">
-    ///     A literal that is not a valid invariant-culture date.
-    /// </param>
     [Test]
     [Arguments("not a date")]
     [Arguments("2026-13-13")]

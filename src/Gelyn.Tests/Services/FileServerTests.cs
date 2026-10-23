@@ -76,9 +76,6 @@ public class FileServerTests
     ///     <c>Host</c> header and a reader who types the one the server does not bind gets a 404 from the
     ///     listener itself, without the request ever reaching the resolver.
     /// </summary>
-    /// <param name="host">
-    ///     The loopback spelling to address.
-    /// </param>
     [Test]
     [Arguments("localhost")]
     [Arguments("127.0.0.1")]
@@ -181,9 +178,6 @@ public class FileServerTests
     ///     Verifies that a method the server does not answer is refused under a 405 naming the two it does,
     ///     which is what RFC 9110 requires of such a response.
     /// </summary>
-    /// <param name="method">
-    ///     A method a preview server has no business answering.
-    /// </param>
     [Test]
     [Arguments("POST")]
     [Arguments("PUT")]
@@ -263,9 +257,6 @@ public class FileServerTests
     ///     Verifies that a subresource carries no interval, so that one page reload is one pass rather than
     ///     one per file the page pulls in.
     /// </summary>
-    /// <param name="relativePath">
-    ///     A file a page links rather than a page itself.
-    /// </param>
     [Test]
     [Arguments("styles.css")]
     [Arguments("app.js")]

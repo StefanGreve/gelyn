@@ -76,12 +76,6 @@ public partial class CommonLogFormatTests
     ///     Verifies that both conventions for an empty body satisfy the grammar, so that the choice between
     ///     Apache's hyphen and the zero nginx reports stays the caller's.
     /// </summary>
-    /// <param name="bytes">
-    ///     A body size of zero, expressed either way.
-    /// </param>
-    /// <param name="expected">
-    ///     The field the entry is to carry.
-    /// </param>
     [Test]
     [Arguments(null, "-")]
     [Arguments(0L, "0")]
@@ -105,9 +99,6 @@ public partial class CommonLogFormatTests
     ///     Verifies that a status reaches the entry as three bare digits, whether or not it is the one a
     ///     successful request is answered under.
     /// </summary>
-    /// <param name="status">
-    ///     A status code.
-    /// </param>
     [Test]
     [Arguments(200)]
     [Arguments(404)]
@@ -135,15 +126,6 @@ public partial class CommonLogFormatTests
     ///     four-digit UTC offset, which is the field <c>HTTPDATE</c> matches and which a space-separated,
     ///     offsetless timestamp does not satisfy.
     /// </summary>
-    /// <param name="offsetHours">
-    ///     The whole hours the offset is to carry.
-    /// </param>
-    /// <param name="offsetMinutes">
-    ///     The minutes the offset is to carry on top of the hours.
-    /// </param>
-    /// <param name="expected">
-    ///     The timestamp field the entry is to hold.
-    /// </param>
     [Test]
     [Arguments(0, 0, "17/Oct/2026:13:06:06 +0000")]
     [Arguments(2, 0, "17/Oct/2026:13:06:06 +0200")]
@@ -177,12 +159,6 @@ public partial class CommonLogFormatTests
     ///     Verifies that the month is abbreviated in English, because the format fixes those three letters
     ///     rather than leaving them to the locale of the machine the server runs on.
     /// </summary>
-    /// <param name="month">
-    ///     The month to stamp.
-    /// </param>
-    /// <param name="expected">
-    ///     The abbreviation it is to carry.
-    /// </param>
     [Test]
     [Arguments(1, "Jan")]
     [Arguments(3, "Mar")]
@@ -206,9 +182,6 @@ public partial class CommonLogFormatTests
     ///     Verifies that a target carrying a query string, an encoded separator or a trailing slash reaches
     ///     the entry unchanged, because the log records what was asked for rather than what it resolved to.
     /// </summary>
-    /// <param name="target">
-    ///     The request target.
-    /// </param>
     [Test]
     [Arguments("/")]
     [Arguments("/index.html")]

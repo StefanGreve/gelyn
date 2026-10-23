@@ -22,9 +22,6 @@ public class VisibilityTests : ArchBase
     ///     emits its state as private nested types inside <c>YamlContext</c>, which the rule counts as
     ///     violations; covering it would mean exempting nested types for every namespace here.
     /// </remarks>
-    /// <param name="namespaceName">
-    ///     The full name of the namespace whose types are under test.
-    /// </param>
     [Test]
     [Arguments(CommandsNamespace)]
     [Arguments(ComponentsNamespace)]

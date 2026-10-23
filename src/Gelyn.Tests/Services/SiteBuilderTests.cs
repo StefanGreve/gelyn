@@ -1004,8 +1004,7 @@ public partial class SiteBuilderTests
     private static FakeLogRecord Reported(ContentFixture fixture, int eventId) =>
         fixture.Records.Single(record => record.Id.Id == eventId);
 
-    // FakeLogger captures the state already stringified, so the value has to be parsed back rather than cast.
-    // The invariant culture matches what the logger used to render it.
+    // FakeLogger stringifies the state, so the value is parsed back under the culture it was rendered with.
     private static T Value<T>(FakeLogRecord record, string name) where T : IParsable<T> =>
         T.Parse(record.GetStructuredStateValue(name)!, CultureInfo.InvariantCulture);
 
@@ -1038,8 +1037,7 @@ public partial class SiteBuilderTests
         return match.Success ? match.Groups["href"].Value : null;
     }
 
-    // Joined rather than returned as a sequence, because the assertion is about order and IsEquivalentTo
-    // ignores it.
+    // Joined rather than returned as a sequence, because IsEquivalentTo disregards the order under test.
     private static string ReadStylesheets(ContentFixture fixture, string outputPath) => string.Join(
         ',',
         StylesheetLink()

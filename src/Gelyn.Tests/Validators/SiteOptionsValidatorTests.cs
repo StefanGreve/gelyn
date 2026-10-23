@@ -71,12 +71,6 @@ public class SiteOptionsValidatorTests
     ///     settings resolving against the working directory. The setting is named rather than assigned, so
     ///     that a property renamed on the options type takes this table with it.
     /// </remarks>
-    /// <param name="setting">
-    ///     The name of the setting to leave blank, which the failure message is to carry.
-    /// </param>
-    /// <param name="value">
-    ///     A value that is empty, or holds nothing but whitespace.
-    /// </param>
     [Test]
     [Arguments(nameof(SiteOptions.Title), "")]
     [Arguments(nameof(SiteOptions.Title), "   ")]
