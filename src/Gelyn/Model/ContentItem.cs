@@ -54,4 +54,11 @@ internal sealed record ContentItem
     ///     <see cref="ContentKind.Page"/>.
     /// </summary>
     public required IReadOnlyList<string> Scripts { get; init; }
+
+    /// <summary>
+    ///     The root-relative URL of the icon that applies to the file, which is the one declared nearest at or
+    ///     above it. <see langword="null"/> when no icon applies, and always <see langword="null"/> for
+    ///     anything but a <see cref="ContentKind.Page"/>.
+    /// </summary>
+    public required string? Favicon { get; init; }
 }

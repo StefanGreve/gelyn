@@ -568,6 +568,130 @@ public class ContentPipelineTests
             .IsEqualTo("/gelyn/app.js,/gelyn/blog/blog.js,/gelyn/blog/2026/year.js");
     }
 
+    /// <summary>
+    ///     Verifies that an icon applies to the pages below it until a nearer one replaces it, which is where
+    ///     it parts from a stylesheet: a page carries one icon rather than the whole chain of them.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Favicon_IsOverriddenByANearerOne()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteBytes("favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("index.md", "Home")
+            .Write("about.md", "About")
+            .WriteBytes("blog/favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("blog/index.md", "Blog")
+            .Write("blog/hello.md", "Hello")
+            .Write("blog/2026/index.md", "2026");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Favicon(items, "/index.html")).IsEqualTo("/favicon.ico");
+            await Assert.That(Favicon(items, "/about.html")).IsEqualTo("/favicon.ico");
+            await Assert.That(Favicon(items, "/blog/index.html")).IsEqualTo("/blog/favicon.ico");
+            await Assert.That(Favicon(items, "/blog/hello.html")).IsEqualTo("/blog/favicon.ico");
+
+            // Inherited past the directory that declared it, the override being the nearest one rather than
+            // the one sitting beside the page.
+            await Assert.That(Favicon(items, "/blog/2026/index.html")).IsEqualTo("/blog/favicon.ico");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that two sections carrying their own icon never see each other's, while a section
+    ///     carrying none falls back to the icon above it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_SiblingDirectories_DoNotShareAFavicon()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteBytes("favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("index.md", "Home")
+            .WriteBytes("blog/blog.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("blog/index.md", "Blog")
+            .WriteBytes("foo/foo.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("foo/index.md", "Foo")
+            .Write("bar/index.md", "Bar");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Favicon(items, "/blog/index.html")).IsEqualTo("/blog/blog.ico");
+            await Assert.That(Favicon(items, "/foo/index.html")).IsEqualTo("/foo/foo.ico");
+            await Assert.That(Favicon(items, "/bar/index.html")).IsEqualTo("/favicon.ico");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an icon is located as a copy in its own right, so that the file the link points at is
+    ///     published beside the pages that link it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Favicon_IsLocatedAsACopy()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteBytes("favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("index.md", "Home");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem icon = items.Single(item => item.Href == "/favicon.ico");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(icon.Kind).IsEqualTo(ContentKind.Favicon);
+            await Assert.That(icon.OutputPath).IsEqualTo("favicon.ico");
+            await Assert.That(icon.Favicon).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a site declaring no icon resolves none, rather than naming a file it never published.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_AbsentFavicon_ResolvesToNothing()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty().Write("index.md", "Home");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(Favicon(items, "/index.html")).IsNull();
+    }
+
+    /// <summary>
+    ///     Verifies that the path of the base URL reaches the icon link as well as a page link, which is the
+    ///     case the browser convention cannot cover on its own.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_BaseUrlPath_IsPrefixedToTheFavicon()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteBytes("favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .Write("index.md", "Home")
+            .WithBaseUrl("https://example.com/gelyn");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(Favicon(items, "/gelyn/index.html")).IsEqualTo("/gelyn/favicon.ico");
+    }
+
     #endregion // Scan Tests
 
     #region RenderAsync Tests
@@ -637,6 +761,9 @@ public class ContentPipelineTests
 
     private static string Scripts(IReadOnlyList<ContentItem> items, string href) =>
         string.Join(',', items.Single(item => item.Href == href).Scripts);
+
+    private static string? Favicon(IReadOnlyList<ContentItem> items, string href) =>
+        items.Single(item => item.Href == href).Favicon;
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
         fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);

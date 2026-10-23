@@ -35,6 +35,7 @@ internal static class Mapper
             InNavigation = item.InNavigation,
             Stylesheets = item.Stylesheets,
             Scripts = item.Scripts,
+            Favicon = item.Favicon,
         };
 
     /// <summary>

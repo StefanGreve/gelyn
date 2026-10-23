@@ -156,7 +156,7 @@ Every page is the same document around your own body:
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- charset, viewport, generator, author, description, revised, canonical, title, stylesheets, scripts -->
+    <!-- charset, viewport, generator, author, description, revised, canonical, title, icon, stylesheets, scripts -->
 </head>
 <body>
     <header>
@@ -265,6 +265,52 @@ copied whether any page loads it or not.
 > content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
 > third-party requests. KaTeX and Mermaid are the two libraries Gelyn fetches for you, through the keys
 > described next.
+
+## Favicon
+
+An `.ico` file in your content tree becomes the icon of the pages around it. It does not accumulate the way a
+stylesheet does, because a document carries one icon: the nearest `.ico` at or above a page wins, and the ones
+further up are ignored rather than added.
+
+```text
+content/
+    favicon.ico
+    index.md
+    blog/
+        favicon.ico
+        index.md
+        2026/
+            index.md
+    notes/
+        notes.md
+```
+
+| Page                   | Icon                |
+| ---------------------- | ------------------- |
+| `index.html`           | `/favicon.ico`      |
+| `blog/index.html`      | `/blog/favicon.ico` |
+| `blog/2026/index.html` | `/blog/favicon.ico` |
+| `notes/notes.html`     | `/favicon.ico`      |
+
+Gelyn writes it into the head as a link:
+
+```html
+<link rel="icon" href="/blog/favicon.ico">
+```
+
+A browser asks for `/favicon.ico` at the root of the origin without being told to, so the icon at your content
+root would be found even with no link at all. Nothing below that root would be, and a site served from a
+subdirectory keeps no icon at the root of the origin either, so Gelyn writes the link in every case and
+`BaseUrl` prefixes it like any other URL.
+
+Everything the stylesheet rule says about placement applies here too: a sibling branch is never reached, the
+extension is matched without regard to case, and the file is copied whether any page links it or not. Where
+the two differ is the count: several `.ico` files in one directory resolve to the first in ordinal name order
+rather than all of them.
+
+> [!NOTE]
+> `.ico` is the only extension Gelyn treats as an icon. A PNG or an SVG icon stays a plain copied file, so
+> link it yourself if you need one.
 
 ## Mathematics
 

@@ -72,4 +72,10 @@ internal sealed record ContentPage
     ///     they run in.
     /// </summary>
     public required IReadOnlyList<string> Scripts { get; init; }
+
+    /// <summary>
+    ///     The root-relative URL of the icon that applies to the page, which is the one declared nearest at or
+    ///     above it, or <see langword="null"/> when no icon applies.
+    /// </summary>
+    public required string? Favicon { get; init; }
 }

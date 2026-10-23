@@ -58,6 +58,9 @@ internal static class HeadComponent
 
         head.AppendLine($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");
 
+        if (context.Page.Favicon is string favicon)
+            head.AppendLine($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
+
         if (context.Page.EnableMathRendering)
         {
             string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(options.KaTeXVersion)}/dist";

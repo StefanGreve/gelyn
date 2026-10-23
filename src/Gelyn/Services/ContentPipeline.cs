@@ -31,6 +31,7 @@ internal sealed class ContentPipeline
     private const string MarkdownExtension = ".md";
     private const string StylesheetExtension = ".css";
     private const string ScriptExtension = ".js";
+    private const string FaviconExtension = ".ico";
 
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
@@ -81,6 +82,7 @@ internal sealed class ContentPipeline
             prefix: [],
             inheritedStylesheets: [],
             inheritedScripts: [],
+            inheritedFavicon: null,
             hrefPrefix,
             options.ExcludePatterns);
     }
@@ -139,6 +141,10 @@ internal sealed class ContentPipeline
     /// <param name="inheritedScripts">
     ///     The root-relative URLs of the scripts declared above <paramref name="directory"/>, outermost first.
     /// </param>
+    /// <param name="inheritedFavicon">
+    ///     The root-relative URL of the nearest icon declared above <paramref name="directory"/>, or
+    ///     <see langword="null"/> when no directory above it declares one.
+    /// </param>
     /// <param name="hrefPrefix">
     ///     The path of the configured base URL, or an empty string when the site is served from the root of a
     ///     domain.
@@ -155,6 +161,7 @@ internal sealed class ContentPipeline
         string[] prefix,
         IReadOnlyList<string> inheritedStylesheets,
         IReadOnlyList<string> inheritedScripts,
+        string? inheritedFavicon,
         string hrefPrefix,
         IReadOnlyList<string> excluded)
     {
@@ -172,6 +179,9 @@ internal sealed class ContentPipeline
         // it, and shared by reference with every page at this level rather than copied per page.
         string[] stylesheets = [.. inheritedStylesheets, .. Linked(ContentKind.Stylesheet)];
         string[] scripts = [.. inheritedScripts, .. Linked(ContentKind.Script)];
+
+        // The nearest declaration wins, because a document carries one icon rather than a chain of them.
+        string? favicon = Linked(ContentKind.Favicon).FirstOrDefault() ?? inheritedFavicon;
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -205,6 +215,7 @@ internal sealed class ContentPipeline
                 InNavigation = isPage && IsInNavigation(segments),
                 Stylesheets = isPage ? stylesheets : [],
                 Scripts = isPage ? scripts : [],
+                Favicon = isPage ? favicon : null,
             });
         }
 
@@ -215,6 +226,7 @@ internal sealed class ContentPipeline
                 [.. prefix, child.Name],
                 inheritedStylesheets: stylesheets,
                 inheritedScripts: scripts,
+                inheritedFavicon: favicon,
                 hrefPrefix,
                 excluded));
         }
@@ -233,6 +245,7 @@ internal sealed class ContentPipeline
         var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
         var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
         var extension when extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
+        var extension when extension.Equals(FaviconExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
         _ => ContentKind.MiscFile,
     };
 

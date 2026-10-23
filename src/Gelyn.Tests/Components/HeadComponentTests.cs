@@ -107,9 +107,53 @@ public class HeadComponentTests
 
     #endregion // Description Tests
 
+    #region Favicon Tests
+
+    /// <summary>
+    ///     Verifies that the icon resolved for a page is linked explicitly, which is what reaches an icon a
+    ///     browser would not request of its own accord.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Favicon_IsLinkedWhenResolved()
+    {
+        // Act
+        string head = Render(new SiteOptions(), favicon: "/blog/favicon.ico");
+
+        // Assert
+        await Assert.That(head).Contains("""<link rel="icon" href="/blog/favicon.ico">""");
+    }
+
+    /// <summary>
+    ///     Verifies that an icon path is escaped for the attribute it sits in.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Favicon_IsEscaped()
+    {
+        // Act
+        string head = Render(new SiteOptions(), favicon: "/a&b/favicon.ico");
+
+        // Assert
+        await Assert.That(head).Contains("""<link rel="icon" href="/a&amp;b/favicon.ico">""");
+    }
+
+    /// <summary>
+    ///     Verifies that a site carrying no icon emits no link rather than an empty one.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_AbsentFavicon_IsOmitted()
+    {
+        // Act
+        string head = Render(new SiteOptions());
+
+        // Assert
+        await Assert.That(head).DoesNotContain("rel=\"icon\"");
+    }
+
+    #endregion // Favicon Tests
+
     #region Helpers
 
-    private static string Render(SiteOptions options, string? pageDescription = null) =>
+    private static string Render(SiteOptions options, string? pageDescription = null, string? favicon = null) =>
         HeadComponent.Render(new RenderContext
         {
             Options = options,
@@ -127,6 +171,7 @@ public class HeadComponentTests
                 InNavigation = true,
                 Stylesheets = [],
                 Scripts = [],
+                Favicon = favicon,
             },
         });
 
