@@ -29,6 +29,8 @@ public class MarkdownRendererTests
     [Arguments("Term\n:   The definition", "<dt>Term</dt>")]
     [Arguments("text[^1]\n\n[^1]: the note", """class="footnote-ref">""")]
     [Arguments("$$x^2$$", """<span class="math">""")]
+    [Arguments("[Usage](usage.md)", """<a href="usage.html">""")]
+    [Arguments("[Preview](usage.md#preview)", """<a href="usage.html#preview">""")]
     public async Task Render_Test_EnabledExtension_ReachesTheOutput(string markdown, string expected)
     {
         // Act

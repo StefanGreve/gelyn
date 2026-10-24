@@ -39,7 +39,7 @@ site. Every `build` option applies unchanged, because serving implies building. 
 exits with code `0`: interrupting it is how the command is meant to end.
 
 What the rebuild loop does with a change, and what it does with one that fails to build, is covered under
-[Preview](usage.html#preview).
+[Preview](usage.md#preview).
 
 ## Request log
 

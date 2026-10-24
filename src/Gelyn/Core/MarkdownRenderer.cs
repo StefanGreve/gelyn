@@ -32,6 +32,7 @@ internal sealed class MarkdownRenderer
         .UseTaskLists()
         .UseDiagrams()
         .UseAutoLinks(new AutoLinkOptions { UseHttpsForWWWLinks = true })
+        .UseRelativeFileLinks()
         .UseYamlFrontMatter()
         .Build();
 

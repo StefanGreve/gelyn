@@ -34,7 +34,7 @@ which is what `example/gelyn.json` resolves its relative paths against:
 gelyn build --config ./example/gelyn.json
 ```
 
-[Usage](usage.html) is the place to start; the banner links the rest.
+[Usage](usage.md) is the place to start; the banner links the rest.
 
 <!-- References -->
 
