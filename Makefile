@@ -50,14 +50,17 @@ setup:
 	dotnet restore $(SOLUTION)
 
 	# the stylesheets and scripts the example and doc sites build with
-	cp -f $(THEMES)/classic.css $(EXAMPLE)/
-	cp -f $(THEMES)/modern.css $(DOCS)/
-	cp -f $(THEMES)/modern.js $(DOCS)/
+	$(MAKE) themes
 
 	# enforced git settings
 	git config --local commit.gpgsign true
 	git config --local tag.gpgsign true
 	git config --local fetch.prune true
+
+themes:
+	cp -f $(THEMES)/classic.css $(EXAMPLE)/
+	cp -f $(THEMES)/modern.css $(DOCS)/
+	cp -f $(THEMES)/modern.js $(DOCS)/
 
 build:
 	dotnet build $(SOLUTION) --configuration Release --no-restore
@@ -83,6 +86,6 @@ clean:
 	dotnet clean --configuration Release
 	@clear
 
-.PHONY: setup build test publish gelyn lint clean
+.PHONY: setup themes build test publish gelyn lint clean
 
 $(V).SILENT:
