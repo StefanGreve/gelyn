@@ -49,9 +49,10 @@ setup:
 	# restore project packages
 	dotnet restore $(SOLUTION)
 
-	# the stylesheets the example and doc sites build with
+	# the stylesheets and scripts the example and doc sites build with
 	cp -f $(THEMES)/classic.css $(EXAMPLE)/
 	cp -f $(THEMES)/modern.css $(DOCS)/
+	cp -f $(THEMES)/modern.js $(DOCS)/
 
 	# enforced git settings
 	git config --local commit.gpgsign true
