@@ -30,7 +30,7 @@ internal static class PathBoundary
     ///     The directory a relative <paramref name="path"/> is resolved against.
     /// </param>
     /// <param name="path">
-    ///     The path to resolve. A rooted value replaces <paramref name="root"/> rather than extending it, and
+    ///     The path to resolve. A rooted value replaces <paramref name="root"/> instead of extending it, and
     ///     a relative one can still climb above it, which is why <see cref="Contains"/> has to be consulted
     ///     before the result is used for anything.
     /// </param>

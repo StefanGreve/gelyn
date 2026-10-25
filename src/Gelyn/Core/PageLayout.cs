@@ -14,7 +14,7 @@ internal static class PageLayout
     ///     Renders a complete HTML document.
     /// </summary>
     /// <remarks>
-    ///     The head is rendered here rather than passed in, because its contents depend on the page: a page
+    ///     The head is rendered here and never passed in, because its contents depend on the page: a page
     ///     that declares no description or date carries none of the corresponding tags.
     /// </remarks>
     /// <param name="context">

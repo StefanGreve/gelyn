@@ -47,7 +47,7 @@ internal static class OverrideOptions
     ///     The configuration index the first promoted exclude pattern is written at.
     /// </summary>
     /// <remarks>
-    ///     Configuration merges an array per index rather than replacing it, so writing at index zero would
+    ///     Configuration merges an array per index instead of replacing it, so writing at index zero would
     ///     overwrite the first configured pattern and leave the rest of the configured list in place. Keys
     ///     are ordered numerically, so an offset no configured list will reach appends instead.
     /// </remarks>
@@ -58,7 +58,7 @@ internal static class OverrideOptions
     /// </summary>
     /// <remarks>
     ///     These options carry values into <c>SiteOptions</c> through <c>AddSiteConfiguration</c>, and no
-    ///     command reads them from the parse result. They are declared here rather than in a command, which
+    ///     command reads them from the parse result. They are declared here instead of inside a command, which
     ///     keeps the names and the options together. Every read returns new instances, because an
     ///     <see cref="Option"/> belongs to one command tree.
     /// </remarks>

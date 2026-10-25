@@ -176,11 +176,11 @@ internal sealed class ContentPipeline
             .Select(file => CombineHref(hrefPrefix, [.. prefix, file.Name]));
 
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
-        // it, and shared by reference with every page at this level rather than copied per page.
+        // it, and shared by reference with every page at this level instead of copied per page.
         string[] stylesheets = [.. inheritedStylesheets, .. Linked(ContentKind.Stylesheet)];
         string[] scripts = [.. inheritedScripts, .. Linked(ContentKind.Script)];
 
-        // The nearest declaration wins, because a document carries one icon rather than a chain of them.
+        // The nearest declaration wins, because a document carries one icon and not a chain of them.
         string? favicon = Linked(ContentKind.Favicon).FirstOrDefault() ?? inheritedFavicon;
 
         // Files before subdirectories, index first among files, which is what makes the root index the

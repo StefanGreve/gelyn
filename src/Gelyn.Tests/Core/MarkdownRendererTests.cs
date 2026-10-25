@@ -9,7 +9,7 @@ namespace Gelyn.Tests.Core;
 ///     Unit tests for the <see cref="MarkdownRenderer"/> class.
 /// </summary>
 /// <remarks>
-///     What is under test is the pipeline the renderer configures rather than Markdig itself. An extension
+///     What is under test is the pipeline the renderer configures, and not Markdig itself. An extension
 ///     dropped from the builder changes what every page renders to and fails nothing else in the suite,
 ///     because the documents the other tests render are prose that needs no extension at all.
 /// </remarks>
@@ -89,7 +89,7 @@ public class MarkdownRendererTests
     ///     with the reference to it.
     /// </summary>
     /// <remarks>
-    ///     A defect in Markdig rather than a decision of this project's: the definition list container is
+    ///     A defect in Markdig, not a decision of this project's: the definition list container is
     ///     never closed, so <c>FootnoteParser.TryOpen</c> declines and both the definition and the reference
     ///     reach the page as literal text, with no warning and a zero exit code. Pinned so that a fix
     ///     upstream turns this test red, which is the signal that the content files depending on the

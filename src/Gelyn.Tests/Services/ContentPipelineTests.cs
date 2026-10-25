@@ -98,7 +98,7 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that files which are not Markdown are located for copying rather than rendered, keeping
+    ///     Verifies that files which are not Markdown are located for copying and never rendered, keeping
     ///     the name they were authored under instead of being renamed to an HTML extension.
     /// </summary>
     [Test]
@@ -153,7 +153,7 @@ public class ContentPipelineTests
     ///     entry exactly, by extension or by suffix, and that a file matching none of them survives.
     /// </summary>
     /// <remarks>
-    ///     The patterns are configured rather than built in, so a project without them publishes the editor
+    ///     The patterns are configured and not built in, so a project without them publishes the editor
     ///     and tool droppings below. <c>docs/configuration.md</c> carries the set a project is expected to
     ///     start from.
     /// </remarks>
@@ -235,7 +235,7 @@ public class ContentPipelineTests
     ///     cannot publish the bytes of a target outside the content directory.
     /// </summary>
     /// <remarks>
-    ///     Mocked rather than driven against a disk, because <c>MockFileSystem</c> does model a file link and
+    ///     Mocked, with no disk involved, because <c>MockFileSystem</c> does model a file link and
     ///     reports its target. <see cref="Scan_Test_DirectorySymlink_IsNotFollowed"/> is the case with no
     ///     mocked equivalent, since traversal through a link is what the mock does not resolve.
     /// </remarks>
@@ -301,7 +301,7 @@ public class ContentPipelineTests
     /// <summary>
     ///     Verifies that a page links the stylesheet of every directory above it as well as its own, ordered
     ///     outermost first so that the deepest one wins the cascade, and that the one at the root reaches
-    ///     every page because the root is every page's ancestor rather than a special case.
+    ///     every page because the root is every page's ancestor and not a special case.
     /// </summary>
     /// <remarks>
     ///     The page count is pinned first, so that the cascades named below account for the whole tree rather
@@ -360,7 +360,7 @@ public class ContentPipelineTests
     /// </summary>
     /// <remarks>
     ///     Distinct from the sibling page above: this is the case that would break if the accumulator were
-    ///     mutated in place rather than rebuilt per directory, because the first branch walked would leak
+    ///     mutated in place instead of rebuilt per directory, because the first branch walked would leak
     ///     into every branch walked after it.
     /// </remarks>
     [Test]
@@ -389,7 +389,7 @@ public class ContentPipelineTests
 
     /// <summary>
     ///     Verifies that an extension is recognized whatever its case, so that a file is handled by what it
-    ///     is rather than by how its name happens to be typed.
+    ///     is and never by how its name happens to be typed.
     /// </summary>
     /// <remarks>
     ///     Reachable on every platform, not only a case-insensitive one: the extension is read back as it was
@@ -570,7 +570,7 @@ public class ContentPipelineTests
 
     /// <summary>
     ///     Verifies that an icon applies to the pages below it until a nearer one replaces it, which is where
-    ///     it parts from a stylesheet: a page carries one icon rather than the whole chain of them.
+    ///     it parts from a stylesheet: a page carries one icon and not the whole chain of them.
     /// </summary>
     [Test]
     public async Task Scan_Test_Favicon_IsOverriddenByANearerOne()
@@ -654,7 +654,7 @@ public class ContentPipelineTests
     }
 
     /// <summary>
-    ///     Verifies that a site declaring no icon resolves none, rather than naming a file it never published.
+    ///     Verifies that a site declaring no icon resolves none, and does not name a file it never published.
     /// </summary>
     [Test]
     public async Task Scan_Test_AbsentFavicon_ResolvesToNothing()
@@ -721,7 +721,7 @@ public class ContentPipelineTests
     /// </summary>
     /// <remarks>
     ///     The landing page is the case with no folder to fall back to, so it resolves to the file name like
-    ///     any other root-level page rather than to the name of the content directory.
+    ///     any other root-level page, and never to the name of the content directory.
     /// </remarks>
     [Test]
     public async Task RenderAsync_Test_MissingFrontMatterTitle_FallsBackToTheName()
@@ -751,7 +751,7 @@ public class ContentPipelineTests
     private static IReadOnlyList<ContentItem> Scan(ContentFixture fixture) =>
         fixture.Pipeline.Scan(fixture.Options);
 
-    // Joined rather than compared as a sequence, because IsEquivalentTo disregards the order under test.
+    // Joined instead of compared as a sequence, because IsEquivalentTo disregards the order under test.
     private static string Stylesheets(IReadOnlyList<ContentItem> items, string href) =>
         string.Join(',', items.Single(item => item.Href == href).Stylesheets);
 

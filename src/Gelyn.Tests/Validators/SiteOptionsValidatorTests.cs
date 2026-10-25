@@ -68,7 +68,7 @@ public class SiteOptionsValidatorTests
     /// <remarks>
     ///     An empty version addresses no package, since it reaches the URL as <c>katex@/dist</c>; an empty
     ///     language yields a <c>lang</c> attribute worse than none; and an empty directory would leave the
-    ///     settings resolving against the working directory. The setting is named rather than assigned, so
+    ///     settings resolving against the working directory. The setting is named and never assigned, so
     ///     that a property renamed on the options type takes this table with it.
     /// </remarks>
     [Test]

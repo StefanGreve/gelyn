@@ -46,8 +46,8 @@ internal static class CommonLogFormat
     ///     The port it is listening on.
     /// </param>
     /// <param name="address">
-    ///     The absolute address <paramref name="host"/> and <paramref name="port"/> resolve to, passed in
-    ///     rather than composed here so that the line cannot announce an address that was never bound.
+    ///     The absolute address <paramref name="host"/> and <paramref name="port"/> resolve to. The caller
+    ///     passes it in, so that the line cannot announce an address that was never bound.
     /// </param>
     /// <returns>
     ///     The line, without a trailing newline.
@@ -90,9 +90,9 @@ internal static class CommonLogFormat
     ///     The status the response carried.
     /// </param>
     /// <param name="bytes">
-    ///     The size of the response body, excluding the headers. Apache writes a hyphen rather than a zero
-    ///     for an empty body and calls that the CLF form, while nginx writes the zero, so both are accepted
-    ///     here and the caller chooses by passing <see langword="null"/> or the count.
+    ///     The size of the response body, excluding the headers. Apache writes a hyphen for an empty body and
+    ///     calls that the CLF form, while nginx writes a zero, so both are accepted here and the caller
+    ///     chooses by passing <see langword="null"/> or the count.
     /// </param>
     /// <returns>
     ///     The entry, without a trailing newline.
@@ -120,8 +120,8 @@ internal static class CommonLogFormat
         TimeSpan offset = timestamp.Offset;
         TimeSpan magnitude = offset.Duration();
 
-        // Written out rather than formatted, because no custom specifier yields the colonless offset the format
-        // asks for: zzz renders +02:00 where this field needs +0200.
+        // Written out by hand, because no custom specifier yields the colonless offset the format asks for:
+        // zzz renders +02:00 where this field needs +0200.
         entry.Append(" [");
         entry.Append(timestamp.ToString(TimestampFormat, Tool.Culture));
         entry.Append(' ');

@@ -16,7 +16,7 @@ public class VisibilityTests : ArchBase
     ///     Verifies that every type in the namespace is internal.
     /// </summary>
     /// <remarks>
-    ///     <c>ResideInNamespace</c> matches a namespace by its full name rather than as a prefix, so each one
+    ///     <c>ResideInNamespace</c> matches a namespace by its full name and never as a prefix, so each one
     ///     has to be named in its own right to be covered at all, the options namespace below the model
     ///     included. <c>Gelyn.Core</c> is the one namespace left out, because the SharpYaml source generator
     ///     emits its state as private nested types inside <c>YamlContext</c>, which the rule counts as

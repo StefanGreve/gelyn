@@ -23,9 +23,9 @@ namespace Gelyn.Tests.Fixtures;
 /// </summary>
 /// <remarks>
 ///     No <see cref="FileSystemWatcher"/> is involved: a test writes the paths one would have reported into
-///     the channel itself, which is what makes the four debounce cases exact rather than a matter of real
+///     the channel itself, which is what makes the four debounce cases exact instead of a matter of real
 ///     saves and real sleeps. Disposal cancels the loop the way Ctrl+C does and waits for it, so a loop that
-///     never stops fails the test that started it rather than leaking into the next one.
+///     never stops fails the test that started it and does not leak into the next one.
 /// </remarks>
 internal sealed class WatchHarness : IAsyncDisposable
 {
@@ -37,7 +37,7 @@ internal sealed class WatchHarness : IAsyncDisposable
     ///     How far one step moves the clock, which is well past the debounce window the loop waits out.
     /// </summary>
     /// <remarks>
-    ///     Advanced in steps rather than once, because a timer the loop registers after an advance starts
+    ///     Advanced in steps and never in one jump, because a timer the loop registers after an advance starts
     ///     from the clock as that advance left it and needs a further one to fire at all.
     /// </remarks>
     private static readonly TimeSpan AdvanceStep = TimeSpan.FromSeconds(1);
@@ -181,7 +181,7 @@ internal sealed class WatchHarness : IAsyncDisposable
     /// </param>
     /// <param name="configuration">
     ///     The configuration the loop reloads, which defaults to one that holds nothing and reloads without
-    ///     complaint. What a test observes of a reload is that the loop asked for it, rather than what the
+    ///     complaint. What a test observes of a reload is that the loop asked for it, and not what the
     ///     reload read: the options a rebuild is driven by come from the monitor the fixture supplies.
     /// </param>
     /// <returns>

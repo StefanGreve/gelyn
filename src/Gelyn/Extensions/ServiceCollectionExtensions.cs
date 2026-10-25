@@ -18,7 +18,7 @@ internal static class ServiceCollectionExtensions
     ///     Registers <see cref="SiteOptions"/> together with the validator that checks it.
     /// </summary>
     /// <remarks>
-    ///     Bound to the root of the configuration rather than to a section, because an empty path binds the
+    ///     Bound to the root of the configuration and not to a section, because an empty path binds the
     ///     whole configuration and <c>gelyn.json</c> therefore needs no wrapping object. Validation is not
     ///     wired to startup, so it runs when the options are first read.
     /// </remarks>
@@ -63,7 +63,7 @@ internal static class ServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     ///     <see cref="Program"/> resolves only the root command, and the subcommands reach it through its
-    ///     constructor, so each one is registered here rather than constructed by hand.
+    ///     constructor, so each one is registered here instead of constructed by hand.
     /// </remarks>
     /// <param name="services">
     ///     The collection to add the registrations to.

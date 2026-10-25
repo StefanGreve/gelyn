@@ -28,7 +28,7 @@ public class FileServerTests
 
     /// <summary>
     ///     Verifies that every bound address is a loopback spelling carrying the trailing slash the listener
-    ///     requires, and that the address printed to the reader is one of them rather than a fourth spelling.
+    ///     requires, and that the address printed to the reader is one of them and not a fourth spelling.
     /// </summary>
     [Test]
     public async Task Addresses_Test_CoverEveryLoopbackSpellingTheListenerAccepts()
@@ -98,8 +98,8 @@ public class FileServerTests
     }
 
     /// <summary>
-    ///     Verifies that a binary file survives the response byte for byte, which is what streaming the file
-    ///     rather than reading it as text buys.
+    ///     Verifies that a binary file survives the response byte for byte, which streaming the file
+    ///     guarantees and reading it as text would not.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_BinaryFile_IsServedByteForByte()
@@ -127,7 +127,7 @@ public class FileServerTests
 
     /// <summary>
     ///     Verifies that a miss is answered with the declared page under a 404, so that the status the
-    ///     resolver chose reaches the client rather than being overwritten by the body it carries.
+    ///     resolver chose reaches the client and is not overwritten by the body it carries.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_Miss_IsAnsweredWithTheNotFoundPage()
@@ -254,8 +254,8 @@ public class FileServerTests
     }
 
     /// <summary>
-    ///     Verifies that a subresource carries no interval, so that one page reload is one pass rather than
-    ///     one per file the page pulls in.
+    ///     Verifies that a subresource carries no interval, so that one page reload is one pass, and not one
+    ///     per file the page pulls in.
     /// </summary>
     [Test]
     [Arguments("styles.css")]
@@ -327,7 +327,7 @@ public class FileServerTests
 
     /// <summary>
     ///     Verifies that a 404 answered without a page carries no interval, the fallback being a bodyless
-    ///     plain-text refusal rather than something a browser would reload into.
+    ///     plain-text refusal and not something a browser would reload into.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_RefreshInterval_IsAbsentFromABodylessNotFound()
@@ -375,9 +375,9 @@ public class FileServerTests
     ///     Reads the <c>Refresh</c> header off one response.
     /// </summary>
     /// <remarks>
-    ///     Read by name rather than through a typed accessor, the field being absent from
+    ///     Read by name, because no typed accessor exists for it: the field is absent from
     ///     <see cref="System.Net.Http.Headers.HttpResponseHeaders"/> for the same reason it is absent from
-    ///     <see cref="HttpResponseHeader"/>: HTTP never defined it.
+    ///     <see cref="HttpResponseHeader"/>, which is that HTTP never defined it.
     /// </remarks>
     /// <param name="response">
     ///     The response to read.
@@ -395,7 +395,7 @@ public class FileServerTests
     #region Shutdown Tests
 
     /// <summary>
-    ///     Verifies that cancelling stops the server rather than leaving it blocked on the next request,
+    ///     Verifies that cancelling stops the server and does not leave it blocked on the next request,
     ///     which is the whole of what Ctrl+C has to do and the one part of it no terminal test can cover.
     /// </summary>
     [Test]
@@ -443,7 +443,7 @@ public class FileServerTests
     /// <summary>
     ///     Verifies that each answered request is logged with the client, the stamped timestamp, the request
     ///     line quoted verbatim, the status and the number of body bytes, and that a response carrying no
-    ///     body reports zero rather than a hyphen.
+    ///     body reports zero and never a hyphen.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_RequestLog_ReportsTheRequestLineStatusAndSize()
@@ -480,7 +480,7 @@ public class FileServerTests
     }
 
     /// <summary>
-    ///     Verifies that each entry is stamped with the time the request was answered rather than the time the
+    ///     Verifies that each entry is stamped with the time the request was answered and not the time the
     ///     server started, and that the query string survives into the logged request line.
     /// </summary>
     [Test]
@@ -516,7 +516,7 @@ public class FileServerTests
     }
 
     /// <summary>
-    ///     Verifies that a <c>HEAD</c> is logged with a size of zero rather than the length it declared,
+    ///     Verifies that a <c>HEAD</c> is logged with a size of zero and never the length it declared,
     ///     because the trailing field counts the bytes the body carried and a <c>HEAD</c> carries none.
     /// </summary>
     [Test]
@@ -547,7 +547,7 @@ public class FileServerTests
 
     /// <summary>
     ///     Verifies that a refused method is logged like any other request, so that the log accounts for every
-    ///     request the server answered rather than for the successful ones alone.
+    ///     request the server answered, and not for the successful ones alone.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_RequestLog_CoversARefusedMethod()
@@ -579,7 +579,7 @@ public class FileServerTests
 
     /// <summary>
     ///     Verifies that the server reports the directory it answers from at debug level, which the banner
-    ///     does not state, so that the two are complementary rather than one repeating the other.
+    ///     does not state, so that the two are complementary and neither repeats the other.
     /// </summary>
     [Test]
     public async Task ServeAsync_Test_Diagnostics_ReportTheServedDirectory()

@@ -24,7 +24,7 @@ public class ConfigurationManagerExtensionsTests
     /// <remarks>
     ///     The promoted values are added after the file and the environment, which is what makes them win.
     ///     Driven through <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>, because the
-    ///     promotion is what is under test rather than the binding that follows it.
+    ///     promotion is what is under test, and not the binding that follows it.
     /// </remarks>
     [Test]
     public async Task Overrides_Test_PromotedFlags_ReachTheSettingsTheyStandFor()
@@ -61,13 +61,13 @@ public class ConfigurationManagerExtensionsTests
     #region Exclude Promotion Tests
 
     /// <summary>
-    ///     Verifies that a promoted exclude pattern is added to the configured list rather than overwriting
+    ///     Verifies that a promoted exclude pattern is added to the configured list and does not overwrite
     ///     the entry it would otherwise share an index with.
     /// </summary>
     /// <remarks>
     ///     Configuration merges an array per index, so writing at index zero would yield the promoted pattern
     ///     alone and silently drop the configured one. Keys are compared numerically, which is what lets the
-    ///     offset append. Driven against the binder rather than through
+    ///     offset append. Driven against the binder instead of through
     ///     <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>, which would read whatever
     ///     <c>gelyn.json</c> the working directory happens to hold.
     /// </remarks>

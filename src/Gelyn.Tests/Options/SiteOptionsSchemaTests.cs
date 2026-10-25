@@ -46,7 +46,7 @@ public class SiteOptionsSchemaTests
     ///     Verifies that every documented default matches the value the options type initializes to.
     /// </summary>
     /// <remarks>
-    ///     Compared as serialized JSON rather than as values, so that a default whose type changed is a
+    ///     Compared as serialized JSON and never as values, so that a default whose type changed is a
     ///     failure too. Every property is reported, because a schema that has fallen behind has usually
     ///     fallen behind in more than one place.
     /// </remarks>

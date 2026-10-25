@@ -12,8 +12,7 @@ namespace Gelyn.Tests.Stubs;
 /// </summary>
 /// <remarks>
 ///     The consumer under test reads <see cref="Reload"/> and the indexer only, so the members that make up
-///     the rest of the interface answer with nothing rather than with a stand-in that would have to be kept
-///     meaningful.
+///     the rest of the interface answer with nothing, because a stand-in would have to be kept meaningful.
 /// </remarks>
 internal sealed class ConfigurationRootStub : IConfigurationRoot
 {

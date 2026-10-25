@@ -93,7 +93,7 @@ internal sealed class ServeCommand : Command
             HelpName = "seconds",
         };
 
-        // Zero would leave no gap between passes, which is a reload loop rather than a preview.
+        // Zero would leave no gap between passes, so the browser would reload without ever settling.
         refresh.Validators.Add(static result =>
         {
             if (result.GetValueOrDefault<int?>() is < 1)

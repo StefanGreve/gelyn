@@ -95,7 +95,7 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that keys outside the recognized vocabulary are ignored rather than rejected.
+    ///     Verifies that keys outside the recognized vocabulary are ignored and never rejected.
     /// </summary>
     [Test]
     public async Task Parse_Test_UnrecognizedKeys_AreIgnored()
@@ -174,8 +174,8 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that a value the invariant culture cannot read as a date leaves the date unset rather than
-    ///     aborting the block.
+    ///     Verifies that a value the invariant culture cannot read as a date leaves the date unset and does
+    ///     not abort the block.
     /// </summary>
     [Test]
     [Arguments("not a date")]

@@ -95,7 +95,7 @@ internal sealed class FileServer
     ///     Every address the server binds, all of them loopback.
     /// </summary>
     /// <remarks>
-    ///     A request is routed by matching its <c>Host</c> header against the host of a prefix rather than by
+    ///     A request is routed by matching its <c>Host</c> header against the host of a prefix, and never by
     ///     the socket it arrived on, so loopback needs one prefix per spelling a reader might type. A request
     ///     matching none of them is answered by the listener itself, with a 404. <c>[::1]</c> is left out
     ///     because the managed implementation used outside Windows rejects a bracketed IPv6 literal from
@@ -277,8 +277,8 @@ internal sealed class FileServer
     /// <remarks>
     ///     The identity and authenticated-user fields are always hyphens, because a loopback preview
     ///     identifies no client, and nginx hard-codes the first of them for the same reason. The trailing
-    ///     count is the body alone, as a number rather than the hyphen Apache's <c>%b</c> writes for an
-    ///     empty body, which is what nginx reports and what makes a page published empty visible at a glance.
+    ///     count is the body alone, always as a number. Apache's <c>%b</c> writes a hyphen for an empty body,
+    ///     while nginx reports the zero, which is what makes a page published empty visible at a glance.
     /// </remarks>
     /// <param name="request">
     ///     The request that was answered.

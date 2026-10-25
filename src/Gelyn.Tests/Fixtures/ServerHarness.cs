@@ -22,7 +22,7 @@ namespace Gelyn.Tests.Fixtures;
 /// <remarks>
 ///     The listener is real while the files it answers from are not, so a test covers the transport without
 ///     reaching a disk. Disposal cancels the server the way Ctrl+C does and waits for it, so a shutdown that
-///     never completes fails the test that started it rather than leaking a socket into the next one.
+///     never completes fails the test that started it and leaks no socket into the next one.
 /// </remarks>
 internal sealed class ServerHarness : IAsyncDisposable
 {
@@ -44,7 +44,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         // Synchronized because the serving task appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
 
-        // A StringWriter rather than a TestConsole, which would need a package the suite does not otherwise want.
+        // A StringWriter, because a TestConsole would need a package the suite does not otherwise want.
         IAnsiConsole console = CapturedConsole.Create(this._writer);
 
         FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
@@ -130,7 +130,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     ///     Composes the absolute URL one request path addresses.
     /// </summary>
     /// <remarks>
-    ///     The default is the literal rather than the name, because <c>localhost</c> resolves to <c>::1</c> on
+    ///     The default is the literal and not the name, because <c>localhost</c> resolves to <c>::1</c> on
     ///     some machines, and the client field of a log entry reports the socket the request arrived on.
     /// </remarks>
     /// <param name="requestPath">

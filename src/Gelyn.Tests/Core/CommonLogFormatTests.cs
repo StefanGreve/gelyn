@@ -11,10 +11,10 @@ namespace Gelyn.Tests.Core;
 ///     Unit tests for the <see cref="CommonLogFormat"/> class.
 /// </summary>
 /// <remarks>
-///     The entries are checked against the grammar rather than against literals written out here, because a
+///     The entries are checked against the grammar and never against literals written out here, because a
 ///     literal only proves the composition has not changed while the grammar proves a log analyzer can read
 ///     it. <see cref="Entry"/> is the <c>COMMONAPACHELOG</c> pattern every such tool is built on, which is
-///     what makes a drift away from the format a failure here rather than a surprise downstream.
+///     what turns a drift away from the format into a failure here instead of a surprise downstream.
 /// </remarks>
 public partial class CommonLogFormatTests
 {
@@ -50,7 +50,7 @@ public partial class CommonLogFormatTests
 
     /// <summary>
     ///     Verifies that an entry whose every optional field is absent still satisfies the grammar, because a
-    ///     hyphen is a value the format accepts rather than a column the caller may leave out.
+    ///     hyphen is a value the format accepts and not a column the caller may leave out.
     /// </summary>
     [Test]
     public async Task BuildMessage_Test_AbsentFields_AreWrittenAsHyphens()
@@ -157,7 +157,7 @@ public partial class CommonLogFormatTests
 
     /// <summary>
     ///     Verifies that the month is abbreviated in English, because the format fixes those three letters
-    ///     rather than leaving them to the locale of the machine the server runs on.
+    ///     and does not leave them to the locale of the machine the server runs on.
     /// </summary>
     [Test]
     [Arguments(1, "Jan")]
@@ -180,7 +180,7 @@ public partial class CommonLogFormatTests
 
     /// <summary>
     ///     Verifies that a target carrying a query string, an encoded separator or a trailing slash reaches
-    ///     the entry unchanged, because the log records what was asked for rather than what it resolved to.
+    ///     the entry unchanged, because the log records what was asked for and not what it resolved to.
     /// </summary>
     [Test]
     [Arguments("/")]
@@ -269,7 +269,7 @@ public partial class CommonLogFormatTests
     }
 
     /// <summary>
-    ///     Verifies that a missing host or address is refused rather than written into the banner, which is
+    ///     Verifies that a missing host or address is refused and never written into the banner, which is
     ///     the line a reader copies to reach the site.
     /// </summary>
     [Test]

@@ -423,7 +423,7 @@ internal sealed class SiteWatcher
     ///     without being rewired.
     /// </summary>
     /// <remarks>
-    ///     Compared as resolved paths rather than as configured values, so that a cosmetic edit such as
+    ///     Compared as resolved paths, never as the configured values, so that a cosmetic edit such as
     ///     <c>./content</c> for <c>content</c> is not reported as a move.
     /// </remarks>
     /// <param name="contentDirectory">
@@ -456,8 +456,8 @@ internal sealed class SiteWatcher
     }
 
     /// <summary>
-    ///     Writes the one line a rebuild reports, which is a summary rather than the line per file that
-    ///     <c>gelyn build</c> writes and that every save would turn into noise.
+    ///     Writes the one line a rebuild reports, a summary of the pass. The line per file that
+    ///     <c>gelyn build</c> writes would turn every save into noise.
     /// </summary>
     /// <param name="fileCount">
     ///     The number of files the rebuild wrote, copied and deleted.
@@ -473,7 +473,7 @@ internal sealed class SiteWatcher
     /// </param>
     private void ReportRebuild(int fileCount, double elapsedMilliseconds, string trigger, int changeCount)
     {
-        // Formatted here rather than in the interpolation, so the culture is not left to the console.
+        // Formatted with Tool.Culture, because interpolating the value would use the current one.
         string elapsed = elapsedMilliseconds.ToString("F2", Tool.Culture);
 
         string cause = changeCount == 1

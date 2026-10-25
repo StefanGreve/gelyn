@@ -108,7 +108,7 @@ public class SiteWatcherTests
 
     /// <summary>
     ///     Verifies that two changes the window does not span are rebuilt once each, so that the debounce
-    ///     delays a rebuild rather than dropping one.
+    ///     delays a rebuild instead of dropping one.
     /// </summary>
     [Test]
     public async Task RebuildOnChangeAsync_Test_ChangesEitherSideOfTheWindow_RebuildTwice()
@@ -184,8 +184,8 @@ public class SiteWatcherTests
     }
 
     /// <summary>
-    ///     Verifies that a rebuild reports one line naming what changed, rather than the line per file that
-    ///     <c>gelyn build</c> writes and that every save would turn into noise.
+    ///     Verifies that a rebuild reports one line naming what changed, a summary of the pass. The line per
+    ///     file that <c>gelyn build</c> writes would turn every save into noise.
     /// </summary>
     [Test]
     public async Task RebuildOnChangeAsync_Test_Rebuild_ReportsOneSummaryLine()
@@ -210,7 +210,7 @@ public class SiteWatcherTests
     }
 
     /// <summary>
-    ///     Verifies that a window holding more than one change reports their number rather than naming one of
+    ///     Verifies that a window holding more than one change reports their number and names none of
     ///     them as though it were the only one.
     /// </summary>
     [Test]
@@ -344,7 +344,7 @@ public class SiteWatcherTests
     ///     can.
     /// </summary>
     /// <remarks>
-    ///     Either arrives from the reload rather than from the read of the options that follows it, wrapped
+    ///     Either arrives from the reload itself, never from the read of the options that follows it, wrapped
     ///     once per reload token in the chain, which is the shape this reproduces: the cancellation source
     ///     behind a reload token collects what its callbacks throw, and the options monitor binds and
     ///     validates eagerly in one of them. Found by running <c>gelyn serve</c> against a malformed

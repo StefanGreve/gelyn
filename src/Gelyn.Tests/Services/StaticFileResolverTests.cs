@@ -42,7 +42,7 @@ public class StaticFileResolverTests
     }
 
     /// <summary>
-    ///     Verifies that a directory holding no index is a miss rather than a listing, which is what the
+    ///     Verifies that a directory holding no index is a miss and never a listing, which is what the
     ///     deploy targets answer too.
     /// </summary>
     [Test]
@@ -92,7 +92,7 @@ public class StaticFileResolverTests
 
     /// <summary>
     ///     Verifies that a file is served verbatim when it is requested by name, page or copy, so that the
-    ///     extensionless rule is an addition rather than a redirection.
+    ///     extensionless rule is an addition and not a redirection.
     /// </summary>
     [Test]
     [Arguments("/about.html", "about.html")]
@@ -184,7 +184,7 @@ public class StaticFileResolverTests
     }
 
     /// <summary>
-    ///     Verifies that a path no file system accepts is a miss rather than an exception, because a request
+    ///     Verifies that a path no file system accepts is a miss and not an exception, because a request
     ///     may spell anything and the server has to survive it.
     /// </summary>
     [Test]
@@ -255,7 +255,7 @@ public class StaticFileResolverTests
 
     /// <summary>
     ///     Verifies that the page is looked for in the output root alone, which is where the deploy targets
-    ///     look for it too, rather than beside the request that missed.
+    ///     look for it too, and never beside the request that missed.
     /// </summary>
     [Test]
     public async Task Resolve_Test_Miss_IgnoresANestedNotFoundPage()
@@ -271,7 +271,7 @@ public class StaticFileResolverTests
     }
 
     /// <summary>
-    ///     Verifies that a site declaring no such page gets a bodyless 404 rather than nothing at all.
+    ///     Verifies that a site declaring no such page gets a bodyless 404 and not nothing at all.
     /// </summary>
     [Test]
     public async Task Resolve_Test_Miss_WithoutAPageIsBodyless()
@@ -297,7 +297,7 @@ public class StaticFileResolverTests
 
     /// <summary>
     ///     Verifies that each extension the output tree can hold is served under its own media type, that the
-    ///     text types declare a charset, and that an unknown extension falls back rather than guessing.
+    ///     text types declare a charset, and that an unknown extension falls back instead of guessing.
     /// </summary>
     [Test]
     [Arguments("index.html", "text/html; charset=utf-8")]

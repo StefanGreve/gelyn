@@ -259,8 +259,8 @@ internal sealed class SiteBuilder
     ///     account for, together with the directories those deletions leave empty.
     /// </summary>
     /// <remarks>
-    ///     Recursive like <see cref="ContentPipeline.CollectItems"/> rather than a flat enumeration, so a
-    ///     skipped directory is never descended into and a deployed <c>.git</c> keeps its contents.
+    ///     Recursive like <see cref="ContentPipeline.CollectItems"/>, because a flat enumeration would descend
+    ///     into a skipped directory and cost a deployed <c>.git</c> its contents.
     /// </remarks>
     /// <param name="directory">
     ///     The directory to walk.

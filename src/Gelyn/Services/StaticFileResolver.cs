@@ -32,9 +32,9 @@ namespace Gelyn.Services;
 ///             </description>
 ///         </item>
 ///     </list>
-///     The output directory arrives per call rather than being held, because it is a property of one serving
-///     session rather than of the resolver, and it is resolved again on each request so that a caller cannot
-///     weaken the containment test by passing a path that was never normalized.
+///     The output directory arrives per call and is never held, because it belongs to one serving session
+///     instead of to the resolver. It is resolved again on each request, so that a caller cannot weaken the
+///     containment test by passing a path that was never normalized.
 /// </remarks>
 internal sealed class StaticFileResolver
 {
@@ -117,7 +117,7 @@ internal sealed class StaticFileResolver
     {
         path = null;
 
-        // Decoded before the resolve, so that an encoded separator is collapsed rather than surviving into a
+        // Decoded before the resolve, so that an encoded separator is collapsed instead of surviving into a
         // file name. The leading one goes first, or Path.Combine reads the whole request path as rooted.
         string relative = Uri.UnescapeDataString(requestPath).TrimStart('/');
         string candidate;

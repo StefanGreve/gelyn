@@ -90,7 +90,7 @@ internal sealed class OutputFixture
     }
 
     /// <summary>
-    ///     Adds one file beside the output tree rather than inside it, as a source directory or a neighboring
+    ///     Adds one file beside the output tree and not inside it, as a source directory or a neighboring
     ///     project would sit there.
     /// </summary>
     /// <param name="relativePath">

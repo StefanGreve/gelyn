@@ -60,7 +60,7 @@ internal sealed class SiteOptions
 
     /// <summary>
     ///     Patterns naming the entries the build leaves out, matched case insensitively against the name of
-    ///     each file and directory rather than against its path, with <c>*</c> and <c>?</c> as the only
+    ///     each file and directory, never against its path, with <c>*</c> and <c>?</c> as the only
     ///     wildcards. A directory that matches is not descended into.
     /// </summary>
     public IReadOnlyList<string> ExcludePatterns { get; set; } = [];

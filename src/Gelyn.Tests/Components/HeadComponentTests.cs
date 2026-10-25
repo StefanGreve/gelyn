@@ -30,7 +30,7 @@ public class HeadComponentTests
     }
 
     /// <summary>
-    ///     Verifies that an author nobody configured is left out rather than stated as an empty value.
+    ///     Verifies that an author nobody configured is left out and never stated as an empty value.
     /// </summary>
     [Test]
     [Arguments(null)]
@@ -134,7 +134,7 @@ public class HeadComponentTests
     }
 
     /// <summary>
-    ///     Verifies that a site carrying no icon emits no link rather than an empty one.
+    ///     Verifies that a site carrying no icon emits no link, not even an empty one.
     /// </summary>
     [Test]
     public async Task Render_Test_AbsentFavicon_IsOmitted()

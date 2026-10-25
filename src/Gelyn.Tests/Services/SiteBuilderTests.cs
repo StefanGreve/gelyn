@@ -428,7 +428,7 @@ public partial class SiteBuilderTests
     ///     navigation leaves out marks none at all.
     /// </summary>
     /// <remarks>
-    ///     The banner is rendered once per variant rather than once per page, so this is what prevents one
+    ///     The banner is rendered once per variant and not once per page, so this is what prevents one
     ///     page's current entry from being served to the rest of the site.
     /// </remarks>
     [Test]
@@ -454,7 +454,7 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that a page's footer carries the date that page declares, and that a page declaring none
-    ///     carries no date rather than one taken from elsewhere.
+    ///     carries no date at all, never one taken from elsewhere.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Footer_CarriesThePageDate()
@@ -645,7 +645,7 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that a source the exclude patterns start matching has its output removed, which is what
-    ///     proves the reconcile subtracts what the scan reports rather than what is still on disk.
+    ///     proves the reconcile subtracts what the scan reports and not what is still on disk.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_NewlyExcludedSource_HasItsOutputRemoved()
@@ -672,7 +672,7 @@ public partial class SiteBuilderTests
     ///     the directory it sits in.
     /// </summary>
     /// <remarks>
-    ///     The nested path is composed rather than written out, because the report uses the native separator
+    ///     The nested path is composed instead of written out, because the report uses the native separator
     ///     while the fixture takes forward slashes.
     /// </remarks>
     [Test]
@@ -935,7 +935,7 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that every phase counter is accumulated rather than left at zero, and that the total is
+    ///     Verifies that every phase counter is accumulated and none is left at zero, and that the total is
     ///     at least the sum of the phases it spans.
     /// </summary>
     /// <remarks>
@@ -1037,7 +1037,7 @@ public partial class SiteBuilderTests
         return match.Success ? match.Groups["href"].Value : null;
     }
 
-    // Joined rather than returned as a sequence, because IsEquivalentTo disregards the order under test.
+    // Joined instead of returned as a sequence, because IsEquivalentTo disregards the order under test.
     private static string ReadStylesheets(ContentFixture fixture, string outputPath) => string.Join(
         ',',
         StylesheetLink()

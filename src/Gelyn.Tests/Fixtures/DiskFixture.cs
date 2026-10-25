@@ -121,7 +121,7 @@ internal sealed class DiskFixture : IDisposable
 
     /// <summary>
     ///     Links a directory in the content tree to the content tree itself, which is the shape that makes a
-    ///     walk unbounded rather than merely wider than intended.
+    ///     walk unbounded. Any other link only makes it wider than intended.
     /// </summary>
     /// <param name="name">
     ///     The name the link is created under, directly below <see cref="ContentRoot"/>.
@@ -173,7 +173,7 @@ internal sealed class DiskFixture : IDisposable
     public void Dispose()
     {
         // Tolerated, because a fixture whose creation failed part way leaves the test with the failure that
-        // matters rather than with one from the cleanup.
+        // matters instead of with one from the cleanup.
         try
         {
             Directory.Delete(this.Root, recursive: true);
