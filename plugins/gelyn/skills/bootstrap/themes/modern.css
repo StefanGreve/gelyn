@@ -99,6 +99,33 @@ header {
                 font-weight: 600;
             }
         }
+
+        @media (hover: hover) {
+            & > li:not(:first-child) > a {
+                position: relative;
+
+                &::after {
+                    content: "";
+                    position: absolute;
+                    inset-inline: 0;
+                    inset-block-end: -0.3em;
+                    height: 1px;
+                    background-color: currentColor;
+                    scale: 0 1;
+                    transform-origin: left;
+                }
+
+                &:hover::after {
+                    scale: 1 1;
+                }
+
+                @media (prefers-reduced-motion: no-preference) {
+                    &::after {
+                        transition: scale 260ms cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                }
+            }
+        }
     }
 }
 
