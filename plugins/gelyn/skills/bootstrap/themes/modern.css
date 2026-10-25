@@ -70,9 +70,19 @@ header {
         flex-wrap: wrap;
         gap: 0.5rem 1.75rem;
         max-width: var(--measure);
+        margin-block: 0;
         margin-inline: auto;
         padding: 0.8rem var(--gutter);
         list-style-type: none;
+
+        & > li:first-child {
+            margin-inline-end: auto;
+
+            & > a {
+                color: var(--label);
+                font-weight: 600;
+            }
+        }
 
         & a {
             color: var(--label-secondary);
