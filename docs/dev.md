@@ -1,13 +1,15 @@
 ---
 title: Development
 date: 2026-10-20
-description: Building Gelyn from source, the git hooks, and the test suite.
+description: Building Gelyn from source, the git hooks, the test suite, and the versioning scheme.
 ---
 
 # Development
 
 The repository root carries a `Makefile` that collects the commands on this page into named targets. Run
 `make setup` once after cloning.
+
+## Building from Source
 
 Install the development dependencies and register the `git` hooks:
 
@@ -72,10 +74,38 @@ dotnet tool install --global Gelyn --prerelease
 > has to be packed as well. `Gelyn` resolves as a package id rather than a path, so `nuget.config` declares
 > `artifacts/nupkg` as the `local` source and maps `Gelyn*` to it.
 
+## Versioning
+
+No project file carries a version number. [MinVer][minver] reads the nearest reachable git tag at build time
+and stamps it onto the assembly, which is what `gelyn --version` prints and what the page footer renders, so
+a release is cut by tagging a commit. Tags are prefixed with `v`, and `make setup` configures
+`tag.gpgsign`, so they are annotated and signed:
+
+```sh
+git tag -m 'Gelyn 0.1.0' v0.1.0
+git push origin v0.1.0
+```
+
+A tagged commit builds as the tag itself. Between tags the commit height is appended, which keeps every build
+uniquely versioned and correctly ordered: three commits past `v0.1.0-alpha.1` build as `0.1.0-alpha.1.3`, and
+three commits past a stable `v0.1.0` build as `0.1.1-alpha.0.3`, because MinVer increments the patch number
+and adds its default pre-release identifiers once a tag is no longer a pre-release.
+
+With no reachable tag at all the version falls back to `0.0.0-alpha.0` plus the height, which is the one
+failure mode worth knowing. A shallow clone reaches no tag, so the CI checkouts in `dotnet-build.yml` and
+`gelyn-build.yml` set `fetch-depth: 0`; a local clone made with `--depth` reports `0.0.0-alpha.0.N` for the
+same reason, and `git fetch --unshallow --tags` restores it.
+
+`AssemblyVersion` is pinned to `<major>.<minor>.0.0` by the `PatchAssemblyVersion` target in
+`Directory.Build.targets` instead of MinVer's own `<major>.0.0.0`. Before 1.0.0 the minor number carries the
+breaking changes, so it belongs in the binding identity while the patch number does not; the target comes out
+once 1.0.0 ships.
+
 <!-- References -->
 
 [tunit]: https://tunit.dev
 [tunit-docs]: https://tunit.dev/docs/intro/
 [husky]: https://alirezanet.github.io/Husky.Net
+[minver]: https://github.com/adamralph/minver
 [mtp]: https://learn.microsoft.com/en-us/dotnet/core/testing/microsoft-testing-platform-intro
 [known-rids]: https://learn.microsoft.com/en-us/dotnet/core/rid-catalog?source=recommendations#known-rids

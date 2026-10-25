@@ -27,6 +27,9 @@ jobs:
     steps:
       - name: Check out Repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: tree:0
 
       - name: Set up the .NET SDK
         uses: actions/setup-dotnet@v6

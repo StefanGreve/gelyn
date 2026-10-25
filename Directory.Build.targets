@@ -9,6 +9,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
+  <Target Name="PatchAssemblyVersion" AfterTargets="MinVer">
+    <PropertyGroup>
+      <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).0.0</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
+
   <Target Name="CleanRepositoryOutput" AfterTargets="Clean">
     <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts;$(RepositoryRoot)TestResults" />
   </Target>

@@ -13,6 +13,9 @@ change once the first stable release ships.
 - [Development][docs-dev] describes the toolchain, the build, and the test suite.
 - Record every new feature and every bug fix in [`CHANGELOG.md`][changelog] once the first release has
   shipped. Until then the file carries its template alone, a pre-release changing without notice.
+- Versions follow [Semantic Versioning][semver], with the minor number carrying the breaking changes until
+  1.0.0 ships. No project file declares a version; each one is derived from a signed, `v`-prefixed git tag,
+  so no pull request changes one. [Development][docs-dev] covers how a release is cut.
 
 ## Theme Development
 
@@ -27,3 +30,4 @@ change once the first stable release ships.
 [changelog]: CHANGELOG.md
 [commit-signing]: https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification
 [docs-dev]: https://stefangreve.github.io/gelyn/dev.html
+[semver]: https://semver.org/spec/v2.0.0.html
