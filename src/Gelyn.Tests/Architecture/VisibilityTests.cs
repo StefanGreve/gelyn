@@ -13,30 +13,23 @@ public class VisibilityTests : ArchBase
     #region Visibility Tests
 
     /// <summary>
-    ///     Verifies that every type in the namespace is internal.
+    ///     Verifies that every type the tool declares is internal.
     /// </summary>
     /// <remarks>
-    ///     <c>ResideInNamespace</c> matches a namespace by its full name and never as a prefix, so each one
-    ///     has to be named in its own right to be covered at all, the options namespace below the model
-    ///     included. <c>Gelyn.Core</c> is the one namespace left out, because the SharpYaml source generator
-    ///     emits its state as private nested types inside <c>YamlContext</c>, which the rule counts as
-    ///     violations; covering it would mean exempting nested types for every namespace here.
+    ///     <c>ResideInNamespaceOrBelow</c> matches the root namespace as a prefix, so a namespace added
+    ///     later is covered without being named. Nested types are exempt because the SharpYaml source
+    ///     generator emits its state as private nested types inside <c>YamlContext</c>; an internal
+    ///     declaring type already bounds how accessible they can be.
     /// </remarks>
     [Test]
-    [Arguments(CommandsNamespace)]
-    [Arguments(ComponentsNamespace)]
-    [Arguments(ExtensionsNamespace)]
-    [Arguments(InternalsNamespace)]
-    [Arguments(ModelNamespace)]
-    [Arguments(OptionsNamespace)]
-    [Arguments(ServicesNamespace)]
-    [Arguments(ValidatorsNamespace)]
-    public void Visibility_Test_EveryTypeInTheNamespaceIsInternal(string namespaceName)
+    public void Visibility_Test_EveryTypeIsInternal()
     {
         // Arrange
         IArchRule rule = Types()
             .That()
-            .ResideInNamespace(namespaceName)
+            .ResideInNamespaceOrBelow(RootNamespace)
+            .And()
+            .AreNotNested()
             .Should()
             .BeInternal();
 
