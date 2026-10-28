@@ -6,6 +6,7 @@ using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Spectre.Console;
@@ -43,7 +44,8 @@ internal sealed class FileServer
 
     private readonly StaticFileResolver _resolver;
     private readonly IFileSystem _fileSystem;
-    private readonly IAnsiConsole _console;
+    private readonly IAnsiConsole _stdOut;
+    private readonly IAnsiConsole _stdErr;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<FileServer> _logger;
 
@@ -56,8 +58,11 @@ internal sealed class FileServer
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    /// <param name="console">
+    /// <param name="stdOut">
     ///     The console the request log is written to.
+    /// </param>
+    /// <param name="stdErr">
+    ///     The console the server writes its warnings to.
     /// </param>
     /// <param name="timeProvider">
     ///     Supplies the local time each request is stamped with.
@@ -68,13 +73,15 @@ internal sealed class FileServer
     public FileServer(
         StaticFileResolver resolver,
         IFileSystem fileSystem,
-        IAnsiConsole console,
+        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
+        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr,
         TimeProvider timeProvider,
         ILogger<FileServer> logger)
     {
         this._resolver = resolver;
         this._fileSystem = fileSystem;
-        this._console = console;
+        this._stdOut = stdOut;
+        this._stdErr = stdErr;
         this._timeProvider = timeProvider;
         this._logger = logger;
     }
@@ -164,7 +171,7 @@ internal sealed class FileServer
         this._logger.LogServerStarted(outputDirectory, address);
 
         if (launchBrowser && !Browser.TryLaunch(address, out string? errorMessage))
-            this._console.MarkupLineInterpolated($"[yellow]warning:[/] no browser was opened: {errorMessage}");
+            this._stdErr.MarkupLineInterpolated($"[yellow]warning:[/] no browser was opened: {errorMessage}");
 
         // GetContextAsync accepts no token, so tearing the listener down is what unblocks a pending accept.
         using CancellationTokenRegistration registration = cancellationToken.Register(listener.Stop);
@@ -322,7 +329,7 @@ internal sealed class FileServer
 
     // Bypasses the console, which would wrap the line and read a bracket in a request path as markup.
     private void Write(string line) =>
-        this._console.Profile.Out.Writer.WriteLine(line);
+        this._stdOut.Profile.Out.Writer.WriteLine(line);
 
     private static bool IsSupportedMethod(string method) =>
         method.Equals(WebRequestMethods.Http.Get, StringComparison.Ordinal)

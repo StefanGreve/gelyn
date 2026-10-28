@@ -380,7 +380,7 @@ public class SiteWatcherTests
         using (Assert.Multiple())
         {
             await Assert.That(harness.Errors.Length).IsEqualTo(1);
-            await Assert.That(harness.Output).Contains(message).And.DoesNotContain("One or more errors");
+            await Assert.That(harness.ErrorOutput).Contains(message).And.DoesNotContain("One or more errors");
             await Assert.That(configuration.Reloads).IsEqualTo(1);
             await Assert.That(harness.Rebuilds).IsEqualTo(1);
             await Assert.That(harness.Stopped).IsFalse();
@@ -416,7 +416,7 @@ public class SiteWatcherTests
         using (Assert.Multiple())
         {
             await Assert.That(harness.Warnings.Length).IsEqualTo(1);
-            await Assert.That(harness.Output).Contains($"{setting} changed.").And.Contains("Restart gelyn serve");
+            await Assert.That(harness.ErrorOutput).Contains($"{setting} changed.").And.Contains("Restart gelyn serve");
             await Assert.That(harness.Rebuilds).IsEqualTo(0);
             await Assert.That(harness.Stopped).IsFalse();
         }

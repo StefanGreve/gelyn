@@ -8,6 +8,7 @@ using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -61,7 +62,8 @@ internal sealed class SiteWatcher
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
-    private readonly IAnsiConsole _console;
+    private readonly IAnsiConsole _stdOut;
+    private readonly IAnsiConsole _stdErr;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SiteWatcher> _logger;
 
@@ -80,8 +82,11 @@ internal sealed class SiteWatcher
     /// <param name="options">
     ///     Supplies the site configuration naming the directories to watch.
     /// </param>
-    /// <param name="console">
+    /// <param name="stdOut">
     ///     The console the command writes its output to.
+    /// </param>
+    /// <param name="stdErr">
+    ///     The console the loop writes its warnings and failures to.
     /// </param>
     /// <param name="timeProvider">
     ///     Supplies the timer the debounce window is waited out on.
@@ -97,7 +102,8 @@ internal sealed class SiteWatcher
         IConfigurationRoot configuration,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
-        IAnsiConsole console,
+        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
+        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr,
         TimeProvider timeProvider,
         IFileSystem fileSystem,
         ILogger<SiteWatcher> logger)
@@ -106,7 +112,8 @@ internal sealed class SiteWatcher
         this._configuration = configuration;
         this._environment = environment;
         this._options = options;
-        this._console = console;
+        this._stdOut = stdOut;
+        this._stdErr = stdErr;
         this._timeProvider = timeProvider;
         this._fileSystem = fileSystem;
         this._logger = logger;
@@ -247,7 +254,7 @@ internal sealed class SiteWatcher
 
             if (this.Moved(contentDirectory, outputDirectory, options) is string moved)
             {
-                this._console.MarkupLineInterpolated($"[yellow]warning:[/] {moved} changed. Restart [bold]gelyn serve[/] to pick that up.");
+                this._stdErr.MarkupLineInterpolated($"[yellow]warning:[/] {moved} changed. Restart [bold]gelyn serve[/] to pick that up.");
                 continue;
             }
 
@@ -412,7 +419,7 @@ internal sealed class SiteWatcher
             : [exception.Message];
 
         foreach (string message in messages)
-            this._console.MarkupLineInterpolated($"[red]error:[/] {message}");
+            this._stdErr.MarkupLineInterpolated($"[red]error:[/] {message}");
     }
 
     private string ConfigurationFileName() =>
@@ -480,7 +487,7 @@ internal sealed class SiteWatcher
             ? $"{Path.GetRelativePath(this._environment.ContentRootPath, trigger)} changed"
             : string.Create(Tool.Culture, $"{changeCount} entries changed");
 
-        this._console.MarkupLineInterpolated($"[green]rebuilt[/] {fileCount} file(s) in {elapsed} ms after {cause}.");
+        this._stdOut.MarkupLineInterpolated($"[green]rebuilt[/] {fileCount} file(s) in {elapsed} ms after {cause}.");
     }
 
     #endregion

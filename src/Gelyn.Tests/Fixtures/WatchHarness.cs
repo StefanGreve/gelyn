@@ -48,6 +48,9 @@ internal sealed class WatchHarness : IAsyncDisposable
     private readonly StringWriter _output = new();
     private readonly TextWriter _writer;
 
+    private readonly StringWriter _errorOutput = new();
+    private readonly TextWriter _errorWriter;
+
     private WatchHarness(ContentFixture content, IConfigurationRoot configuration)
     {
         this.Content = content;
@@ -61,15 +64,19 @@ internal sealed class WatchHarness : IAsyncDisposable
 
         // Synchronized because the loop appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
+        this._errorWriter = TextWriter.Synchronized(this._errorOutput);
 
-        IAnsiConsole console = CapturedConsole.Create(this._writer);
+        // The two streams are captured apart, so a test can tell which one a message reached.
+        IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
+        IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
 
         this.Watcher = new SiteWatcher(
             content.Builder,
             this.Configuration,
             content.HostEnvironment,
             new OptionsMonitorStub(content.Options),
-            console,
+            stdOut,
+            stdErr,
             this.TimeProvider,
             content.FileSystem,
             this.Logger);
@@ -159,14 +166,36 @@ internal sealed class WatchHarness : IAsyncDisposable
     public int Reloads => this.Count(EventIds.CONFIGURATION_RELOADED);
 
     /// <summary>
-    ///     The lines reporting a rebuild that failed.
+    ///     Everything the loop has written to standard error.
     /// </summary>
-    public string[] Errors => [.. this.Lines.Where(static line => line.StartsWith("error:", StringComparison.Ordinal))];
+    public string ErrorOutput
+    {
+        get
+        {
+            lock (this._errorWriter)
+            {
+                return this._errorOutput.ToString();
+            }
+        }
+    }
 
     /// <summary>
-    ///     The lines reporting something the session cannot follow.
+    ///     What the loop has written to standard error, one element per line.
     /// </summary>
-    public string[] Warnings => [.. this.Lines.Where(static line => line.StartsWith("warning:", StringComparison.Ordinal))];
+    public string[] ErrorLines =>
+        this.ErrorOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>
+    ///     The lines reporting a rebuild that failed. Read off standard error, so a count also pins the
+    ///     stream the report reached.
+    /// </summary>
+    public string[] Errors => [.. this.ErrorLines.Where(static line => line.StartsWith("error:", StringComparison.Ordinal))];
+
+    /// <summary>
+    ///     The lines reporting something the session cannot follow, read off standard error for the reason
+    ///     <see cref="Errors"/> gives.
+    /// </summary>
+    public string[] Warnings => [.. this.ErrorLines.Where(static line => line.StartsWith("warning:", StringComparison.Ordinal))];
 
     /// <summary>
     ///     Indicates whether the loop has stopped.

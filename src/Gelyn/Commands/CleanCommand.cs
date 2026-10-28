@@ -4,6 +4,7 @@ using System.IO.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -28,14 +29,18 @@ internal sealed class CleanCommand : Command
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    /// <param name="console">
+    /// <param name="stdOut">
     ///     The console the command writes its output to.
+    /// </param>
+    /// <param name="stdErr">
+    ///     The console the command writes its failures to.
     /// </param>
     public CleanCommand(
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
-        IAnsiConsole console)
+        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
+        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("clean", "Remove the output directory.")
     {
         this.SetAction(_ =>
@@ -47,19 +52,19 @@ internal sealed class CleanCommand : Command
             {
                 if (!fileSystem.Directory.Exists(directory))
                 {
-                    console.MarkupLineInterpolated($"Nothing to remove at {directory}.");
+                    stdOut.MarkupLineInterpolated($"Nothing to remove at {directory}.");
 
                     return ExitCodes.Success;
                 }
 
                 fileSystem.Directory.Delete(directory, recursive: true);
-                console.MarkupLineInterpolated($"[green]removed[/] {directory}");
+                stdOut.MarkupLineInterpolated($"[green]removed[/] {directory}");
 
                 return ExitCodes.Success;
             }
             catch (IOException exception)
             {
-                console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+                stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
                 return ExitCodes.Error;
             }

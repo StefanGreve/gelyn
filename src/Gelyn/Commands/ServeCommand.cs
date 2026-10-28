@@ -7,6 +7,7 @@ using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
@@ -55,8 +56,11 @@ internal sealed class ServeCommand : Command
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    /// <param name="console">
+    /// <param name="stdOut">
     ///     The console the command writes its output to.
+    /// </param>
+    /// <param name="stdErr">
+    ///     The console the command writes its failures to.
     /// </param>
     public ServeCommand(
         SiteBuilder siteBuilder,
@@ -65,7 +69,8 @@ internal sealed class ServeCommand : Command
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
-        IAnsiConsole console)
+        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
+        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("serve", "Serve the site over HTTP for local preview, rebuilding it as its sources change.")
     {
         Option<int> port = new($"--{PortOption}")
@@ -121,7 +126,7 @@ internal sealed class ServeCommand : Command
                 int configuredPort = parsed.GetValue(port);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+                stdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
 
                 using CancellationTokenSource session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -148,7 +153,7 @@ internal sealed class ServeCommand : Command
             }
             catch (Exception exception) when (exception is IOException or HttpListenerException or PlatformNotSupportedException)
             {
-                console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+                stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
                 return ExitCodes.Error;
             }
         });

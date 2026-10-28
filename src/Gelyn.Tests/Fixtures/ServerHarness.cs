@@ -35,6 +35,9 @@ internal sealed class ServerHarness : IAsyncDisposable
     private readonly StringWriter _output = new();
     private readonly TextWriter _writer;
 
+    private readonly StringWriter _errorOutput = new();
+    private readonly TextWriter _errorWriter;
+
     private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds)
     {
         this.Port = FreePort();
@@ -43,11 +46,14 @@ internal sealed class ServerHarness : IAsyncDisposable
 
         // Synchronized because the serving task appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
+        this._errorWriter = TextWriter.Synchronized(this._errorOutput);
 
         // A StringWriter, because a TestConsole would need a package the suite does not otherwise want.
-        IAnsiConsole console = CapturedConsole.Create(this._writer);
+        // The two streams are captured apart, so a test can tell which one a message reached.
+        IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
+        IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
 
-        FileServer server = new(fixture.Resolver, fixture.FileSystem, console, this.TimeProvider, this.Logger);
+        FileServer server = new(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
         // listening and the request below needs no readiness poll.
@@ -93,6 +99,20 @@ internal sealed class ServerHarness : IAsyncDisposable
     ///     What the server has written, one element per line, the banner first.
     /// </summary>
     public string[] Lines => this.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+    /// <summary>
+    ///     Everything the server has written to standard error.
+    /// </summary>
+    public string ErrorOutput
+    {
+        get
+        {
+            lock (this._errorWriter)
+            {
+                return this._errorOutput.ToString();
+            }
+        }
+    }
 
     /// <summary>
     ///     The client the requests are sent through.

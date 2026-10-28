@@ -35,7 +35,12 @@ internal static class Program
     public static async Task<int> Main(string[] args)
     {
         long started = Stopwatch.GetTimestamp();
-        IAnsiConsole console = AnsiConsole.Console;
+
+        IAnsiConsole stdOut = AnsiConsole.Console;
+        IAnsiConsole stdErr = AnsiConsole.Create(new AnsiConsoleSettings
+        {
+            Out = new AnsiConsoleOutput(System.Console.Error),
+        });
 
         try
         {
@@ -44,7 +49,8 @@ internal static class Program
             builder.Logging.ConfigureDiagnostics(builder.Configuration);
 
             // Third-party registrations
-            builder.Services.TryAddSingleton(console);
+            builder.Services.TryAddKeyedSingleton(ConsoleTarget.StdOut, stdOut);
+            builder.Services.TryAddKeyedSingleton(ConsoleTarget.StdErr, stdErr);
             builder.Services.TryAddSingleton<IFileSystem, FileSystem>();
             builder.Services.TryAddSingleton<IConfigurationRoot>(builder.Configuration);
 
@@ -79,7 +85,7 @@ internal static class Program
         }
         catch (Exception exception)
         {
-            console.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+            stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
             return exception switch
             {
