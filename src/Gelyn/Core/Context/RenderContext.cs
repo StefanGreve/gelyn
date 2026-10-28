@@ -1,6 +1,7 @@
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
-namespace Gelyn.Model;
+namespace Gelyn.Core.Context;
 
 /// <summary>
 ///     Everything a renderer needs to lay out one page of the site.

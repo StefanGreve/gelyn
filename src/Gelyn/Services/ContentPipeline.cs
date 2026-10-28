@@ -2,6 +2,7 @@ using System.IO.Abstractions;
 using System.IO.Enumeration;
 
 using Gelyn.Core;
+using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -77,14 +78,15 @@ internal sealed class ContentPipeline
 
         string hrefPrefix = ResolveBaseUrlPath(options.BaseUrl);
 
-        return this.CollectItems(
-            this._fileSystem.DirectoryInfo.New(root),
-            prefix: [],
-            inheritedStylesheets: [],
-            inheritedScripts: [],
-            inheritedFavicon: null,
-            hrefPrefix,
-            options.ExcludePatterns);
+        return this.CollectItems(this._fileSystem.DirectoryInfo.New(root), new ScanContext
+        {
+            Prefix = [],
+            Stylesheets = [],
+            Scripts = [],
+            Favicon = null,
+            HrefPrefix = hrefPrefix,
+            Excluded = options.ExcludePatterns,
+        });
     }
 
     /// <summary>
@@ -131,57 +133,32 @@ internal sealed class ContentPipeline
     /// <param name="directory">
     ///     The directory to walk.
     /// </param>
-    /// <param name="prefix">
-    ///     The output-relative segments leading to <paramref name="directory"/>, empty at the content root.
-    /// </param>
-    /// <param name="inheritedStylesheets">
-    ///     The root-relative URLs of the stylesheets declared above <paramref name="directory"/>, outermost
-    ///     first.
-    /// </param>
-    /// <param name="inheritedScripts">
-    ///     The root-relative URLs of the scripts declared above <paramref name="directory"/>, outermost first.
-    /// </param>
-    /// <param name="inheritedFavicon">
-    ///     The root-relative URL of the nearest icon declared above <paramref name="directory"/>, or
-    ///     <see langword="null"/> when no directory above it declares one.
-    /// </param>
-    /// <param name="hrefPrefix">
-    ///     The path of the configured base URL, or an empty string when the site is served from the root of a
-    ///     domain.
-    /// </param>
-    /// <param name="excluded">
-    ///     The name patterns an entry is left out for.
+    /// <param name="context">
+    ///     What this level inherits from the level above it.
     /// </param>
     /// <returns>
     ///     Every file at and below <paramref name="directory"/>, landing page first, with the files the build
     ///     has no use for left out.
     /// </returns>
-    private List<ContentItem> CollectItems(
-        IDirectoryInfo directory,
-        string[] prefix,
-        IReadOnlyList<string> inheritedStylesheets,
-        IReadOnlyList<string> inheritedScripts,
-        string? inheritedFavicon,
-        string hrefPrefix,
-        IReadOnlyList<string> excluded)
+    private List<ContentItem> CollectItems(IDirectoryInfo directory, ScanContext context)
     {
         IFileSystemInfo[] entries = [.. directory
             .EnumerateFileSystemInfos()
-            .Where(entry => !IsDenied(entry, excluded))
+            .Where(entry => !IsDenied(entry, context.Excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
         IEnumerable<string> Linked(ContentKind kind) => entries
             .OfType<IFileInfo>()
             .Where(file => Classify(file) == kind)
-            .Select(file => CombineHref(hrefPrefix, [.. prefix, file.Name]));
+            .Select(file => CombineHref(context.HrefPrefix, [.. context.Prefix, file.Name]));
 
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
         // it, and shared by reference with every page at this level instead of copied per page.
-        string[] stylesheets = [.. inheritedStylesheets, .. Linked(ContentKind.Stylesheet)];
-        string[] scripts = [.. inheritedScripts, .. Linked(ContentKind.Script)];
+        string[] stylesheets = [.. context.Stylesheets, .. Linked(ContentKind.Stylesheet)];
+        string[] scripts = [.. context.Scripts, .. Linked(ContentKind.Script)];
 
         // The nearest declaration wins, because a document carries one icon and not a chain of them.
-        string? favicon = Linked(ContentKind.Favicon).FirstOrDefault() ?? inheritedFavicon;
+        string? favicon = Linked(ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -203,15 +180,15 @@ internal sealed class ContentPipeline
                 ? isIndex ? IndexOutputFileName : $"{slug}.html"
                 : file.Name;
 
-            string[] segments = [.. prefix, name];
+            string[] segments = [.. context.Prefix, name];
 
             items.Add(new ContentItem
             {
                 SourcePath = file.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
-                Href = CombineHref(hrefPrefix, segments),
+                Href = CombineHref(context.HrefPrefix, segments),
                 Kind = kind,
-                FallbackTitle = isIndex && prefix.Length > 0 ? prefix[^1] : slug,
+                FallbackTitle = isIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : slug,
                 InNavigation = isPage && IsInNavigation(segments),
                 Stylesheets = isPage ? stylesheets : [],
                 Scripts = isPage ? scripts : [],
@@ -221,14 +198,13 @@ internal sealed class ContentPipeline
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
         {
-            items.AddRange(this.CollectItems(
-                child,
-                [.. prefix, child.Name],
-                inheritedStylesheets: stylesheets,
-                inheritedScripts: scripts,
-                inheritedFavicon: favicon,
-                hrefPrefix,
-                excluded));
+            items.AddRange(this.CollectItems(child, context with
+            {
+                Prefix = [.. context.Prefix, child.Name],
+                Stylesheets = stylesheets,
+                Scripts = scripts,
+                Favicon = favicon,
+            }));
         }
 
         return items;

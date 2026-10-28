@@ -1,8 +1,8 @@
 using System.Net;
 using System.Text;
 
+using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
-using Gelyn.Model;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Components;

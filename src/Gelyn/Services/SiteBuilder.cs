@@ -3,6 +3,7 @@ using System.IO.Abstractions;
 
 using Gelyn.Components;
 using Gelyn.Core;
+using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
@@ -110,15 +111,13 @@ internal sealed class SiteBuilder
             this._environment.ContentRootPath,
             options.OutputDirectory);
 
-        (IReadOnlyList<string> written, long composeTicks, long writeTicks) = await this
+        PageWriteContext write = await this
             .WritePagesAsync(pages, options, outputDirectory, isMeasuring, cancellationToken)
             .ConfigureAwait(false);
 
         long copyStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         List<string> copied = this.CopyAssets(items, outputDirectory, cancellationToken);
-
-        if (isMeasuring)
-            writeTicks += Stopwatch.GetTimestamp() - copyStarted;
+        long writeTicks = isMeasuring ? write.WriteTicks + Stopwatch.GetTimestamp() - copyStarted : 0;
 
         long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         List<string> removed = this.Reconcile(items, outputDirectory, cancellationToken);
@@ -129,18 +128,24 @@ internal sealed class SiteBuilder
 
         if (isMeasuring)
         {
-            this.ReportCounters(
-                items.Count,
-                pages.Count,
-                written.Count + copied.Count,
-                removed.Count,
-                (scanTicks, renderTicks, composeTicks, writeTicks, removeTicks),
-                elapsed);
+            this.ReportCounters(new BuildCounterContext
+            {
+                ItemCount = items.Count,
+                PageCount = pages.Count,
+                FileCount = write.Written.Count + copied.Count,
+                RemovedCount = removed.Count,
+                ScanTicks = scanTicks,
+                RenderTicks = renderTicks,
+                ComposeTicks = write.ComposeTicks,
+                WriteTicks = writeTicks,
+                RemoveTicks = removeTicks,
+                Elapsed = elapsed,
+            });
         }
 
         return new BuildReport
         {
-            Pages = written,
+            Pages = write.Written,
             Copies = copied,
             Removed = removed,
             Elapsed = elapsed,
@@ -149,7 +154,7 @@ internal sealed class SiteBuilder
 
     #region Helpers
 
-    private async Task<(List<string> Written, long ComposeTicks, long WriteTicks)> WritePagesAsync(
+    private async Task<PageWriteContext> WritePagesAsync(
         IReadOnlyList<ContentPage> pages,
         SiteOptions options,
         string outputDirectory,
@@ -192,7 +197,12 @@ internal sealed class SiteBuilder
             written.Add(page.OutputPath);
         }
 
-        return (written, composeTicks, writeTicks);
+        return new PageWriteContext
+        {
+            Written = written,
+            ComposeTicks = composeTicks,
+            WriteTicks = writeTicks,
+        };
     }
 
     private static string ComposeDocument(RenderContext context, Dictionary<string, string> banners)
@@ -242,16 +252,16 @@ internal sealed class SiteBuilder
         foreach (ContentItem item in items)
             published.Add(item.OutputPath);
 
-        List<string> removed = [];
+        PruneContext context = new()
+        {
+            Prefix = [],
+            Published = published,
+            Removed = [],
+        };
 
-        this.PruneDirectory(
-            this._fileSystem.DirectoryInfo.New(outputDirectory),
-            prefix: [],
-            published,
-            removed,
-            cancellationToken);
+        this.PruneDirectory(this._fileSystem.DirectoryInfo.New(outputDirectory), context, cancellationToken);
 
-        return removed;
+        return context.Removed;
     }
 
     /// <summary>
@@ -265,14 +275,8 @@ internal sealed class SiteBuilder
     /// <param name="directory">
     ///     The directory to walk.
     /// </param>
-    /// <param name="prefix">
-    ///     The output-relative segments leading to <paramref name="directory"/>, empty at the output root.
-    /// </param>
-    /// <param name="published">
-    ///     The output-relative path of every file the site consists of.
-    /// </param>
-    /// <param name="removed">
-    ///     Receives the output-relative path of each file that was deleted.
+    /// <param name="context">
+    ///     What this level of the walk carries, deletions included.
     /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
@@ -283,9 +287,7 @@ internal sealed class SiteBuilder
     /// </returns>
     private bool PruneDirectory(
         IDirectoryInfo directory,
-        string[] prefix,
-        HashSet<string> published,
-        List<string> removed,
+        PruneContext context,
         CancellationToken cancellationToken)
     {
         // Materialized ahead of the first delete. POSIX leaves it unspecified whether a directory stream
@@ -305,11 +307,11 @@ internal sealed class SiteBuilder
                 continue;
             }
 
-            string[] segments = [.. prefix, entry.Name];
+            string[] segments = [.. context.Prefix, entry.Name];
 
             if (entry is IDirectoryInfo child)
             {
-                if (this.PruneDirectory(child, segments, published, removed, cancellationToken))
+                if (this.PruneDirectory(child, context with { Prefix = segments }, cancellationToken))
                 {
                     occupied = true;
                     continue;
@@ -321,33 +323,27 @@ internal sealed class SiteBuilder
 
             string relativePath = this._fileSystem.Path.Combine(segments);
 
-            if (published.Contains(relativePath))
+            if (context.Published.Contains(relativePath))
             {
                 occupied = true;
                 continue;
             }
 
             entry.Delete();
-            removed.Add(relativePath);
+            context.Removed.Add(relativePath);
         }
 
         return occupied;
     }
 
-    private void ReportCounters(
-        int itemCount,
-        int pageCount,
-        int fileCount,
-        int removedCount,
-        (long Scan, long Render, long Compose, long Write, long Remove) ticks,
-        TimeSpan elapsed)
+    private void ReportCounters(BuildCounterContext counters)
     {
-        this._logger.LogScanCompleted(itemCount, ticks.Scan.TotalMilliseconds);
-        this._logger.LogRenderCompleted(pageCount, ticks.Render.TotalMilliseconds);
-        this._logger.LogComposeCompleted(pageCount, ticks.Compose.TotalMilliseconds);
-        this._logger.LogWriteCompleted(fileCount, ticks.Write.TotalMilliseconds);
-        this._logger.LogRemoveCompleted(removedCount, ticks.Remove.TotalMilliseconds);
-        this._logger.LogBuildCompleted(fileCount + removedCount, elapsed.TotalMilliseconds);
+        this._logger.LogScanCompleted(counters.ItemCount, counters.ScanTicks.TotalMilliseconds);
+        this._logger.LogRenderCompleted(counters.PageCount, counters.RenderTicks.TotalMilliseconds);
+        this._logger.LogComposeCompleted(counters.PageCount, counters.ComposeTicks.TotalMilliseconds);
+        this._logger.LogWriteCompleted(counters.FileCount, counters.WriteTicks.TotalMilliseconds);
+        this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
+        this._logger.LogBuildCompleted(counters.FileCount + counters.RemovedCount, counters.Elapsed.TotalMilliseconds);
     }
 
     #endregion
