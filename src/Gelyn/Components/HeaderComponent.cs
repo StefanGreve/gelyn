@@ -25,11 +25,11 @@ internal static class HeaderComponent
         var navItems = context.Navigation.Select(page =>
         {
             bool isCurrent = string.Equals(context.Page.Href, page.Href, StringComparison.Ordinal);
-            string current = isCurrent ? "aria-current=\"page\"" : string.Empty;
+            string current = isCurrent ? " aria-current=\"page\"" : string.Empty;
 
             return $"""
                 <li>
-                    <a {current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>
+                    <a{current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>
                 </li>
             """;
         });

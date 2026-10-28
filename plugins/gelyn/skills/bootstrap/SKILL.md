@@ -54,11 +54,11 @@ keeping that name whatever the answer, so a theme can be swapped later without t
 
 ## 4. Copy the templates
 
-`templates/` into `content/`, keeping the tree: `index.md`, `blogs/index.md`, `blogs/hello.md`. Replace
+`templates/` into `content/`, keeping the tree: `index.md`, `blog/index.md`, `blog/hello.md`. Replace
 `{{TITLE}}` and `{{AUTHOR}}`, and `{{DATE}}` with today's date as `YYYY-MM-DD`. The stylesheet is not copied
 from here; step 3 writes it.
 
-Navigation follows depth, so `index.md` and `blogs/index.md` are linked in the banner and `blogs/hello.md` is
+Navigation follows depth, so `index.md` and `blog/index.md` are linked in the banner and `blog/hello.md` is
 not. Keep further posts beside `hello.md` to inherit that.
 
 ## 5. Ask about JavaScript, and write none
@@ -68,7 +68,7 @@ rule instead, so the user writes one where they want it:
 
 A `.css` or `.js` file is linked from every page in its own directory and in every directory below it.
 Placement is the whole mechanism and nothing is declared, so `styles.css` at the content root reaches every
-page, while a `blogs/blogs.css` would reach the posts alone. Links are written outermost first, so a deeper
+page, while a `blog/blog.css` would reach the posts alone. Links are written outermost first, so a deeper
 file overrides a shallower one, and a sibling branch is never reached. A script is written as
 `<script defer>` and therefore runs in document order, outermost first.
 

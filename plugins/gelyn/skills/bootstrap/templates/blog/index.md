@@ -1,9 +1,9 @@
 ---
-title: Blogs
+title: Blog
 description: Posts
 ---
 
-# Blogs
+# Blog
 
 <!-- TODO: render Table of Content here -->
 
