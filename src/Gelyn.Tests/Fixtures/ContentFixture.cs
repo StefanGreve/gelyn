@@ -260,6 +260,39 @@ internal sealed class ContentFixture
             .Write("blog/hello.md", "Hello");
 
     /// <summary>
+    ///     Creates a fixture holding a section index that carries a <c>[TOD]</c> marker, together with the
+    ///     pages the resulting table is expected to list and the pages it is expected to leave out.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html              2026-01-01
+    ///     about.md             -> about.html              2026-01-15
+    ///     blog/index.md        -> blog/index.html         2026-02-01   carries [TOD]
+    ///     blog/hello.md        -> blog/hello.html         2026-03-01   listed
+    ///     blog/draft.md        -> blog/draft.html         no date      a draft, so no table lists it
+    ///     blog/2026/index.md   -> blog/2026/index.html    2026-06-01   listed, and marked as a folder
+    ///     blog/2026/retro.md   -> blog/2026/retro.html    2026-07-01   listed
+    ///     blogs/other.md       -> blogs/other.html        2026-04-01   beside blog, so out of scope
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateTabulated(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteDated("index.md", "Home", "2026-01-01")
+            .WriteDated("about.md", "About", "2026-01-15")
+            .WriteDated("blog/index.md", "Blog", "2026-02-01", "[TOD]")
+            .WriteDated("blog/hello.md", "Hello", "2026-03-01")
+            .Write("blog/draft.md", "Draft")
+            .WriteDated("blog/2026/index.md", "Year 2026", "2026-06-01")
+            .WriteDated("blog/2026/retro.md", "Retro", "2026-07-01")
+            .WriteDated("blogs/other.md", "Other", "2026-04-01");
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">
@@ -296,6 +329,34 @@ internal sealed class ContentFixture
     public ContentFixture Write(string relativePath, string? title = null) => this.WriteFile(
         relativePath,
         title is null ? "# Untitled" : $"---{Environment.NewLine}title: {title}{Environment.NewLine}---");
+
+    /// <summary>
+    ///     Adds one source file that declares a date, creating the directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="title">
+    ///     The title to declare in the front matter.
+    /// </param>
+    /// <param name="date">
+    ///     The date to declare in the front matter, in ISO 8601 form.
+    /// </param>
+    /// <param name="body">
+    ///     The Markdown to write below the front matter, which defaults to nothing.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteDated(string relativePath, string title, string date, string body = "") =>
+        this.WriteFile(relativePath, string.Join(
+            Environment.NewLine,
+            "---",
+            $"title: {title}",
+            $"date: {date}",
+            "---",
+            string.Empty,
+            body));
 
     /// <summary>
     ///     Adds one file verbatim, creating the directories leading to it.
@@ -507,10 +568,6 @@ internal sealed class ContentFixture
             .Write("blog/hello.md", "Hello")
             .Write("blog/2026/index.md", "2026");
     }
-
-    private ContentFixture WriteDated(string relativePath, string title, string date) => this.WriteFile(
-        relativePath,
-        string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---"));
 
     private string Resolve(string relativePath) => this.Resolve(this.ContentRoot, relativePath);
 

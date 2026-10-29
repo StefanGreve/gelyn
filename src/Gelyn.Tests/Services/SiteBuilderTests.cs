@@ -538,6 +538,133 @@ public partial class SiteBuilderTests
 
     #endregion // Shared Fragment Tests
 
+    #region Table Of Documents Tests
+
+    /// <summary>
+    ///     Verifies that a marker is replaced by a table of the pages at and below the marker's own
+    ///     directory, newest first, with nothing of the marker left behind.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Marker_IsReplacedByTheTable()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateTabulated();
+        string section = Path.Combine("blog", "index.html");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(TableLinks(fixture, section))
+                .IsEqualTo("/blog/2026/retro.html,/blog/2026/index.html,/blog/hello.html");
+
+            await Assert.That(ReadPage(fixture, section)).DoesNotContain("[TOD]");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an index below the marker is marked as a folder while every other entry is marked as
+    ///     a file, which is the only automated check the theme rules have.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_NestedIndex_IsMarkedAsAFolder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateTabulated();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(TableTypes(fixture, Path.Combine("blog", "index.html")))
+            .IsEqualTo("file,folder,file");
+    }
+
+    /// <summary>
+    ///     Verifies that a marker on one page leaves every other page of the site byte for byte as it was.
+    /// </summary>
+    /// <remarks>
+    ///     The substitution runs during compose, which every page passes through, so this is what keeps one
+    ///     page's table from reaching the rest of the site.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_PagesWithoutAMarker_AreUnchanged()
+    {
+        // Arrange
+        ContentFixture marked = ContentFixture.CreateTabulated();
+        ContentFixture plain = ContentFixture.CreateTabulated().WriteDated("blog/index.md", "Blog", "2026-02-01");
+        string section = Path.Combine("blog", "index.html");
+
+        string[] others =
+        [
+            "index.html",
+            "about.html",
+            Path.Combine("blog", "hello.html"),
+            Path.Combine("blog", "draft.html"),
+            Path.Combine("blog", "2026", "index.html"),
+            Path.Combine("blog", "2026", "retro.html"),
+            Path.Combine("blogs", "other.html"),
+        ];
+
+        // Act
+        await marked.Builder.BuildAsync(CancellationToken.None);
+        await plain.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            foreach (string path in others)
+                await Assert.That(ReadPage(marked, path)).IsEqualTo(ReadPage(plain, path));
+
+            // Without this the test would pass just as well on a build that substituted nothing anywhere.
+            await Assert.That(ReadPage(marked, section)).IsNotEqualTo(ReadPage(plain, section));
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a marker written inside a fenced block or a code span is left alone while a real
+    ///     marker on the same page is still expanded.
+    /// </summary>
+    /// <remarks>
+    ///     The whole choice of matching the rendered HTML rests on this: Markdig escapes the brackets of both
+    ///     forms, so a marker shown as an example in the documentation cannot be substituted.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_EscapedMarker_IsLeftAlone()
+    {
+        // Arrange
+        string body = string.Join(
+            Environment.NewLine,
+            "[TOD]",
+            string.Empty,
+            "An inline `[TOD]` stays code.",
+            string.Empty,
+            "```",
+            "[TOD]",
+            "```");
+
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteDated("index.md", "Home", "2026-01-01", body)
+            .WriteDated("about.md", "About", "2026-01-15");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string html = ReadPage(fixture, "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(TableLinks(fixture, "index.html")).IsEqualTo("/about.html");
+            await Assert.That(html).Contains("<code>[TOD]</code>");
+            await Assert.That(html).Contains("<pre><code>[TOD]");
+        }
+    }
+
+    #endregion // Table Of Documents Tests
+
     #region Canonical Tests
 
     /// <summary>
@@ -1020,6 +1147,17 @@ public partial class SiteBuilderTests
     private static string ReadFooter(ContentFixture fixture, string outputPath) =>
         FooterBlock().Match(ReadPage(fixture, outputPath)).Value;
 
+    private static string ReadTable(ContentFixture fixture, string outputPath) =>
+        TableBlock().Match(ReadPage(fixture, outputPath)).Value;
+
+    private static string TableLinks(ContentFixture fixture, string outputPath) => string.Join(
+        ',',
+        TableLink().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["href"].Value));
+
+    private static string TableTypes(ContentFixture fixture, string outputPath) => string.Join(
+        ',',
+        TableRow().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["type"].Value));
+
     private static string? ReadCanonical(ContentFixture fixture, string outputPath) =>
         Canonical(ReadPage(fixture, outputPath));
 
@@ -1087,6 +1225,15 @@ public partial class SiteBuilderTests
 
     [GeneratedRegex("<footer>.*?</footer>", RegexOptions.Singleline)]
     private static partial Regex FooterBlock();
+
+    [GeneratedRegex("<table>.*?</table>", RegexOptions.Singleline)]
+    private static partial Regex TableBlock();
+
+    [GeneratedRegex("""<tr data-type="(?<type>[^"]*)">""")]
+    private static partial Regex TableRow();
+
+    [GeneratedRegex("""<a href="(?<href>[^"]*)">""")]
+    private static partial Regex TableLink();
 
     [GeneratedRegex("<nav>.*?</nav>", RegexOptions.Singleline)]
     private static partial Regex NavigationBlock();
