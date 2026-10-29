@@ -12,7 +12,6 @@ namespace Gelyn.Components;
 /// </summary>
 internal static class HeadComponent
 {
-    private const string DateFormat = "yyyy-MM-dd";
     private const string MathRenderer = "renderMathInElement(document.body);";
     private const string DiagramRenderer = "mermaid.initialize({ startOnLoad: true });";
 
@@ -46,7 +45,7 @@ internal static class HeadComponent
 
         if (context.Page.Date is DateOnly revised)
         {
-            string date = revised.ToString(DateFormat, Tool.Culture);
+            string date = revised.ToString(DateFormat.Machine, Tool.Culture);
             head.AppendLine($"""<meta name="revised" content="{date}">""");
         }
 

@@ -12,9 +12,6 @@ namespace Gelyn.Components;
 /// </summary>
 internal static class FooterComponent
 {
-    private const string DateFormat = "MMM d, yyyy";
-    private const string MachineDateFormat = "yyyy-MM-dd";
-
     /// <summary>
     ///     Renders the block.
     /// </summary>
@@ -36,8 +33,8 @@ internal static class FooterComponent
         if (context.Page.Date is DateOnly date)
         {
             // The attribute is a machine format, so it stays invariant even if the displayed date is localized.
-            string machine = date.ToString(MachineDateFormat, CultureInfo.InvariantCulture);
-            revised = $""" - last revised <time datetime="{machine}">{date.ToString(DateFormat, Tool.Culture)}</time>""";
+            string machine = date.ToString(DateFormat.Machine, CultureInfo.InvariantCulture);
+            revised = $""" - last revised <time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";
         }
 
         footer.AppendLine("<footer>");

@@ -156,6 +156,7 @@ public class HeadComponentTests
         {
             Options = options,
             Navigation = [],
+            Documents = [],
             Page = new ContentPage
             {
                 OutputPath = "index.html",

@@ -19,6 +19,11 @@ internal sealed record RenderContext
     public required IReadOnlyList<ContentPage> Navigation { get; init; }
 
     /// <summary>
+    ///     Every page the site is built from, landing page first.
+    /// </summary>
+    public required IReadOnlyList<ContentPage> Documents { get; init; }
+
+    /// <summary>
     ///     The page currently being rendered.
     /// </summary>
     public required ContentPage Page { get; init; }

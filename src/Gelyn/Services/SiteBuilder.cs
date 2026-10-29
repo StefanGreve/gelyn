@@ -174,7 +174,7 @@ internal sealed class SiteBuilder
 
         foreach (ContentPage page in pages)
         {
-            RenderContext context = page.ToRenderContext(options, navigation);
+            RenderContext context = page.ToRenderContext(options, navigation, pages);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
             string html = ComposeDocument(context, banners);
