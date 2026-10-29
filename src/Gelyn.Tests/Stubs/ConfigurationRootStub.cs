@@ -73,7 +73,6 @@ internal sealed class ConfigurationRootStub : IConfigurationRoot
     {
         this.Reloads++;
 
-        if (this._failure is not null)
-            throw this._failure;
+        if (this._failure is not null) throw this._failure;
     }
 }

@@ -227,8 +227,7 @@ internal sealed class SiteWatcher
                     changed.Add(path);
             }
 
-            if (changed.Count == 0)
-                continue;
+            if (changed.Count == 0) continue;
 
             trigger = changed[0];
             this._logger.LogChangeDetected(changed.Count, trigger);
@@ -298,8 +297,7 @@ internal sealed class SiteWatcher
     /// </returns>
     private bool HasChanged(string path)
     {
-        if (this._fileSystem.Directory.Exists(path))
-            return true;
+        if (this._fileSystem.Directory.Exists(path)) return true;
 
         IFileInfo entry = this._fileSystem.FileInfo.New(path);
 

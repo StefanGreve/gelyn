@@ -133,16 +133,14 @@ internal sealed class StaticFileResolver
 
         // One test over the resolved path covers `..`, a rooted path and an encoded separator alike, and it
         // runs before any file is touched.
-        if (!PathBoundary.Contains(root, candidate))
-            return false;
+        if (!PathBoundary.Contains(root, candidate)) return false;
 
         IPath paths = this._fileSystem.Path;
 
         if (this._fileSystem.Directory.Exists(candidate))
             return this.TryUse(paths.Combine(candidate, IndexFileName), out path);
 
-        if (this.TryUse(candidate, out path))
-            return true;
+        if (this.TryUse(candidate, out path)) return true;
 
         return paths.GetExtension(candidate).Length == 0
             && this.TryUse(candidate + HtmlExtension, out path);

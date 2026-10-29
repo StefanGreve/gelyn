@@ -21,7 +21,18 @@ internal static class TableOfDocumentsComponent
     ///     The rendered form of a <c>[TOD]</c> marker, which is a paragraph holding the literal and nothing else.
     /// </summary>
     internal const string Marker = "<p>[TOD]</p>";
+
+    private const string IndexFileName = "index.html";
+    private const string FileType = "file";
     private const string FolderType = "folder";
+
+    // One description of the columns, so that a column added later is an entry here and not a second edit.
+    // Each cell writes its own markup and escapes its own text, because neither column is plain text.
+    private static readonly (string Header, Func<ContentPage, string> Cell)[] Columns =
+    [
+        ("Date", RenderDate),
+        ("Title", RenderTitle),
+    ];
 
     /// <summary>
     ///     Renders the table.
@@ -43,8 +54,7 @@ internal static class TableOfDocumentsComponent
             .OrderByDescending(static page => page.Date)
             .ThenBy(static page => page.Title, StringComparer.Ordinal)];
 
-        if (documents.Count == 0)
-            return string.Empty;
+        if (documents.Count == 0) return string.Empty;
 
         var table = new StringBuilder();
 
@@ -107,8 +117,7 @@ internal static class TableOfDocumentsComponent
         ReadOnlySpan<char> relativePath = page.OutputPath.AsSpan(scope.Length);
         int separator = relativePath.IndexOf(Path.DirectorySeparatorChar);
 
-        if (separator < 0)
-            return FileType;
+        if (separator < 0) return FileType;
 
         return relativePath[(separator + 1)..].Equals(IndexFileName, StringComparison.Ordinal)
             ? FolderType

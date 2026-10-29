@@ -39,8 +39,7 @@ internal static class LoggingBuilderExtensions
         logging.ClearProviders();
         logging.SetMinimumLevel(level);
 
-        if (level == LogLevel.None)
-            return logging;
+        if (level == LogLevel.None) return logging;
 
         // Standard output carries the command's result, and this threshold defaults to None, meaning stdout.
         logging.AddConsole(static options => options.LogToStandardErrorThreshold = LogLevel.Trace);

@@ -71,8 +71,7 @@ internal static class ConfigurationManagerExtensions
 
         foreach ((string option, string key) in promotions)
         {
-            if (configuration[option] is string value)
-                overrides[key] = value;
+            if (configuration[option] is string value) overrides[key] = value;
         }
 
         if (configuration[OverrideOptions.Exclude] is string patterns)
