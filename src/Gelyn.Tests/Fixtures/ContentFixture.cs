@@ -271,7 +271,7 @@ internal sealed class ContentFixture
     ///     blog/hello.md        -> blog/hello.html         2026-03-01   listed
     ///     blog/draft.md        -> blog/draft.html         no date      a draft, so no table lists it
     ///     blog/2026/index.md   -> blog/2026/index.html    2026-06-01   listed, and marked as a folder
-    ///     blog/2026/retro.md   -> blog/2026/retro.html    2026-07-01   listed
+    ///     blog/2026/retro.md   -> blog/2026/retro.html    2026-07-01   a directory down, so not listed
     ///     blogs/other.md       -> blogs/other.html        2026-04-01   beside blog, so out of scope
     ///     </code>
     /// </remarks>

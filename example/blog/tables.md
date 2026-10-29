@@ -18,8 +18,8 @@ A cell holding a literal pipe needs escaping, so `a \| b` keeps both halves in o
 
 ## Generated tables
 
-The table on the [blog index](index.html) is not written by hand. A `[TOD]` marker is replaced at build
-time by a row per page in that directory and below it, dated newest first, which is why a new post needs no
-link added anywhere.
+The table on the [blog index](index.html) is not written by hand. A `[TOD]` marker is replaced at build time
+by a row per page in that directory, plus one per section below it, dated newest first, which is why a new
+post needs no link added anywhere.
 
-This post declares a date, so that table lists it.
+This post sits beside that index and declares a date, so the table lists it as a file row.

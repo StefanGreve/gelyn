@@ -541,8 +541,8 @@ public partial class SiteBuilderTests
     #region Table Of Documents Tests
 
     /// <summary>
-    ///     Verifies that a marker is replaced by a table of the pages at and below the marker's own
-    ///     directory, newest first, with nothing of the marker left behind.
+    ///     Verifies that a marker is replaced by a table listing the marker's own directory, newest first,
+    ///     with nothing of the marker left behind.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Marker_IsReplacedByTheTable()
@@ -558,15 +558,15 @@ public partial class SiteBuilderTests
         using (Assert.Multiple())
         {
             await Assert.That(TableLinks(fixture, section))
-                .IsEqualTo("/blog/2026/retro.html,/blog/2026/index.html,/blog/hello.html");
+                .IsEqualTo("/blog/2026/index.html,/blog/hello.html");
 
             await Assert.That(ReadPage(fixture, section)).DoesNotContain("[TOD]");
         }
     }
 
     /// <summary>
-    ///     Verifies that an index below the marker is marked as a folder while every other entry is marked as
-    ///     a file, which is the only automated check the theme rules have.
+    ///     Verifies that an index one directory below the marker is marked as a folder while every entry
+    ///     beside the marker is marked as a file, which is the only automated check the theme rules have.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_NestedIndex_IsMarkedAsAFolder()
@@ -579,7 +579,7 @@ public partial class SiteBuilderTests
 
         // Assert
         await Assert.That(TableTypes(fixture, Path.Combine("blog", "index.html")))
-            .IsEqualTo("file,folder,file");
+            .IsEqualTo("folder,file");
     }
 
     /// <summary>

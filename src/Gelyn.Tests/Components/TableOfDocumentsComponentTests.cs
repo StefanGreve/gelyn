@@ -20,21 +20,63 @@ public partial class TableOfDocumentsComponentTests
     #region Scope Tests
 
     /// <summary>
-    ///     Verifies that the table lists the pages below the marker's own directory as well as the pages
-    ///     beside it, so that a section index reaches its whole subtree.
+    ///     Verifies that a page inside a directory below the marker is left out, the directory's own index
+    ///     standing for it instead, so that the table reads as a listing of one directory.
     /// </summary>
     [Test]
-    public async Task Render_Test_NestedPage_IsListed()
+    public async Task Render_Test_NestedPage_IsNotListed()
     {
         // Act
         string table = Render(
             "blog/index.html",
             Page("blog/index.html", "Blog", "2026-02-01"),
             Page("blog/hello.html", "Hello", "2026-03-01"),
+            Page("blog/2026/index.html", "Year 2026", "2026-06-01"),
             Page("blog/2026/retro.html", "Retro", "2026-07-01"));
 
         // Assert
-        await Assert.That(Links(table)).IsEqualTo("/blog/2026/retro.html,/blog/hello.html");
+        await Assert.That(Links(table)).IsEqualTo("/blog/2026/index.html,/blog/hello.html");
+    }
+
+    /// <summary>
+    ///     Verifies that an index more than one directory below the marker is left out as well, so that a
+    ///     table never reaches past the directories it lists.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_IndexTwoDirectoriesDown_IsNotListed()
+    {
+        // Act
+        string table = Render(
+            "blog/index.html",
+            Page("blog/index.html", "Blog", "2026-02-01"),
+            Page("blog/2026/index.html", "Year 2026", "2026-06-01"),
+            Page("blog/2026/q3/index.html", "Q3", "2026-07-01"));
+
+        // Assert
+        await Assert.That(Links(table)).IsEqualTo("/blog/2026/index.html");
+    }
+
+    /// <summary>
+    ///     Verifies that a directory whose index declares no date is absent from the table along with
+    ///     everything inside it, the index being the only row that stands for the directory.
+    /// </summary>
+    /// <remarks>
+    ///     This is the sharpest consequence of listing one level at a time: the draft rule applied to a
+    ///     section index takes the whole section out of the listings, not one page.
+    /// </remarks>
+    [Test]
+    public async Task Render_Test_DirectoryWithADraftIndex_IsNotListed()
+    {
+        // Act
+        string table = Render(
+            "blog/index.html",
+            Page("blog/index.html", "Blog", "2026-02-01"),
+            Page("blog/hello.html", "Hello", "2026-03-01"),
+            Page("blog/2026/index.html", "Year 2026"),
+            Page("blog/2026/retro.html", "Retro", "2026-07-01"));
+
+        // Assert
+        await Assert.That(Links(table)).IsEqualTo("/blog/hello.html");
     }
 
     /// <summary>
@@ -90,21 +132,22 @@ public partial class TableOfDocumentsComponentTests
     }
 
     /// <summary>
-    ///     Verifies that a marker on the landing page reaches the whole site, the content root resolving to
-    ///     the empty prefix every page carries.
+    ///     Verifies that a marker on the landing page lists the root of the site, the content root resolving
+    ///     to the empty prefix every page carries.
     /// </summary>
     [Test]
-    public async Task Render_Test_MarkerOnTheLandingPage_ListsTheWholeSite()
+    public async Task Render_Test_MarkerOnTheLandingPage_ListsTheRoot()
     {
         // Act
         string table = Render(
             "index.html",
             Page("index.html", "Home", "2026-01-01"),
             Page("about.html", "About", "2026-01-15"),
+            Page("blog/index.html", "Blog", "2026-02-01"),
             Page("blog/hello.html", "Hello", "2026-03-01"));
 
         // Assert
-        await Assert.That(Links(table)).IsEqualTo("/blog/hello.html,/about.html");
+        await Assert.That(Links(table)).IsEqualTo("/blog/index.html,/about.html");
     }
 
     #endregion // Scope Tests
@@ -232,8 +275,8 @@ public partial class TableOfDocumentsComponentTests
     #region Item Type Tests
 
     /// <summary>
-    ///     Verifies that an index below the marker is marked as a folder while every other entry is marked
-    ///     as a file, which is the distinction the shipped themes style.
+    ///     Verifies that an index one directory below the marker is marked as a folder while every entry
+    ///     beside the marker is marked as a file, which is the distinction the shipped themes style.
     /// </summary>
     [Test]
     public async Task Render_Test_NestedIndex_IsMarkedAsAFolder()
@@ -242,7 +285,7 @@ public partial class TableOfDocumentsComponentTests
         string table = Render(
             "blog/index.html",
             Page("blog/index.html", "Blog", "2026-02-01"),
-            Page("blog/2026/retro.html", "Retro", "2026-07-01"),
+            Page("blog/later.html", "Later", "2026-07-01"),
             Page("blog/2026/index.html", "Year 2026", "2026-06-01"),
             Page("blog/hello.html", "Hello", "2026-03-01"));
 
@@ -251,20 +294,21 @@ public partial class TableOfDocumentsComponentTests
     }
 
     /// <summary>
-    ///     Verifies that a page whose name merely ends with the index file name is marked as a file, the
-    ///     last segment having to match in full.
+    ///     Verifies that a page whose name merely ends with the index file name does not stand for its
+    ///     directory, the segment having to match in full.
     /// </summary>
     [Test]
-    public async Task Render_Test_NestedPageNamedLikeAnIndex_IsMarkedAsAFile()
+    public async Task Render_Test_NestedPageNamedLikeAnIndex_IsNotListed()
     {
         // Act
         string table = Render(
             "blog/index.html",
             Page("blog/index.html", "Blog", "2026-02-01"),
+            Page("blog/hello.html", "Hello", "2026-03-01"),
             Page("blog/2026/myindex.html", "My Index", "2026-07-01"));
 
         // Assert
-        await Assert.That(Types(table)).IsEqualTo("file");
+        await Assert.That(Links(table)).IsEqualTo("/blog/hello.html");
     }
 
     /// <summary>

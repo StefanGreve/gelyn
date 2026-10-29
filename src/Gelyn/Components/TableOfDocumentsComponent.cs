@@ -21,18 +21,7 @@ internal static class TableOfDocumentsComponent
     ///     The rendered form of a <c>[TOD]</c> marker, which is a paragraph holding the literal and nothing else.
     /// </summary>
     internal const string Marker = "<p>[TOD]</p>";
-
-    private const string IndexFileName = "index.html";
-    private const string FileType = "file";
     private const string FolderType = "folder";
-
-    // One description of the columns, so that a column added later is an entry here and not a second edit.
-    // Each cell writes its own markup and escapes its own text, because neither column is plain text.
-    private static readonly (string Header, Func<ContentPage, string> Cell)[] Columns =
-    [
-        ("Date", RenderDate),
-        ("Title", RenderTitle),
-    ];
 
     /// <summary>
     ///     Renders the table.
@@ -99,27 +88,31 @@ internal static class TableOfDocumentsComponent
             : outputPath[..(separator + 1)];
     }
 
-    // Three rules in one: no table lists a draft, the marker's own page is never an entry in its own table,
-    // and the scope reaches the marker's directory and below.
+    // No table lists a draft, its own page, or anything the scope does not hold directly. StartsWith comes
+    // first because ResolveType slices from the scope's length and means nothing outside it.
     private static bool IsListed(ContentPage page, string current, string scope) =>
         !IsDraft(page)
         && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
-        && page.OutputPath.StartsWith(scope, StringComparison.Ordinal);
+        && page.OutputPath.StartsWith(scope, StringComparison.Ordinal)
+        && ResolveType(page, scope) is not null;
 
     // A document declares a date once it is ready to be found, so the absence of one is what marks it unfinished.
     private static bool IsDraft(ContentPage page) =>
         page.Date is null;
 
-    // An index below the scope is the document of its own directory, which is the distinction the attribute
-    // carries. The last segment has to match in full, because a page named myindex.md ends the same way.
-    private static string ResolveType(ContentPage page, string scope)
+    // A directory listing: pages beside the marker, plus each directory below it as its own index. Null is
+    // anything deeper. The segment matches in full, because myindex.md ends the same way.
+    private static string? ResolveType(ContentPage page, string scope)
     {
         ReadOnlySpan<char> relativePath = page.OutputPath.AsSpan(scope.Length);
-        int separator = relativePath.LastIndexOf(Path.DirectorySeparatorChar);
+        int separator = relativePath.IndexOf(Path.DirectorySeparatorChar);
 
-        return separator >= 0 && relativePath[(separator + 1)..].Equals(IndexFileName, StringComparison.Ordinal)
+        if (separator < 0)
+            return FileType;
+
+        return relativePath[(separator + 1)..].Equals(IndexFileName, StringComparison.Ordinal)
             ? FolderType
-            : FileType;
+            : null;
     }
 
     private static string RenderDate(ContentPage page)

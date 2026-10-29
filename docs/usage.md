@@ -74,7 +74,7 @@ Gelyn exits with code 1 and writes nothing, because it renders every page before
 message comes from the YAML reader, which names neither the file nor the line.
 
 A `date` is also what publishes a page. A page that declares one is listed in the
-[table of documents](#table-of-documents) of every directory above it, and a page that declares none is a
+[table of documents](#table-of-documents) of the directory holding it, and a page that declares none is a
 draft that no table lists.
 
 Nothing else about a draft changes. Gelyn renders it, writes it to your output directory, and serves it at its
@@ -128,7 +128,8 @@ section out. Write `[TOD]` alone on a line and Gelyn replaces it with a table of
 [TOD]
 ```
 
-Given this tree, where `blog/index.md` carries the marker:
+A table lists one directory, the way a file browser does. Given this tree, where `blog/index.md` carries the
+marker:
 
 ```text
 content/
@@ -138,36 +139,42 @@ content/
         hello.md      -> blog/hello.html        listed
         draft.md      -> blog/draft.html        declares no date, so not listed
         2026/
-            index.md  -> blog/2026/index.html   listed, and marked as a folder
-            retro.md  -> blog/2026/retro.html   listed
+            index.md  -> blog/2026/index.html   listed, as the row standing for 2026/
+            retro.md  -> blog/2026/retro.html   a directory down, so listed by 2026/ instead
 ```
 
-the table holds three rows, newest first: `retro.html`, then `2026/index.html`, then `hello.html`. Five rules
-decide what any table holds:
+the table holds two rows, newest first: `2026/index.html`, then `hello.html`. Five rules decide what any
+table holds:
 
-| Rule   | Detail                                                                                                         |
-| ------ | -------------------------------------------------------------------------------------------------------------- |
-| Scope  | The marker's own directory and every directory below it. A marker in `content/index.md` covers the whole site. |
-| Self   | The page carrying the marker is never one of its own entries.                                                  |
-| Drafts | A page declaring no `date` is left out. See [Front matter](#front-matter).                                     |
-| Order  | Newest first, with the title breaking a tie between two pages sharing a date.                                  |
-| Empty  | A table with no entries renders nothing at all, not an empty table.                                            |
+| Rule   | Detail                                                                                               |
+| ------ | ---------------------------------------------------------------------------------------------------- |
+| Scope  | The marker's own directory, one level deep. A directory below it is one row, standing for its index. |
+| Self   | The page carrying the marker is never one of its own entries.                                        |
+| Drafts | A page declaring no `date` is left out. See [Front matter](#front-matter).                           |
+| Order  | Newest first, with the title breaking a tie between two pages sharing a date.                        |
+| Empty  | A table with no entries renders nothing at all, not an empty table.                                  |
 
 Each row carries the date and the title, the title linking to the page:
 
 ```html
-<tr data-type="file">
-<td><time datetime="2026-07-01">Jul 1, 2026</time></td>
-<td><a href="/blog/2026/retro.html">Retro</a></td>
+<tr data-type="folder">
+<td><time datetime="2026-06-01">Jun 1, 2026</time></td>
+<td><a href="/blog/2026/index.html">Year 2026</a></td>
 </tr>
 ```
 
-`data-type` is your hook for telling the two kinds of row apart. It reads `folder` for a section index below
-the marker's own directory, which stands for that directory, and `file` for every other page. Both shipped
-themes style the distinction, and a theme that ignores the attribute renders a plain table.
+`data-type` is your hook for telling the two kinds of row apart. It reads `folder` for the row standing for a
+directory, which is that directory's own `index.md`, and `file` for a page sitting beside the marker. Both
+shipped themes style the distinction, and a theme that ignores the attribute renders a plain table.
 
-Markers nest. Give `blog/index.md` and `blog/2026/index.md` one each, and the first lists everything under
-`blog/` while the second lists only what sits under `blog/2026/`.
+So a reader reaches a post two levels down by following the folder row to that directory's index, which is
+why a `[TOD]` in every index is the usual arrangement: give `blog/index.md` and `blog/2026/index.md` one each
+and each lists its own level.
+
+> [!IMPORTANT]
+> A section index is the only row standing for its directory, so a section index declaring no `date` takes the
+> whole section out of the listing above it. The pages inside are still built and still served, but nothing
+> links to them. Date every `index.md` you want reachable.
 
 Gelyn substitutes a marker standing alone as its own paragraph and nothing else, so a `[TOD]` inside a code
 span or a fenced block is published as you wrote it, and `[TOD] with trailing text` renders as text.
