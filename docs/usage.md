@@ -57,7 +57,7 @@ enableDiagramRendering: true
 | Key                      | Description                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------- |
 | `title`                  | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`                   | Fills the `revised` meta tag and dates the footer, in `yyyy-MM-dd` form.              |
+| `date`                   | Dates the footer, fills the `revised` meta tag, and lists the page in a table.        |
 | `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
 | `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
@@ -73,8 +73,14 @@ A block that isn't well-formed YAML, or that holds something other than key-valu
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The
 message comes from the YAML reader, which names neither the file nor the line.
 
-A `date` is metadata and nothing more. It orders no page and generates no listing, so a section index links its
-pages because its Markdown says so.
+A `date` is also what publishes a page. A page that declares one is listed in the
+[table of documents](#table-of-documents) of every directory above it, and a page that declares none is a
+draft that no table lists.
+
+Nothing else about a draft changes. Gelyn renders it, writes it to your output directory, and serves it at its
+own URL exactly as it does any other page, so a link pointing at it keeps working. Adding the date is what
+makes the page discoverable, and removing the date is how you take a page back out of the listings without
+deleting it.
 
 ## Page titles
 
@@ -101,7 +107,8 @@ page. Depth alone decides what Gelyn links.
 | `blog/hello.md`      | No     | A page inside a section.                     |
 | `blog/2026/index.md` | No     | An index below the first level.              |
 
-No front matter key opts a page in or out, so link anything the banner leaves out yourself.
+No front matter key opts a page in or out. Link what the banner leaves out yourself, or let a
+[table of documents](#table-of-documents) list a whole directory for you.
 
 Entries follow the order Gelyn walks the tree: the landing page first, then the remaining root-level pages,
 then one entry per section. Within a directory, Gelyn compares names ordinally, which sorts every uppercase
@@ -109,6 +116,65 @@ name ahead of every lowercase one, so `Archive.md` precedes `about.md`.
 
 The entry for the page being rendered carries [`aria-current="page"`][aria-current], which is your hook for
 styling it.
+
+## Table of documents
+
+A directory index has no way to list what sits below it, and the banner deliberately leaves the pages inside a
+section out. Write `[TOD]` alone on a line and Gelyn replaces it with a table of documents:
+
+```markdown
+# Blog
+
+[TOD]
+```
+
+Given this tree, where `blog/index.md` carries the marker:
+
+```text
+content/
+    index.md          -> index.html
+    blog/
+        index.md      -> blog/index.html        carries [TOD]
+        hello.md      -> blog/hello.html        listed
+        draft.md      -> blog/draft.html        declares no date, so not listed
+        2026/
+            index.md  -> blog/2026/index.html   listed, and marked as a folder
+            retro.md  -> blog/2026/retro.html   listed
+```
+
+the table holds three rows, newest first: `retro.html`, then `2026/index.html`, then `hello.html`. Five rules
+decide what any table holds:
+
+| Rule   | Detail                                                                                                         |
+| ------ | -------------------------------------------------------------------------------------------------------------- |
+| Scope  | The marker's own directory and every directory below it. A marker in `content/index.md` covers the whole site. |
+| Self   | The page carrying the marker is never one of its own entries.                                                  |
+| Drafts | A page declaring no `date` is left out. See [Front matter](#front-matter).                                     |
+| Order  | Newest first, with the title breaking a tie between two pages sharing a date.                                  |
+| Empty  | A table with no entries renders nothing at all, not an empty table.                                            |
+
+Each row carries the date and the title, the title linking to the page:
+
+```html
+<tr data-type="file">
+<td><time datetime="2026-07-01">Jul 1, 2026</time></td>
+<td><a href="/blog/2026/retro.html">Retro</a></td>
+</tr>
+```
+
+`data-type` is your hook for telling the two kinds of row apart. It reads `folder` for a section index below
+the marker's own directory, which stands for that directory, and `file` for every other page. Both shipped
+themes style the distinction, and a theme that ignores the attribute renders a plain table.
+
+Markers nest. Give `blog/index.md` and `blog/2026/index.md` one each, and the first lists everything under
+`blog/` while the second lists only what sits under `blog/2026/`.
+
+Gelyn substitutes a marker standing alone as its own paragraph and nothing else, so a `[TOD]` inside a code
+span or a fenced block is published as you wrote it, and `[TOD] with trailing text` renders as text.
+
+> [!NOTE]
+> `[TOD]` is not `[TOC]`. A table of documents lists the other documents around it; a table of contents lists
+> the headings inside one. Gelyn renders no `[TOC]` today.
 
 ## Markdown
 
