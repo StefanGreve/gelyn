@@ -107,7 +107,8 @@ internal static class TableOfDocumentsComponent
         && page.OutputPath.StartsWith(scope, StringComparison.Ordinal);
 
     // A document declares a date once it is ready to be found, so the absence of one is what marks it unfinished.
-    private static bool IsDraft(ContentPage page) => page.Date is null;
+    private static bool IsDraft(ContentPage page) =>
+        page.Date is null;
 
     // An index below the scope is the document of its own directory, which is the distinction the attribute
     // carries. The last segment has to match in full, because a page named myindex.md ends the same way.

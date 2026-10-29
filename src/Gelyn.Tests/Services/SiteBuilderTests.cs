@@ -1150,13 +1150,11 @@ public partial class SiteBuilderTests
     private static string ReadTable(ContentFixture fixture, string outputPath) =>
         TableBlock().Match(ReadPage(fixture, outputPath)).Value;
 
-    private static string TableLinks(ContentFixture fixture, string outputPath) => string.Join(
-        ',',
-        TableLink().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["href"].Value));
+    private static string TableLinks(ContentFixture fixture, string outputPath) =>
+        string.Join(',', TableLink().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["href"].Value));
 
-    private static string TableTypes(ContentFixture fixture, string outputPath) => string.Join(
-        ',',
-        TableRow().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["type"].Value));
+    private static string TableTypes(ContentFixture fixture, string outputPath) =>
+        string.Join(',', TableRow().Matches(ReadTable(fixture, outputPath)).Select(match => match.Groups["type"].Value));
 
     private static string? ReadCanonical(ContentFixture fixture, string outputPath) =>
         Canonical(ReadPage(fixture, outputPath));
@@ -1176,24 +1174,15 @@ public partial class SiteBuilderTests
     }
 
     // Joined instead of returned as a sequence, because IsEquivalentTo disregards the order under test.
-    private static string ReadStylesheets(ContentFixture fixture, string outputPath) => string.Join(
-        ',',
-        StylesheetLink()
-            .Matches(ReadPage(fixture, outputPath))
-            .Select(match => match.Groups["href"].Value));
+    private static string ReadStylesheets(ContentFixture fixture, string outputPath) =>
+        string.Join(',', StylesheetLink().Matches(ReadPage(fixture, outputPath)).Select(match => match.Groups["href"].Value));
 
-    private static string ReadScripts(ContentFixture fixture, string outputPath) => string.Join(
-        ',',
-        ScriptTag()
-            .Matches(ReadPage(fixture, outputPath))
-            .Select(match => match.Groups["src"].Value));
+    private static string ReadScripts(ContentFixture fixture, string outputPath) =>
+        string.Join(',', ScriptTag().Matches(ReadPage(fixture, outputPath)).Select(match => match.Groups["src"].Value));
 
     // Matched across both tag shapes, because ScriptTag passes over the auto-render tag's onload attribute.
-    private static string ReadMathAssets(ContentFixture fixture, string outputPath) => string.Join(
-        ',',
-        MathAsset()
-            .Matches(ReadPage(fixture, outputPath))
-            .Select(match => match.Groups["url"].Value));
+    private static string ReadMathAssets(ContentFixture fixture, string outputPath) =>
+        string.Join(',', MathAsset().Matches(ReadPage(fixture, outputPath)).Select(match => match.Groups["url"].Value));
 
     private static string? ReadDiagramImport(ContentFixture fixture, string outputPath)
     {

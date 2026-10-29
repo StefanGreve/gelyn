@@ -326,9 +326,8 @@ internal sealed class ContentFixture
     /// <returns>
     ///     The same fixture, so that calls can be chained.
     /// </returns>
-    public ContentFixture Write(string relativePath, string? title = null) => this.WriteFile(
-        relativePath,
-        title is null ? "# Untitled" : $"---{Environment.NewLine}title: {title}{Environment.NewLine}---");
+    public ContentFixture Write(string relativePath, string? title = null) =>
+        this.WriteFile(relativePath, title is null ? "# Untitled" : $"---{Environment.NewLine}title: {title}{Environment.NewLine}---");
 
     /// <summary>
     ///     Adds one source file that declares a date, creating the directories leading to it.
@@ -349,14 +348,9 @@ internal sealed class ContentFixture
     ///     The same fixture, so that calls can be chained.
     /// </returns>
     public ContentFixture WriteDated(string relativePath, string title, string date, string body = "") =>
-        this.WriteFile(relativePath, string.Join(
-            Environment.NewLine,
-            "---",
-            $"title: {title}",
-            $"date: {date}",
-            "---",
-            string.Empty,
-            body));
+        this.WriteFile(
+            relativePath,
+            string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---", string.Empty, body));
 
     /// <summary>
     ///     Adds one file verbatim, creating the directories leading to it.

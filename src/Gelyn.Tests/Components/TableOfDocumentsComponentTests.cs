@@ -343,37 +343,42 @@ public partial class TableOfDocumentsComponentTests
         });
     }
 
-    private static ContentPage Page(string outputPath, string title, string? date = null) => new()
-    {
-        OutputPath = Native(outputPath),
-        Href = $"/{outputPath}",
-        Title = title,
-        Description = null,
-        Date = date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture),
-        EnableMathRendering = false,
-        EnableDiagramRendering = false,
-        Html = string.Empty,
-        InNavigation = false,
-        Stylesheets = [],
-        Scripts = [],
-        Favicon = null,
-    };
+    private static ContentPage Page(string outputPath, string title, string? date = null) =>
+        new()
+        {
+            OutputPath = Native(outputPath),
+            Href = $"/{outputPath}",
+            Title = title,
+            Description = null,
+            Date = date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture),
+            EnableMathRendering = false,
+            EnableDiagramRendering = false,
+            Html = string.Empty,
+            InNavigation = false,
+            Stylesheets = [],
+            Scripts = [],
+            Favicon = null,
+        };
 
     // The component scopes by output path, which carries the native separator wherever the suite runs.
-    private static string Native(string path) => path.Replace('/', Path.DirectorySeparatorChar);
+    private static string Native(string path) =>
+        path.Replace('/', Path.DirectorySeparatorChar);
 
     // Joined instead of returned as a sequence, because IsEquivalentTo disregards the order under test.
-    private static string Links(string table) => Joined(RowLink(), table, "href");
+    private static string Links(string table) =>
+        Joined(RowLink(), table, "href");
 
-    private static string Titles(string table) => Joined(RowLink(), table, "title");
+    private static string Titles(string table) =>
+        Joined(RowLink(), table, "title");
 
-    private static string Types(string table) => Joined(RowType(), table, "type");
+    private static string Types(string table) =>
+        Joined(RowType(), table, "type");
 
-    private static string Headers(string table) => Joined(HeaderCell(), table, "header");
+    private static string Headers(string table) =>
+        Joined(HeaderCell(), table, "header");
 
-    private static string Joined(Regex pattern, string table, string group) => string.Join(
-        ',',
-        pattern.Matches(table).Select(match => match.Groups[group].Value));
+    private static string Joined(Regex pattern, string table, string group) =>
+        string.Join(',', pattern.Matches(table).Select(match => match.Groups[group].Value));
 
     private static int Count(string table, string value) =>
         table.Split(value, StringSplitOptions.None).Length - 1;
