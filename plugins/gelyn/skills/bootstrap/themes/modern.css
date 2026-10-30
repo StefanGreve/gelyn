@@ -13,6 +13,10 @@
 
     --gutter: 1.5rem;
     --measure: 92ch;
+
+    /* Octicons (MIT): file-16, file-directory-fill-16 */
+    --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z'/%3E%3C/svg%3E");
+    --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z'/%3E%3C/svg%3E");
 }
 
 /* layout */
@@ -399,7 +403,7 @@ main > table {
 :is(th, td) {
     padding: 0.625rem 0.875rem;
     border-block-end: 1px solid var(--separator);
-    text-align: left;
+    text-align: start;
     vertical-align: top;
 }
 
@@ -412,6 +416,104 @@ th {
 
 tbody > tr:last-child > td {
     border-block-end: none;
+}
+
+/* table of documents */
+
+main > nav > table {
+    width: 100%;
+    border: 1px solid var(--separator);
+    border-radius: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9375rem;
+
+    & > * > tr > :first-child {
+        width: 1%;
+        padding-inline-start: 1rem;
+        text-align: end;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    & > * > tr > :last-child {
+        padding-inline-end: 1rem;
+    }
+
+    & > thead > tr > th {
+        padding-block: 0.5rem;
+        border-block-end: 1px solid var(--separator);
+        background-color: var(--surface);
+        font-size: 0.6875rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+
+        &:first-child {
+            border-start-start-radius: 11px;
+        }
+
+        &:last-child {
+            border-start-end-radius: 11px;
+        }
+    }
+
+    & > tbody > tr > td {
+        border-block-end: 1px solid color-mix(in oklab, var(--separator) 55%, transparent);
+    }
+
+    & > tbody > tr:last-child > td {
+        border-block-end: none;
+
+        &:first-child {
+            border-end-start-radius: 11px;
+        }
+
+        &:last-child {
+            border-end-end-radius: 11px;
+        }
+    }
+
+    & > tbody time {
+        color: var(--label-secondary);
+    }
+
+    & > tbody a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--label);
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    & > tbody a::before {
+        content: "";
+        flex: none;
+        width: 1rem;
+        height: 1rem;
+        background-color: var(--label-secondary);
+        -webkit-mask: var(--icon-file) center / contain no-repeat;
+        mask: var(--icon-file) center / contain no-repeat;
+    }
+
+    & > tbody > tr[data-type="folder"] a::before {
+        -webkit-mask-image: var(--icon-folder);
+        mask-image: var(--icon-folder);
+    }
+
+    @media (hover: hover) {
+        & > tbody > tr:hover > td {
+            background-color: color-mix(in oklab, var(--accent) 8%, transparent);
+        }
+
+        & > tbody > tr:hover a {
+            color: var(--accent);
+        }
+
+        & > tbody > tr:hover a::before {
+            background-color: var(--accent);
+        }
+    }
 }
 
 /* footer */
