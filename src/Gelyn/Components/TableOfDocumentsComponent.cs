@@ -26,6 +26,9 @@ internal static class TableOfDocumentsComponent
     private const string FileType = "file";
     private const string FolderType = "folder";
 
+    // The banner carries the other navigation landmark on every page, so this one is labelled to tell them apart.
+    private const string NavigationLabel = "documents";
+
     // One description of the columns, so that a column added later is an entry here and not a second edit.
     // Each cell writes its own markup and escapes its own text, because neither column is plain text.
     private static readonly (string Header, Func<ContentPage, string> Cell)[] Columns =
@@ -41,7 +44,7 @@ internal static class TableOfDocumentsComponent
     ///     The context the page is rendered against.
     /// </param>
     /// <returns>
-    ///     The HTML of the table, or an empty string when no page is listed.
+    ///     The HTML of the navigation landmark holding the table, or an empty string when no page is listed.
     /// </returns>
     public static string Render(RenderContext context)
     {
@@ -62,6 +65,7 @@ internal static class TableOfDocumentsComponent
 
         var table = new StringBuilder();
 
+        table.AppendLine($"""<nav aria-label="{NavigationLabel}">""");
         table.AppendLine("<table>");
         table.AppendLine("<thead>");
         table.AppendLine("<tr>");
@@ -89,6 +93,7 @@ internal static class TableOfDocumentsComponent
 
         table.AppendLine("</tbody>");
         table.AppendLine("</table>");
+        table.AppendLine("</nav>");
 
         return table.ToString();
     }
@@ -137,7 +142,7 @@ internal static class TableOfDocumentsComponent
             ?? throw new InvalidOperationException("A listed document always declares a date.");
 
         string machine = date.ToString(DateFormat.Machine, Tool.Culture);
-        return $"""<time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";
+        return $"""<time datetime="{machine}">{date.ToString(DateFormat.Listing, Tool.Culture)}</time>""";
     }
 
     private static string RenderTitle(ContentPage page) =>

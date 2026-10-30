@@ -154,14 +154,28 @@ table holds:
 | Order  | Newest first, with the title breaking a tie between two pages sharing a date.                        |
 | Empty  | A table with no entries renders nothing at all, not an empty table.                                  |
 
-Each row carries the date and the title, the title linking to the page:
+The table is a navigation landmark, and each row carries the date and the title, the title linking to the
+page:
 
 ```html
+<nav aria-label="documents">
+<table>
+<thead>
+<tr><th>Date</th><th>Title</th></tr>
+</thead>
+<tbody>
 <tr data-type="folder">
 <td><time datetime="2026-06-01">Jun 1, 2026</time></td>
 <td><a href="/blog/2026/index.html">Year 2026</a></td>
 </tr>
+</tbody>
+</table>
+</nav>
 ```
+
+The `nav` wrapper is what a theme selects on, `main > nav > table` reaching a table of documents without
+reaching a pipe table you wrote by hand. It is also what lets a reader using a screen reader skip the listing,
+and it carries a label because the banner is the other navigation landmark on the same page.
 
 `data-type` is your hook for telling the two kinds of row apart. It reads `folder` for the row standing for a
 directory, which is that directory's own `index.md`, and `file` for a page sitting beside the marker. Both

@@ -14,4 +14,11 @@ internal static class DateFormat
     ///     The ISO 8601 calendar date, as in <c>2026-01-01</c>.
     /// </summary>
     internal const string Machine = "yyyy-MM-dd";
+
+    /// <summary>
+    ///     The form a date takes in a listing, as in <c>2026-01-01</c>. It currently matches
+    ///     <see cref="Machine" /> and is stated apart from it, so that a listing can be given its own form
+    ///     without the <c>datetime</c> attribute following it.
+    /// </summary>
+    internal const string Listing = "yyyy-MM-dd";
 }

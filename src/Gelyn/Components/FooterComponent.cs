@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -32,8 +31,7 @@ internal static class FooterComponent
 
         if (context.Page.Date is DateOnly date)
         {
-            // The attribute is a machine format, so it stays invariant even if the displayed date is localized.
-            string machine = date.ToString(DateFormat.Machine, CultureInfo.InvariantCulture);
+            string machine = date.ToString(DateFormat.Machine, Tool.Culture);
             revised = $""" - last revised <time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";
         }
 

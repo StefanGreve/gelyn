@@ -37,7 +37,6 @@ internal static class PageLayout
         string language = WebUtility.HtmlEncode(context.Options.Language);
         string head = HeadComponent.Render(context);
 
-        // Expand [TOD] marker if present
         string body = context.Page.Html.Contains(TableOfDocumentsComponent.Marker, StringComparison.Ordinal)
             ? context.Page.Html.Replace(TableOfDocumentsComponent.Marker, TableOfDocumentsComponent.Render(context), StringComparison.Ordinal)
             : context.Page.Html;

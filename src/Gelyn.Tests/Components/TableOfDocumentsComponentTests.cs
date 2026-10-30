@@ -354,8 +354,29 @@ public partial class TableOfDocumentsComponentTests
     }
 
     /// <summary>
-    ///     Verifies that a date is rendered in both a human-readable and a machine-readable form, so that the
-    ///     displayed value can be localized without the attribute following it.
+    ///     Verifies that the table is wrapped in a labelled navigation landmark, the banner carrying the other
+    ///     one on the same page.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Table_SitsInALabelledLandmark()
+    {
+        // Act
+        string table = Render(
+            "blog/index.html",
+            Page("blog/index.html", "Blog", "2026-02-01"),
+            Page("blog/hello.html", "Hello", "2026-03-01"));
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(table).StartsWith("""<nav aria-label="documents">""");
+            await Assert.That(table.TrimEnd()).EndsWith("</nav>");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a listed date is written as an ISO calendar date, carried both as the element's text
+    ///     and as the machine-readable attribute beside it.
     /// </summary>
     [Test]
     public async Task Render_Test_Date_CarriesAMachineReadableAttribute()
@@ -367,7 +388,7 @@ public partial class TableOfDocumentsComponentTests
             Page("blog/hello.html", "Hello", "2026-03-01"));
 
         // Assert
-        await Assert.That(table).Contains("""<time datetime="2026-03-01">Mar 1, 2026</time>""");
+        await Assert.That(table).Contains("""<time datetime="2026-03-01">2026-03-01</time>""");
     }
 
     #endregion // Markup Tests
