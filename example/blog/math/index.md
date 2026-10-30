@@ -7,7 +7,11 @@ enableMathRendering: true
 
 # Math
 
-Everyone loves $\pi$. Have a look at this beautiful equation:
+Everyone loves $\pi$.
+
+[TOD]
+
+Have a look at this beautiful equation:
 
 $$
 e^{i\pi} + 1 = 0
@@ -17,5 +21,3 @@ Both forms reach the browser as literal text unless the page declares `enableMat
 applies to this page alone, so the posts below declare their own.
 
 Headings get GitHub style identifiers, so [Math](#math) links within the page.
-
-[TOD]
