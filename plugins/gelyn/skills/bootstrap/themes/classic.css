@@ -3,6 +3,10 @@
 :root {
     --primary-color: black;
     --border-color: var(--primary-color);
+
+    /* Octicons (MIT): file-16, file-directory-fill-16 */
+    --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z'/%3E%3C/svg%3E");
+    --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z'/%3E%3C/svg%3E");
 }
 
 /* layout */
@@ -157,7 +161,39 @@ table {
     }
 
     & > thead {
-        text-align: left;
+        text-align: start;
+    }
+}
+
+/* table of documents */
+
+main > nav > table {
+    & > * > tr > :first-child {
+        width: 1%;
+        text-align: end;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    & > tbody a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+    }
+
+    & > tbody a::before {
+        content: "";
+        flex: none;
+        width: 1em;
+        height: 1em;
+        background-color: currentColor;
+        -webkit-mask: var(--icon-file) center / contain no-repeat;
+        mask: var(--icon-file) center / contain no-repeat;
+    }
+
+    & > tbody > tr[data-type="folder"] a::before {
+        -webkit-mask-image: var(--icon-folder);
+        mask-image: var(--icon-folder);
     }
 }
 
