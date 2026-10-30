@@ -60,6 +60,38 @@ nav {
     }
 }
 
+/* table of documents */
+
+main > nav > table {
+    & > * > tr > :first-child {
+        width: 1%;
+        text-align: end;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    & > tbody a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
+    }
+
+    & > tbody a::before {
+        content: "";
+        flex: none;
+        width: 1em;
+        height: 1em;
+        background-color: currentColor;
+        -webkit-mask: var(--icon-file) center / contain no-repeat;
+        mask: var(--icon-file) center / contain no-repeat;
+    }
+
+    & > tbody > tr[data-type="folder"] a::before {
+        -webkit-mask-image: var(--icon-folder);
+        mask-image: var(--icon-folder);
+    }
+}
+
 /* alert extension */
 
 div.markdown-alert {
@@ -162,38 +194,6 @@ table {
 
     & > thead {
         text-align: start;
-    }
-}
-
-/* table of documents */
-
-main > nav > table {
-    & > * > tr > :first-child {
-        width: 1%;
-        text-align: end;
-        white-space: nowrap;
-        font-variant-numeric: tabular-nums;
-    }
-
-    & > tbody a {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4em;
-    }
-
-    & > tbody a::before {
-        content: "";
-        flex: none;
-        width: 1em;
-        height: 1em;
-        background-color: currentColor;
-        -webkit-mask: var(--icon-file) center / contain no-repeat;
-        mask: var(--icon-file) center / contain no-repeat;
-    }
-
-    & > tbody > tr[data-type="folder"] a::before {
-        -webkit-mask-image: var(--icon-folder);
-        mask-image: var(--icon-folder);
     }
 }
 

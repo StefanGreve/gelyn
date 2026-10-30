@@ -258,6 +258,104 @@ header {
     }
 }
 
+/* table of documents */
+
+main > nav > table {
+    width: 100%;
+    border: 1px solid var(--separator);
+    border-radius: 12px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.9375rem;
+
+    & > * > tr > :first-child {
+        width: 1%;
+        padding-inline-start: 1rem;
+        text-align: end;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    & > * > tr > :last-child {
+        padding-inline-end: 1rem;
+    }
+
+    & > thead > tr > th {
+        padding-block: 0.5rem;
+        border-block-end: 1px solid var(--separator);
+        background-color: var(--surface);
+        font-size: 0.6875rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+
+        &:first-child {
+            border-start-start-radius: 11px;
+        }
+
+        &:last-child {
+            border-start-end-radius: 11px;
+        }
+    }
+
+    & > tbody > tr > td {
+        border-block-end: 1px solid color-mix(in oklab, var(--separator) 55%, transparent);
+    }
+
+    & > tbody > tr:last-child > td {
+        border-block-end: none;
+
+        &:first-child {
+            border-end-start-radius: 11px;
+        }
+
+        &:last-child {
+            border-end-end-radius: 11px;
+        }
+    }
+
+    & > tbody time {
+        color: var(--label-secondary);
+    }
+
+    & > tbody a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--label);
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    & > tbody a::before {
+        content: "";
+        flex: none;
+        width: 1rem;
+        height: 1rem;
+        background-color: var(--label-secondary);
+        -webkit-mask: var(--icon-file) center / contain no-repeat;
+        mask: var(--icon-file) center / contain no-repeat;
+    }
+
+    & > tbody > tr[data-type="folder"] a::before {
+        -webkit-mask-image: var(--icon-folder);
+        mask-image: var(--icon-folder);
+    }
+
+    @media (hover: hover) {
+        & > tbody > tr:hover > td {
+            background-color: color-mix(in oklab, var(--accent) 8%, transparent);
+        }
+
+        & > tbody > tr:hover a {
+            color: var(--accent);
+        }
+
+        & > tbody > tr:hover a::before {
+            background-color: var(--accent);
+        }
+    }
+}
+
 /* typography */
 
 main > h1 {
@@ -416,104 +514,6 @@ th {
 
 tbody > tr:last-child > td {
     border-block-end: none;
-}
-
-/* table of documents */
-
-main > nav > table {
-    width: 100%;
-    border: 1px solid var(--separator);
-    border-radius: 12px;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.9375rem;
-
-    & > * > tr > :first-child {
-        width: 1%;
-        padding-inline-start: 1rem;
-        text-align: end;
-        white-space: nowrap;
-        font-variant-numeric: tabular-nums;
-    }
-
-    & > * > tr > :last-child {
-        padding-inline-end: 1rem;
-    }
-
-    & > thead > tr > th {
-        padding-block: 0.5rem;
-        border-block-end: 1px solid var(--separator);
-        background-color: var(--surface);
-        font-size: 0.6875rem;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-
-        &:first-child {
-            border-start-start-radius: 11px;
-        }
-
-        &:last-child {
-            border-start-end-radius: 11px;
-        }
-    }
-
-    & > tbody > tr > td {
-        border-block-end: 1px solid color-mix(in oklab, var(--separator) 55%, transparent);
-    }
-
-    & > tbody > tr:last-child > td {
-        border-block-end: none;
-
-        &:first-child {
-            border-end-start-radius: 11px;
-        }
-
-        &:last-child {
-            border-end-end-radius: 11px;
-        }
-    }
-
-    & > tbody time {
-        color: var(--label-secondary);
-    }
-
-    & > tbody a {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--label);
-        font-weight: 500;
-        text-decoration: none;
-    }
-
-    & > tbody a::before {
-        content: "";
-        flex: none;
-        width: 1rem;
-        height: 1rem;
-        background-color: var(--label-secondary);
-        -webkit-mask: var(--icon-file) center / contain no-repeat;
-        mask: var(--icon-file) center / contain no-repeat;
-    }
-
-    & > tbody > tr[data-type="folder"] a::before {
-        -webkit-mask-image: var(--icon-folder);
-        mask-image: var(--icon-folder);
-    }
-
-    @media (hover: hover) {
-        & > tbody > tr:hover > td {
-            background-color: color-mix(in oklab, var(--accent) 8%, transparent);
-        }
-
-        & > tbody > tr:hover a {
-            color: var(--accent);
-        }
-
-        & > tbody > tr:hover a::before {
-            background-color: var(--accent);
-        }
-    }
 }
 
 /* footer */
