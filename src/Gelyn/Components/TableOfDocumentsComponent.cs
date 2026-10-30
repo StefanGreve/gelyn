@@ -47,14 +47,18 @@ internal static class TableOfDocumentsComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        string scope = ResolveScope(context.Page.OutputPath);
+        string current = context.Page.OutputPath;
+        string scope = ResolveScope(current);
 
-        List<ContentPage> documents = [.. context.Documents
-            .Where(page => IsListed(page, context.Page.OutputPath, scope))
-            .OrderByDescending(static page => page.Date)
-            .ThenBy(static page => page.Title, StringComparer.Ordinal)];
+        List<(ContentPage Page, string Type)> rows = [];
 
-        if (documents.Count == 0) return string.Empty;
+        foreach (ContentPage page in context.Documents)
+        {
+            if (ResolveRow(page, current, scope) is string type)
+                rows.Add((page, type));
+        }
+
+        if (rows.Count == 0) return string.Empty;
 
         var table = new StringBuilder();
 
@@ -69,9 +73,13 @@ internal static class TableOfDocumentsComponent
         table.AppendLine("</thead>");
         table.AppendLine("<tbody>");
 
-        foreach (ContentPage page in documents)
+        IOrderedEnumerable<(ContentPage Page, string Type)> orderedRows = rows
+            .OrderByDescending(static row => row.Page.Date)
+            .ThenBy(static row => row.Page.Title, StringComparer.Ordinal);
+
+        foreach ((ContentPage page, string type) in orderedRows)
         {
-            table.AppendLine($"""<tr data-type="{ResolveType(page, scope)}">""");
+            table.AppendLine($"""<tr data-type="{type}">""");
 
             foreach ((_, Func<ContentPage, string> cell) in Columns)
                 table.AppendLine($"<td>{cell(page)}</td>");
@@ -98,22 +106,16 @@ internal static class TableOfDocumentsComponent
             : outputPath[..(separator + 1)];
     }
 
-    // No table lists a draft, its own page, or anything the scope does not hold directly. StartsWith comes
-    // first because ResolveType slices from the scope's length and means nothing outside it.
-    private static bool IsListed(ContentPage page, string current, string scope) =>
-        !IsDraft(page)
-        && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
-        && page.OutputPath.StartsWith(scope, StringComparison.Ordinal)
-        && ResolveType(page, scope) is not null;
-
-    // A document declares a date once it is ready to be found, so the absence of one is what marks it unfinished.
-    private static bool IsDraft(ContentPage page) =>
-        page.Date is null;
-
-    // A directory listing: pages beside the marker, plus each directory below it as its own index. Null is
-    // anything deeper. The segment matches in full, because myindex.md ends the same way.
-    private static string? ResolveType(ContentPage page, string scope)
+    // The rejections run before the slice, which counts from the scope's length and is meaningless outside it.
+    // The last segment is matched in full, because a page named myindex.md ends the same way.
+    private static string? ResolveRow(ContentPage page, string current, string scope)
     {
+        bool listed = !IsDraft(page)
+            && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
+            && page.OutputPath.StartsWith(scope, StringComparison.Ordinal);
+
+        if (!listed) return null;
+
         ReadOnlySpan<char> relativePath = page.OutputPath.AsSpan(scope.Length);
         int separator = relativePath.IndexOf(Path.DirectorySeparatorChar);
 
@@ -124,9 +126,15 @@ internal static class TableOfDocumentsComponent
             : null;
     }
 
+    // A document declares a date once it is ready to be found, so the absence of one is what marks it unfinished.
+    private static bool IsDraft(ContentPage page) =>
+        page.Date is null;
+
+    // ResolveRow rejects a dateless page as a draft, so the throw states an invariant and is never reached.
     private static string RenderDate(ContentPage page)
     {
-        if (page.Date is not DateOnly date) return string.Empty;
+        DateOnly date = page.Date
+            ?? throw new InvalidOperationException("A listed document always declares a date.");
 
         string machine = date.ToString(DateFormat.Machine, Tool.Culture);
         return $"""<time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";
