@@ -31,7 +31,8 @@ internal sealed class SiteOptions
 
     /// <summary>
     ///     The absolute URL the finished site is served from, such as <c>https://example.com/blog</c>, or
-    ///     <see langword="null"/> when it is served from the root of a domain.
+    ///     <see langword="null"/> when no absolute URL is known. Its path is the prefix every link carries,
+    ///     which is empty both for <see langword="null"/> and for a URL addressing the root of a domain.
     /// </summary>
     public Uri? BaseUrl { get; set; }
 

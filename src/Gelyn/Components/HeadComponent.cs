@@ -75,7 +75,7 @@ internal static class HeadComponent
         {
             string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(options.MermaidVersion)}/dist";
 
-            // The module entry is smaller then a bundle and fetches only the diagram types the page uses.
+            // The module entry is smaller than a bundle and fetches only the diagram types the page uses.
             // A module script defers by itself, so it needs no defer attribute.
             head.AppendLine("""<script type="module">""");
             head.AppendLine($"""import mermaid from "{mermaid}/mermaid.esm.min.mjs";""");
