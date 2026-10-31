@@ -340,6 +340,32 @@ public class StaticFileResolverTests
     }
 
     /// <summary>
+    ///     Verifies that the feed is served under the media type RFC 4287 registers for it, and that a file
+    ///     of the same name below the output root is not, the build writing the feed to that root alone.
+    /// </summary>
+    /// <remarks>
+    ///     The extension cannot settle this one, <c>.xml</c> being what the sitemap carries as well, so the
+    ///     path is what the feed is recognized by.
+    /// </remarks>
+    [Test]
+    public async Task Resolve_Test_ContentType_RecognizesTheFeedByItsPath()
+    {
+        // Arrange
+        var fixture = OutputFixture.Create("index.html", "feed.xml", "blog/feed.xml");
+
+        // Act
+        ServedFile feed = fixture.Resolve("/feed.xml");
+        ServedFile nested = fixture.Resolve("/blog/feed.xml");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(feed.ContentType).IsEqualTo("application/atom+xml; charset=utf-8");
+            await Assert.That(nested.ContentType).IsEqualTo("application/xml; charset=utf-8");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that the extension is read without regard to case, because the deploy target reads it
     ///     that way and a file named by hand can carry any spelling.
     /// </summary>

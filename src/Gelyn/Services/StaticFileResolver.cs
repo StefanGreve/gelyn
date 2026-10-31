@@ -2,6 +2,7 @@ using System.IO.Abstractions;
 using System.Net;
 using System.Net.Mime;
 
+using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 
@@ -51,6 +52,7 @@ internal sealed class StaticFileResolver
     private const string CssContentType = MediaTypeNames.Text.Css + Charset;
     private const string JavaScriptContentType = MediaTypeNames.Text.JavaScript + Charset;
     private const string XmlContentType = MediaTypeNames.Application.Xml + Charset;
+    private const string AtomContentType = AtomFeed.ContentType + Charset;
     private const string SvgContentType = MediaTypeNames.Image.Svg + Charset;
 
     private readonly IFileSystem _fileSystem;
@@ -90,7 +92,7 @@ internal sealed class StaticFileResolver
             ? new ServedFile
             {
                 Path = located,
-                ContentType = Classify(this._fileSystem.Path.GetExtension(located)),
+                ContentType = this.Classify(root, located),
                 StatusCode = HttpStatusCode.OK,
             }
             : this.NotFound(root);
@@ -168,9 +170,16 @@ internal sealed class StaticFileResolver
         };
     }
 
+    // The feed is the one file whose media type its extension cannot settle: RFC 4287 registers
+    // application/atom+xml, and .xml is what any other XML output carries as well.
+    private string Classify(string root, string path) =>
+        path.Equals(this._fileSystem.Path.Combine(root, AtomFeed.FileName), StringComparison.OrdinalIgnoreCase)
+            ? AtomContentType
+            : ClassifyExtension(this._fileSystem.Path.GetExtension(path));
+
     // A switch over string literals compares ordinally, so matching an extension that may carry any spelling
     // needs the when clauses that ContentPipeline.Classify uses for the same reason.
-    private static string Classify(string extension) =>
+    private static string ClassifyExtension(string extension) =>
         extension switch
         {
             var value when value.Equals(HtmlExtension, StringComparison.OrdinalIgnoreCase) => HtmlContentType,
