@@ -31,6 +31,7 @@ internal static class Mapper
             Title = document.FrontMatter?.Title ?? item.FallbackTitle,
             Description = document.FrontMatter?.Description,
             Date = document.FrontMatter?.Date,
+            Revised = document.FrontMatter?.Revised ?? document.FrontMatter?.Date,
             EnableMathRendering = document.FrontMatter?.EnableMathRendering ?? false,
             EnableDiagramRendering = document.FrontMatter?.EnableDiagramRendering ?? false,
             Html = document.Html,

@@ -250,17 +250,19 @@ public class AtomFeedTests
     }
 
     /// <summary>
-    ///     Verifies that an entry describes itself from its own description, falls back to the site's, and
-    ///     carries no summary when neither declares one.
+    ///     Verifies that an entry describes itself from the site description, never from the description its
+    ///     own page declares, and carries no summary when the site declares none.
     /// </summary>
+    /// <remarks>
+    ///     So every entry of one feed carries the same summary. The page description is deliberately left
+    ///     out, which is what makes a per-entry summary a later change and not a fix.
+    /// </remarks>
     [Test]
-    [Arguments("Page said it", "Site said it", "Page said it")]
-    [Arguments(null, "Site said it", "Site said it")]
-    [Arguments(null, null, null)]
-    public async Task Render_Test_Summary_PrefersThePageDescription(
-        string? pageDescription,
-        string? siteDescription,
-        string? expected)
+    [Arguments("Site said it", "Site said it")]
+    [Arguments(null, null)]
+    [Arguments("", null)]
+    [Arguments("   ", null)]
+    public async Task Render_Test_Summary_ComesFromTheSiteDescription(string? siteDescription, string? expected)
     {
         // Arrange
         SiteOptions options = Options();
@@ -268,14 +270,81 @@ public class AtomFeedTests
 
         ContentPage page = Page("post.html", "Post", "2026-01-01", inFeed: true) with
         {
-            Description = pageDescription,
+            Description = "Page said it",
         };
 
         // Act
         XElement entry = Entries(Render(options, [page])).Single();
 
         // Assert
-        await Assert.That(Value(entry, "summary")).IsEqualTo(expected);
+        using (Assert.Multiple())
+        {
+            await Assert.That(Value(entry, "summary")).IsEqualTo(expected);
+            await Assert.That(Xml(options, [page])).DoesNotContain("Page said it");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an entry is published on the date its page declares and updated on the date its page
+    ///     was revised, which are the two distinct instants Atom asks for.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Entry_SeparatesTheRevisionFromThePublication()
+    {
+        // Arrange
+        ContentPage page = Page("post.html", "Post", "2026-01-01", inFeed: true, revised: "2026-03-04");
+
+        // Act
+        XElement entry = Entries(Render(Options(), [page])).Single();
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Value(entry, "published")).IsEqualTo("2026-01-01T00:00:00Z");
+            await Assert.That(Value(entry, "updated")).IsEqualTo("2026-03-04T00:00:00Z");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an entry whose page declares no revision carries one instant in both elements.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Entry_RepeatsThePublicationWithoutARevision()
+    {
+        // Act
+        XElement entry = Entries(Render(Options(), [Page("post.html", "Post", "2026-01-01", inFeed: true)])).Single();
+
+        // Assert
+        await Assert.That(Value(entry, "updated")).IsEqualTo(Value(entry, "published"));
+    }
+
+    /// <summary>
+    ///     Verifies that the feed is dated from the most recent revision among its entries and not from the
+    ///     entry it lists first, which is the most recently published one.
+    /// </summary>
+    /// <remarks>
+    ///     The two differ as soon as an older post is revised: the entry order is unchanged, because a reader
+    ///     lists by publication, while the feed itself has changed and has to say so.
+    /// </remarks>
+    [Test]
+    public async Task Render_Test_Feed_IsDatedFromTheNewestRevision()
+    {
+        // Arrange
+        ContentPage[] pages =
+        [
+            Page("new.html", "New", "2026-05-01", inFeed: true),
+            Page("old.html", "Old", "2026-01-01", inFeed: true, revised: "2026-09-09"),
+        ];
+
+        // Act
+        XElement feed = Render(Options(), pages);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Value(feed, "updated")).IsEqualTo("2026-09-09T00:00:00Z");
+            await Assert.That(Titles(feed)).IsEqualTo("New,Old");
+        }
     }
 
     #endregion // Metadata Tests
@@ -317,7 +386,12 @@ public class AtomFeedTests
             BaseUrl = new Uri(baseUrl, UriKind.Absolute),
         };
 
-    private static ContentPage Page(string outputPath, string title, string? date, bool inFeed = false) =>
+    private static ContentPage Page(
+        string outputPath,
+        string title,
+        string? date,
+        bool inFeed = false,
+        string? revised = null) =>
         new()
         {
             SourcePath = Path.ChangeExtension(outputPath, ".md"),
@@ -325,7 +399,11 @@ public class AtomFeedTests
             Href = $"/blog/{outputPath}",
             Title = title,
             Description = null,
-            Date = date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture),
+            Date = Parse(date),
+
+            // Resolved the way Mapper resolves it, so that a case declaring no revision carries the fallback
+            // the renderer is handed in a build and not a null the renderer never sees.
+            Revised = Parse(revised) ?? Parse(date),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
             Html = string.Empty,
@@ -335,6 +413,9 @@ public class AtomFeedTests
             Scripts = [],
             Favicon = null,
         };
+
+    private static DateOnly? Parse(string? date) =>
+        date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture);
 
     private static string Xml(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
         Encoding.UTF8.GetString(AtomFeed.Render(options, pages));

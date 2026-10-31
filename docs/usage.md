@@ -42,12 +42,13 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of five keys:
+Open a Markdown file with a YAML block to declare any of six keys:
 
 ```markdown
 ---
 title: About
 date: 2026-09-14
+revised: 2026-10-08
 description: Who I am and what I write about
 enableMathRendering: true
 enableDiagramRendering: true
@@ -57,7 +58,8 @@ enableDiagramRendering: true
 | Key                      | Description                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------------- |
 | `title`                  | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`                   | Dates the footer, fills the `revised` meta tag, and lists the page in a table.        |
+| `date`                   | Publishes the page and dates it in a table of documents. See [Dates](#dates).         |
+| `revised`                | Dates the footer and the `revised` meta tag. See [Dates](#dates).                     |
 | `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
 | `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
@@ -67,15 +69,30 @@ Three rules are worth knowing, because none of them produces a warning:
 - Open the block on the very first line. With one blank line above it, Gelyn no longer reads it as front
   matter. It renders the delimiters and the keys as content, and the title falls back to the file name.
 - Gelyn ignores a key it doesn't know, so `titel:` loses your title in silence.
-- Gelyn drops a `date` it can't parse the same way, and writes the page as though it declared none.
+- Gelyn drops a `date` or a `revised` it can't parse the same way, and writes the page as though it declared
+  none.
 
 A block that isn't well-formed YAML, or that holds something other than key-value pairs, does stop the build.
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The
 message comes from the YAML reader, which names neither the file nor the line.
 
+## Dates
+
+A page carries two dates, and they answer different questions. Write both in ISO 8601 form, `YYYY-MM-DD`.
+
+| Key       | Answers                       | Read by                                     |
+| --------- | ----------------------------- | ------------------------------------------- |
+| `date`    | When did this go out?         | The table of documents.                     |
+| `revised` | When was this last corrected? | The footer, and the `revised` meta tag.     |
+
+`revised` is optional and falls back to `date`, so a page you have not corrected since publishing it reads as
+last revised on the day it went out. Declare `revised` the day you change a published page, and leave `date`
+where it is: moving `date` forward reorders the page in every listing as though it were new.
+
 A `date` is also what publishes a page. A page that declares one is listed in the
 [table of documents](#table-of-documents) of the directory holding it, and a page that declares none is a
-draft that no table lists.
+draft that no table lists. `revised` publishes nothing: a page declaring `revised` and no `date` is still a
+draft.
 
 Nothing else about a draft changes. Gelyn renders it, writes it to your output directory, and serves it at its
 own URL exactly as it does any other page, so a link pointing at it keeps working. Adding the date is what
@@ -150,8 +167,8 @@ table holds:
 | ------ | ---------------------------------------------------------------------------------------------------- |
 | Scope  | The marker's own directory, one level deep. A directory below it is one row, standing for its index. |
 | Self   | The page carrying the marker is never one of its own entries.                                        |
-| Drafts | A page declaring no `date` is left out. See [Front matter](#front-matter).                           |
-| Order  | Newest first, with the title breaking a tie between two pages sharing a date.                        |
+| Drafts | A page declaring no `date` is left out. See [Dates](#dates).                                         |
+| Order  | Newest `date` first, with the title breaking a tie. A `revised` reorders nothing.                    |
 | Empty  | A table with no entries renders nothing at all, not an empty table.                                  |
 
 The table is a navigation landmark, and each row carries the date and the title, the title linking to the
@@ -260,8 +277,8 @@ Every page is the same document around your own body:
 </html>
 ```
 
-Gelyn leaves out a value it doesn't have rather than writing it empty, so a page with no `date` carries no
-`revised` tag and no date in its footer, and a site with no `BaseUrl` no canonical link.
+Gelyn leaves out a value it doesn't have rather than writing it empty, so a page declaring neither `date` nor
+`revised` carries no `revised` tag and no date in its footer, and a site with no `BaseUrl` no canonical link.
 
 The shell declares no classes of its own. Style it through the elements, `aria-current="page"`, and the classes
 Markdig emits: `markdown-alert`, `contains-task-list`, `footnotes`, `math`, `mermaid`, and `language-*`.

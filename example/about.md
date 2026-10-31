@@ -1,6 +1,7 @@
 ---
 title: About
 date: 2026-09-14
+revised: 2026-10-26
 description: Who I am and what I work on.
 ---
 

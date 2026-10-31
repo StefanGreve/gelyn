@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
@@ -149,9 +151,65 @@ public class HeadComponentTests
 
     #endregion // Favicon Tests
 
+    #region Revision Tests
+
+    /// <summary>
+    ///     Verifies that a page declaring a revision states that date and not the one it was published on.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Revision_IsStatedOverThePublicationDate()
+    {
+        // Act
+        string head = Render(new SiteOptions(), date: "2026-09-14", revised: "2026-10-08");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(head).Contains("""<meta name="revised" content="2026-10-08">""");
+            await Assert.That(head).DoesNotContain("2026-09-14");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page declaring no revision states its publication date, a page published and never
+    ///     revised since having been last revised on the day it went out.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_AbsentRevision_FallsBackToThePublicationDate()
+    {
+        // Act
+        string head = Render(new SiteOptions(), date: "2026-09-14");
+
+        // Assert
+        await Assert.That(head).Contains("""<meta name="revised" content="2026-09-14">""");
+    }
+
+    /// <summary>
+    ///     Verifies that a page declaring neither date states no revision at all, never an empty value.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_UndatedPage_StatesNoRevision()
+    {
+        // Act
+        string head = Render(new SiteOptions());
+
+        // Assert
+        await Assert.That(head).DoesNotContain("""name="revised""");
+    }
+
+    #endregion // Revision Tests
+
     #region Helpers
 
-    private static string Render(SiteOptions options, string? pageDescription = null, string? favicon = null) =>
+    private static DateOnly? Parse(string? date) =>
+        date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture);
+
+    private static string Render(
+        SiteOptions options,
+        string? pageDescription = null,
+        string? favicon = null,
+        string? date = null,
+        string? revised = null) =>
         HeadComponent.Render(new RenderContext
         {
             Options = options,
@@ -164,7 +222,11 @@ public class HeadComponentTests
                 Href = "/index.html",
                 Title = "Home",
                 Description = pageDescription,
-                Date = null,
+                Date = Parse(date),
+
+                // Resolved the way Mapper resolves it, so a case declaring no revision carries the fallback
+                // the component is handed in a build.
+                Revised = Parse(revised) ?? Parse(date),
                 EnableMathRendering = false,
                 EnableDiagramRendering = false,
                 Html = "<p>Home</p>",

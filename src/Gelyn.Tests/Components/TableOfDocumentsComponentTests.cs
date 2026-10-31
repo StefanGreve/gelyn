@@ -416,7 +416,11 @@ public partial class TableOfDocumentsComponentTests
             Href = $"/{outputPath}",
             Title = title,
             Description = null,
-            Date = date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture),
+            Date = Parse(date),
+
+            // The fallback a page declaring no revision carries. The table reads the publication date alone,
+            // so no assertion in this class depends on the value.
+            Revised = Parse(date),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
             Html = string.Empty,
@@ -426,6 +430,9 @@ public partial class TableOfDocumentsComponentTests
             Scripts = [],
             Favicon = null,
         };
+
+    private static DateOnly? Parse(string? date) =>
+        date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture);
 
     // The component scopes by output path, which carries the native separator wherever the suite runs.
     private static string Native(string path) =>

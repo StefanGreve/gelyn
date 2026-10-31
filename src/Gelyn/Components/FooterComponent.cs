@@ -29,7 +29,7 @@ internal static class FooterComponent
         string version = WebUtility.HtmlEncode(Tool.Version);
         string revised = string.Empty;
 
-        if (context.Page.Date is DateOnly date)
+        if (context.Page.Revised is DateOnly date)
         {
             string machine = date.ToString(DateFormat.Machine, Tool.Culture);
             revised = $""" - last revised <time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";

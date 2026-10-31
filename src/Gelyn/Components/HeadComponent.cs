@@ -43,7 +43,7 @@ internal static class HeadComponent
         if (!string.IsNullOrWhiteSpace(description))
             head.AppendLine($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
 
-        if (context.Page.Date is DateOnly revised)
+        if (context.Page.Revised is DateOnly revised)
         {
             string date = revised.ToString(DateFormat.Machine, Tool.Culture);
             head.AppendLine($"""<meta name="revised" content="{date}">""");

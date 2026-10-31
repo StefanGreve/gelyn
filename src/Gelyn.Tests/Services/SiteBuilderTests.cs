@@ -483,6 +483,37 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a page declaring a revision dates its footer and its listing from different dates:
+    ///     the footer from the revision, the table of documents from the publication.
+    /// </summary>
+    /// <remarks>
+    ///     The one case that tells the two dates apart end to end. Every other page in the suite declares a
+    ///     publication date alone, where the fallback makes the two indistinguishable.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Revision_DatesTheFooterAndNotTheListing()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteDated("index.md", "Home", "2026-01-01", "[TOD]")
+            .WriteRevised("about.md", "About", "2026-02-01", "2026-08-20");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadFooter(fixture, "about.html"))
+                .Contains("""last revised <time datetime="2026-08-20">Aug 20, 2026</time>""");
+
+            await Assert.That(ReadTable(fixture, "index.html"))
+                .Contains("""<time datetime="2026-02-01">2026-02-01</time>""")
+                .And.DoesNotContain("2026-08-20");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that two pages declaring the same date carry the same footer while pages declaring
     ///     different dates do not, so the footer varies by the declared date and by nothing else.
     /// </summary>

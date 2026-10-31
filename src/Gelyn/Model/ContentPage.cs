@@ -41,8 +41,16 @@ internal sealed record ContentPage
 
     /// <summary>
     ///     The publication date declared in the front matter, or <see langword="null"/> when it declares none.
+    ///     A page declaring none is a draft, so this is what admits the page to a listing.
     /// </summary>
     public required DateOnly? Date { get; init; }
+
+    /// <summary>
+    ///     The date the page was last revised, which is the revision date declared in the front matter and
+    ///     <see cref="Date"/> when it declares none. <see langword="null"/> only when the page declares
+    ///     neither, so a page carrying a publication date always carries this one too.
+    /// </summary>
+    public required DateOnly? Revised { get; init; }
 
     /// <summary>
     ///     Indicates whether the page loads a math renderer, as declared in its front matter. The value applies

@@ -27,6 +27,13 @@ internal sealed record FrontMatter
     public DateOnly? Date { get; set; }
 
     /// <summary>
+    ///     The date the page was last revised, or <see langword="null"/> when the block omits it, which is the
+    ///     case for a page that has not been revised since it was published.
+    /// </summary>
+    [YamlConverter(typeof(DateOnlyConverter))]
+    public DateOnly? Revised { get; set; }
+
+    /// <summary>
     ///     The page description, or <see langword="null"/> when the block omits it.
     /// </summary>
     public string? Description { get; set; }

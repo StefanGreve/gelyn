@@ -27,6 +27,7 @@ public class FrontMatterParserTests
             ---
             title: Home
             date: 2026-09-13
+            revised: 2026-10-08
             description: Notes about software
             enableMathRendering: true
             enableDiagramRendering: true
@@ -42,6 +43,7 @@ public class FrontMatterParserTests
         {
             await Assert.That(result?.Title).IsEqualTo("Home");
             await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+            await Assert.That(result?.Revised).IsEqualTo(new DateOnly(2026, 10, 8));
             await Assert.That(result?.Description).IsEqualTo("Notes about software");
             await Assert.That(result?.EnableMathRendering).IsTrue();
             await Assert.That(result?.EnableDiagramRendering).IsTrue();

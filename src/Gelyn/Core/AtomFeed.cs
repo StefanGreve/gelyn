@@ -34,8 +34,7 @@ internal static class AtomFeed
 
     private const string TextType = "text";
 
-    // Stood in for the author of a site that names none, RFC 4287 requiring one of a feed whose entries
-    // carry none of their own, which is every entry here.
+    // Stood in for the author of a site that names none, RFC 4287 requiring the feed to name one.
     private const string AnonymousAuthor = "anonymous";
 
     /// <summary>
@@ -65,8 +64,7 @@ internal static class AtomFeed
 
         if (entries.Length == 0) return [];
 
-        // Resolving a relative reference against a base URL whose path names no directory drops its last
-        // segment, so the trailing slash is what keeps a site served from below a domain root addressable.
+        // Without the trailing slash, resolving against it would drop the last segment of the path.
         var root = new Uri(StringUtils.EnsureEndsOn(baseUrl.AbsoluteUri, '/'));
 
         var settings = new XmlWriterSettings
@@ -77,16 +75,16 @@ internal static class AtomFeed
 
         using var buffer = new MemoryStream();
 
-        // Closed before the bytes are read, because the writer holds the tail of the document until it is.
         using (var writer = XmlWriter.Create(buffer, settings))
         {
             writer.WriteStartDocument();
             writer.WriteStartElement("feed", Namespace);
 
-            WriteMetadata(writer, options, root, entries[0]);
+            // The newest revision, which is not the first entry: that one is the newest publication.
+            writer.WriteMetadata(options, root, entries.Max(static page => page.Revised));
 
             foreach (ContentPage page in entries)
-                WriteEntry(writer, options, root, page);
+                writer.WriteEntry(options, root, page);
 
             writer.WriteEndElement();
             writer.WriteEndDocument();
@@ -109,10 +107,10 @@ internal static class AtomFeed
     /// <param name="root">
     ///     The base URL as a directory, which every link is resolved against.
     /// </param>
-    /// <param name="newest">
-    ///     The most recent entry, which is what dates the feed.
+    /// <param name="updated">
+    ///     The date the feed itself carries, which is the most recent revision among its entries.
     /// </param>
-    private static void WriteMetadata(XmlWriter writer, SiteOptions options, Uri root, ContentPage newest)
+    private static void WriteMetadata(this XmlWriter writer, SiteOptions options, Uri root, DateOnly? updated)
     {
         writer.WriteElementString("id", Namespace, root.AbsoluteUri);
         writer.WriteElementString("title", Namespace, options.Title);
@@ -120,12 +118,10 @@ internal static class AtomFeed
         if (!string.IsNullOrWhiteSpace(options.Description))
             writer.WriteElementString("subtitle", Namespace, options.Description);
 
-        // Dated from the content and never from the clock, so that a build of unchanged pages is byte for
-        // byte the build before it.
-        writer.WriteElementString("updated", Namespace, ToInstant(newest.Date));
+        writer.WriteElementString("updated", Namespace, ToInstant(updated));
 
-        WriteLink(writer, "self", new Uri(root, FileName).AbsoluteUri, ContentType);
-        WriteLink(writer, "alternate", root.AbsoluteUri, MediaTypeNames.Text.Html);
+        writer.WriteLink("self", new Uri(root, FileName).AbsoluteUri, ContentType);
+        writer.WriteLink("alternate", root.AbsoluteUri, MediaTypeNames.Text.Html);
 
         writer.WriteStartElement("author", Namespace);
         writer.WriteElementString("name", Namespace, options.Author ?? AnonymousAuthor);
@@ -144,7 +140,7 @@ internal static class AtomFeed
     ///     The writer the document is being built with.
     /// </param>
     /// <param name="options">
-    ///     The site configuration, which supplies the description a page declaring none falls back to.
+    ///     The site configuration, which supplies the summary.
     /// </param>
     /// <param name="root">
     ///     The base URL as a directory, which the entry's links are resolved against.
@@ -152,28 +148,21 @@ internal static class AtomFeed
     /// <param name="page">
     ///     The page the entry stands for.
     /// </param>
-    private static void WriteEntry(XmlWriter writer, SiteOptions options, Uri root, ContentPage page)
+    private static void WriteEntry(this XmlWriter writer, SiteOptions options, Uri root, ContentPage page)
     {
         // The href already carries the path of the base URL, so it resolves against the origin alone.
         string address = new Uri(root, page.Href).AbsoluteUri;
-        string instant = ToInstant(page.Date);
 
         writer.WriteStartElement("entry", Namespace);
 
         writer.WriteElementString("id", Namespace, address);
         writer.WriteElementString("title", Namespace, page.Title);
+        writer.WriteElementString("updated", Namespace, ToInstant(page.Revised));
+        writer.WriteElementString("published", Namespace, ToInstant(page.Date));
 
-        // One date answers both, a page declaring when it was published and nothing about later revisions.
-        writer.WriteElementString("updated", Namespace, instant);
-        writer.WriteElementString("published", Namespace, instant);
+        writer.WriteLink("alternate", address, MediaTypeNames.Text.Html);
 
-        // Required of an entry carrying no atom:content, which is every entry: the rendered body still holds
-        // its unexpanded markers at this point, and its links are site-relative where a reader needs absolute.
-        WriteLink(writer, "alternate", address, MediaTypeNames.Text.Html);
-
-        // An empty page description wins over the site's and leaves the entry with no summary, which is how
-        // HeadComponent reads the same pair.
-        string? summary = page.Description ?? options.Description;
+        string? summary = options.Description;
 
         if (!string.IsNullOrWhiteSpace(summary))
         {
@@ -186,7 +175,7 @@ internal static class AtomFeed
         writer.WriteEndElement();
     }
 
-    private static void WriteLink(XmlWriter writer, string relation, string address, string type)
+    private static void WriteLink(this XmlWriter writer, string relation, string address, string type)
     {
         writer.WriteStartElement("link", Namespace);
         writer.WriteAttributeString("rel", relation);
@@ -195,7 +184,6 @@ internal static class AtomFeed
         writer.WriteEndElement();
     }
 
-    // Every entry was filtered and sorted on its date, so the throw states an invariant and is never reached.
     private static string ToInstant(DateOnly? date)
     {
         DateOnly value = date ?? throw new InvalidOperationException("A feed entry always declares a date.");

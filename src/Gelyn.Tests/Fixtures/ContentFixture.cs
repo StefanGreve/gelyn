@@ -402,6 +402,36 @@ internal sealed class ContentFixture
             string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---", string.Empty, body));
 
     /// <summary>
+    ///     Adds one source file that declares a publication date and a revision date, creating the
+    ///     directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="title">
+    ///     The title to declare in the front matter.
+    /// </param>
+    /// <param name="date">
+    ///     The publication date to declare in the front matter, in ISO 8601 form.
+    /// </param>
+    /// <param name="revised">
+    ///     The revision date to declare in the front matter, in ISO 8601 form.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteRevised(string relativePath, string title, string date, string revised) =>
+        this.WriteFile(
+            relativePath,
+            string.Join(
+                Environment.NewLine,
+                "---",
+                $"title: {title}",
+                $"date: {date}",
+                $"revised: {revised}",
+                "---"));
+
+    /// <summary>
     ///     Adds one source file that opts into the feed, creating the directories leading to it.
     /// </summary>
     /// <param name="relativePath">
