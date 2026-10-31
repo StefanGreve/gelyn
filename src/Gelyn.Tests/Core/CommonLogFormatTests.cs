@@ -139,8 +139,8 @@ public partial class CommonLogFormatTests
         string expected)
     {
         // Arrange
-        TimeSpan offset = new(offsetHours, offsetMinutes, 0);
-        DateTimeOffset timestamp = new(2026, 10, 17, 13, 6, 6, offset);
+        var offset = new TimeSpan(offsetHours, offsetMinutes, 0);
+        var timestamp = new DateTimeOffset(2026, 10, 17, 13, 6, 6, offset);
 
         // Act
         string entry = Build(timestamp: timestamp);

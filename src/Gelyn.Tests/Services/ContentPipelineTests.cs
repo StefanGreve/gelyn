@@ -25,7 +25,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_LandingPage_IsTheFirstResult()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -42,7 +42,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_Navigation_CoversTheFirstTwoLevelsOnly()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         string[] expected = ["/index.html", "/about.html", "/blog/index.html"];
 
         // Act
@@ -311,7 +311,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_Stylesheets_CascadeOutermostFirst()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
+        var fixture = ContentFixture.CreateStyled();
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -339,7 +339,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_Stylesheet_IsLocatedAsACopy()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
+        var fixture = ContentFixture.CreateStyled();
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -451,7 +451,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_Scripts_CascadeOutermostFirst()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateScripted();
+        var fixture = ContentFixture.CreateScripted();
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -505,7 +505,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_Script_IsLocatedAsACopy()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateScripted();
+        var fixture = ContentFixture.CreateScripted();
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);
@@ -701,7 +701,7 @@ public class ContentPipelineTests
     public async Task RenderAsync_Test_NestedContent_IsRendered()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
@@ -752,7 +752,7 @@ public class ContentPipelineTests
     public async Task RenderAsync_Test_FeedOptIn_ReachesTheDeclaringPageAlone()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateSyndicated();
+        var fixture = ContentFixture.CreateSyndicated();
 
         // Act
         IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);

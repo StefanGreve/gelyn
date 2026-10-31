@@ -65,7 +65,7 @@ internal static class Program
             // Ensures that --help and --version execute even when the configuration holds invalid values:
             // consumers read their options lazily, so validation surfaces here and only for a real command.
             // A configuration file that cannot be parsed is the exception, because loading it is eager.
-            InvocationConfiguration configuration = new() { EnableDefaultExceptionHandler = false };
+            var configuration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
 
             ParseResult parsed = host.Services
                 .GetRequiredService<GelynCommand>()

@@ -24,7 +24,7 @@ internal static class HostExtensions
     {
         ArgumentNullException.ThrowIfNull(args);
 
-        ConfigurationManager configuration = new();
+        var configuration = new ConfigurationManager();
 
         configuration
             .AddEnvironmentVariables(prefix: HostVariablePrefix)

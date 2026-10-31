@@ -122,7 +122,8 @@ internal sealed class SiteWatcher
     /// <summary>
     ///     The writer the watchers hand their events to, and the seam a test writes a change into.
     /// </summary>
-    internal ChannelWriter<string> Changes => this._changes.Writer;
+    internal ChannelWriter<string> Changes =>
+        this._changes.Writer;
 
     /// <summary>
     ///     Watches the content tree and the configuration file until the operation is cancelled, rebuilding
@@ -219,7 +220,7 @@ internal sealed class SiteWatcher
                 arrived.Add(path);
 
             List<string> changed = [];
-            HashSet<string> considered = new(StringComparer.OrdinalIgnoreCase);
+            var considered = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (string path in arrived)
             {
@@ -342,7 +343,7 @@ internal sealed class SiteWatcher
     /// </returns>
     private static FileSystemWatcher Observe(string directory, string filter, bool recursive, ChannelWriter<string> writer)
     {
-        FileSystemWatcher watcher = new(directory, filter) { IncludeSubdirectories = recursive };
+        var watcher = new FileSystemWatcher(directory, filter) { IncludeSubdirectories = recursive };
         void Report(object sender, FileSystemEventArgs e) => writer.TryWrite(e.FullPath);
 
         watcher.Changed += Report;
@@ -377,13 +378,14 @@ internal sealed class SiteWatcher
     /// <seealso href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtokensource.cancel">
     ///     CancellationTokenSource.Cancel.
     /// </seealso>
-    private static bool IsConfigurationFailure(Exception exception) => exception switch
-    {
-        AggregateException aggregate => aggregate.Flatten().InnerExceptions is { Count: > 0 } failures && failures.All(IsConfigurationFailure),
-        InvalidDataException or InvalidOperationException or OptionsValidationException => true,
-        IOException => true,
-        _ => false,
-    };
+    private static bool IsConfigurationFailure(Exception exception) =>
+        exception switch
+        {
+            AggregateException aggregate => aggregate.Flatten().InnerExceptions is { Count: > 0 } failures && failures.All(IsConfigurationFailure),
+            InvalidDataException or InvalidOperationException or OptionsValidationException => true,
+            IOException => true,
+            _ => false,
+        };
 
     /// <summary>
     ///     The ways a build over a tree that is being edited fails, each of which leaves the loop serving

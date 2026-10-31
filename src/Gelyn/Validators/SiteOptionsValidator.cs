@@ -78,9 +78,8 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
     // The build would publish an output inside the content directory as content, `gelyn clean` would remove
     // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it
     // just wrote, so neither may contain the other.
-    private static bool ViolatesBoundary(string root, string content, string output) => PathBoundary.Overlap(
-        PathBoundary.Resolve(root, content),
-        PathBoundary.Resolve(root, output));
+    private static bool ViolatesBoundary(string root, string content, string output) =>
+        PathBoundary.Overlap(PathBoundary.Resolve(root, content), PathBoundary.Resolve(root, output));
 
     #endregion
 }

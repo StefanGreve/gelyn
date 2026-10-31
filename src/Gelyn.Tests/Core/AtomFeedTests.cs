@@ -29,7 +29,7 @@ public class AtomFeedTests
     public async Task Render_Test_AbsentBaseUrl_WritesNothing()
     {
         // Arrange
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         // Act
         byte[] feed = AtomFeed.Render(options, [Page("post.html", "Post", "2026-01-01", inFeed: true)]);

@@ -131,7 +131,8 @@ internal sealed class WatchHarness : IAsyncDisposable
     /// <summary>
     ///     The records the loop has written, in the order it wrote them.
     /// </summary>
-    public IReadOnlyList<FakeLogRecord> Records => this.Logger.Collector.GetSnapshot();
+    public IReadOnlyList<FakeLogRecord> Records =>
+        this.Logger.Collector.GetSnapshot();
 
     /// <summary>
     ///     Everything the loop has written to its console.
@@ -158,12 +159,14 @@ internal sealed class WatchHarness : IAsyncDisposable
     /// <summary>
     ///     The number of rebuilds the loop has completed.
     /// </summary>
-    public int Rebuilds => this.Count(EventIds.REBUILD_COMPLETED);
+    public int Rebuilds =>
+        this.Count(EventIds.REBUILD_COMPLETED);
 
     /// <summary>
     ///     The number of configuration reloads the loop has performed.
     /// </summary>
-    public int Reloads => this.Count(EventIds.CONFIGURATION_RELOADED);
+    public int Reloads =>
+        this.Count(EventIds.CONFIGURATION_RELOADED);
 
     /// <summary>
     ///     Everything the loop has written to standard error.
@@ -189,18 +192,21 @@ internal sealed class WatchHarness : IAsyncDisposable
     ///     The lines reporting a rebuild that failed. Read off standard error, so a count also pins the
     ///     stream the report reached.
     /// </summary>
-    public string[] Errors => [.. this.ErrorLines.Where(static line => line.StartsWith("error:", StringComparison.Ordinal))];
+    public string[] Errors =>
+        [.. this.ErrorLines.Where(static line => line.StartsWith("error:", StringComparison.Ordinal))];
 
     /// <summary>
     ///     The lines reporting something the session cannot follow, read off standard error for the reason
     ///     <see cref="Errors"/> gives.
     /// </summary>
-    public string[] Warnings => [.. this.ErrorLines.Where(static line => line.StartsWith("warning:", StringComparison.Ordinal))];
+    public string[] Warnings =>
+        [.. this.ErrorLines.Where(static line => line.StartsWith("warning:", StringComparison.Ordinal))];
 
     /// <summary>
     ///     Indicates whether the loop has stopped.
     /// </summary>
-    public bool Stopped => this._watching.IsCompleted;
+    public bool Stopped =>
+        this._watching.IsCompleted;
 
     /// <summary>
     ///     Starts a rebuild loop over one content tree.
@@ -412,7 +418,8 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.Watcher.Changes.TryWrite(path);
     }
 
-    private int Count(int eventId) => this.Records.Count(record => record.Id.Id == eventId);
+    private int Count(int eventId) =>
+        this.Records.Count(record => record.Id.Id == eventId);
 
     private async Task AdvanceUntilAsync(Func<bool> reached, string expectation)
     {

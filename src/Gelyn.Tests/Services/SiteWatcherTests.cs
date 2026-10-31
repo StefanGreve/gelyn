@@ -34,7 +34,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_OneChange_RebuildsOnce()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness.Change("about.md");
@@ -60,7 +60,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_ChangesInsideTheWindow_RebuildOnce()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness
@@ -89,7 +89,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_UnchangedEntry_IsNotRebuiltOn()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         harness.Change("about.md");
         await harness.WaitForRebuildsAsync(1);
@@ -114,7 +114,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_ChangesEitherSideOfTheWindow_RebuildTwice()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness.Change("about.md");
@@ -139,7 +139,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_RepeatedChange_IsCountedOnce()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness
@@ -170,8 +170,8 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_Rebuild_PublishesTheEditedSource()
     {
         // Arrange
-        ContentFixture content = ContentFixture.Create();
-        await using WatchHarness harness = WatchHarness.Start(content);
+        var content = ContentFixture.Create();
+        await using var harness = WatchHarness.Start(content);
 
         // Act
         content.Write("about.md", "Revised");
@@ -191,7 +191,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_Rebuild_ReportsOneSummaryLine()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
         string source = Path.Combine("content", "about.md");
 
         // Act
@@ -217,7 +217,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_SeveralChanges_AreReportedByTheirNumber()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness.Change("about.md").Change("index.md");
@@ -237,8 +237,8 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_FailedRebuild_LeavesTheLoopRunning()
     {
         // Arrange
-        ContentFixture content = ContentFixture.Create();
-        await using WatchHarness harness = WatchHarness.Start(content);
+        var content = ContentFixture.Create();
+        await using var harness = WatchHarness.Start(content);
 
         // Act
         content.Delete("index.md");
@@ -274,7 +274,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_ConfigurationChange_IsReloadedBeforeTheRebuild()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         int[] expected =
         [
@@ -303,7 +303,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_ConfigurationChange_IsRecognizedWhateverItsCasing()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness.ChangeConfiguration(harness.ConfigurationPath.ToUpperInvariant());
@@ -322,7 +322,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_SourceChange_ReloadsNothing()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         harness.Change("about.md");
@@ -366,8 +366,8 @@ public class SiteWatcherTests
                 [message])
             : new InvalidOperationException(message);
 
-        ConfigurationRootStub configuration = new(new AggregateException(new AggregateException(rejected)));
-        await using WatchHarness harness = WatchHarness.Start(configuration: configuration);
+        var configuration = new ConfigurationRootStub(new AggregateException(new AggregateException(rejected)));
+        await using var harness = WatchHarness.Start(configuration: configuration);
 
         // Act
         harness.ChangeConfiguration();
@@ -398,8 +398,8 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_MovedDirectory_IsReportedWithoutARebuild(string setting)
     {
         // Arrange
-        ContentFixture content = ContentFixture.Create();
-        await using WatchHarness harness = WatchHarness.Start(content);
+        var content = ContentFixture.Create();
+        await using var harness = WatchHarness.Start(content);
 
         // Act
         if (setting.Equals(nameof(SiteOptions.ContentDirectory), StringComparison.Ordinal))
@@ -434,7 +434,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_Cancellation_StopsTheLoop()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
 
         // Act
         await harness.StopAsync();
@@ -455,7 +455,7 @@ public class SiteWatcherTests
     public async Task RebuildOnChangeAsync_Test_ChangeAfterCancellation_RebuildsNothing()
     {
         // Arrange
-        await using WatchHarness harness = WatchHarness.Start();
+        await using var harness = WatchHarness.Start();
         await harness.StopAsync();
 
         // Act

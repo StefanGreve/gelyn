@@ -54,7 +54,7 @@ public class SiteOptionsSchemaTests
     public async Task Schema_Test_DefaultsMatchTheOptionsType()
     {
         // Arrange
-        SiteOptions options = new();
+        var options = new SiteOptions();
         JsonElement documented = ReadDocumentedProperties();
 
         // Act and Assert
@@ -81,7 +81,7 @@ public class SiteOptionsSchemaTests
     {
         string path = Path.Combine(AppContext.BaseDirectory, SchemaFileName);
 
-        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        using var document = JsonDocument.Parse(File.ReadAllText(path));
 
         // Cloned because every JsonElement is invalidated once the owning document is disposed.
         return document.RootElement

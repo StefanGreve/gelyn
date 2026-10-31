@@ -21,7 +21,8 @@ internal static class PathBoundary
     /// <exception cref="ArgumentException">
     ///     <paramref name="path"/> is empty or carries a character that no path may hold, such as NUL.
     /// </exception>
-    internal static string Resolve(string path) => Normalize(Path.GetFullPath(path));
+    internal static string Resolve(string path) =>
+        Normalize(Path.GetFullPath(path));
 
     /// <summary>
     ///     Resolves one path against a directory, collapsing the <c>..</c> segments either of them holds.
@@ -41,7 +42,8 @@ internal static class PathBoundary
     ///     The combination of <paramref name="root"/> and <paramref name="path"/> is empty or carries a
     ///     character that no path may hold, such as NUL.
     /// </exception>
-    internal static string Resolve(string root, string path) => Normalize(Path.GetFullPath(Path.Combine(root, path)));
+    internal static string Resolve(string root, string path) =>
+        Normalize(Path.GetFullPath(Path.Combine(root, path)));
 
     /// <summary>
     ///     Indicates whether one path is a directory itself or sits below it.

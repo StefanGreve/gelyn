@@ -161,7 +161,7 @@ internal sealed class FileServer
         string address = Address(port);
         string? refresh = refreshSeconds?.ToString(Tool.Culture);
 
-        using HttpListener listener = new();
+        using var listener = new HttpListener();
 
         foreach (string prefix in Addresses(port))
             listener.Prefixes.Add(prefix);

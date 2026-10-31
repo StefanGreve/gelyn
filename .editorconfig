@@ -101,8 +101,8 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 
 # var preferences
 csharp_style_var_elsewhere = false:silent
-csharp_style_var_for_built_in_types = false:silent
-csharp_style_var_when_type_is_apparent = true:silent
+csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_when_type_is_apparent = true:warning
 
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = true:silent
@@ -146,7 +146,7 @@ dotnet_diagnostic.IDE0290.severity = none
 # Expression-level preferences
 csharp_prefer_simple_default_expression = true:suggestion
 csharp_style_deconstructed_variable_declaration = true:suggestion
-csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
+csharp_style_implicit_object_creation_when_type_is_apparent = false:silent
 csharp_style_inlined_variable_declaration = true:suggestion
 csharp_style_prefer_index_operator = true:suggestion
 csharp_style_prefer_local_over_anonymous_function = true:suggestion

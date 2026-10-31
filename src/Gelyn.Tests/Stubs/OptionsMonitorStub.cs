@@ -18,13 +18,17 @@ internal sealed class OptionsMonitorStub : IOptionsMonitor<SiteOptions>
     /// <param name="options">
     ///     The options to report, or <see langword="null"/> to report the defaults.
     /// </param>
-    public OptionsMonitorStub(SiteOptions? options = null) => this.CurrentValue = options ?? new SiteOptions();
+    public OptionsMonitorStub(SiteOptions? options = null)
+    {
+        this.CurrentValue = options ?? new SiteOptions();
+    }
 
     /// <inheritdoc/>
     public SiteOptions CurrentValue { get; }
 
     /// <inheritdoc/>
-    public SiteOptions Get(string? name) => this.CurrentValue;
+    public SiteOptions Get(string? name) =>
+        this.CurrentValue;
 
     /// <summary>
     ///     Not supported.
@@ -39,5 +43,6 @@ internal sealed class OptionsMonitorStub : IOptionsMonitor<SiteOptions>
     ///     Always thrown. The services under test read <see cref="CurrentValue"/> only, so a no-op
     ///     subscription would hide a change in what they depend on.
     /// </exception>
-    public IDisposable OnChange(Action<SiteOptions, string?> listener) => throw new NotSupportedException();
+    public IDisposable OnChange(Action<SiteOptions, string?> listener) =>
+        throw new NotSupportedException();
 }

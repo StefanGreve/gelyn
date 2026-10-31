@@ -59,10 +59,10 @@ internal sealed class OutputFixture
     /// </returns>
     public static OutputFixture Create(params string[] relativePaths)
     {
-        MockFileSystem fileSystem = new();
+        var fileSystem = new MockFileSystem();
         string parent = fileSystem.Path.Combine(fileSystem.Path.GetTempPath(), "gelyn");
 
-        OutputFixture fixture = new(fileSystem, parent);
+        var fixture = new OutputFixture(fileSystem, parent);
 
         foreach (string relativePath in relativePaths)
             fixture.Write(relativePath);
@@ -116,7 +116,8 @@ internal sealed class OutputFixture
     /// <returns>
     ///     The absolute path.
     /// </returns>
-    public string Locate(string relativePath) => this.Resolve(this.Root, relativePath);
+    public string Locate(string relativePath) =>
+        this.Resolve(this.Root, relativePath);
 
     /// <summary>
     ///     Resolves one request path against the output tree.
@@ -127,13 +128,13 @@ internal sealed class OutputFixture
     /// <returns>
     ///     What the request resolved to.
     /// </returns>
-    public ServedFile Resolve(string requestPath) => this.Resolver.Resolve(this.Root, requestPath);
+    public ServedFile Resolve(string requestPath) =>
+        this.Resolver.Resolve(this.Root, requestPath);
 
     #region Helpers
 
-    private string Resolve(string root, string relativePath) => this.FileSystem.Path.Combine(
-        root,
-        relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
+    private string Resolve(string root, string relativePath) =>
+        this.FileSystem.Path.Combine(root, relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
 
     #endregion
 }

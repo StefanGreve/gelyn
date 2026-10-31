@@ -29,7 +29,7 @@ internal sealed class DiskFixture : IDisposable
         this.OutputRoot = Path.Combine(root, options.OutputDirectory);
 
         IFileSystem fileSystem = new FileSystem();
-        HostEnvironmentStub environment = new() { ContentRootPath = root };
+        var environment = new HostEnvironmentStub { ContentRootPath = root };
 
         this.Pipeline = new ContentPipeline(environment, fileSystem);
 
@@ -79,8 +79,8 @@ internal sealed class DiskFixture : IDisposable
     /// </returns>
     public static DiskFixture Create()
     {
-        SiteOptions options = new();
-        DiskFixture fixture = new(Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}"), options);
+        var options = new SiteOptions();
+        var fixture = new DiskFixture(Path.Combine(Path.GetTempPath(), $"gelyn-{Guid.NewGuid():N}"), options);
 
         Directory.CreateDirectory(fixture.ContentRoot);
         Directory.CreateDirectory(fixture.OutputRoot);
@@ -165,7 +165,8 @@ internal sealed class DiskFixture : IDisposable
     /// <returns>
     ///     <see langword="true"/> when the file is present, <see langword="false"/> otherwise.
     /// </returns>
-    public bool Holds(string relativePath) => File.Exists(Locate(this.Root, relativePath));
+    public bool Holds(string relativePath) =>
+        File.Exists(Locate(this.Root, relativePath));
 
     /// <summary>
     ///     Removes the whole tree, links included.

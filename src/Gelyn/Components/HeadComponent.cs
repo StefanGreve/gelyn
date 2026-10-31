@@ -28,7 +28,7 @@ internal static class HeadComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        StringBuilder head = new();
+        var head = new StringBuilder();
         SiteOptions options = context.Options;
 
         head.AppendLine("""<meta charset="utf-8">""");

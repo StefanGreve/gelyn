@@ -27,7 +27,7 @@ internal static class Browser
         try
         {
             // Null when the shell handed the URL to a browser that was already running
-            using Process? process = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            using var process = Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
             errorMessage = null;
             return true;
         }

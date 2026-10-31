@@ -45,7 +45,6 @@ internal static class StringUtils
             body.CopyTo(buffer);
             buffer[body.Length] = terminator;
 
-            // Sliced because Rent answers with at least the requested length and often more.
             return new string(buffer[..length]);
         }
         finally

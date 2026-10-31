@@ -26,11 +26,12 @@ internal static class CapturedConsole
     /// <returns>
     ///     The new console.
     /// </returns>
-    public static IAnsiConsole Create(TextWriter writer) => AnsiConsole.Create(new AnsiConsoleSettings
-    {
-        Ansi = AnsiSupport.No,
-        ColorSystem = ColorSystemSupport.NoColors,
-        Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
-        Out = new AnsiConsoleOutput(writer),
-    });
+    public static IAnsiConsole Create(TextWriter writer) =>
+        AnsiConsole.Create(new AnsiConsoleSettings
+        {
+            Ansi = AnsiSupport.No,
+            ColorSystem = ColorSystemSupport.NoColors,
+            Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
+            Out = new AnsiConsoleOutput(writer),
+        });
 }

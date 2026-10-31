@@ -27,7 +27,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_Directory_ResolvesToItsIndex(string requestPath, string expected)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "blog/index.html", "blog/2026/index.html");
+        var fixture = OutputFixture.Create("index.html", "blog/index.html", "blog/2026/index.html");
 
         // Act
         ServedFile file = fixture.Resolve(requestPath);
@@ -49,7 +49,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_DirectoryWithoutAnIndex_IsAMiss()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "assets/logo.png");
+        var fixture = OutputFixture.Create("index.html", "assets/logo.png");
 
         // Act
         ServedFile file = fixture.Resolve("/assets/");
@@ -77,7 +77,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_ExtensionlessPath_ResolvesToTheHtmlFile(string requestPath, string expected)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "about.html", "blog/hello.html");
+        var fixture = OutputFixture.Create("index.html", "about.html", "blog/hello.html");
 
         // Act
         ServedFile file = fixture.Resolve(requestPath);
@@ -100,7 +100,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_NamedFile_ResolvesToItself(string requestPath, string expected)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "about.html", "robots.txt");
+        var fixture = OutputFixture.Create("index.html", "about.html", "robots.txt");
 
         // Act
         ServedFile file = fixture.Resolve(requestPath);
@@ -117,7 +117,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_PathCarryingAnExtension_IsNotExtended()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "about.css.html");
+        var fixture = OutputFixture.Create("index.html", "about.css.html");
 
         // Act
         ServedFile file = fixture.Resolve("/about.css");
@@ -191,7 +191,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_UnacceptablePath_IsAMiss()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
+        var fixture = OutputFixture.Create("index.html");
 
         // Act
         ServedFile file = fixture.Resolve("/%00");
@@ -239,7 +239,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_Miss_ServesTheDeclaredNotFoundPage()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "404.html");
+        var fixture = OutputFixture.Create("index.html", "404.html");
 
         // Act
         ServedFile file = fixture.Resolve("/nope");
@@ -261,7 +261,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_Miss_IgnoresANestedNotFoundPage()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "blog/index.html", "blog/404.html");
+        var fixture = OutputFixture.Create("index.html", "blog/index.html", "blog/404.html");
 
         // Act
         ServedFile file = fixture.Resolve("/blog/nope");
@@ -277,7 +277,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_Miss_WithoutAPageIsBodyless()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
+        var fixture = OutputFixture.Create("index.html");
 
         // Act
         ServedFile file = fixture.Resolve("/nope");
@@ -326,7 +326,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_ContentType_FollowsTheExtension(string relativePath, string expected)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", relativePath);
+        var fixture = OutputFixture.Create("index.html", relativePath);
 
         // Act
         ServedFile file = fixture.Resolve($"/{relativePath}");
@@ -347,7 +347,7 @@ public class StaticFileResolverTests
     public async Task Resolve_Test_ContentType_DisregardsTheCaseOfTheExtension()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "README.HTML", "photo.JPG");
+        var fixture = OutputFixture.Create("index.html", "README.HTML", "photo.JPG");
 
         // Act
         ServedFile page = fixture.Resolve("/README.HTML");

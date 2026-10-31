@@ -111,7 +111,7 @@ internal static class CommonLogFormat
         ArgumentNullException.ThrowIfNull(method);
         ArgumentNullException.ThrowIfNull(protocol);
 
-        StringBuilder entry = new();
+        var entry = new StringBuilder();
 
         entry.Append(client ?? Unavailable);
         entry.Append(' ').Append(identity ?? Unavailable);

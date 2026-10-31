@@ -170,31 +170,32 @@ internal sealed class StaticFileResolver
 
     // A switch over string literals compares ordinally, so matching an extension that may carry any spelling
     // needs the when clauses that ContentPipeline.Classify uses for the same reason.
-    private static string Classify(string extension) => extension switch
-    {
-        var value when value.Equals(HtmlExtension, StringComparison.OrdinalIgnoreCase) => HtmlContentType,
-        var value when value.Equals(".css", StringComparison.OrdinalIgnoreCase) => CssContentType,
-        var value when value.Equals(".js", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,
-        var value when value.Equals(".mjs", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,
-        var value when value.Equals(".txt", StringComparison.OrdinalIgnoreCase) => PlainTextContentType,
-        var value when value.Equals(".xml", StringComparison.OrdinalIgnoreCase) => XmlContentType,
-        var value when value.Equals(".svg", StringComparison.OrdinalIgnoreCase) => SvgContentType,
-        var value when value.Equals(".json", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Json,
-        var value when value.Equals(".webmanifest", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Manifest,
-        var value when value.Equals(".ico", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Icon,
-        var value when value.Equals(".png", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Png,
-        var value when value.Equals(".jpg", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Jpeg,
-        var value when value.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Jpeg,
-        var value when value.Equals(".gif", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Gif,
-        var value when value.Equals(".webp", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Webp,
-        var value when value.Equals(".avif", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Avif,
-        var value when value.Equals(".woff", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Woff,
-        var value when value.Equals(".woff2", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Woff2,
-        var value when value.Equals(".ttf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Ttf,
-        var value when value.Equals(".otf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Otf,
-        var value when value.Equals(".pdf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Pdf,
-        _ => MediaTypeNames.Application.Octet,
-    };
+    private static string Classify(string extension) =>
+        extension switch
+        {
+            var value when value.Equals(HtmlExtension, StringComparison.OrdinalIgnoreCase) => HtmlContentType,
+            var value when value.Equals(".css", StringComparison.OrdinalIgnoreCase) => CssContentType,
+            var value when value.Equals(".js", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,
+            var value when value.Equals(".mjs", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,
+            var value when value.Equals(".txt", StringComparison.OrdinalIgnoreCase) => PlainTextContentType,
+            var value when value.Equals(".xml", StringComparison.OrdinalIgnoreCase) => XmlContentType,
+            var value when value.Equals(".svg", StringComparison.OrdinalIgnoreCase) => SvgContentType,
+            var value when value.Equals(".json", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Json,
+            var value when value.Equals(".webmanifest", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Manifest,
+            var value when value.Equals(".ico", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Icon,
+            var value when value.Equals(".png", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Png,
+            var value when value.Equals(".jpg", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Jpeg,
+            var value when value.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Jpeg,
+            var value when value.Equals(".gif", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Gif,
+            var value when value.Equals(".webp", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Webp,
+            var value when value.Equals(".avif", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Image.Avif,
+            var value when value.Equals(".woff", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Woff,
+            var value when value.Equals(".woff2", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Woff2,
+            var value when value.Equals(".ttf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Ttf,
+            var value when value.Equals(".otf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Font.Otf,
+            var value when value.Equals(".pdf", StringComparison.OrdinalIgnoreCase) => MediaTypeNames.Application.Pdf,
+            _ => MediaTypeNames.Application.Octet,
+        };
 
     #endregion
 }

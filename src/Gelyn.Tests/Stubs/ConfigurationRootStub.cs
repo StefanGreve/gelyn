@@ -25,7 +25,10 @@ internal sealed class ConfigurationRootStub : IConfigurationRoot
     /// <param name="failure">
     ///     The exception every reload throws, or <see langword="null"/> for a reload that succeeds.
     /// </param>
-    public ConfigurationRootStub(Exception? failure = null) => this._failure = failure;
+    public ConfigurationRootStub(Exception? failure = null)
+    {
+        this._failure = failure;
+    }
 
     /// <summary>
     ///     The number of times the configuration was asked to reload, the failed attempts included.
@@ -33,20 +36,25 @@ internal sealed class ConfigurationRootStub : IConfigurationRoot
     public int Reloads { get; private set; }
 
     /// <inheritdoc/>
-    public IEnumerable<IConfigurationProvider> Providers => [];
+    public IEnumerable<IConfigurationProvider> Providers =>
+        [];
 
     /// <inheritdoc/>
     public string? this[string key]
     {
-        get => null;
-        set => throw new NotSupportedException();
+        get =>
+            null;
+        set =>
+            throw new NotSupportedException();
     }
 
     /// <inheritdoc/>
-    public IEnumerable<IConfigurationSection> GetChildren() => [];
+    public IEnumerable<IConfigurationSection> GetChildren() =>
+        [];
 
     /// <inheritdoc/>
-    public IChangeToken GetReloadToken() => this._token;
+    public IChangeToken GetReloadToken() =>
+        this._token;
 
     /// <summary>
     ///     Not supported.
@@ -61,7 +69,8 @@ internal sealed class ConfigurationRootStub : IConfigurationRoot
     ///     Always thrown. A section of an empty configuration would be an empty section, which no test can
     ///     tell apart from one that was never asked for.
     /// </exception>
-    public IConfigurationSection GetSection(string key) => throw new NotSupportedException();
+    public IConfigurationSection GetSection(string key) =>
+        throw new NotSupportedException();
 
     /// <summary>
     ///     Records the reload and fails it when the stub was constructed to.

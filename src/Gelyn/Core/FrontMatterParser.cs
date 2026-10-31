@@ -34,7 +34,7 @@ internal static class FrontMatterParser
     // A delimiter line would otherwise open a second YAML document, which Deserialize rejects outright.
     private static string StripDelimiters(ReadOnlySpan<char> block)
     {
-        StringBuilder body = new(block.Length);
+        var body = new StringBuilder(block.Length);
 
         foreach (ReadOnlySpan<char> line in block.EnumerateLines())
         {

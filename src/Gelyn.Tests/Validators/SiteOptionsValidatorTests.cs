@@ -27,7 +27,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_ServableBaseUrl_Succeeds(string baseUrl)
     {
         // Arrange
-        SiteOptions options = new() { BaseUrl = new Uri(baseUrl) };
+        var options = new SiteOptions { BaseUrl = new Uri(baseUrl) };
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -48,7 +48,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_UnservableBaseUrl_Fails(string baseUrl)
     {
         // Arrange
-        SiteOptions options = new() { BaseUrl = new Uri(baseUrl, UriKind.RelativeOrAbsolute) };
+        var options = new SiteOptions { BaseUrl = new Uri(baseUrl, UriKind.RelativeOrAbsolute) };
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -108,7 +108,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_AbsentBaseUrl_Succeeds()
     {
         // Arrange
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -132,7 +132,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_OutputDirectoryBesideContentDirectory_Succeeds(string content, string output)
     {
         // Arrange
-        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+        var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -154,7 +154,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_OutputDirectoryInsideContentDirectory_Fails(string content, string output)
     {
         // Arrange
-        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+        var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -178,7 +178,7 @@ public class SiteOptionsValidatorTests
     public async Task Validate_Test_OutputDirectoryAboveContentDirectory_Fails(string content, string output)
     {
         // Arrange
-        SiteOptions options = new() { ContentDirectory = content, OutputDirectory = output };
+        var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
         ValidateOptionsResult result = Validate(options);
@@ -205,7 +205,7 @@ public class SiteOptionsValidatorTests
     // string, so no conversion is involved.
     private static SiteOptions Blank(string setting, string value)
     {
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         typeof(SiteOptions).GetProperty(setting)!.SetValue(options, value);
 

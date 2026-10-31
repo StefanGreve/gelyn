@@ -73,7 +73,7 @@ internal sealed class ServeCommand : Command
         [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("serve", "Serve the site over HTTP for local preview, rebuilding it as its sources change.")
     {
-        Option<int> port = new($"--{PortOption}")
+        var port = new Option<int>($"--{PortOption}")
         {
             Description = $"The loopback port to serve on. Defaults to {DefaultPort}.",
             HelpName = "number",
@@ -87,12 +87,12 @@ internal sealed class ServeCommand : Command
                 result.AddError($"--{PortOption} must be between {IPEndPoint.MinPort + 1} and {IPEndPoint.MaxPort}.");
         });
 
-        Option<bool> launchBrowser = new($"--{LaunchBrowserOption}")
+        var launchBrowser = new Option<bool>($"--{LaunchBrowserOption}")
         {
             Description = "Open the served site in the default browser.",
         };
 
-        Option<int?> refresh = new($"--{RefreshOption}")
+        var refresh = new Option<int?>($"--{RefreshOption}")
         {
             Description = "Ask the browser to reload an HTML page every so many seconds. Absent by default.",
             HelpName = "seconds",
@@ -128,7 +128,7 @@ internal sealed class ServeCommand : Command
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
                 stdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
 
-                using CancellationTokenSource session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                using var session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
                 Task serving = server.ServeAsync(
                     outputDirectory,

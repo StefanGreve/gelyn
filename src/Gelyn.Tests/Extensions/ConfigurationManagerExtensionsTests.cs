@@ -30,7 +30,7 @@ public class ConfigurationManagerExtensionsTests
     public async Task Overrides_Test_PromotedFlags_ReachTheSettingsTheyStandFor()
     {
         // Arrange
-        ConfigurationManager configuration = new();
+        var configuration = new ConfigurationManager();
 
         configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -40,7 +40,7 @@ public class ConfigurationManagerExtensionsTests
             [OverrideOptions.Output] = "public",
         });
 
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         // Act
         configuration.AddSiteConfiguration([]);
@@ -86,7 +86,7 @@ public class ConfigurationManagerExtensionsTests
             })
             .Build();
 
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         // Act
         configuration.Bind(options);
@@ -104,14 +104,14 @@ public class ConfigurationManagerExtensionsTests
     public async Task Exclude_Test_SeparatedPatterns_ReachTheOptionsIndividually()
     {
         // Arrange
-        ConfigurationManager configuration = new();
+        var configuration = new ConfigurationManager();
 
         configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             [OverrideOptions.Exclude] = $"*.tmp{OverrideOptions.ExcludeSeparator} drafts ",
         });
 
-        SiteOptions options = new();
+        var options = new SiteOptions();
 
         // Act
         configuration.AddSiteConfiguration([]);

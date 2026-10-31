@@ -31,7 +31,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_LandingPage_IsWrittenFirst()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -104,7 +104,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_StylesheetLinks_AreEmittedOutermostFirst()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
+        var fixture = ContentFixture.CreateStyled();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -127,7 +127,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_ScriptTags_AreDeferredAndOutermostFirst()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateScripted();
+        var fixture = ContentFixture.CreateScripted();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -152,7 +152,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Script_IsCopiedBesideThePagesThatLoadIt()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateScripted();
+        var fixture = ContentFixture.CreateScripted();
 
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -179,7 +179,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_MathRenderer_IsLoadedByThePageThatEnablesIt()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateMathematical();
+        var fixture = ContentFixture.CreateMathematical();
         string katex = Package("katex", fixture.Options.KaTeXVersion);
 
         // Act
@@ -206,7 +206,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_MathRenderer_IsInheritedByNoPage()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateMathematical();
+        var fixture = ContentFixture.CreateMathematical();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -228,7 +228,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_MathRenderer_RequestsTheConfiguredVersion()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateMathematical();
+        var fixture = ContentFixture.CreateMathematical();
         fixture.Options.KaTeXVersion = "1.2.3";
 
         // Act
@@ -274,7 +274,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_DiagramRenderer_IsLoadedByThePageThatEnablesIt()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+        var fixture = ContentFixture.CreateDiagrammatic();
         string mermaid = Package("mermaid", fixture.Options.MermaidVersion);
 
         // Act
@@ -301,7 +301,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_DiagramRenderer_IsInheritedByNoPage()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+        var fixture = ContentFixture.CreateDiagrammatic();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -323,7 +323,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_DiagramRenderer_RequestsTheConfiguredVersion()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateDiagrammatic();
+        var fixture = ContentFixture.CreateDiagrammatic();
         fixture.Options.MermaidVersion = "11.0.0";
 
         // Act
@@ -342,8 +342,8 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Renderers_AreEnabledIndependently()
     {
         // Arrange
-        ContentFixture mathematical = ContentFixture.CreateMathematical();
-        ContentFixture diagrammatic = ContentFixture.CreateDiagrammatic();
+        var mathematical = ContentFixture.CreateMathematical();
+        var diagrammatic = ContentFixture.CreateDiagrammatic();
         string page = Path.Combine("blog", "index.html");
 
         // Act
@@ -366,7 +366,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Stylesheet_IsCopiedBesideThePagesThatLinkIt()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateStyled();
+        var fixture = ContentFixture.CreateStyled();
 
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -400,7 +400,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Navigation_LinksTopLevelPagesOnly()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         string[] expected = ["/index.html", "/about.html", "/blog/index.html"];
 
         // Act
@@ -435,7 +435,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Header_MarksTheCurrentPageOnly()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         string nested = fixture.FileSystem.Path.Combine("blog", "hello.html");
         string section = fixture.FileSystem.Path.Combine("blog", "index.html");
 
@@ -460,7 +460,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Footer_CarriesThePageDate()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateDated();
+        var fixture = ContentFixture.CreateDated();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -487,7 +487,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Footer_VariesByDateAlone()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateDated();
+        var fixture = ContentFixture.CreateDated();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -518,7 +518,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_SharedFragments_SurroundTheContent()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -548,7 +548,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Marker_IsReplacedByTheTable()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateTabulated();
+        var fixture = ContentFixture.CreateTabulated();
         string section = Path.Combine("blog", "index.html");
 
         // Act
@@ -572,7 +572,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_NestedIndex_IsMarkedAsAFolder()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.CreateTabulated();
+        var fixture = ContentFixture.CreateTabulated();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -593,7 +593,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_PagesWithoutAMarker_AreUnchanged()
     {
         // Arrange
-        ContentFixture marked = ContentFixture.CreateTabulated();
+        var marked = ContentFixture.CreateTabulated();
         ContentFixture plain = ContentFixture.CreateTabulated().WriteDated("blog/index.md", "Blog", "2026-02-01");
         string section = Path.Combine("blog", "index.html");
 
@@ -703,7 +703,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Canonical_IsOmittedWithoutABaseUrl()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -729,7 +729,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_OrphanedPage_IsRemoved()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         fixture.Delete("about.md");
@@ -778,7 +778,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_NewlyExcludedSource_HasItsOutputRemoved()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         fixture.WithExcludePatterns("about.md");
@@ -856,7 +856,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_EmptiedDirectory_IsRemoved()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         fixture.Delete("blog/2026/q3/deep.md");
@@ -945,7 +945,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Counters_AreReportedInPhaseOrder()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         int[] phases =
         [
@@ -1012,7 +1012,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Counters_CountRemovalsApartFromWrites()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         fixture.Delete("about.md");
@@ -1046,7 +1046,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Counters_AreReportedAtDebug()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -1074,7 +1074,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Counters_AccountForEveryPhase()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         await fixture.Builder.BuildAsync(CancellationToken.None);
@@ -1109,7 +1109,7 @@ public partial class SiteBuilderTests
     public async Task BuildAsync_Test_Elapsed_IsTheMeasurementTheBuildCounterReports()
     {
         // Arrange
-        ContentFixture fixture = ContentFixture.Create();
+        var fixture = ContentFixture.Create();
 
         // Act
         BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);

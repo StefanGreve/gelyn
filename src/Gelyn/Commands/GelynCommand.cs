@@ -27,7 +27,7 @@ internal sealed class GelynCommand : RootCommand
         : base("A static site generator.")
     {
         // Read by AddSiteConfiguration before the host exists, because it selects a configuration source.
-        Option<string> configuration = new(ConfigurationFile.OptionName)
+        var configuration = new Option<string>(ConfigurationFile.OptionName)
         {
             Description = $"Path to the configuration file. Defaults to {ConfigurationFile.DefaultFileName}.",
             HelpName = "path",
@@ -35,7 +35,7 @@ internal sealed class GelynCommand : RootCommand
         };
 
         // Read by Program before the host exists, because it selects the minimum level of the log providers.
-        Option<LogLevel> verbosity = new(VerbosityOption.OptionName)
+        var verbosity = new Option<LogLevel>(VerbosityOption.OptionName)
         {
             Description = "How much diagnostic output to write to standard error.",
             HelpName = "level",

@@ -65,16 +65,16 @@ internal static class AtomFeed
         // segment, so the trailing slash is what keeps a site served from below a domain root addressable.
         var root = new Uri(StringUtils.EnsureEndsOn(baseUrl.AbsoluteUri, '/'));
 
-        XmlWriterSettings settings = new()
+        var settings = new XmlWriterSettings
         {
             Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             Indent = true,
         };
 
-        using MemoryStream buffer = new();
+        using var buffer = new MemoryStream();
 
         // Closed before the bytes are read, because the writer holds the tail of the document until it is.
-        using (XmlWriter writer = XmlWriter.Create(buffer, settings))
+        using (var writer = XmlWriter.Create(buffer, settings))
         {
             writer.WriteStartDocument();
             writer.WriteStartElement("feed", Namespace);

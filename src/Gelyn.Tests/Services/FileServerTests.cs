@@ -56,7 +56,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create("index.html").Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
@@ -83,7 +83,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/", host), CancellationToken.None);
@@ -107,10 +107,10 @@ public class FileServerTests
         // Arrange
         byte[] expected = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF];
 
-        OutputFixture fixture = OutputFixture.Create("index.html");
+        var fixture = OutputFixture.Create("index.html");
         fixture.FileSystem.AddFile(fixture.Locate("logo.png"), new MockFileData(expected));
 
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/logo.png"), CancellationToken.None);
@@ -134,7 +134,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create("index.html").Write("404.html", "<p>Gone</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
@@ -157,9 +157,9 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
-        using HttpRequestMessage request = new(HttpMethod.Head, harness.Url("/"));
+        using var request = new HttpRequestMessage(HttpMethod.Head, harness.Url("/"));
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
@@ -185,10 +185,10 @@ public class FileServerTests
     public async Task ServeAsync_Test_UnsupportedMethod_IsRefusedUnderTheAllowedOnes(string method)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture);
 
-        using HttpRequestMessage request = new(new HttpMethod(method), harness.Url("/"));
+        using var request = new HttpRequestMessage(new HttpMethod(method), harness.Url("/"));
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
@@ -210,9 +210,9 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
-        using HttpRequestMessage refused = new(HttpMethod.Post, harness.Url("/"));
+        using var refused = new HttpRequestMessage(HttpMethod.Post, harness.Url("/"));
 
         // Act
         using HttpResponseMessage first = await harness.Client.SendAsync(refused, CancellationToken.None);
@@ -240,7 +240,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+        await using var harness = ServerHarness.Start(fixture, refreshSeconds: 2);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
@@ -265,8 +265,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_RefreshInterval_IsAbsentFromASubresource(string relativePath)
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create(relativePath);
-        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+        var fixture = OutputFixture.Create(relativePath);
+        await using var harness = ServerHarness.Start(fixture, refreshSeconds: 2);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(
@@ -290,7 +290,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
@@ -312,7 +312,7 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create("index.html").Write("404.html", "<p>Gone</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+        await using var harness = ServerHarness.Start(fixture, refreshSeconds: 2);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
@@ -333,8 +333,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_RefreshInterval_IsAbsentFromABodylessNotFound()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture, refreshSeconds: 2);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/nope"), CancellationToken.None);
@@ -356,9 +356,9 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture, refreshSeconds: 2);
+        await using var harness = ServerHarness.Start(fixture, refreshSeconds: 2);
 
-        using HttpRequestMessage request = new(HttpMethod.Head, harness.Url("/"));
+        using var request = new HttpRequestMessage(HttpMethod.Head, harness.Url("/"));
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
@@ -402,8 +402,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_Cancellation_StopsTheServer()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture);
 
         using HttpResponseMessage served = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
 
@@ -430,10 +430,10 @@ public class FileServerTests
     public async Task ServeAsync_Test_Banner_NamesTheAddressThePortAndTheUrl()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
+        var fixture = OutputFixture.Create("index.html");
 
         // Act
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
         // Assert
         await Assert.That(harness.Output.TrimEnd())
@@ -449,8 +449,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_RequestLog_ReportsTheRequestLineStatusAndSize()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html", "about.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html", "about.html");
+        await using var harness = ServerHarness.Start(fixture);
 
         long size = fixture.FileSystem.FileInfo.New(fixture.Locate("index.html")).Length;
 
@@ -487,8 +487,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_RequestLog_StampsEachEntryAndKeepsTheQueryString()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture);
 
         long size = fixture.FileSystem.FileInfo.New(fixture.Locate("index.html")).Length;
 
@@ -524,9 +524,9 @@ public class FileServerTests
     {
         // Arrange
         OutputFixture fixture = OutputFixture.Create().Write("index.html", "<p>Home</p>");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        await using var harness = ServerHarness.Start(fixture);
 
-        using HttpRequestMessage request = new(HttpMethod.Head, harness.Url("/"));
+        using var request = new HttpRequestMessage(HttpMethod.Head, harness.Url("/"));
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
@@ -553,10 +553,10 @@ public class FileServerTests
     public async Task ServeAsync_Test_RequestLog_CoversARefusedMethod()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture);
 
-        using HttpRequestMessage request = new(HttpMethod.Post, harness.Url("/")) { Content = new StringContent(string.Empty) };
+        using var request = new HttpRequestMessage(HttpMethod.Post, harness.Url("/")) { Content = new StringContent(string.Empty) };
 
         // Act
         using HttpResponseMessage response = await harness.Client.SendAsync(request, CancellationToken.None);
@@ -585,8 +585,8 @@ public class FileServerTests
     public async Task ServeAsync_Test_Diagnostics_ReportTheServedDirectory()
     {
         // Arrange
-        OutputFixture fixture = OutputFixture.Create("index.html");
-        await using ServerHarness harness = ServerHarness.Start(fixture);
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);

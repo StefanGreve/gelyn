@@ -21,7 +21,7 @@ public class HeadComponentTests
     public async Task Render_Test_Author_IsStatedWhenConfigured()
     {
         // Arrange
-        SiteOptions options = new() { Author = "Ann & Bob" };
+        var options = new SiteOptions { Author = "Ann & Bob" };
 
         // Act
         string head = Render(options);
@@ -40,7 +40,7 @@ public class HeadComponentTests
     public async Task Render_Test_BlankAuthor_IsOmitted(string? author)
     {
         // Arrange
-        SiteOptions options = new() { Author = author };
+        var options = new SiteOptions { Author = author };
 
         // Act
         string head = Render(options);
@@ -61,7 +61,7 @@ public class HeadComponentTests
     public async Task Render_Test_PageDescription_OverridesTheSiteDescription()
     {
         // Arrange
-        SiteOptions options = new() { Description = "Notes about software" };
+        var options = new SiteOptions { Description = "Notes about software" };
 
         // Act
         string head = Render(options, pageDescription: "About the author");
@@ -81,7 +81,7 @@ public class HeadComponentTests
     public async Task Render_Test_AbsentPageDescription_FallsBackToTheSite()
     {
         // Arrange
-        SiteOptions options = new() { Description = "Notes about software" };
+        var options = new SiteOptions { Description = "Notes about software" };
 
         // Act
         string head = Render(options);

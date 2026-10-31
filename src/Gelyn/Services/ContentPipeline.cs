@@ -216,14 +216,15 @@ internal sealed class ContentPipeline
         entry.LinkTarget is not null
         || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
 
-    private static ContentKind Classify(IFileInfo file) => file.Extension switch
-    {
-        var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
-        var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
-        var extension when extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
-        var extension when extension.Equals(FaviconExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
-        _ => ContentKind.MiscFile,
-    };
+    private static ContentKind Classify(IFileInfo file) =>
+        file.Extension switch
+        {
+            var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
+            var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
+            var extension when extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
+            var extension when extension.Equals(FaviconExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
+            _ => ContentKind.MiscFile,
+        };
 
     private static string CombineHref(string prefix, string[] segments) =>
         $"{prefix}/{string.Join('/', segments)}";
@@ -231,12 +232,13 @@ internal sealed class ContentPipeline
     private static string ResolveBaseUrlPath(Uri? baseUrl) =>
         baseUrl?.AbsolutePath.TrimEnd('/') ?? string.Empty;
 
-    private static bool IsInNavigation(string[] segments) => segments.Length switch
-    {
-        1 => true,
-        2 => segments[^1].Equals(IndexOutputFileName, StringComparison.Ordinal),
-        _ => false,
-    };
+    private static bool IsInNavigation(string[] segments) =>
+        segments.Length switch
+        {
+            1 => true,
+            2 => segments[^1].Equals(IndexOutputFileName, StringComparison.Ordinal),
+            _ => false,
+        };
 
     #endregion
 }

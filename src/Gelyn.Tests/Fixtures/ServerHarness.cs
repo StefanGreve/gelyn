@@ -53,7 +53,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
         IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
 
-        FileServer server = new(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
+        var server = new FileServer(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
         // listening and the request below needs no readiness poll.
@@ -98,7 +98,8 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <summary>
     ///     What the server has written, one element per line, the banner first.
     /// </summary>
-    public string[] Lines => this.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+    public string[] Lines =>
+        this.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 
     /// <summary>
     ///     Everything the server has written to standard error.
@@ -122,7 +123,8 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <summary>
     ///     Indicates whether the server has stopped.
     /// </summary>
-    public bool Stopped => this._serving.IsCompleted;
+    public bool Stopped =>
+        this._serving.IsCompleted;
 
     /// <summary>
     ///     Starts a server over one output tree.
@@ -229,7 +231,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     // on. The window between the probe closing and the listener binding is what that costs.
     private static int FreePort()
     {
-        using TcpListener probe = new(IPAddress.Loopback, 0);
+        using var probe = new TcpListener(IPAddress.Loopback, 0);
 
         probe.Start();
 

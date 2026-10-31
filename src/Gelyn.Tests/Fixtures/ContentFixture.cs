@@ -95,7 +95,8 @@ internal sealed class ContentFixture
     /// <summary>
     ///     The records <see cref="Builder"/> has written, in the order it wrote them.
     /// </summary>
-    public IReadOnlyList<FakeLogRecord> Records => this.Logger.Collector.GetSnapshot();
+    public IReadOnlyList<FakeLogRecord> Records =>
+        this.Logger.Collector.GetSnapshot();
 
     /// <summary>
     ///     Creates a fixture holding a tree that nests deeper than the navigation reaches, so that a test
@@ -324,11 +325,11 @@ internal sealed class ContentFixture
     /// </returns>
     public static ContentFixture CreateEmpty(LogLevel verbosity = LogLevel.Debug)
     {
-        MockFileSystem fileSystem = new();
-        SiteOptions options = new();
+        var fileSystem = new MockFileSystem();
+        var options = new SiteOptions();
         string root = fileSystem.Path.Combine(fileSystem.Path.GetTempPath(), "gelyn");
 
-        ContentFixture fixture = new(fileSystem, root, options, verbosity);
+        var fixture = new ContentFixture(fileSystem, root, options, verbosity);
 
         fileSystem.AddDirectory(fixture.ContentRoot);
 
@@ -556,7 +557,8 @@ internal sealed class ContentFixture
     /// <returns>
     ///     The contents of the file.
     /// </returns>
-    public string ReadOutput(string path) => this.FileSystem.File.ReadAllText(path);
+    public string ReadOutput(string path) =>
+        this.FileSystem.File.ReadAllText(path);
 
     /// <summary>
     ///     Enumerates the files the builder has produced.
@@ -584,11 +586,11 @@ internal sealed class ContentFixture
             .Write("blog/2026/index.md", "2026");
     }
 
-    private string Resolve(string relativePath) => this.Resolve(this.ContentRoot, relativePath);
+    private string Resolve(string relativePath) =>
+        this.Resolve(this.ContentRoot, relativePath);
 
-    private string Resolve(string root, string relativePath) => this.FileSystem.Path.Combine(
-        root,
-        relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
+    private string Resolve(string root, string relativePath) =>
+        this.FileSystem.Path.Combine(root, relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
 
     #endregion
 }

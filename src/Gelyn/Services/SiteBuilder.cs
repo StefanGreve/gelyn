@@ -170,11 +170,11 @@ internal sealed class SiteBuilder
 
         // The banner differs only in which navigation entry carries aria-current, so it needs one render per
         // linked page plus one shared by every page the navigation leaves out, however many pages there are.
-        Dictionary<string, string> banners = new(navigation.Count + 1, StringComparer.Ordinal);
+        var banners = new Dictionary<string, string>(navigation.Count + 1, StringComparer.Ordinal);
 
         foreach (ContentPage page in pages)
         {
-            RenderContext context = page.ToRenderContext(options, navigation, pages);
+            var context = page.ToRenderContext(options, navigation, pages);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
             string html = ComposeDocument(context, banners);
@@ -247,12 +247,12 @@ internal sealed class SiteBuilder
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        HashSet<string> published = new(items.Count, StringComparer.Ordinal);
+        var published = new HashSet<string>(items.Count, StringComparer.Ordinal);
 
         foreach (ContentItem item in items)
             published.Add(item.OutputPath);
 
-        PruneContext context = new()
+        var context = new PruneContext
         {
             Prefix = [],
             Published = published,
