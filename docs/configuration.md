@@ -38,6 +38,7 @@ otherwise ignore in silence.
 | `Author`           | unset     | Fills the `author` meta tag. While unset, Gelyn omits the tag.                                          |
 | `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
+| `EnableFeed`       | `false`   | Publishes a feed of the pages that ask to be in one. See [Feed](#feed).                                 |
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
@@ -67,7 +68,8 @@ description: Who I am and what I write about
 ---
 ```
 
-Gelyn writes `date` to the `revised` meta tag and omits the tag when the front matter declares none.
+Gelyn writes the page's `revised` date to the `revised` meta tag, falling back to its `date`, and omits the
+tag when the front matter declares neither.
 
 ## Base URL
 
@@ -88,6 +90,40 @@ A trailing slash makes no difference, and a URL that addresses the root of a dom
 all, so `https://example.com` leaves every link exactly as it would be with no `BaseUrl` configured. Gelyn
 accepts only absolute `http` and `https` URLs, and rejects anything else before the build starts. While
 `BaseUrl` is unset, Gelyn writes no canonical reference at all, because a relative one would carry no meaning.
+
+## Feed
+
+`EnableFeed` publishes an [Atom 1.0](https://www.rfc-editor.org/rfc/rfc4287.html) document at `feed.xml` in the
+root of your output directory, and points every page at it so a reader finds it:
+
+```html
+<link rel="alternate" type="application/atom+xml" href="https://example.com/feed.xml" title="Gelyn">
+```
+
+Two switches have to be on, and a page is in the feed only if it says so:
+
+| Requirement        | Why                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `EnableFeed: true` | The feature is off by default.                                                       |
+| `BaseUrl`          | Every entry needs an absolute URL, and only `BaseUrl` supplies the origin.           |
+| `enableFeed: true` | In the front matter of each page you want syndicated. Nothing is syndicated for you. |
+| `date`             | Atom dates every entry, so a draft is never one. Dates are covered in `usage.md`.    |
+
+Nothing above fails a build. Gelyn writes no feed and warns once if `BaseUrl` is unset or no page qualifies,
+and names any page that asks for the feed without declaring a `date`.
+
+The opt-in is per page and is inherited by nothing, so a section index is in the feed only if it declares
+`enableFeed` itself. There is no setting that syndicates a directory: Gelyn has no concept of a post, so the
+page is what decides.
+
+An entry is identified by its URL, which is also the cost of that choice. Renaming a published file changes
+its identity, and a reader shows the renamed page as new rather than as the one it already has. Choose file
+names you can live with before you publish, the same way you would choose a permalink.
+
+What an entry carries is fixed: the title, the page's `date` as `published`, its `revised` as `updated`, a
+link to the page, and the page's own `description` as the summary. A page declaring no `description` carries
+no summary, and your site's `Description` does not stand in for it, so write one per syndicated page. The feed
+carries no article bodies, so a reader follows the link to read the page.
 
 ## Exclude patterns
 
@@ -157,8 +193,8 @@ usable on their own. Five settings have a flag:
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
-`Language`, `Author`, `Description`, `KaTeXVersion`, and `MermaidVersion` have none, so set them in the file
-or in the environment.
+`Language`, `Author`, `Description`, `EnableFeed`, `KaTeXVersion`, and `MermaidVersion` have none, so set
+them in the file or in the environment.
 
 `ExcludePatterns` is the only collection-valued setting, which makes layer 3 awkward for it. An environment
 variable named exactly like the setting can't carry a list, so each entry needs its own `ExcludePatterns__0`,

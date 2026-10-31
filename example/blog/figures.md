@@ -2,6 +2,7 @@
 title: Figures
 date: 2026-10-08
 description: Captioned blocks, and which end the caption goes on.
+enableFeed: true
 ---
 
 # Figures

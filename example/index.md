@@ -1,6 +1,7 @@
 ---
 title: Home
 date: 2026-09-13
+description: The landing page, and where the rest of this example site goes from here.
 ---
 
 # Gelyn

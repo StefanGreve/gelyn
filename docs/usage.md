@@ -42,7 +42,7 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of six keys:
+Open a Markdown file with a YAML block to declare any of seven keys:
 
 ```markdown
 ---
@@ -52,6 +52,7 @@ revised: 2026-10-08
 description: Who I am and what I write about
 enableMathRendering: true
 enableDiagramRendering: true
+enableFeed: true
 ---
 ```
 
@@ -63,6 +64,7 @@ enableDiagramRendering: true
 | `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
 | `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
+| `enableFeed`             | Publishes this page in the site feed. Configured in `configuration.md`.               |
 
 Three rules are worth knowing, because none of them produces a warning:
 
@@ -80,10 +82,10 @@ message comes from the YAML reader, which names neither the file nor the line.
 
 A page carries two dates, and they answer different questions. Write both in ISO 8601 form, `YYYY-MM-DD`.
 
-| Key       | Answers                       | Read by                                     |
-| --------- | ----------------------------- | ------------------------------------------- |
-| `date`    | When did this go out?         | The table of documents.                     |
-| `revised` | When was this last corrected? | The footer, and the `revised` meta tag.     |
+| Key       | Answers                       | Read by                                                  |
+| --------- | ----------------------------- | -------------------------------------------------------- |
+| `date`    | When did this go out?         | The table of documents, and `published` in the feed.     |
+| `revised` | When was this last corrected? | The footer, the `revised` meta tag, `updated` in a feed. |
 
 `revised` is optional and falls back to `date`, so a page you have not corrected since publishing it reads as
 last revised on the day it went out. Declare `revised` the day you change a published page, and leave `date`

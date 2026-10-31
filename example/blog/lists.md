@@ -2,6 +2,7 @@
 title: Lists
 date: 2026-09-20
 description: Task lists, numbering styles, and definitions.
+enableFeed: true
 ---
 
 # Lists

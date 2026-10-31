@@ -2,6 +2,7 @@
 title: Tables
 date: 2026-10-24
 description: Pipe tables, and the table a marker writes for you.
+enableFeed: true
 ---
 
 # Tables
