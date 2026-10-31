@@ -64,7 +64,7 @@ internal static class PathBoundary
     /// </returns>
     internal static bool Contains(string directory, string path) =>
         path.Equals(directory, StringComparison.Ordinal)
-        || path.StartsWith(directory + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+        || path.StartsWith(Terminated(directory), StringComparison.Ordinal);
 
     /// <summary>
     ///     Indicates whether either of two paths is the other or sits below it.
@@ -87,13 +87,18 @@ internal static class PathBoundary
     /// </returns>
     internal static bool Overlap(string first, string second) =>
         first.Equals(second, StringComparison.OrdinalIgnoreCase)
-        || first.StartsWith(second + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-        || second.StartsWith(first + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        || first.StartsWith(Terminated(second), StringComparison.OrdinalIgnoreCase)
+        || second.StartsWith(Terminated(first), StringComparison.OrdinalIgnoreCase);
 
     #region Helpers
 
     private static string Normalize(string path) =>
         path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+    // A prefix test is a directory test only while the prefix ends on a separator: "blog" alone would
+    // otherwise match "blogs/post.html".
+    private static string Terminated(string directory) =>
+        StringUtils.EnsureEndsOn(directory, Path.DirectorySeparatorChar);
 
     #endregion
 }

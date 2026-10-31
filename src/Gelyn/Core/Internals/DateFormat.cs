@@ -21,4 +21,9 @@ internal static class DateFormat
     ///     without the <c>datetime</c> attribute following it.
     /// </summary>
     internal const string Listing = "yyyy-MM-dd";
+
+    /// <summary>
+    ///     The RFC 3339 instant a feed carries, as in <c>2026-01-01T00:00:00Z</c>.
+    /// </summary>
+    internal const string Instant = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 }
