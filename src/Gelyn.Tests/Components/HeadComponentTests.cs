@@ -199,6 +199,105 @@ public class HeadComponentTests
 
     #endregion // Revision Tests
 
+    #region Feed Tests
+
+    /// <summary>
+    ///     Verifies that a site publishing a feed points every page at it, which is how a reader and a
+    ///     browser extension find the file.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Feed_IsAnnouncedWhenPublished()
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            Title = "Gelyn",
+            BaseUrl = new Uri("https://example.com", UriKind.Absolute),
+            EnableFeed = true,
+        };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head).Contains(
+            """<link rel="alternate" type="application/atom+xml" href="https://example.com/feed.xml" title="Gelyn">""");
+    }
+
+    /// <summary>
+    ///     Verifies that the link addresses the feed below the path the base URL names, a site served from a
+    ///     subdirectory publishing its feed there and not at the root of the domain.
+    /// </summary>
+    /// <remarks>
+    ///     The regression this guards is the one the renderer documents: <c>feed.xml</c> is a relative
+    ///     reference, so resolving it against a base URL naming no directory drops that URL's last segment.
+    /// </remarks>
+    [Test]
+    public async Task Render_Test_Feed_KeepsThePathOfTheBaseUrl()
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            BaseUrl = new Uri("https://example.com/gelyn/docs", UriKind.Absolute),
+            EnableFeed = true,
+        };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head)
+            .Contains("https://example.com/gelyn/docs/feed.xml")
+            .And.DoesNotContain("https://example.com/feed.xml");
+    }
+
+    /// <summary>
+    ///     Verifies that no page announces a feed unless both switches are on, the file being written only
+    ///     when both are, and that a page announces none by default.
+    /// </summary>
+    [Test]
+    [Arguments(null, true)]
+    [Arguments("https://example.com", false)]
+    [Arguments(null, false)]
+    public async Task Render_Test_Feed_IsAnnouncedByNeitherSwitchAlone(string? baseUrl, bool enableFeed)
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            BaseUrl = baseUrl is null ? null : new Uri(baseUrl, UriKind.Absolute),
+            EnableFeed = enableFeed,
+        };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head).DoesNotContain("""rel="alternate""");
+    }
+
+    /// <summary>
+    ///     Verifies that a site title is escaped for the attribute it is written into.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Feed_EscapesTheSiteTitle()
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            Title = "Ann & Bob",
+            BaseUrl = new Uri("https://example.com", UriKind.Absolute),
+            EnableFeed = true,
+        };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head).Contains("""title="Ann &amp; Bob">""");
+    }
+
+    #endregion // Feed Tests
+
     #region Helpers
 
     private static DateOnly? Parse(string? date) =>

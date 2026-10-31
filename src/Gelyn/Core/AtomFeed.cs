@@ -29,8 +29,13 @@ internal static class AtomFeed
     // written without would land in no namespace and carry an xmlns="" of its own to say so.
     private const string Namespace = "http://www.w3.org/2005/Atom";
 
-    // RFC 4287 registers this media type, and System.Net.Mime declares no constant for it.
-    private const string ContentType = "application/atom+xml";
+    /// <summary>
+    ///     The media type the feed is served and linked as.
+    /// </summary>
+    /// <remarks>
+    ///     RFC 4287 registers it, and <see cref="MediaTypeNames"/> declares no constant for it.
+    /// </remarks>
+    internal const string ContentType = "application/atom+xml";
 
     private const string TextType = "text";
 
@@ -84,7 +89,7 @@ internal static class AtomFeed
             writer.WriteMetadata(options, root, entries.Max(static page => page.Revised));
 
             foreach (ContentPage page in entries)
-                writer.WriteEntry(options, root, page);
+                writer.WriteEntry(root, page);
 
             writer.WriteEndElement();
             writer.WriteEndDocument();
@@ -139,16 +144,13 @@ internal static class AtomFeed
     /// <param name="writer">
     ///     The writer the document is being built with.
     /// </param>
-    /// <param name="options">
-    ///     The site configuration, which supplies the summary.
-    /// </param>
     /// <param name="root">
     ///     The base URL as a directory, which the entry's links are resolved against.
     /// </param>
     /// <param name="page">
-    ///     The page the entry stands for.
+    ///     The page the entry stands for, which supplies every value the entry carries.
     /// </param>
-    private static void WriteEntry(this XmlWriter writer, SiteOptions options, Uri root, ContentPage page)
+    private static void WriteEntry(this XmlWriter writer, Uri root, ContentPage page)
     {
         // The href already carries the path of the base URL, so it resolves against the origin alone.
         string address = new Uri(root, page.Href).AbsoluteUri;
@@ -162,7 +164,7 @@ internal static class AtomFeed
 
         writer.WriteLink("alternate", address, MediaTypeNames.Text.Html);
 
-        string? summary = options.Description;
+        string? summary = page.Description;
 
         if (!string.IsNullOrWhiteSpace(summary))
         {

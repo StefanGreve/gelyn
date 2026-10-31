@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 
+using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
@@ -53,6 +54,17 @@ internal static class HeadComponent
         {
             string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
             head.AppendLine($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+
+            if (options.EnableFeed)
+            {
+                // Resolved against the base URL as a directory, a relative reference otherwise losing a segment.
+                var root = new Uri(StringUtils.EnsureEndsOn(baseUrl.AbsoluteUri, '/'));
+
+                string feed = WebUtility.HtmlEncode(new Uri(root, AtomFeed.FileName).AbsoluteUri);
+                string title = WebUtility.HtmlEncode(options.Title);
+
+                head.AppendLine($"""<link rel="alternate" type="{AtomFeed.ContentType}" href="{feed}" title="{title}">""");
+            }
         }
 
         head.AppendLine($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");

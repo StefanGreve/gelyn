@@ -250,27 +250,28 @@ public class AtomFeedTests
     }
 
     /// <summary>
-    ///     Verifies that an entry describes itself from the site description, never from the description its
-    ///     own page declares, and carries no summary when the site declares none.
+    ///     Verifies that an entry describes itself from the description its own page declares, never from the
+    ///     site description, and carries no summary when the page declares none.
     /// </summary>
     /// <remarks>
-    ///     So every entry of one feed carries the same summary. The page description is deliberately left
-    ///     out, which is what makes a per-entry summary a later change and not a fix.
+    ///     So two entries of one feed carry two summaries. The site description reaches the feed's
+    ///     <c>subtitle</c> and stops there, which is what keeps it from standing in for a page that says
+    ///     nothing about itself.
     /// </remarks>
     [Test]
-    [Arguments("Site said it", "Site said it")]
+    [Arguments("Page said it", "Page said it")]
     [Arguments(null, null)]
     [Arguments("", null)]
     [Arguments("   ", null)]
-    public async Task Render_Test_Summary_ComesFromTheSiteDescription(string? siteDescription, string? expected)
+    public async Task Render_Test_Summary_ComesFromThePageDescription(string? pageDescription, string? expected)
     {
         // Arrange
         SiteOptions options = Options();
-        options.Description = siteDescription;
+        options.Description = "Site said it";
 
         ContentPage page = Page("post.html", "Post", "2026-01-01", inFeed: true) with
         {
-            Description = "Page said it",
+            Description = pageDescription,
         };
 
         // Act
@@ -280,8 +281,31 @@ public class AtomFeedTests
         using (Assert.Multiple())
         {
             await Assert.That(Value(entry, "summary")).IsEqualTo(expected);
-            await Assert.That(Xml(options, [page])).DoesNotContain("Page said it");
+            await Assert.That(Value(entry.Parent!, "subtitle")).IsEqualTo("Site said it");
         }
+    }
+
+    /// <summary>
+    ///     Verifies that each entry carries the summary of the page it stands for, which is what the page
+    ///     description buys over one summary repeated across the whole feed.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Summary_IsWrittenPerEntry()
+    {
+        // Arrange
+        ContentPage[] pages =
+        [
+            Page("first.html", "First", "2026-02-01", inFeed: true) with { Description = "About the first" },
+            Page("second.html", "Second", "2026-01-01", inFeed: true) with { Description = "About the second" },
+        ];
+
+        // Act
+        XElement feed = Render(Options(), pages);
+
+        // Assert
+        string summaries = string.Join(',', Entries(feed).Select(entry => Value(entry, "summary")));
+
+        await Assert.That(summaries).IsEqualTo("About the first,About the second");
     }
 
     /// <summary>
