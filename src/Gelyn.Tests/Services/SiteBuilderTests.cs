@@ -297,6 +297,32 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that the renderer reaches the window and precedes the resources the content tree supplies,
+    ///     so that a script of the author's configures Mermaid before it draws on the load event.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DiagramRenderer_PrecedesTheCascadedResources()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDiagrammatic()
+            .WriteFile("app.js", "globalThis.app = 1");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(markup).Contains("window.mermaid = mermaid;");
+
+            await Assert.That(markup.IndexOf("window.mermaid = mermaid;", StringComparison.Ordinal))
+                .IsLessThan(markup.IndexOf("/app.js", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
     ///     Verifies that diagram rendering applies to the page declaring it alone, neither to the pages beside
     ///     it nor to the pages below it.
     /// </summary>

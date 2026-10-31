@@ -50,7 +50,9 @@ keeping that name whatever the answer, so a theme can be swapped later without t
   them a blank file to start from.
 - `Modern` - `modern.css`, light or dark by browser preference, and ready to use unchanged. Suggest it to a
   user who would rather not write CSS. It covers the common elements, so a definition list, a footnote block
-  and a task list fall back to browser defaults.
+  and a task list fall back to browser defaults. Copy `modern.js` beside it as `content/theme.js`, because
+  the stylesheet is half a theme without it: the script builds the sheet menu the stylesheet styles below
+  40rem, and gives a Mermaid diagram the appearance the rest of the page follows.
 
 ## 4. Copy the templates
 
@@ -63,8 +65,9 @@ not. Keep further posts beside `hello.md` to inherit that.
 
 ## 5. Ask about JavaScript, and write none
 
-Ask whether the site will carry its own JavaScript. Create no `.js` file either way; explain the placement
-rule instead, so the user writes one where they want it:
+Ask whether the site will carry its own JavaScript. Create no `.js` file of the user's either way, and leave
+the `theme.js` of step 3 where it is. Explain the placement rule instead, so the user writes one where they
+want it:
 
 A `.css` or `.js` file is linked from every page in its own directory and in every directory below it.
 Placement is the whole mechanism and nothing is declared, so `styles.css` at the content root reaches every

@@ -55,3 +55,36 @@
 
     header.append(toggle, panel);
 })();
+
+// Gives a diagram the appearance the rest of the sheet already follows. Mermaid resolves none of its own, and
+// gelyn puts the instance on window because its import otherwise stays inside the module in the head.
+
+(() => {
+    const mermaid = window.mermaid;
+
+    if (mermaid == null) {
+        return;
+    }
+
+    const dark = matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => mermaid.initialize({ startOnLoad: true, theme: dark.matches ? "dark" : "default" });
+    const sources = new Map();
+
+    // A render replaces each pre with the SVG and discards the diagram source, so drawing one again after the
+    // preference changes needs a copy taken before the first render, which the load event defers until later.
+    for (const diagram of document.querySelectorAll("pre.mermaid")) {
+        sources.set(diagram, diagram.textContent);
+    }
+
+    apply();
+
+    dark.addEventListener("change", async () => {
+        for (const [diagram, source] of sources) {
+            diagram.textContent = source;
+            diagram.removeAttribute("data-processed");
+        }
+
+        apply();
+        await mermaid.run();
+    });
+})();

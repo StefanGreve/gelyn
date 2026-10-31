@@ -486,12 +486,33 @@ Gelyn writes one module script into the head of that page, which is the form Mer
 ```html
 <script type="module">
 import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.esm.min.mjs";
+window.mermaid = mermaid;
 mermaid.initialize({ startOnLoad: true });
 </script>
 ```
 
 `startOnLoad` is what finds every `<pre class="mermaid">` on the page and replaces it with SVG, so you
 configure nothing else. A module script defers on its own, which is why this one carries no `defer`.
+
+`window.mermaid` is there because an import binds the instance inside the module alone, which would leave a
+script of yours no way to reach it. Three facts make that assignment usable. A module script and a
+`<script defer>` go on one list and run in document order, so every script [the cascade](#scripts) writes
+runs after this one. Mermaid draws on the `load` event, which fires after all of them. A later
+`mermaid.initialize` therefore still settles how the first diagram is drawn, including Mermaid's
+[site-wide `theme`][mermaid-theming], which Gelyn leaves alone because a theme is the stylesheet's business
+and Mermaid resolves no appearance of its own:
+
+```js
+const dark = matchMedia("(prefers-color-scheme: dark)");
+mermaid.initialize({ startOnLoad: true, theme: dark.matches ? "dark" : "default" });
+```
+
+Redrawing one after `load` costs more. A render replaces each `<pre>` with the SVG and marks it
+`data-processed="true"`, discarding the diagram source, so following the preference while the page stays open
+means copying every source before `load`, restoring it, clearing that attribute, and awaiting
+`mermaid.run()`. That is worth the lines on a site whose stylesheet follows the same preference, because
+macOS switches appearance at dusk under a tab left open and the diagram would be the one element left
+disagreeing.
 
 `MermaidVersion` in `gelyn.json` sets the version in that URL. It defaults to `12.1.0`.
 
@@ -581,4 +602,5 @@ warning: ContentDirectory changed. Restart gelyn serve to pick that up.
 [katex-browser]: https://katex.org/docs/browser
 [mermaid]: https://mermaid.js.org
 [mermaid-docs]: https://mermaid.js.org/intro/getting-started.html
+[mermaid-theming]: https://mermaid.js.org/config/theming.html#site-wide-theme
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current

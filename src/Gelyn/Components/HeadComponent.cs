@@ -14,7 +14,6 @@ namespace Gelyn.Components;
 internal static class HeadComponent
 {
     private const string MathRenderer = "renderMathInElement(document.body);";
-    private const string DiagramRenderer = "mermaid.initialize({ startOnLoad: true });";
 
     /// <summary>
     ///     Renders the metadata.
@@ -87,11 +86,14 @@ internal static class HeadComponent
         {
             string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(options.MermaidVersion)}/dist";
 
-            // The module entry is smaller than a bundle and fetches only the diagram types the page uses.
-            // A module script defers by itself, so it needs no defer attribute.
+            // The module entry is smaller than a bundle and fetches only the diagram types the page uses. A
+            // module script defers by itself, so it needs no defer attribute and runs before every script below.
             head.AppendLine("""<script type="module">""");
             head.AppendLine($"""import mermaid from "{mermaid}/mermaid.esm.min.mjs";""");
-            head.AppendLine(DiagramRenderer);
+            // The import binds Mermaid inside the module alone, and it draws on the load event, so the global
+            // is what lets a stylesheet's own script configure the renderer while there is still time
+            head.AppendLine("window.mermaid = mermaid;");
+            head.AppendLine("mermaid.initialize({ startOnLoad: true });");
             head.AppendLine("</script>");
         }
 
