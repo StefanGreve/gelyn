@@ -62,6 +62,11 @@ internal static class EventIds
     /// </summary>
     internal const int FEED_ENTRY_SKIPPED = 1_009;
 
+    /// <summary>
+    ///     The sitemap was asked for and no absolute URL was configured to resolve its locations against.
+    /// </summary>
+    internal const int SITEMAP_SKIPPED_WITHOUT_BASE_URL = 1_010;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

@@ -627,6 +627,19 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Switches the sitemap on in the fixture's options, as a configuration file would.
+    /// </summary>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithSitemap()
+    {
+        this.Options.EnableSitemap = true;
+
+        return this;
+    }
+
+    /// <summary>
     ///     Applies exclude patterns to the fixture's options, as a configuration file or the
     ///     <c>--exclude</c> flag would.
     /// </summary>

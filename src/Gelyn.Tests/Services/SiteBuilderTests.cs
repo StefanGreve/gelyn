@@ -24,6 +24,7 @@ namespace Gelyn.Tests.Services;
 public partial class SiteBuilderTests
 {
     private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";
+    private static readonly XNamespace Sitemaps = "http://www.sitemaps.org/schemas/sitemap/0.9";
 
     #region BuildAsync Tests
 
@@ -945,7 +946,7 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that the feed survives the build that follows the one writing it, which no source
-    ///     accounts for and the reconcile would otherwise delete.
+    ///     accounts for and the prune would otherwise delete.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Feed_SurvivesTheNextBuild()
@@ -1002,7 +1003,225 @@ public partial class SiteBuilderTests
 
     #endregion // Feed Tests
 
-    #region Reconcile Tests
+    #region Sitemap Tests
+
+    /// <summary>
+    ///     Verifies that the sitemap is written beside the pages, lists every one of them, and is reported
+    ///     apart from them.
+    /// </summary>
+    /// <remarks>
+    ///     The fixture is the one the feed tests use, so the same tree that publishes two of its five pages
+    ///     puts all five here. No front matter key decides membership, and a draft is listed like the rest.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_ListsEveryPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEquivalentTo(["sitemap.xml"]);
+            await Assert.That(fixture.OutputHolds("sitemap.xml")).IsTrue();
+
+            await Assert.That(SitemapLocations(fixture)).IsEquivalentTo([
+                "https://example.com/index.html",
+                "https://example.com/blog/index.html",
+                "https://example.com/blog/hello.html",
+                "https://example.com/blog/later.html",
+                "https://example.com/blog/draft.html",
+            ]);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that each page is dated from its revision, and that the one page declaring neither date
+    ///     is listed without the element.
+    /// </summary>
+    /// <remarks>
+    ///     What <see cref="Gelyn.Tests.Core.SitemapTests"/> assumes of the mapper, confirmed against it: a
+    ///     page published and never corrected dates from its publication, so four of the five carry a date.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_DatesEachPageFromItsRevision()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(SitemapRevisions(fixture))
+            .IsEquivalentTo(["2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01"]);
+    }
+
+    /// <summary>
+    ///     Verifies that every location agrees with the canonical link of the page it stands for, because a
+    ///     sitemap disagreeing with the canonical tag is the standard way to report one page as two.
+    /// </summary>
+    /// <remarks>
+    ///     The base URL carries a path, which is the case that catches a prefix applied twice in one of the
+    ///     two places and once in the other.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_AgreesWithTheCanonicalLinks()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com/gelyn/docs")
+            .WithSitemap();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] canonical = [.. report.Pages.Select(page => ReadCanonical(fixture, page) ?? string.Empty)];
+
+        await Assert.That(SitemapLocations(fixture)).IsEquivalentTo(canonical);
+    }
+
+    /// <summary>
+    ///     Verifies that the sitemap is counted among the files the build produced, so that the total the
+    ///     command prints accounts for the output no source stands behind.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_IsCountedAmongTheFilesWritten()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        int written = report.Pages.Count + report.Generated.Count;
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Pages.Count).IsEqualTo(5);
+            await Assert.That(report.FileCount).IsEqualTo(written);
+            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(written);
+            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(written);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that nothing is written while the setting is off, which is the default, and that the
+    ///     build says nothing about it either.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_IsNotWrittenWhileTheSettingIsOff()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished().WithBaseUrl("https://example.com");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEmpty();
+            await Assert.That(fixture.OutputHolds("sitemap.xml")).IsFalse();
+            await Assert.That(Warnings(fixture)).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a sitemap asked for without a base URL is skipped with one warning naming that
+    ///     reason, and that the build still succeeds, because the workflows supply the base URL per run.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_IsSkippedWithoutABaseUrl()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished().WithSitemap();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEmpty();
+            await Assert.That(fixture.OutputHolds("sitemap.xml")).IsFalse();
+            await Assert.That(report.Pages.Count).IsEqualTo(5);
+
+            await Assert.That(Reported(fixture, EventIds.SITEMAP_SKIPPED_WITHOUT_BASE_URL).Level)
+                .IsEqualTo(LogLevel.Warning);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the sitemap survives the build that follows the one writing it, which no source
+    ///     accounts for and the prune would otherwise delete.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_SurvivesTheNextBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        string before = ReadSitemap(fixture);
+
+        // Act
+        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(second.Removed).IsEmpty();
+            await Assert.That(second.Generated).IsEquivalentTo(first.Generated);
+            await Assert.That(fixture.OutputHolds("sitemap.xml")).IsTrue();
+
+            // Dated from the pages and never from the clock, which is what keeps the bytes identical.
+            await Assert.That(ReadSitemap(fixture)).IsEqualTo(before);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a sitemap left behind by a build that had the setting on is deleted once it is off,
+    ///     because the seam exempts the output the build generated and not whatever carries the name.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Sitemap_IsRemovedOnceTheSettingIsOff()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Options.EnableSitemap = false;
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["sitemap.xml"]);
+            await Assert.That(fixture.OutputHolds("sitemap.xml")).IsFalse();
+        }
+    }
+
+    #endregion // Sitemap Tests
+
+    #region PruneOutput Tests
 
     /// <summary>
     ///     Verifies that the output of a page whose source is gone is deleted and reported.
@@ -1029,7 +1248,7 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that a colocated file is reconciled in the same way as a page, because every file the scan
+    ///     Verifies that a colocated file is pruned in the same way as a page, because every file the scan
     ///     locates is an output.
     /// </summary>
     [Test]
@@ -1054,7 +1273,7 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that a source the exclude patterns start matching has its output removed, which is what
-    ///     proves the reconcile subtracts what the scan reports and not what is still on disk.
+    ///     proves the prune subtracts what the scan reports and not what is still on disk.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_NewlyExcludedSource_HasItsOutputRemoved()
@@ -1107,7 +1326,7 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that a rebuild over an unchanged tree deletes nothing, which is what keeps the reconcile
+    ///     Verifies that a rebuild over an unchanged tree deletes nothing, which is what keeps the prune
     ///     from being destructive in the ordinary case.
     /// </summary>
     [Test]
@@ -1131,7 +1350,7 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that a directory the reconcile empties is removed along with the files in it, while the
+    ///     Verifies that a directory the prune empties is removed along with the files in it, while the
     ///     directory above it survives because it still holds a page.
     /// </summary>
     [Test]
@@ -1184,7 +1403,7 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that a directory symbolic link in the output is not descended into, so that the reconcile
+    ///     Verifies that a directory symbolic link in the output is not descended into, so that the prune
     ///     cannot delete a file outside the output directory.
     /// </summary>
     /// <remarks>
@@ -1213,7 +1432,7 @@ public partial class SiteBuilderTests
         }
     }
 
-    #endregion // Reconcile Tests
+    #endregion // PruneOutput Tests
 
     #region Counter Tests
 
@@ -1375,7 +1594,7 @@ public partial class SiteBuilderTests
             await Assert.That(compose).IsGreaterThan(0);
             await Assert.That(write).IsGreaterThan(0);
 
-            // Nonzero even on this tree, because the reconcile walks the whole output whether it deletes or not.
+            // Nonzero even on this tree, because the prune walks the whole output whether it deletes or not.
             await Assert.That(remove).IsGreaterThan(0);
 
             await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED))
@@ -1441,6 +1660,19 @@ public partial class SiteBuilderTests
 
     private static string EntryLinks(ContentFixture fixture) =>
         string.Join(',', FeedEntries(fixture).Select(entry => entry.Element(Atom + "id")?.Value));
+
+    private static string ReadSitemap(ContentFixture fixture) =>
+        fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, "sitemap.xml"));
+
+    private static IEnumerable<XElement> SitemapUrls(ContentFixture fixture) =>
+        XElement.Parse(ReadSitemap(fixture)).Elements(Sitemaps + "url");
+
+    private static IEnumerable<string> SitemapLocations(ContentFixture fixture) =>
+        SitemapUrls(fixture).Select(url => url.Element(Sitemaps + "loc")?.Value ?? string.Empty);
+
+    // Filtered and not defaulted, because the absent element is what one of the cases is about.
+    private static IEnumerable<string> SitemapRevisions(ContentFixture fixture) =>
+        SitemapUrls(fixture).Select(url => url.Element(Sitemaps + "lastmod")?.Value).OfType<string>();
 
     private static string ReadPage(ContentFixture fixture, string outputPath) =>
         fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));

@@ -138,7 +138,7 @@ internal sealed class DiskFixture : IDisposable
 
     /// <summary>
     ///     Links a directory in the output tree to a directory outside it, which is the shape that would let
-    ///     the reconcile delete a file the build never wrote.
+    ///     the prune delete a file the build never wrote.
     /// </summary>
     /// <param name="name">
     ///     The name the link is created under, directly below <see cref="OutputRoot"/>.

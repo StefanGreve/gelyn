@@ -101,7 +101,7 @@ internal static partial class LogMessages
     ///     The number of files that were deleted, which excludes the directories emptied by deleting them.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The duration of the reconcile, which walks the whole output directory whether or not it deletes
+    ///     The duration of the prune, which walks the whole output directory whether or not it deletes
     ///     anything.
     /// </param>
     [LoggerMessage(
@@ -197,6 +197,25 @@ internal static partial class LogMessages
         Level = LogLevel.Warning,
         Message = "Left {Path} out of the feed, because it declares enableFeed without a date")]
     internal static partial void LogFeedEntrySkipped(this ILogger logger, string path);
+
+    /// <summary>
+    ///     Reports that the sitemap was asked for and nothing was written, because every location it carries
+    ///     is absolute and only the base URL supplies the origin.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, for the reason the feed's equivalent gives: the base URL is supplied
+    ///     per run in the workflows this is built by, so a build that declares none locally is the ordinary
+    ///     case and not a mistake.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.SITEMAP_SKIPPED_WITHOUT_BASE_URL,
+        EventName = nameof(EventIds.SITEMAP_SKIPPED_WITHOUT_BASE_URL),
+        Level = LogLevel.Warning,
+        Message = "Skipped the sitemap, because the configuration declares no base URL")]
+    internal static partial void LogSitemapSkippedWithoutBaseUrl(this ILogger logger);
 
     /// <summary>
     ///     Reports the directory the preview server answers from and the address it answers on.

@@ -53,7 +53,7 @@ internal sealed record BuildCounterContext
     public required long WriteTicks { get; init; }
 
     /// <summary>
-    ///     The ticks the reconciliation took.
+    ///     The ticks the prune took.
     /// </summary>
     public required long RemoveTicks { get; init; }
 

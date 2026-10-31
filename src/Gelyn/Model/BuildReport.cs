@@ -11,8 +11,7 @@ internal sealed record BuildReport
     public required IReadOnlyList<string> Pages { get; init; }
 
     /// <summary>
-    ///     The output-relative paths that were written from no source of their own, which today is the
-    ///     syndication feed and nothing else.
+    ///     The output-relative paths that were written from no source of their own.
     /// </summary>
     public required IReadOnlyList<string> Generated { get; init; }
 

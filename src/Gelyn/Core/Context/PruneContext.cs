@@ -1,7 +1,7 @@
 namespace Gelyn.Core.Context;
 
 /// <summary>
-///     What one level of the output walk carries while the build reconciles the output directory.
+///     What one level of the output walk carries while the build prunes the output directory.
 /// </summary>
 /// <remarks>
 ///     <see cref="Removed"/> is an accumulator rather than an input: every level appends to the one list, so

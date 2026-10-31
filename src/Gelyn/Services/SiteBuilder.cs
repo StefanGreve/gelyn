@@ -28,7 +28,8 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="WriteFeedAsync"/> writes the syndication feed the pages were asked to fill.
+///                 <see cref="WriteGeneratedAsync"/> writes the feed and the sitemap, each of which the
+///                 configuration has to ask for.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -38,7 +39,7 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="Reconcile"/> deletes the output that no located file accounts for.
+///                 <see cref="PruneOutput"/> deletes the output that no located file accounts for.
 ///             </description>
 ///         </item>
 ///     </list>
@@ -122,14 +123,14 @@ internal sealed class SiteBuilder
         long copyStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
         List<string> generated = await this
-            .WriteFeedAsync(pages, options, outputDirectory, cancellationToken)
+            .WriteGeneratedAsync(pages, options, outputDirectory, cancellationToken)
             .ConfigureAwait(false);
 
         List<string> copied = this.CopyAssets(items, outputDirectory, cancellationToken);
         long writeTicks = isMeasuring ? write.WriteTicks + Stopwatch.GetTimestamp() - copyStarted : 0;
 
         long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-        List<string> removed = this.Reconcile(items, generated, outputDirectory, cancellationToken);
+        List<string> removed = this.PruneOutput(items, generated, outputDirectory, cancellationToken);
         long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
 
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
@@ -231,6 +232,48 @@ internal sealed class SiteBuilder
     }
 
     /// <summary>
+    ///     Writes the documents that no source file of their own stands behind.
+    /// </summary>
+    /// <param name="pages">
+    ///     Every page the site is built from, which is what both documents are assembled from.
+    /// </param>
+    /// <param name="options">
+    ///     The site configuration, which switches each document on and supplies the origin both need.
+    /// </param>
+    /// <param name="outputDirectory">
+    ///     The absolute path of the directory the documents are written to.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     The output-relative paths of the documents that were written, which is what exempts them from
+    ///     <see cref="PruneOutput"/>.
+    /// </returns>
+    private async Task<List<string>> WriteGeneratedAsync(
+        IReadOnlyList<ContentPage> pages,
+        SiteOptions options,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        List<string> generated = [];
+
+        string? feed = await this
+            .WriteFeedAsync(pages, options, outputDirectory, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (feed is not null) generated.Add(feed);
+
+        string? sitemap = await this
+            .WriteSitemapAsync(pages, options, outputDirectory, cancellationToken)
+            .ConfigureAwait(false);
+
+        if (sitemap is not null) generated.Add(sitemap);
+
+        return generated;
+    }
+
+    /// <summary>
     ///     Writes the syndication feed, or nothing at all when the configuration has not asked for one or
     ///     when the feed would carry no entry.
     /// </summary>
@@ -247,22 +290,22 @@ internal sealed class SiteBuilder
     ///     Token used to cancel the operation.
     /// </param>
     /// <returns>
-    ///     The output-relative path of the feed, or an empty list when none was written.
+    ///     The output-relative path of the feed, or <see langword="null"/> when none was written.
     /// </returns>
-    private async Task<List<string>> WriteFeedAsync(
+    private async Task<string?> WriteFeedAsync(
         IReadOnlyList<ContentPage> pages,
         SiteOptions options,
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        if (!options.EnableFeed) return [];
+        if (!options.EnableFeed) return null;
 
         // Reported ahead of the render, which answers with nothing for either reason and so cannot tell the
         // two apart on its own.
         if (options.BaseUrl is null)
         {
             this._logger.LogFeedSkippedWithoutBaseUrl();
-            return [];
+            return null;
         }
 
         // The one conflict the opt-in makes expressible: a page asks to be published and declares no date to
@@ -275,7 +318,7 @@ internal sealed class SiteBuilder
         if (document.Length == 0)
         {
             this._logger.LogFeedSkippedWithoutEntries();
-            return [];
+            return null;
         }
 
         string destination = this._fileSystem.Path.Combine(outputDirectory, AtomFeed.FileName);
@@ -285,7 +328,55 @@ internal sealed class SiteBuilder
             .WriteAllBytesAsync(destination, document, cancellationToken)
             .ConfigureAwait(false);
 
-        return [AtomFeed.FileName];
+        return AtomFeed.FileName;
+    }
+
+    /// <summary>
+    ///     Writes the sitemap, or nothing at all when the configuration has not asked for one or declares no
+    ///     base URL to resolve its locations against.
+    /// </summary>
+    /// <param name="pages">
+    ///     Every page the site is built from, all of which the sitemap lists.
+    /// </param>
+    /// <param name="options">
+    ///     The site configuration, which both switches the sitemap on and supplies the origin its locations
+    ///     need.
+    /// </param>
+    /// <param name="outputDirectory">
+    ///     The absolute path of the directory the sitemap is written to.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     The output-relative path of the sitemap, or <see langword="null"/> when none was written.
+    /// </returns>
+    private async Task<string?> WriteSitemapAsync(
+        IReadOnlyList<ContentPage> pages,
+        SiteOptions options,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        if (!options.EnableSitemap) return null;
+
+        // Checked here too, the render answering with nothing for this reason and holding no logger to say so.
+        if (options.BaseUrl is null)
+        {
+            this._logger.LogSitemapSkippedWithoutBaseUrl();
+            return null;
+        }
+
+        // Always a document from here on. Every page is listed, and the scan fails a tree holding none.
+        byte[] document = Sitemap.Render(options, pages);
+
+        string destination = this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName);
+        this._fileSystem.Directory.CreateDirectory(outputDirectory);
+
+        await this._fileSystem.File
+            .WriteAllBytesAsync(destination, document, cancellationToken)
+            .ConfigureAwait(false);
+
+        return Sitemap.FileName;
     }
 
     private List<string> CopyAssets(
@@ -310,7 +401,7 @@ internal sealed class SiteBuilder
         return copied;
     }
 
-    private List<string> Reconcile(
+    private List<string> PruneOutput(
         IReadOnlyList<ContentItem> items,
         List<string> generated,
         string outputDirectory,
