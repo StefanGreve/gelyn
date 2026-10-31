@@ -411,6 +411,7 @@ public partial class TableOfDocumentsComponentTests
     private static ContentPage Page(string outputPath, string title, string? date = null) =>
         new()
         {
+            SourcePath = Native(Path.ChangeExtension(outputPath, ".md")),
             OutputPath = Native(outputPath),
             Href = $"/{outputPath}",
             Title = title,

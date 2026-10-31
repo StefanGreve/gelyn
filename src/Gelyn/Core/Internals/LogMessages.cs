@@ -151,6 +151,54 @@ internal static partial class LogMessages
     internal static partial void LogStartupCompleted(this ILogger logger, double elapsedMilliseconds);
 
     /// <summary>
+    ///     Reports that the feed was asked for and nothing was written, because every link it carries is
+    ///     absolute and only the base URL supplies the origin.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, because the base URL is supplied per run in the workflows this is
+    ///     built by, so a build that declares none locally is the ordinary case and not a mistake.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.FEED_SKIPPED_WITHOUT_BASE_URL,
+        EventName = nameof(EventIds.FEED_SKIPPED_WITHOUT_BASE_URL),
+        Level = LogLevel.Warning,
+        Message = "Skipped the feed, because the configuration declares no base URL")]
+    internal static partial void LogFeedSkippedWithoutBaseUrl(this ILogger logger);
+
+    /// <summary>
+    ///     Reports that the feed was asked for and nothing was written, because no page qualified as an entry.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.FEED_SKIPPED_WITHOUT_ENTRIES,
+        EventName = nameof(EventIds.FEED_SKIPPED_WITHOUT_ENTRIES),
+        Level = LogLevel.Warning,
+        Message = "Skipped the feed, because no page declares both enableFeed and a date")]
+    internal static partial void LogFeedSkippedWithoutEntries(this ILogger logger);
+
+    /// <summary>
+    ///     Reports that one page asking to be published by the feed was left out of it, because Atom requires
+    ///     a date on every entry and the page declares none.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="path">
+    ///     The absolute path of the page's source file, which is the file the declaration is edited in.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.FEED_ENTRY_SKIPPED,
+        EventName = nameof(EventIds.FEED_ENTRY_SKIPPED),
+        Level = LogLevel.Warning,
+        Message = "Left {Path} out of the feed, because it declares enableFeed without a date")]
+    internal static partial void LogFeedEntrySkipped(this ILogger logger, string path);
+
+    /// <summary>
     ///     Reports the directory the preview server answers from and the address it answers on.
     /// </summary>
     /// <param name="logger">

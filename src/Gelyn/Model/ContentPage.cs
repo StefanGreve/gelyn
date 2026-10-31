@@ -4,11 +4,17 @@ namespace Gelyn.Model;
 ///     A discovered content file, rendered and ready to be laid out.
 /// </summary>
 /// <remarks>
-///     A <see cref="ContentItem"/> becomes a page once its Markdown has been read. The output path and the
-///     URL are copied across unchanged, while the front matter and the body are added by the render.
+///     A <see cref="ContentItem"/> becomes a page once its Markdown has been read. The source path, the output
+///     path and the URL are copied across unchanged, while the front matter and the body are added by the
+///     render.
 /// </remarks>
 internal sealed record ContentPage
 {
+    /// <summary>
+    ///     The absolute path of the file the page was rendered from, which is what a diagnostic names.
+    /// </summary>
+    public required string SourcePath { get; init; }
+
     /// <summary>
     ///     The path of the generated file, relative to the output root, using the native directory separator.
     /// </summary>

@@ -47,6 +47,9 @@ internal sealed class BuildCommand : Command
                 foreach (string page in report.Pages)
                     stdOut.MarkupLineInterpolated($"[green]created[/] {page}");
 
+                foreach (string file in report.Generated)
+                    stdOut.MarkupLineInterpolated($"[green]created[/] {file}");
+
                 foreach (string copy in report.Copies)
                     stdOut.MarkupLineInterpolated($"[green]copied[/] {copy}");
 

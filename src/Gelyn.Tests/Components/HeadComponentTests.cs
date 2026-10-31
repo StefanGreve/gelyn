@@ -159,6 +159,7 @@ public class HeadComponentTests
             Documents = [],
             Page = new ContentPage
             {
+                SourcePath = "index.md",
                 OutputPath = "index.html",
                 Href = "/index.html",
                 Title = "Home",

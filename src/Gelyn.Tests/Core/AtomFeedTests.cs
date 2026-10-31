@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -231,11 +232,11 @@ public class AtomFeedTests
     #region Metadata Tests
 
     /// <summary>
-    ///     Verifies that a site declaring no author is its own, RFC 4287 requiring an author of a feed whose
-    ///     entries declare none and no page carrying one to declare.
+    ///     Verifies that a site declaring no author is published as anonymous, RFC 4287 requiring an author of
+    ///     a feed whose entries declare none and no page carrying one to declare.
     /// </summary>
     [Test]
-    public async Task Render_Test_AbsentAuthor_FallsBackToTheTitle()
+    public async Task Render_Test_AbsentAuthor_FallsBackToAnonymous()
     {
         // Arrange
         SiteOptions options = Options();
@@ -245,7 +246,7 @@ public class AtomFeedTests
         XElement feed = Render(options, [Page("post.html", "Post", "2026-01-01", inFeed: true)]);
 
         // Assert
-        await Assert.That(feed.Element(Atom + "author")?.Element(Atom + "name")?.Value).IsEqualTo("Gelyn");
+        await Assert.That(feed.Element(Atom + "author")?.Element(Atom + "name")?.Value).IsEqualTo("anonymous");
     }
 
     /// <summary>
@@ -319,6 +320,7 @@ public class AtomFeedTests
     private static ContentPage Page(string outputPath, string title, string? date, bool inFeed = false) =>
         new()
         {
+            SourcePath = Path.ChangeExtension(outputPath, ".md"),
             OutputPath = outputPath,
             Href = $"/blog/{outputPath}",
             Title = title,

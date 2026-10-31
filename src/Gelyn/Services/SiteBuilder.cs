@@ -28,6 +28,11 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
+///                 <see cref="WriteFeedAsync"/> writes the syndication feed the pages were asked to fill.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
 ///                 <see cref="CopyAssets"/> copies every located file that is not a page.
 ///             </description>
 ///         </item>
@@ -85,8 +90,7 @@ internal sealed class SiteBuilder
     ///     Token used to cancel the operation.
     /// </param>
     /// <returns>
-    ///     The files that were written, the files that were copied, the files that were deleted, and how long
-    ///     all of it took.
+    ///     What the build produced, and how long it took.
     /// </returns>
     public async Task<BuildReport> BuildAsync(CancellationToken cancellationToken)
     {
@@ -116,11 +120,16 @@ internal sealed class SiteBuilder
             .ConfigureAwait(false);
 
         long copyStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+
+        List<string> generated = await this
+            .WriteFeedAsync(pages, options, outputDirectory, cancellationToken)
+            .ConfigureAwait(false);
+
         List<string> copied = this.CopyAssets(items, outputDirectory, cancellationToken);
         long writeTicks = isMeasuring ? write.WriteTicks + Stopwatch.GetTimestamp() - copyStarted : 0;
 
         long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-        List<string> removed = this.Reconcile(items, outputDirectory, cancellationToken);
+        List<string> removed = this.Reconcile(items, generated, outputDirectory, cancellationToken);
         long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
 
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
@@ -132,7 +141,7 @@ internal sealed class SiteBuilder
             {
                 ItemCount = items.Count,
                 PageCount = pages.Count,
-                FileCount = write.Written.Count + copied.Count,
+                FileCount = write.Written.Count + generated.Count + copied.Count,
                 RemovedCount = removed.Count,
                 ScanTicks = scanTicks,
                 RenderTicks = renderTicks,
@@ -146,6 +155,7 @@ internal sealed class SiteBuilder
         return new BuildReport
         {
             Pages = write.Written,
+            Generated = generated,
             Copies = copied,
             Removed = removed,
             Elapsed = elapsed,
@@ -220,6 +230,64 @@ internal sealed class SiteBuilder
         return PageLayout.Render(context, header, FooterComponent.Render(context));
     }
 
+    /// <summary>
+    ///     Writes the syndication feed, or nothing at all when the configuration has not asked for one or
+    ///     when the feed would carry no entry.
+    /// </summary>
+    /// <param name="pages">
+    ///     Every page the site is built from, of which the feed publishes those that declare it.
+    /// </param>
+    /// <param name="options">
+    ///     The site configuration, which both switches the feed on and supplies the origin its links need.
+    /// </param>
+    /// <param name="outputDirectory">
+    ///     The absolute path of the directory the feed is written to.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     The output-relative path of the feed, or an empty list when none was written.
+    /// </returns>
+    private async Task<List<string>> WriteFeedAsync(
+        IReadOnlyList<ContentPage> pages,
+        SiteOptions options,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        if (!options.EnableFeed) return [];
+
+        // Reported ahead of the render, which answers with nothing for either reason and so cannot tell the
+        // two apart on its own.
+        if (options.BaseUrl is null)
+        {
+            this._logger.LogFeedSkippedWithoutBaseUrl();
+            return [];
+        }
+
+        // The one conflict the opt-in makes expressible: a page asks to be published and declares no date to
+        // be published under, which Atom requires of every entry.
+        foreach (ContentPage page in pages.Where(static page => page.InFeed && page.Date is null))
+            this._logger.LogFeedEntrySkipped(page.SourcePath);
+
+        byte[] document = AtomFeed.Render(options, pages);
+
+        if (document.Length == 0)
+        {
+            this._logger.LogFeedSkippedWithoutEntries();
+            return [];
+        }
+
+        string destination = this._fileSystem.Path.Combine(outputDirectory, AtomFeed.FileName);
+        this._fileSystem.Directory.CreateDirectory(outputDirectory);
+
+        await this._fileSystem.File
+            .WriteAllBytesAsync(destination, document, cancellationToken)
+            .ConfigureAwait(false);
+
+        return [AtomFeed.FileName];
+    }
+
     private List<string> CopyAssets(
         IReadOnlyList<ContentItem> items,
         string outputDirectory,
@@ -244,13 +312,17 @@ internal sealed class SiteBuilder
 
     private List<string> Reconcile(
         IReadOnlyList<ContentItem> items,
+        List<string> generated,
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        var published = new HashSet<string>(items.Count, StringComparer.Ordinal);
+        var published = new HashSet<string>(items.Count + generated.Count, StringComparer.Ordinal);
 
         foreach (ContentItem item in items)
             published.Add(item.OutputPath);
+
+        foreach (string path in generated)
+            published.Add(path);
 
         var context = new PruneContext
         {

@@ -47,6 +47,21 @@ internal static class EventIds
     /// </summary>
     internal const int STARTUP_COMPLETED = 1_006;
 
+    /// <summary>
+    ///     The feed was asked for and no absolute URL was configured to resolve its links against.
+    /// </summary>
+    internal const int FEED_SKIPPED_WITHOUT_BASE_URL = 1_007;
+
+    /// <summary>
+    ///     The feed was asked for and no page qualified as an entry.
+    /// </summary>
+    internal const int FEED_SKIPPED_WITHOUT_ENTRIES = 1_008;
+
+    /// <summary>
+    ///     One page asked to be published by the feed and carries no date to be published under.
+    /// </summary>
+    internal const int FEED_ENTRY_SKIPPED = 1_009;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

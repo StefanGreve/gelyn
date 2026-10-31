@@ -257,6 +257,33 @@ internal sealed class ContentFixture
         CreateRendered("enableFeed", verbosity);
 
     /// <summary>
+    ///     Creates a fixture holding two pages the feed publishes, one that asks to be published without
+    ///     declaring a date, and two that ask for nothing, so that a test can tell each exclusion apart.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html              2026-01-01   out of the feed
+    ///     blog/index.md        -> blog/index.html         2026-02-01   out of the feed
+    ///     blog/hello.md        -> blog/hello.html         2026-03-01   in the feed
+    ///     blog/later.md        -> blog/later.html         2026-04-01   in the feed
+    ///     blog/draft.md        -> blog/draft.html         no date      opts in, so it is the conflict
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreatePublished(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteDated("index.md", "Home", "2026-01-01")
+            .WriteDated("blog/index.md", "Blog", "2026-02-01")
+            .WriteSyndicated("blog/hello.md", "Hello", "2026-03-01")
+            .WriteSyndicated("blog/later.md", "Later", "2026-04-01")
+            .WriteSyndicated("blog/draft.md", "Draft");
+
+    /// <summary>
     ///     Creates a fixture holding two pages that declare the same date, one that declares a different date
     ///     and one that declares none, so that a test can tell the footers apart by the date they carry.
     /// </summary>
@@ -373,6 +400,31 @@ internal sealed class ContentFixture
         this.WriteFile(
             relativePath,
             string.Join(Environment.NewLine, "---", $"title: {title}", $"date: {date}", "---", string.Empty, body));
+
+    /// <summary>
+    ///     Adds one source file that opts into the feed, creating the directories leading to it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="title">
+    ///     The title to declare in the front matter.
+    /// </param>
+    /// <param name="date">
+    ///     The date to declare in the front matter, in ISO 8601 form, or <see langword="null"/> to declare
+    ///     none, which is the conflict the opt-in makes expressible.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WriteSyndicated(string relativePath, string title, string? date = null)
+    {
+        string[] lines = date is null
+            ? ["---", $"title: {title}", "enableFeed: true", "---"]
+            : ["---", $"title: {title}", $"date: {date}", "enableFeed: true", "---"];
+
+        return this.WriteFile(relativePath, string.Join(Environment.NewLine, lines));
+    }
 
     /// <summary>
     ///     Adds one file verbatim, creating the directories leading to it.
@@ -527,6 +579,19 @@ internal sealed class ContentFixture
     public ContentFixture WithBaseUrl(string baseUrl)
     {
         this.Options.BaseUrl = new Uri(baseUrl, UriKind.Absolute);
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Switches the feed on in the fixture's options, as a configuration file would.
+    /// </summary>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithFeed()
+    {
+        this.Options.EnableFeed = true;
 
         return this;
     }

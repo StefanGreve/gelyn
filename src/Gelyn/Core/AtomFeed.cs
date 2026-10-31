@@ -34,6 +34,10 @@ internal static class AtomFeed
 
     private const string TextType = "text";
 
+    // Stood in for the author of a site that names none, RFC 4287 requiring one of a feed whose entries
+    // carry none of their own, which is every entry here.
+    private const string AnonymousAuthor = "anonymous";
+
     /// <summary>
     ///     Renders the feed.
     /// </summary>
@@ -123,10 +127,8 @@ internal static class AtomFeed
         WriteLink(writer, "self", new Uri(root, FileName).AbsoluteUri, ContentType);
         WriteLink(writer, "alternate", root.AbsoluteUri, MediaTypeNames.Text.Html);
 
-        // Required of a feed whose entries declare no author of their own, which is every entry here, since
-        // a page carries no author of its own. A site is the author of what it publishes.
         writer.WriteStartElement("author", Namespace);
-        writer.WriteElementString("name", Namespace, options.Author ?? options.Title);
+        writer.WriteElementString("name", Namespace, options.Author ?? AnonymousAuthor);
         writer.WriteEndElement();
 
         writer.WriteStartElement("generator", Namespace);

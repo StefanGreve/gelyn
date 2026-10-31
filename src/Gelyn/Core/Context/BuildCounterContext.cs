@@ -22,7 +22,8 @@ internal sealed record BuildCounterContext
     public required int PageCount { get; init; }
 
     /// <summary>
-    ///     The number of files that reached the output directory, written and copied together.
+    ///     The number of files that reached the output directory, the pages, the generated output and the
+    ///     copies together.
     /// </summary>
     public required int FileCount { get; init; }
 

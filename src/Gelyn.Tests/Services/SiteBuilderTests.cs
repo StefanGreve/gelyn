@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
@@ -22,6 +23,8 @@ namespace Gelyn.Tests.Services;
 /// </summary>
 public partial class SiteBuilderTests
 {
+    private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";
+
     #region BuildAsync Tests
 
     /// <summary>
@@ -720,6 +723,228 @@ public partial class SiteBuilderTests
 
     #endregion // Canonical Tests
 
+    #region Feed Tests
+
+    /// <summary>
+    ///     Verifies that the feed is written beside the pages, carries the pages that opt into it newest
+    ///     first, and is reported apart from them.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_PublishesThePagesThatOptIn()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEquivalentTo(["feed.xml"]);
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsTrue();
+            await Assert.That(EntryTitles(fixture)).IsEqualTo("Later,Hello");
+
+            await Assert.That(EntryLinks(fixture))
+                .IsEqualTo("https://example.com/blog/later.html,https://example.com/blog/hello.html");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the feed is counted among the files the build produced, so that the total the command
+    ///     prints accounts for the output no source stands behind.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_IsCountedAmongTheFilesWritten()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        int written = report.Pages.Count + report.Generated.Count;
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Pages.Count).IsEqualTo(5);
+            await Assert.That(report.FileCount).IsEqualTo(written);
+            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(written);
+            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(written);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page opting into the feed produces nothing while the setting is off, which is the
+    ///     default, and that the build says nothing about it either.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_IsNotWrittenWhileTheSettingIsOff()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished().WithBaseUrl("https://example.com");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEmpty();
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsFalse();
+            await Assert.That(Warnings(fixture)).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a feed asked for without a base URL is skipped with one warning naming that reason,
+    ///     and that the build still succeeds, because the workflows supply the base URL per run.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_IsSkippedWithoutABaseUrl()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished().WithFeed();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEmpty();
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsFalse();
+            await Assert.That(report.Pages.Count).IsEqualTo(5);
+
+            await Assert.That(Reported(fixture, EventIds.FEED_SKIPPED_WITHOUT_BASE_URL).Level)
+                .IsEqualTo(LogLevel.Warning);
+
+            // The missing origin is what the author fixes, so the pages are not worth a warning of their own.
+            await Assert.That(Reports(fixture, EventIds.FEED_ENTRY_SKIPPED)).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a feed no page opts into is skipped with one warning naming that reason, which is the
+    ///     other way the feature produces nothing while it is switched on.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_IsSkippedWhenNoPageOptsIn()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDated()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEmpty();
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsFalse();
+
+            await Assert.That(Reported(fixture, EventIds.FEED_SKIPPED_WITHOUT_ENTRIES).Level)
+                .IsEqualTo(LogLevel.Warning);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page opting into the feed without declaring a date is named by a warning of its
+    ///     own, and left out of the feed the pages beside it still fill.
+    /// </summary>
+    /// <remarks>
+    ///     The warning names the source file and not the generated one, because the declaration is edited
+    ///     there. It is the only reason <see cref="Gelyn.Model.ContentPage"/> carries a source path at all.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Feed_WarnsAboutAPageDeclaringNoDate()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        string source = Path.Combine(fixture.ContentRoot, "blog", "draft.md");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        FakeLogRecord warning = Reported(fixture, EventIds.FEED_ENTRY_SKIPPED);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+            await Assert.That(warning.GetStructuredStateValue("Path")).IsEqualTo(source);
+            await Assert.That(EntryTitles(fixture)).DoesNotContain("Draft");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the feed survives the build that follows the one writing it, which no source
+    ///     accounts for and the reconcile would otherwise delete.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_SurvivesTheNextBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        string before = ReadFeed(fixture);
+
+        // Act
+        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(second.Removed).IsEmpty();
+            await Assert.That(second.Generated).IsEquivalentTo(first.Generated);
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsTrue();
+
+            // Dated from the newest entry and never from the clock, which is what keeps the bytes identical.
+            await Assert.That(ReadFeed(fixture)).IsEqualTo(before);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a feed left behind by a build that had the setting on is deleted once it is off,
+    ///     because the seam exempts the output the build generated and not whatever happens to carry the name.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Feed_IsRemovedOnceTheSettingIsOff()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed();
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Options.EnableFeed = false;
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["feed.xml"]);
+            await Assert.That(fixture.OutputHolds("feed.xml")).IsFalse();
+        }
+    }
+
+    #endregion // Feed Tests
+
     #region Reconcile Tests
 
     /// <summary>
@@ -1128,8 +1353,11 @@ public partial class SiteBuilderTests
 
     #region Helpers
 
+    private static IEnumerable<FakeLogRecord> Reports(ContentFixture fixture, int eventId) =>
+        fixture.Records.Where(record => record.Id.Id == eventId);
+
     private static FakeLogRecord Reported(ContentFixture fixture, int eventId) =>
-        fixture.Records.Single(record => record.Id.Id == eventId);
+        Reports(fixture, eventId).Single();
 
     // FakeLogger stringifies the state, so the value is parsed back under the culture it was rendered with.
     private static T Value<T>(FakeLogRecord record, string name) where T : IParsable<T> =>
@@ -1140,6 +1368,22 @@ public partial class SiteBuilderTests
 
     private static double Elapsed(ContentFixture fixture, int eventId) =>
         Value<double>(Reported(fixture, eventId), "ElapsedMilliseconds");
+
+    private static IEnumerable<FakeLogRecord> Warnings(ContentFixture fixture) =>
+        fixture.Records.Where(static record => record.Level >= LogLevel.Warning);
+
+    private static string ReadFeed(ContentFixture fixture) =>
+        fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, "feed.xml"));
+
+    private static IEnumerable<XElement> FeedEntries(ContentFixture fixture) =>
+        XElement.Parse(ReadFeed(fixture)).Elements(Atom + "entry");
+
+    // Joined instead of returned as a sequence, because IsEquivalentTo disregards the order under test.
+    private static string EntryTitles(ContentFixture fixture) =>
+        string.Join(',', FeedEntries(fixture).Select(entry => entry.Element(Atom + "title")?.Value));
+
+    private static string EntryLinks(ContentFixture fixture) =>
+        string.Join(',', FeedEntries(fixture).Select(entry => entry.Element(Atom + "id")?.Value));
 
     private static string ReadPage(ContentFixture fixture, string outputPath) =>
         fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));

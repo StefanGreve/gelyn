@@ -25,6 +25,7 @@ internal static class Mapper
     internal static ContentPage ToContentPage(this ContentItem item, RenderedMarkdown document) =>
         new()
         {
+            SourcePath = item.SourcePath,
             OutputPath = item.OutputPath,
             Href = item.Href,
             Title = document.FrontMatter?.Title ?? item.FallbackTitle,

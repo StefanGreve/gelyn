@@ -11,6 +11,12 @@ internal sealed record BuildReport
     public required IReadOnlyList<string> Pages { get; init; }
 
     /// <summary>
+    ///     The output-relative paths that were written from no source of their own, which today is the
+    ///     syndication feed and nothing else.
+    /// </summary>
+    public required IReadOnlyList<string> Generated { get; init; }
+
+    /// <summary>
     ///     The output-relative paths that were copied unchanged.
     /// </summary>
     public required IReadOnlyList<string> Copies { get; init; }
@@ -31,5 +37,5 @@ internal sealed record BuildReport
     ///     The number of files the build wrote, copied and deleted, which is the total every command reports.
     /// </summary>
     public int FileCount =>
-        this.Pages.Count + this.Copies.Count + this.Removed.Count;
+        this.Pages.Count + this.Generated.Count + this.Copies.Count + this.Removed.Count;
 }
