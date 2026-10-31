@@ -30,6 +30,7 @@ public class FrontMatterParserTests
             description: Notes about software
             enableMathRendering: true
             enableDiagramRendering: true
+            enableFeed: true
             ---
         """;
 
@@ -44,6 +45,7 @@ public class FrontMatterParserTests
             await Assert.That(result?.Description).IsEqualTo("Notes about software");
             await Assert.That(result?.EnableMathRendering).IsTrue();
             await Assert.That(result?.EnableDiagramRendering).IsTrue();
+            await Assert.That(result?.EnableFeed).IsTrue();
         }
     }
 
@@ -62,6 +64,28 @@ public class FrontMatterParserTests
 
         // Assert
         await Assert.That(result?.EnableMathRendering).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that the feed opt-in is read as a declared boolean, and that a block omitting the key is
+    ///     distinguishable from one declaring it false.
+    /// </summary>
+    /// <remarks>
+    ///     Both of those keep the page out of the feed, so the distinction earns a test of its own only
+    ///     because the key is the whole of what puts a page in: a value misread as absent is a page silently
+    ///     dropped from the feed, which nothing else would report.
+    /// </remarks>
+    [Test]
+    [Arguments("enableFeed: true", true)]
+    [Arguments("enableFeed: false", false)]
+    [Arguments("title: Home", null)]
+    public async Task Parse_Test_FeedOptIn_IsReadAsADeclaredBoolean(string line, bool? expected)
+    {
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(line);
+
+        // Assert
+        await Assert.That(result?.EnableFeed).IsEqualTo(expected);
     }
 
     /// <summary>

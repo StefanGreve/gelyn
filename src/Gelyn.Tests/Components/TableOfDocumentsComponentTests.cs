@@ -420,6 +420,7 @@ public partial class TableOfDocumentsComponentTests
             EnableDiagramRendering = false,
             Html = string.Empty,
             InNavigation = false,
+            InFeed = false,
             Stylesheets = [],
             Scripts = [],
             Favicon = null,

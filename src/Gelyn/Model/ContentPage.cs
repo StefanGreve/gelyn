@@ -62,6 +62,12 @@ internal sealed record ContentPage
     public required bool InNavigation { get; init; }
 
     /// <summary>
+    ///     Indicates whether the feed publishes the page, as declared in its front matter. A page that declares
+    ///     nothing stays out, so membership is never inherited from a directory above it.
+    /// </summary>
+    public required bool InFeed { get; init; }
+
+    /// <summary>
     ///     The root-relative URLs of the stylesheets that apply to the page, outermost first, so that a
     ///     stylesheet deeper in the tree overrides one above it.
     /// </summary>

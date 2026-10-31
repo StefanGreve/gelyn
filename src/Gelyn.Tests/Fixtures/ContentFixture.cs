@@ -235,6 +235,27 @@ internal sealed class ContentFixture
         CreateRendered("enableDiagramRendering", verbosity);
 
     /// <summary>
+    ///     Creates a fixture holding one page that opts into the feed, beside a page and above a page that do
+    ///     not, so that a test can confirm the opt-in reaches neither.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html             out of the feed
+    ///     blog/index.md        -> blog/index.html        in the feed
+    ///     blog/hello.md        -> blog/hello.html        out of the feed
+    ///     blog/2026/index.md   -> blog/2026/index.html   out of the feed
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateSyndicated(LogLevel verbosity = LogLevel.Debug) =>
+        CreateRendered("enableFeed", verbosity);
+
+    /// <summary>
     ///     Creates a fixture holding two pages that declare the same date, one that declares a different date
     ///     and one that declares none, so that a test can tell the footers apart by the date they carry.
     /// </summary>

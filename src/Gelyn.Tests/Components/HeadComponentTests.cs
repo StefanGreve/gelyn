@@ -168,6 +168,7 @@ public class HeadComponentTests
                 EnableDiagramRendering = false,
                 Html = "<p>Home</p>",
                 InNavigation = true,
+                InFeed = false,
                 Stylesheets = [],
                 Scripts = [],
                 Favicon = favicon,

@@ -744,9 +744,35 @@ public class ContentPipelineTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that the feed opt-in reaches the page that declares it and no other, so that membership is
+    ///     neither inherited by a page below the declaration nor shared with a page beside it.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_FeedOptIn_ReachesTheDeclaringPageAlone()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateSyndicated();
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(InFeed(pages, "/blog/index.html")).IsTrue();
+            await Assert.That(InFeed(pages, "/index.html")).IsFalse();
+            await Assert.That(InFeed(pages, "/blog/hello.html")).IsFalse();
+            await Assert.That(InFeed(pages, "/blog/2026/index.html")).IsFalse();
+        }
+    }
+
     #endregion // RenderAsync Tests
 
     #region Helpers
+
+    private static bool InFeed(IReadOnlyList<ContentPage> pages, string href) =>
+        pages.Single(page => page.Href == href).InFeed;
 
     private static IReadOnlyList<ContentItem> Scan(ContentFixture fixture) =>
         fixture.Pipeline.Scan(fixture.Options);

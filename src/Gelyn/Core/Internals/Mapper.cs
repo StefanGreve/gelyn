@@ -34,6 +34,7 @@ internal static class Mapper
             EnableDiagramRendering = document.FrontMatter?.EnableDiagramRendering ?? false,
             Html = document.Html,
             InNavigation = item.InNavigation,
+            InFeed = document.FrontMatter?.EnableFeed ?? false,
             Stylesheets = item.Stylesheets,
             Scripts = item.Scripts,
             Favicon = item.Favicon,

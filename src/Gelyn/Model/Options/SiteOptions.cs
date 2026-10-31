@@ -37,6 +37,13 @@ internal sealed class SiteOptions
     public Uri? BaseUrl { get; set; }
 
     /// <summary>
+    ///     Indicates whether the build writes a syndication feed of the pages whose front matter declares
+    ///     <c>enableFeed</c>. Every entry carries an absolute URL, so no feed is written while
+    ///     <see cref="BaseUrl"/> is <see langword="null"/>.
+    /// </summary>
+    public bool EnableFeed { get; set; }
+
+    /// <summary>
     ///     The version of KaTeX requested from jsDelivr, such as <c>0.19.0</c>.
     /// </summary>
     public string KaTeXVersion { get; set; } = "0.19.0";

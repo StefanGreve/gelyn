@@ -56,6 +56,14 @@
         "https://example.com"
       ]
     },
+    "EnableFeed": {
+      "description": "Writes a syndication feed of the pages whose front matter declares enableFeed. Requires BaseUrl, as every entry needs an absolute URL.",
+      "type": "boolean",
+      "default": false,
+      "examples": [
+        true
+      ]
+    },
     "KaTeXVersion": {
       "description": "The version of KaTeX requested from jsDelivr by a page whose front matter sets enableMathRendering.",
       "type": "string",
