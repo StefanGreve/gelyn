@@ -44,6 +44,12 @@ internal sealed class SiteOptions
     public bool EnableFeed { get; set; }
 
     /// <summary>
+    ///     Indicates whether the build writes a sitemap of the pages it publishes. Every location in it is an
+    ///     absolute URL, so no sitemap is written while <see cref="BaseUrl"/> is <see langword="null"/>.
+    /// </summary>
+    public bool EnableSitemap { get; set; }
+
+    /// <summary>
     ///     The version of KaTeX requested from jsDelivr, such as <c>0.19.0</c>.
     /// </summary>
     public string KaTeXVersion { get; set; } = "0.19.0";

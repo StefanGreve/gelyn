@@ -64,6 +64,14 @@
         true
       ]
     },
+    "EnableSitemap": {
+      "description": "Writes a sitemap of the pages the site publishes. Requires BaseUrl, as every location in it is an absolute URL.",
+      "type": "boolean",
+      "default": false,
+      "examples": [
+        true
+      ]
+    },
     "KaTeXVersion": {
       "description": "The version of KaTeX requested from jsDelivr by a page whose front matter sets enableMathRendering.",
       "type": "string",
