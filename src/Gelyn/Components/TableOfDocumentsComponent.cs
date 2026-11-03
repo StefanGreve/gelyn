@@ -51,13 +51,13 @@ internal static class TableOfDocumentsComponent
         ArgumentNullException.ThrowIfNull(context);
 
         string current = context.Page.OutputPath;
-        string scope = ResolveScope(current);
+        int scopeLength = ResolveScopeLength(current);
 
         List<(ContentPage Page, string Type)> rows = [];
 
         foreach (ContentPage page in context.Documents)
         {
-            if (ResolveRow(page, current, scope) is string type)
+            if (ResolveRow(page, current, scopeLength) is string type)
                 rows.Add((page, type));
         }
 
@@ -100,28 +100,24 @@ internal static class TableOfDocumentsComponent
 
     #region Helpers
 
-    // Keeping the trailing separator makes StartsWith a directory test and not a string one: "blog" alone
-    // would match "blogs/post.html". The content root has none, yielding the empty prefix every page starts with.
-    private static string ResolveScope(string outputPath)
-    {
-        int separator = outputPath.LastIndexOf(Path.DirectorySeparatorChar);
-
-        return separator < 0
-            ? string.Empty
-            : outputPath[..(separator + 1)];
-    }
+    // Counting the trailing separator in makes the prefix test a directory test and not a string one: "blog"
+    // alone would match "blogs/post.html". A path carrying no separator yields zero, which every page passes.
+    private static int ResolveScopeLength(string outputPath) =>
+        outputPath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
 
     // The rejections run before the slice, which counts from the scope's length and is meaningless outside it.
     // The last segment is matched in full, because a page named myindex.md ends the same way.
-    private static string? ResolveRow(ContentPage page, string current, string scope)
+    private static string? ResolveRow(ContentPage page, string current, int scopeLength)
     {
+        ReadOnlySpan<char> outputPath = page.OutputPath;
+
         bool listed = !IsDraft(page)
             && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
-            && page.OutputPath.StartsWith(scope, StringComparison.Ordinal);
+            && outputPath.StartsWith(current.AsSpan(0, scopeLength), StringComparison.Ordinal);
 
         if (!listed) return null;
 
-        ReadOnlySpan<char> relativePath = page.OutputPath.AsSpan(scope.Length);
+        ReadOnlySpan<char> relativePath = outputPath[scopeLength..];
         int separator = relativePath.IndexOf(Path.DirectorySeparatorChar);
 
         if (separator < 0) return FileType;
