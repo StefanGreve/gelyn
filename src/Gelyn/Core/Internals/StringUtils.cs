@@ -175,4 +175,44 @@ internal static class StringUtils
             if (rented is not null) ArrayPool<char>.Shared.Return(rented);
         }
     }
+
+    /// <summary>
+    ///     Removes a delimiter from the start of a text and from its last line, along with the whitespace
+    ///     surrounding the whole.
+    /// </summary>
+    /// <remarks>
+    ///     The two ends are not matched alike. A leading delimiter is removed wherever it sits, while a
+    ///     trailing one is removed only when it makes up the last line, indentation allowed, so that a text
+    ///     ending on the delimiter's own characters keeps them. A delimiter between the two is left where it
+    ///     is.
+    /// </remarks>
+    /// <param name="text">
+    ///     The text to trim.
+    /// </param>
+    /// <param name="delimiter">
+    ///     The delimiter to remove, compared ordinally.
+    /// </param>
+    /// <returns>
+    ///     The text between the delimiters, which is empty when the text holds nothing else.
+    /// </returns>
+    /// <example>
+    ///     <code>
+    ///     // "\ntitle: Home", where "title: a---" keeps its dashes
+    ///     TrimDelimiters("---\ntitle: Home\n---", "---");
+    ///     </code>
+    /// </example>
+    internal static ReadOnlySpan<char> TrimDelimiters(ReadOnlySpan<char> text, ReadOnlySpan<char> delimiter)
+    {
+        ReadOnlySpan<char> body = text.Trim();
+
+        if (body.StartsWith(delimiter)) body = body[delimiter.Length..];
+
+        // Cut at the last break and not off the end, so the indentation before a delimiter goes with it.
+        int lastBreak = body.LastIndexOfAny('\n', '\r');
+
+        if (lastBreak >= 0 && body[(lastBreak + 1)..].Trim().SequenceEqual(delimiter))
+            body = body[..lastBreak];
+
+        return body;
+    }
 }

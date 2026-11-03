@@ -1,5 +1,4 @@
-using System.Text;
-
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 
 using SharpYaml;
@@ -31,20 +30,10 @@ internal static class FrontMatterParser
 
     #region Helpers
 
-    // A delimiter line would otherwise open a second YAML document, which Deserialize rejects outright.
-    private static string StripDelimiters(ReadOnlySpan<char> block)
-    {
-        var body = new StringBuilder(block.Length);
-
-        foreach (ReadOnlySpan<char> line in block.EnumerateLines())
-        {
-            if (line.Trim().SequenceEqual(Delimiter)) continue;
-
-            body.Append(line).AppendLine();
-        }
-
-        return body.ToString();
-    }
+    // A delimiter would otherwise open a second YAML document, which Deserialize rejects outright. Markdig
+    // closes the block at its second one, so the two it hands over are the first and the last line.
+    private static string StripDelimiters(ReadOnlySpan<char> block) =>
+        StringUtils.TrimDelimiters(block, Delimiter).ToString();
 
     #endregion
 }

@@ -415,4 +415,165 @@ public class StringUtilsTests
     }
 
     #endregion // JoinSegments Tests
+
+    #region TrimDelimiters Tests
+
+    /// <summary>
+    ///     Verifies that the delimiter is removed from both ends, leaving what sat between them.
+    /// </summary>
+    [Test]
+    public async Task TrimDelimiters_Test_BothEnds_AreRemoved()
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters("---\ntitle: Home\n---", "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\ntitle: Home");
+    }
+
+    /// <summary>
+    ///     Verifies that a text ending on the delimiter's own characters keeps them, the trailing delimiter
+    ///     counting only as a line of its own.
+    /// </summary>
+    [Test]
+    [Arguments("title: a---")]
+    [Arguments("title: a--- ")]
+    public async Task TrimDelimiters_Test_TextEndingOnTheCharacters_KeepsThem(string text)
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(text, "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("title: a---");
+    }
+
+    /// <summary>
+    ///     Verifies that an indented trailing delimiter is removed along with its indentation, which is the
+    ///     shape a block written as a raw string literal takes.
+    /// </summary>
+    [Test]
+    public async Task TrimDelimiters_Test_IndentedTrailingDelimiter_IsRemovedWithItsIndentation()
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters("    ---\n    title: Home\n    ---", "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\n    title: Home");
+    }
+
+    /// <summary>
+    ///     Verifies that the delimiter is recognized regardless of the newline convention the text uses.
+    /// </summary>
+    [Test]
+    [Arguments("---\ntitle: Home\n---", "\ntitle: Home")]
+    [Arguments("---\r\ntitle: Home\r\n---", "\r\ntitle: Home\r")]
+    [Arguments("---\rtitle: Home\r---", "\rtitle: Home")]
+    public async Task TrimDelimiters_Test_NewlineConventions_AreAllRecognized(string text, string expected)
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(text, "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that a delimiter sitting between the two ends is left where it is, only the ends being
+    ///     matched.
+    /// </summary>
+    [Test]
+    public async Task TrimDelimiters_Test_InteriorDelimiter_IsLeftWhereItIs()
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters("---\na: 1\n---\nb: 2\n---", "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\na: 1\n---\nb: 2");
+    }
+
+    /// <summary>
+    ///     Verifies that text carrying no delimiter is returned with its surrounding whitespace removed and
+    ///     nothing else taken.
+    /// </summary>
+    [Test]
+    [Arguments("title: Home", "title: Home")]
+    [Arguments("  title: Home  ", "title: Home")]
+    [Arguments("\n\ntitle: Home\n\n", "title: Home")]
+    public async Task TrimDelimiters_Test_TextWithoutADelimiter_IsOnlyTrimmed(string text, string expected)
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(text, "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that text holding nothing but delimiters yields an empty span.
+    /// </summary>
+    [Test]
+    [Arguments("---")]
+    [Arguments("---\n---")]
+    [Arguments("  ---\n---  ")]
+    [Arguments("")]
+    public async Task TrimDelimiters_Test_NothingButDelimiters_YieldsAnEmptySpan(string text)
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(text, "---");
+
+        // Assert
+        await Assert.That(result.IsEmpty).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that the whitespace around the whole text is removed even when the delimiters are
+    ///     present, so that the result opens on the first entry's line.
+    /// </summary>
+    [Test]
+    public async Task TrimDelimiters_Test_SurroundingWhitespace_IsRemoved()
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters("\n  ---\ntitle: Home\n---  \n", "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\ntitle: Home");
+    }
+
+    /// <summary>
+    ///     Verifies that any value serves as the delimiter, not only a run of dashes.
+    /// </summary>
+    [Test]
+    [Arguments("+++", "+++\ntitle: Home\n+++")]
+    [Arguments("...", "...\ntitle: Home\n...")]
+    public async Task TrimDelimiters_Test_Delimiter_IsNotRestrictedToDashes(string delimiter, string text)
+    {
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(text, delimiter);
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\ntitle: Home");
+    }
+
+    /// <summary>
+    ///     Verifies that a slice of a larger text is trimmed on its own terms, the characters around it
+    ///     reaching neither end of the result.
+    /// </summary>
+    [Test]
+    public async Task TrimDelimiters_Test_Slice_IsTrimmedWithoutItsSurroundings()
+    {
+        // Arrange
+        const string lead = "body\n";
+        const string slice = "---\ntitle: Home\n---";
+        const string document = $"{lead}{slice}\nmore";
+
+        // Act
+        ReadOnlySpan<char> result = StringUtils.TrimDelimiters(
+            document.AsSpan(lead.Length, slice.Length),
+            "---");
+
+        // Assert
+        await Assert.That(result.ToString()).IsEqualTo("\ntitle: Home");
+    }
+
+    #endregion // TrimDelimiters Tests
 }
