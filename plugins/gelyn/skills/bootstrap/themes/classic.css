@@ -172,7 +172,7 @@ div.footnotes > hr {
     margin-inline: 0;
 }
 
-/* footer extension */
+/* content footer, which only raw HTML in a page produces */
 
 main footer {
     margin-block-start: 1em;

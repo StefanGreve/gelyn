@@ -25,7 +25,7 @@ Front matter
 
 Headings get GitHub style identifiers, so [Tables](#tables) links within the page.
 
-Citations, figures, footers and alphabetic lists are enabled too. The table in `usage.md` has them.
+Citations, figures and alphabetic lists are enabled too. The table in `usage.md` has them.
 
 ## Code
 

@@ -72,6 +72,40 @@
         true
       ]
     },
+    "FooterLinks": {
+      "description": "Links listed in the footer of every page, in the order declared here. The feed and the sitemap are appended after them when the build publishes them.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["Label", "Url"],
+        "properties": {
+          "Label": {
+            "description": "The text the link reads as.",
+            "type": "string",
+            "minLength": 1
+          },
+          "Url": {
+            "description": "The absolute http or https URL the link addresses.",
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "default": [],
+      "examples": [
+        [
+          {
+            "Label": "GitHub",
+            "Url": "https://github.com/StefanGreve"
+          },
+          {
+            "Label": "LinkedIn",
+            "Url": "https://www.linkedin.com/in/example"
+          }
+        ]
+      ]
+    },
     "KaTeXVersion": {
       "description": "The version of KaTeX requested from jsDelivr by a page whose front matter sets enableMathRendering.",
       "type": "string",
