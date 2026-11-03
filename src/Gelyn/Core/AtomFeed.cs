@@ -63,7 +63,7 @@ internal static class AtomFeed
         if (options.BaseUrl is not Uri baseUrl) return [];
 
         ContentPage[] entries = [.. pages
-            .Where(static page => page.InFeed && page.Date is not null)
+            .Where(IsEntry)
             .OrderByDescending(static page => page.Date)
             .ThenBy(static page => page.Title, StringComparer.Ordinal)];
 
@@ -98,7 +98,25 @@ internal static class AtomFeed
         return buffer.ToArray();
     }
 
+    /// <summary>
+    ///     Indicates whether any page qualifies as an entry.
+    /// </summary>
+    /// <param name="pages">
+    ///     Every page the site is built from, in any order.
+    /// </param>
+    /// <returns>
+    ///     <see langword="true"/> when at least one page declares the feed and carries a date,
+    ///     <see langword="false"/> otherwise.
+    /// </returns>
+    internal static bool HasEntries(IReadOnlyList<ContentPage> pages) =>
+        pages.Any(IsEntry);
+
     #region Helpers
+
+    // Factored out so that whether a feed can be written and which pages it then carries stay one rule: the
+    // page asks for the feed and declares the date Atom requires of an entry.
+    private static bool IsEntry(ContentPage page) =>
+        page.InFeed && page.Date is not null;
 
     /// <summary>
     ///     Writes the elements that describe the feed itself, ahead of its entries.

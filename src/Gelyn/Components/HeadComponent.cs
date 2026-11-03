@@ -54,7 +54,8 @@ internal static class HeadComponent
             string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
             head.AppendLine($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
 
-            if (options.EnableFeed)
+            // Announced only for a feed the build will write, which takes a page that qualifies as an entry.
+            if (options.EnableFeed && AtomFeed.HasEntries(context.Documents))
             {
                 // Resolved against the base URL as a directory, a relative reference otherwise losing a segment.
                 var root = new Uri(StringUtils.EnsureEndsOn(baseUrl.AbsoluteUri, '/'));

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 
@@ -217,7 +218,7 @@ public class HeadComponentTests
         };
 
         // Act
-        string head = Render(options);
+        string head = Render(options, hasFeedEntry: true);
 
         // Assert
         await Assert.That(head).Contains(
@@ -243,7 +244,7 @@ public class HeadComponentTests
         };
 
         // Act
-        string head = Render(options);
+        string head = Render(options, hasFeedEntry: true);
 
         // Assert
         await Assert.That(head)
@@ -276,6 +277,27 @@ public class HeadComponentTests
     }
 
     /// <summary>
+    ///     Verifies that a site with both switches on announces nothing while no page qualifies as an entry,
+    ///     the build writing no document for such a site to point at.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Feed_IsNotAnnouncedWithoutAnEntry()
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            BaseUrl = new Uri("https://example.com", UriKind.Absolute),
+            EnableFeed = true,
+        };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head).DoesNotContain("""rel="alternate""");
+    }
+
+    /// <summary>
     ///     Verifies that a site title is escaped for the attribute it is written into.
     /// </summary>
     [Test]
@@ -290,7 +312,7 @@ public class HeadComponentTests
         };
 
         // Act
-        string head = Render(options);
+        string head = Render(options, hasFeedEntry: true);
 
         // Assert
         await Assert.That(head).Contains("""title="Ann &amp; Bob">""");
@@ -308,34 +330,41 @@ public class HeadComponentTests
         string? pageDescription = null,
         string? favicon = null,
         string? date = null,
-        string? revised = null) =>
-        HeadComponent.Render(new RenderContext
+        string? revised = null,
+        bool hasFeedEntry = false)
+    {
+        var page = new ContentPage
+        {
+            SourcePath = "index.md",
+            OutputPath = "index.html",
+            Href = "/index.html",
+            Title = "Home",
+            Description = pageDescription,
+            Date = Parse(date),
+            Revised = Parse(revised) ?? Parse(date),
+            EnableMathRendering = false,
+            EnableDiagramRendering = false,
+            Html = "<p>Home</p>",
+            InNavigation = true,
+            InFeed = false,
+            Stylesheets = [],
+            Scripts = [],
+            Favicon = favicon,
+        };
+
+        // The entry sits on a second page, so the announcement is shown to follow the site and not the page.
+        IReadOnlyList<ContentPage> documents = hasFeedEntry
+            ? [page, page with { Href = "/post.html", InFeed = true, Date = new DateOnly(2026, 1, 1) }]
+            : [page];
+
+        return HeadComponent.Render(new RenderContext
         {
             Options = options,
             Navigation = [],
-            Documents = [],
-            Page = new ContentPage
-            {
-                SourcePath = "index.md",
-                OutputPath = "index.html",
-                Href = "/index.html",
-                Title = "Home",
-                Description = pageDescription,
-                Date = Parse(date),
-
-                // Resolved the way Mapper resolves it, so a case declaring no revision carries the fallback
-                // the component is handed in a build.
-                Revised = Parse(revised) ?? Parse(date),
-                EnableMathRendering = false,
-                EnableDiagramRendering = false,
-                Html = "<p>Home</p>",
-                InNavigation = true,
-                InFeed = false,
-                Stylesheets = [],
-                Scripts = [],
-                Favicon = favicon,
-            },
+            Documents = documents,
+            Page = page,
         });
+    }
 
     #endregion
 }
