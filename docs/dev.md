@@ -1,6 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
+revised: 2026-10-25
 description: Building Gelyn from source, the git hooks, the test suite, and the versioning scheme.
 ---
 

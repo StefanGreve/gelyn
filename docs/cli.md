@@ -1,6 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
+revised: 2026-10-24
 description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
 ---
 

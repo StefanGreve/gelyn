@@ -1,0 +1,5 @@
+# A crawler reads robots.txt from the origin root, which this project site does not own.
+User-agent: *
+Disallow:
+
+Sitemap: https://stefangreve.github.io/gelyn/sitemap.xml

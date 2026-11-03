@@ -1,6 +1,7 @@
 ---
 title: Configuration
 date: 2026-10-15
+revised: 2026-11-03
 description: Every setting gelyn.json accepts, its default, and the order the sources are read in.
 ---
 

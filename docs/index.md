@@ -1,6 +1,7 @@
 ---
 title: Gelyn
 date: 2026-10-25
+revised: 2026-10-25
 description: A static site generator that turns a folder of Markdown into a website.
 ---
 
