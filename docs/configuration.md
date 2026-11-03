@@ -39,6 +39,7 @@ otherwise ignore in silence.
 | `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
 | `EnableFeed`       | `false`   | Publishes a feed of the pages that ask to be in one. See [Feed](#feed).                                 |
+| `EnableSitemap`    | `false`   | Publishes a sitemap of every page the build renders. See [Sitemap](#sitemap).                           |
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
@@ -125,6 +126,57 @@ link to the page, and the page's own `description` as the summary. A page declar
 no summary, and your site's `Description` does not stand in for it, so write one per syndicated page. The feed
 carries no article bodies, so a reader follows the link to read the page.
 
+## Sitemap
+
+`EnableSitemap` publishes a [Sitemap 0.9](https://www.sitemaps.org/protocol.html) document at `sitemap.xml` in the
+root of your output directory, which is the inventory a search engine reads to learn what your site holds:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://example.com/index.html</loc>
+    <lastmod>2026-01-01</lastmod>
+  </url>
+  <url>
+    <loc>https://example.com/about.html</loc>
+  </url>
+</urlset>
+```
+
+Two switches have to be on, and no page has to opt in:
+
+| Requirement           | Why                                                                        |
+| --------------------- | -------------------------------------------------------------------------- |
+| `EnableSitemap: true` | The feature is off by default.                                             |
+| `BaseUrl`             | Every location is an absolute URL, and only `BaseUrl` supplies the origin. |
+
+Neither fails a build. Gelyn writes no sitemap and warns once if `BaseUrl` is unset.
+
+Every page is listed, including one that declares no `date`. Such a page is a draft only in the sense that no table
+of documents links it, and a crawler reaches it through your navigation anyway, so leaving it out of the inventory
+would hide it from nothing. No front matter key keeps a single page out. Name the file in `ExcludePatterns` to keep
+it out of the build entirely.
+
+Each `<loc>` is the address the page already carries as its `<link rel="canonical">`, which is the agreement that
+matters. A sitemap disagreeing with the canonical tag is the standard way to report one page as two.
+
+`<lastmod>` is the page's `revised` date, falling back to its `date`, and is omitted for a page declaring neither.
+
+> [!IMPORTANT]
+> A stale `revised` date is worse than none at all. Gelyn can't verify one, since `revised` is front matter you
+> write, and [Google](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap) uses
+> the value only "if it's consistently and verifiably (for example by comparing to the last modification of
+> the page) accurate". A date you don't keep current therefore costs you the signal instead of adding one, so
+> leave `revised` off a page you don't intend to maintain.
+
+Gelyn doesn't generate a `robots.txt`, and copies yours like any other file beside your Markdown, so point crawlers
+at the sitemap yourself with the line the protocol specifies:
+
+```text
+Sitemap: https://example.com/sitemap.xml
+```
+
 ## Exclude patterns
 
 Gelyn copies every file beside your Markdown to the output directory, so name anything the build shouldn't
@@ -193,8 +245,8 @@ usable on their own. Five settings have a flag:
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
-`Language`, `Author`, `Description`, `EnableFeed`, `KaTeXVersion`, and `MermaidVersion` have none, so set
-them in the file or in the environment.
+`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `KaTeXVersion`, and `MermaidVersion` have
+none, so set them in the file or in the environment.
 
 `ExcludePatterns` is the only collection-valued setting, which makes layer 3 awkward for it. An environment
 variable named exactly like the setting can't carry a list, so each entry needs its own `ExcludePatterns__0`,
