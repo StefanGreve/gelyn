@@ -29,6 +29,12 @@ internal static class StringUtils
     /// <returns>
     ///     The terminated value.
     /// </returns>
+    /// <example>
+    ///     <code>
+    ///     // "https://example.com/blog/", as does the same value ending on one slash or on several
+    ///     EnsureEndsOn("https://example.com/blog", '/');
+    ///     </code>
+    /// </example>
     internal static string EnsureEndsOn(ReadOnlySpan<char> value, char terminator)
     {
         ReadOnlySpan<char> body = value.TrimEnd(terminator);
@@ -96,5 +102,77 @@ internal static class StringUtils
         return value.Length > body.Length
             && value[body.Length] == separator
             && value[..body.Length].Equals(body, comparison);
+    }
+
+    /// <summary>
+    ///     Joins a prefix, a run of segments and a final segment, separating each from the one before it.
+    /// </summary>
+    /// <remarks>
+    ///     The prefix is taken verbatim, so one already ending on the separator yields a doubled separator.
+    /// </remarks>
+    /// <param name="prefix">
+    ///     The value the result opens with. An empty span yields a result opening with the separator.
+    /// </param>
+    /// <param name="segments">
+    ///     The segments between the prefix and <paramref name="last"/>, outermost first. An empty list leaves
+    ///     the prefix and <paramref name="last"/> adjacent.
+    /// </param>
+    /// <param name="last">
+    ///     The segment the result ends on.
+    /// </param>
+    /// <param name="separator">
+    ///     The character written before each segment.
+    /// </param>
+    /// <returns>
+    ///     The joined value.
+    /// </returns>
+    /// <example>
+    ///     <code>
+    ///     // "/gelyn/blog/post.html"
+    ///     JoinSegments("/gelyn", ["blog"], "post.html", '/');
+    ///     </code>
+    /// </example>
+    internal static string JoinSegments(
+        ReadOnlySpan<char> prefix,
+        IReadOnlyList<string> segments,
+        string last,
+        char separator)
+    {
+        // Summed up front so that the result is written into one buffer, where joining the segments and then
+        // interpolating the prefix onto them allocates the join only to copy it and drop it.
+        int length = prefix.Length + last.Length + 1;
+
+        for (int index = 0; index < segments.Count; index++)
+            length += segments[index].Length + 1;
+
+        char[]? rented = null;
+
+        Span<char> buffer = length <= StackLimit
+            ? stackalloc char[StackLimit]
+            : (rented = ArrayPool<char>.Shared.Rent(length));
+
+        try
+        {
+            prefix.CopyTo(buffer);
+            int position = prefix.Length;
+
+            for (int index = 0; index < segments.Count; index++)
+            {
+                string segment = segments[index];
+
+                buffer[position++] = separator;
+                segment.CopyTo(buffer[position..]);
+                position += segment.Length;
+            }
+
+            buffer[position] = separator;
+            last.CopyTo(buffer[(position + 1)..]);
+
+            return new string(buffer[..length]);
+        }
+        finally
+        {
+            if (rented is not null) ArrayPool<char>.Shared.Return(rented);
+        }
     }
 }

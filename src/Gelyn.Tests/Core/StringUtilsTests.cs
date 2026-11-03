@@ -289,4 +289,130 @@ public class StringUtilsTests
     }
 
     #endregion // StartsWithSegment Tests
+
+    #region JoinSegments Tests
+
+    /// <summary>
+    ///     Verifies that the prefix, the segments and the final segment are each separated from the one
+    ///     before it by exactly one separator.
+    /// </summary>
+    [Test]
+    public async Task JoinSegments_Test_Segments_AreSeparatedOneFromTheNext()
+    {
+        // Act
+        string result = StringUtils.JoinSegments("/gelyn", ["blog", "2026"], "post.html", '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo("/gelyn/blog/2026/post.html");
+    }
+
+    /// <summary>
+    ///     Verifies that an empty segment list leaves the prefix and the final segment adjacent, which is the
+    ///     shape a landing page takes.
+    /// </summary>
+    [Test]
+    [Arguments("/gelyn", "index.html", "/gelyn/index.html")]
+    [Arguments("", "index.html", "/index.html")]
+    public async Task JoinSegments_Test_EmptySegmentList_LeavesThePrefixBesideTheLast(
+        string prefix,
+        string last,
+        string expected)
+    {
+        // Act
+        string result = StringUtils.JoinSegments(prefix, [], last, '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that an empty prefix yields a root-relative value, which is what a site served from the
+    ///     root of a domain publishes.
+    /// </summary>
+    [Test]
+    public async Task JoinSegments_Test_EmptyPrefix_YieldsARootRelativeValue()
+    {
+        // Act
+        string result = StringUtils.JoinSegments(default, ["blog"], "post.html", '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo("/blog/post.html");
+    }
+
+    /// <summary>
+    ///     Verifies that a prefix already ending on the separator yields a doubled one, the prefix reaching
+    ///     the result verbatim.
+    /// </summary>
+    [Test]
+    public async Task JoinSegments_Test_PrefixEndingOnTheSeparator_IsTakenVerbatim()
+    {
+        // Act
+        string result = StringUtils.JoinSegments("/gelyn/", [], "index.html", '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo("/gelyn//index.html");
+    }
+
+    /// <summary>
+    ///     Verifies that any character serves as the separator, the path separator among them.
+    /// </summary>
+    [Test]
+    [Arguments('/', "root/blog/post.html")]
+    [Arguments('\\', "root\\blog\\post.html")]
+    [Arguments(',', "root,blog,post.html")]
+    public async Task JoinSegments_Test_Separator_IsNotRestrictedToASlash(char separator, string expected)
+    {
+        // Act
+        string result = StringUtils.JoinSegments("root", ["blog"], "post.html", separator);
+
+        // Assert
+        await Assert.That(result).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that a value is joined correctly on either side of the stack buffer's limit, the lengths
+    ///     past it renting a pooled array whose own length is only ever at least what was asked for.
+    /// </summary>
+    [Test]
+    [Arguments(1)]
+    [Arguments(84)]
+    [Arguments(85)]
+    [Arguments(300)]
+    public async Task JoinSegments_Test_ValueBeyondTheStackBuffer_IsStillJoined(int segmentLength)
+    {
+        // Arrange
+        string segment = new('a', segmentLength);
+        string last = new('b', segmentLength);
+
+        // Act
+        string result = StringUtils.JoinSegments(default, [segment, segment], last, '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo($"/{segment}/{segment}/{last}");
+    }
+
+    /// <summary>
+    ///     Verifies that a slice of a larger prefix is joined on its own terms, the characters around it
+    ///     reaching neither the length nor the result.
+    /// </summary>
+    [Test]
+    public async Task JoinSegments_Test_PrefixSlice_IsJoinedWithoutItsSurroundings()
+    {
+        // Arrange
+        const string lead = "see ";
+        const string slice = "/gelyn";
+        const string sentence = $"{lead}{slice} for more";
+
+        // Act
+        string result = StringUtils.JoinSegments(
+            sentence.AsSpan(lead.Length, slice.Length),
+            ["blog"],
+            "post.html",
+            '/');
+
+        // Assert
+        await Assert.That(result).IsEqualTo("/gelyn/blog/post.html");
+    }
+
+    #endregion // JoinSegments Tests
 }
