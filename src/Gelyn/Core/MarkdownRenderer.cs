@@ -21,6 +21,7 @@ internal sealed class MarkdownRenderer
         .UseAlertBlocks()
         .UseAbbreviations()
         .UseAutoIdentifiers(AutoIdentifierOptions.GitHub)
+        .UseTableOfContents()
         .UseCitations()
         .UseDefinitionLists()
         .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)
