@@ -26,5 +26,6 @@
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
   },
-  "xml.format.maxLineWidth": 120
+  "xml.format.maxLineWidth": 120,
+  "dotnet.defaultSolution": "Gelyn.slnx"
 }
