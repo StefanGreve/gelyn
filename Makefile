@@ -27,6 +27,14 @@ else
 BINARY = gelyn
 endif
 
+# Every recipe below is POSIX: cp, clear and a shell conditional. On Windows that means Git Bash or MSYS2.
+# An empty uname is what says make is running under cmd.exe instead, where those recipes fail one at a time.
+ifeq ($(PLATFORM),win)
+ifeq ($(UNAME_S),)
+$(error make needs a POSIX shell. On Windows, run it from Git Bash or MSYS2)
+endif
+endif
+
 # Native AOT cannot cross-compile between operating systems, so the host decides the runtime.
 # Override it as `make publish RID=linux-x64` to pick another of the identifiers Gelyn.csproj targets.
 RID ?= $(PLATFORM)-$(ARCHITECTURE)
