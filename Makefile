@@ -4,6 +4,15 @@ THEMES = ./plugins/gelyn/skills/bootstrap/themes
 EXAMPLE = ./example
 DOCS = ./docs
 
+# A 32-bit make sees x86 and finds the host architecture in PROCESSOR_ARCHITEW6432.
+ifeq ($(OS),Windows_NT)
+PLATFORM = win
+ifneq ($(filter ARM64,$(PROCESSOR_ARCHITECTURE) $(PROCESSOR_ARCHITEW6432)),)
+ARCHITECTURE = arm64
+else
+ARCHITECTURE = x64
+endif
+else
 UNAME_S = $(shell uname -s)
 UNAME_M = $(shell uname -m)
 
@@ -20,19 +29,16 @@ ARCHITECTURE = arm64
 else
 ARCHITECTURE = x64
 endif
+endif
 
+# Without SHELL, make on Windows runs recipes with any sh.exe on PATH, such as Git's.
 ifeq ($(PLATFORM),win)
+SHELL := cmd.exe
 BINARY = gelyn.exe
+CLEAR = cls
 else
 BINARY = gelyn
-endif
-
-# Every recipe below is POSIX: cp, clear and a shell conditional. On Windows that means Git Bash or MSYS2.
-# An empty uname is what says make is running under cmd.exe instead, where those recipes fail one at a time.
-ifeq ($(PLATFORM),win)
-ifeq ($(UNAME_S),)
-$(error make needs a POSIX shell. On Windows, run it from Git Bash or MSYS2)
-endif
+CLEAR = clear
 endif
 
 # Native AOT cannot cross-compile between operating systems, so the host decides the runtime.
@@ -40,6 +46,10 @@ endif
 RID ?= $(PLATFORM)-$(ARCHITECTURE)
 
 GELYN = $(MAIN_PROJECT)/bin/Release/net10.0/$(RID)/publish/$(BINARY)
+
+ifeq ($(PLATFORM),win)
+GELYN := $(subst /,\,$(GELYN))
+endif
 
 # Absent rather than zero, which the serve command rejects as a reload loop.
 REFRESH = $(if $(refresh),--refresh $(refresh))
@@ -50,17 +60,17 @@ project ?= docs
 SITE_CONFIG = ./$(project)/gelyn.json
 
 setup:
-	# local tools, and the git hooks one of them installs
+	: local tools, and the git hooks one of them installs
 	dotnet tool restore
 	dotnet tool run husky install
 
-	# restore project packages
+	: restore project packages
 	dotnet restore $(SOLUTION)
 
-	# the stylesheets and scripts the example and doc sites build with
+	: the stylesheets and scripts the example and doc sites build with
 	$(MAKE) themes
 
-	# enforced git settings
+	: enforced git settings
 	git config --local commit.gpgsign true
 	git config --local tag.gpgsign true
 	git config --local fetch.prune true
@@ -80,11 +90,11 @@ publish:
 	dotnet publish $(MAIN_PROJECT) --runtime $(RID)
 
 gelyn: publish
-	if [ "$(serve)" = "true" ]; then \
-		$(GELYN) serve --config $(SITE_CONFIG) --launch-browser $(REFRESH); \
-	else \
-		$(GELYN) build --config $(SITE_CONFIG); \
-	fi
+ifeq ($(serve),true)
+	$(GELYN) serve --config $(SITE_CONFIG) --launch-browser $(REFRESH)
+else
+	$(GELYN) build --config $(SITE_CONFIG)
+endif
 
 lint:
 	dotnet format $(SOLUTION)
@@ -92,7 +102,7 @@ lint:
 clean:
 	dotnet clean
 	dotnet clean --configuration Release
-	@clear
+	@$(CLEAR)
 
 .PHONY: setup themes build test publish gelyn lint clean
 

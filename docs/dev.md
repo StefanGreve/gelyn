@@ -29,6 +29,14 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 > [!NOTE]
 > `make setup` is the only target that is required, and it is required once after cloning.
 
+On Windows, the recipes run under `cmd.exe` regardless of the shell that invokes `make`, so cmd, PowerShell, and
+Git Bash behave alike. `make themes`, and therefore `make setup`, copies with `cp`, which [Coreutils for
+Windows][coreutils] provides:
+
+```powershell
+winget install -e --id Microsoft.Coreutils
+```
+
 What a target does depends on one of four arguments. Each is appended to the command, as
 `make <target> <argument>=<value>`:
 
@@ -140,6 +148,16 @@ version from `global.json`, and pass `--dry-run` to print every step without run
 > do. Linux validates no such signature, so `dotnet-install.sh --jsonfile global.json` is the route there and
 > the script refuses to run.
 
+On Windows, `winget` installs and removes one exact SDK version, so the script has no counterpart there:
+
+```powershell
+winget install -e --id Microsoft.DotNet.SDK.10 -v "10.0.403"
+winget uninstall -e --id Microsoft.DotNet.SDK.10 -v "10.0.401"
+```
+
+Without `-v`, [`winget uninstall`][winget-uninstall] removes "the highest versioned application", which is the
+pinned SDK whenever the pin is the newest one installed.
+
 ## Versioning
 
 No project file carries a version number. [MinVer][minver] reads the nearest reachable git tag at build time
@@ -178,3 +196,5 @@ once 1.0.0 ships.
 [global-json]: https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#globaljson-schema
 [lock-files]: https://learn.microsoft.com/en-us/dotnet/core/install/upgrade#package-lock-files
 [dotnet-download]: https://dotnet.microsoft.com/download/dotnet
+[coreutils]: https://github.com/microsoft/coreutils
+[winget-uninstall]: https://learn.microsoft.com/en-us/windows/package-manager/winget/uninstall
