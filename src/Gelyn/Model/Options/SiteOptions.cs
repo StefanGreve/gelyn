@@ -50,6 +50,12 @@ internal sealed class SiteOptions
     public bool EnableSitemap { get; set; }
 
     /// <summary>
+    ///     The links listed in the footer of every page, in the order declared here, with the feed and the
+    ///     sitemap appended after them whenever the build publishes those documents.
+    /// </summary>
+    public IReadOnlyList<FooterLink> FooterLinks { get; set; } = [];
+
+    /// <summary>
     ///     The version of KaTeX requested from jsDelivr, such as <c>0.19.0</c>.
     /// </summary>
     public string KaTeXVersion { get; set; } = "0.19.0";
