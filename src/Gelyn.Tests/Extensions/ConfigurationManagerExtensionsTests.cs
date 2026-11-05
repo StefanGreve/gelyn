@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
@@ -125,5 +127,66 @@ public class ConfigurationManagerExtensionsTests
         }
     }
 
-    #endregion
+    #endregion // Exclude Promotion Tests
+
+    #region Footer Link Tests
+
+    /// <summary>
+    ///     Verifies that indexed keys naming the members of a footer link reach the options as one link,
+    ///     which is the shape a configuration file and the environment both flatten to.
+    /// </summary>
+    [Test]
+    public async Task FooterLinks_Test_IndexedKeys_ReachTheOptions()
+    {
+        // Arrange
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["FooterLinks:0:Label"] = "GitHub",
+                ["FooterLinks:0:Url"] = "https://github.com/octocat",
+            })
+            .Build();
+
+        var options = new SiteOptions();
+
+        // Act
+        configuration.Bind(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.FooterLinks).Count().IsEqualTo(1);
+            await Assert.That(options.FooterLinks[0].Label).IsEqualTo("GitHub");
+            await Assert.That(options.FooterLinks[0].Url).IsEqualTo(new Uri("https://github.com/octocat"));
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a configuration file setting the list to <c>null</c> leaves the default empty list in
+    ///     place, which every consumer relies on by reading the list without a null check.
+    /// </summary>
+    /// <remarks>
+    ///     Driven through the JSON provider, because how a <c>null</c> reaches the binder is that provider's
+    ///     decision, and an in-memory key would not show it.
+    /// </remarks>
+    [Test]
+    public async Task FooterLinks_Test_NullValue_LeavesTheListEmpty()
+    {
+        // Arrange
+        using var json = new MemoryStream(Encoding.UTF8.GetBytes("""{ "FooterLinks": null }"""));
+
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddJsonStream(json)
+            .Build();
+
+        var options = new SiteOptions();
+
+        // Act
+        configuration.Bind(options);
+
+        // Assert
+        await Assert.That(options.FooterLinks).IsNotNull().And.IsEmpty();
+    }
+
+    #endregion // Footer Link Tests
 }

@@ -640,6 +640,23 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Applies footer links to the fixture's options, as a configuration file would.
+    /// </summary>
+    /// <param name="links">
+    ///     The links to list, in the order the footer is expected to list them. Only links the validator
+    ///     would accept are useful here, because the footer trusts it to have run.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithFooterLinks(params FooterLink[] links)
+    {
+        this.Options.FooterLinks = links;
+
+        return this;
+    }
+
+    /// <summary>
     ///     Applies exclude patterns to the fixture's options, as a configuration file or the
     ///     <c>--exclude</c> flag would.
     /// </summary>

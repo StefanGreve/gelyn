@@ -10,6 +10,7 @@ using System.Xml.Linq;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
+using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
 
@@ -565,6 +566,30 @@ public partial class SiteBuilderTests
         {
             await Assert.That(about).IsEqualTo(home);
             await Assert.That(footers.Distinct().Count()).IsEqualTo(3);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a configured footer link lands in the footer of a dated and of an undated page,
+    ///     which are rendered once each and so cannot share the link by way of the same cached footer.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_FooterLink_LandsInEveryFooter()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateDated()
+            .WithFooterLinks(new FooterLink { Label = "GitHub", Url = new Uri("https://github.com/octocat") });
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        const string anchor = """<li><a href="https://github.com/octocat">GitHub</a></li>""";
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadFooter(fixture, "index.html")).Contains(anchor);
+            await Assert.That(ReadFooter(fixture, Path.Combine("blog", "hello.html"))).Contains(anchor);
         }
     }
 
