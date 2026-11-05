@@ -28,7 +28,25 @@ body {
     }
 
     & > footer {
-        font-style: italic;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.5em 1em;
+
+        & > span {
+            font-style: italic;
+        }
+
+        & > ul {
+            order: 1;
+            margin-block: 0;
+            margin-inline: auto 0;
+            padding: 0;
+            list-style-type: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5em 1em;
+        }
     }
 }
 
