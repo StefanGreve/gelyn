@@ -5,6 +5,12 @@
   "Author": "Stefan Greve",
   "Description": "A static site generator that turns a folder of Markdown into a website.",
   "EnableSitemap": true,
+  "FooterLinks": [
+    {
+      "Label": "GitHub",
+      "Url": "https://github.com/StefanGreve/gelyn"
+    }
+  ],
   "ContentDirectory": "docs",
   "OutputDirectory": "_docs",
   "ExcludePatterns": [

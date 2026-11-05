@@ -11,6 +11,10 @@
     {
       "Label": "GitHub",
       "Url": "https://github.com/StefanGreve/gelyn"
+    },
+    {
+      "Label": "Documentation",
+      "Url": "https://stefangreve.github.io/gelyn/"
     }
   ],
   "KaTeXVersion": "0.19.0",
