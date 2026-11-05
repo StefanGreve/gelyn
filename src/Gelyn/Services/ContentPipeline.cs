@@ -76,7 +76,7 @@ internal sealed class ContentPipeline
         if (!this._fileSystem.File.Exists(home))
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
-        string hrefPrefix = ResolveBaseUrlPath(options.BaseUrl);
+        string hrefPrefix = UrlUtils.ResolveBasePath(options.BaseUrl);
 
         return this.CollectItems(this._fileSystem.DirectoryInfo.New(root), new ScanContext
         {
@@ -228,9 +228,6 @@ internal sealed class ContentPipeline
 
     private static string CombineHref(string prefix, IReadOnlyList<string> segments, string last) =>
         StringUtils.JoinSegments(prefix, segments, last, '/');
-
-    private static string ResolveBaseUrlPath(Uri? baseUrl) =>
-        baseUrl?.AbsolutePath.TrimEnd('/') ?? string.Empty;
 
     private static bool IsInNavigation(string[] segments) =>
         segments.Length switch
