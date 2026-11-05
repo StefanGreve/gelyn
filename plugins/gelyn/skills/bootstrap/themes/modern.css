@@ -525,9 +525,39 @@ hr {
     border-block-start: 1px solid var(--separator);
 }
 
-footer {
+body > footer {
+    display: grid;
+    justify-items: center;
+    row-gap: 0.5rem;
     padding-block: 1.5rem;
     color: var(--label-secondary);
     font-size: 0.8125rem;
     text-align: center;
+
+    & > ul {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+
+        & > li + li::before {
+            content: "\00B7" / "";
+            margin-inline: 0.6em;
+        }
+    }
+
+    & a {
+        color: var(--label);
+        text-decoration: none;
+
+        &:hover {
+            color: var(--accent);
+        }
+    }
+
+    & > span {
+        font-size: 0.75rem;
+    }
 }
