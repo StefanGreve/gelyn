@@ -183,12 +183,16 @@ internal sealed class SiteBuilder
         // linked page plus one shared by every page the navigation leaves out, however many pages there are.
         var banners = new Dictionary<string, string>(navigation.Count + 1, StringComparer.Ordinal);
 
+        // The footer differs only in the page's revision date, so it needs one render per distinct date plus
+        // one shared by every undated page, which also bounds the scan for feed entries the footer makes.
+        var footers = new Dictionary<string, string>(StringComparer.Ordinal);
+
         foreach (ContentPage page in pages)
         {
             var context = page.ToRenderContext(options, navigation, pages);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = ComposeDocument(context, banners);
+            string html = ComposeDocument(context, banners, footers);
 
             if (isMeasuring)
                 composeTicks += Stopwatch.GetTimestamp() - composeStarted;
@@ -216,19 +220,28 @@ internal sealed class SiteBuilder
         };
     }
 
-    private static string ComposeDocument(RenderContext context, Dictionary<string, string> banners)
+    private static string ComposeDocument(
+        RenderContext context,
+        Dictionary<string, string> banners,
+        Dictionary<string, string> footers)
     {
-        string key = context.Page.InNavigation ? context.Page.Href : string.Empty;
+        string bannerKey = context.Page.InNavigation ? context.Page.Href : string.Empty;
 
-        if (!banners.TryGetValue(key, out string? header))
+        if (!banners.TryGetValue(bannerKey, out string? header))
         {
             header = HeaderComponent.Render(context);
-            banners[key] = header;
+            banners[bannerKey] = header;
         }
 
-        // NOTE: the footer varies only by the page's date, so it could be cached per date.
-        // Only warranted once the footer grows past the few AppendLine calls it costs today.
-        return PageLayout.Render(context, header, FooterComponent.Render(context));
+        string footerKey = context.Page.Revised?.ToString(DateFormat.Machine, Tool.Culture) ?? string.Empty;
+
+        if (!footers.TryGetValue(footerKey, out string? footer))
+        {
+            footer = FooterComponent.Render(context);
+            footers[footerKey] = footer;
+        }
+
+        return PageLayout.Render(context, header, footer);
     }
 
     /// <summary>
