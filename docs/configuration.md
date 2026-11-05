@@ -1,7 +1,7 @@
 ---
 title: Configuration
 date: 2026-10-15
-revised: 2026-11-03
+revised: 2026-11-05
 description: Every setting gelyn.json accepts, its default, and the order the sources are read in.
 ---
 
@@ -41,6 +41,7 @@ otherwise ignore in silence.
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
 | `EnableFeed`       | `false`   | Publishes a feed of the pages that ask to be in one. See [Feed](#feed).                                 |
 | `EnableSitemap`    | `false`   | Publishes a sitemap of every page the build renders. See [Sitemap](#sitemap).                           |
+| `FooterLinks`      | `[]`      | Lists links in the footer of every page. See [Footer links](#footer-links).                             |
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
@@ -178,6 +179,50 @@ at the sitemap yourself with the line the protocol specifies:
 Sitemap: https://example.com/sitemap.xml
 ```
 
+## Footer links
+
+`FooterLinks` lists links in the footer of every page, in the order you declare them. Each entry names a `Label`,
+which is the text the link reads as, and a `Url`, which is the address it points at:
+
+```json
+"FooterLinks": [
+  { "Label": "GitHub", "Url": "https://github.com/octocat" },
+  { "Label": "Mastodon", "Url": "https://mastodon.social/@octocat" }
+]
+```
+
+Gelyn appends a `Feed` entry and then a `Sitemap` entry after yours, each only when the build publishes that
+document, so neither link leads to a missing file. [Feed](#feed) and [Sitemap](#sitemap) state when that is. With
+both published, the footer reads:
+
+```html
+<footer>
+<ul>
+<li><a href="https://github.com/octocat">GitHub</a></li>
+<li><a href="https://mastodon.social/@octocat">Mastodon</a></li>
+<li><a href="/feed.xml">Feed</a></li>
+<li><a href="/sitemap.xml">Sitemap</a></li>
+</ul>
+<span>Built with Gelyn v0.1.0 - last revised <time datetime="2026-10-25">Oct 25, 2026</time></span>
+</footer>
+```
+
+Every `Url` must be an absolute `http` or `https` URL, and every `Label` must hold text. Gelyn rejects anything
+else before the build starts and names the entry by its index, such as `FooterLinks[1].Url`. The same rule keeps a
+`javascript:` URL off every page you publish. A relative URL is rejected too, so give a page of your own site its
+full address.
+
+The two generated entries are labelled in English, like the rest of the footer, whatever `Language` says.
+
+The markup carries no icons and no classes. Icons are your stylesheet's job, which can select a link by its
+address and draw one with `::before`:
+
+```css
+body > footer a[href^="https://github.com/"]::before {
+  content: url("github.svg");
+}
+```
+
 ## Exclude patterns
 
 Gelyn copies every file beside your Markdown to the output directory, so name anything the build shouldn't
@@ -246,9 +291,11 @@ usable on their own. Five settings have a flag:
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
-`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `KaTeXVersion`, and `MermaidVersion` have
-none, so set them in the file or in the environment.
+`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `FooterLinks`, `KaTeXVersion`, and
+`MermaidVersion` have none, so set them in the file or in the environment.
 
-`ExcludePatterns` is the only collection-valued setting, which makes layer 3 awkward for it. An environment
-variable named exactly like the setting can't carry a list, so each entry needs its own `ExcludePatterns__0`,
-`ExcludePatterns__1`, and so on. The file and `--exclude` are the practical routes.
+`ExcludePatterns` and `FooterLinks` are the two collection-valued settings, which makes layer 3 awkward for them.
+An environment variable named exactly like the setting can't carry a list, so each pattern needs its own
+`ExcludePatterns__0`, `ExcludePatterns__1`, and so on, and each footer link one variable per member, such as
+`FooterLinks__0__Label` and `FooterLinks__0__Url`. The file is the practical route for both, and `--exclude` for
+the patterns.

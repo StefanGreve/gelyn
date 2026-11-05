@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-10-31
+revised: 2026-11-05
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 ---
 
@@ -274,14 +274,17 @@ Every page is the same document around your own body:
     </main>
     <hr />
     <footer>
-        Built with Gelyn v0.1.0 - last revised <time datetime="2026-10-10">Oct 10, 2026</time>
+        <ul><li><a href="https://github.com/octocat">GitHub</a></li></ul>
+        <span>Built with Gelyn v0.1.0 - last revised <time datetime="2026-10-10">Oct 10, 2026</time></span>
     </footer>
 </body>
 </html>
 ```
 
 Gelyn leaves out a value it doesn't have rather than writing it empty, so a page declaring neither `date` nor
-`revised` carries no `revised` tag and no date in its footer, and a site with no `BaseUrl` no canonical link.
+`revised` carries no `revised` tag and no date in its footer, a site with no `BaseUrl` no canonical link, and a
+footer with nothing to link no list. The footer's links come from
+[`FooterLinks`](configuration.md#footer-links).
 
 The shell declares no classes of its own. Style it through the elements, `aria-current="page"`, and the classes
 Markdig emits: `markdown-alert`, `contains-task-list`, `footnotes`, `math`, `mermaid`, and `language-*`.
