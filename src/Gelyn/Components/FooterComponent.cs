@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text;
 
+using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Model.Options;
 
 namespace Gelyn.Components;
 
@@ -36,9 +38,47 @@ internal static class FooterComponent
         }
 
         footer.AppendLine("<footer>");
-        footer.AppendLine($"Built with {Tool.Name} v{version}{revised}");
+        footer.AppendLinks(context);
+        footer.AppendLine($"<span>Built with {Tool.Name} v{version}{revised}</span>");
         footer.AppendLine("</footer>");
 
         return footer.ToString();
     }
+
+    #region Helpers
+
+    private static void AppendLinks(this StringBuilder footer, RenderContext context)
+    {
+        SiteOptions options = context.Options;
+        var links = new List<(string Label, string Href)>(options.FooterLinks.Count + 2);
+
+        foreach (FooterLink link in options.FooterLinks)
+        {
+            Uri url = link.Url ?? throw new InvalidOperationException("A configured footer link always declares a URL.");
+            links.Add((link.Label, url.AbsoluteUri));
+        }
+
+        // Linked under the conditions SiteBuilder writes each document under, so that no entry leads to a 404.
+        if (options.BaseUrl is Uri baseUrl)
+        {
+            string prefix = UrlUtils.ResolveBasePath(baseUrl);
+
+            if (options.EnableFeed && AtomFeed.HasEntries(context.Documents))
+                links.Add(("Feed", StringUtils.JoinSegments(prefix, [], AtomFeed.FileName, '/')));
+
+            if (options.EnableSitemap)
+                links.Add(("Sitemap", StringUtils.JoinSegments(prefix, [], Sitemap.FileName, '/')));
+        }
+
+        if (links.Count == 0) return;
+
+        footer.AppendLine("<ul>");
+
+        foreach ((string label, string href) in links)
+            footer.AppendLine($"""<li><a href="{WebUtility.HtmlEncode(href)}">{WebUtility.HtmlEncode(label)}</a></li>""");
+
+        footer.AppendLine("</ul>");
+    }
+
+    #endregion
 }
