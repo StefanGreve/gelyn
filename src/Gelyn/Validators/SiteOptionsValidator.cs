@@ -57,6 +57,18 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (options.BaseUrl is Uri baseUrl && !IsServable(baseUrl))
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 
+        for (int i = 0; i < options.FooterLinks.Count; i++)
+        {
+            FooterLink link = options.FooterLinks[i];
+            string key = $"{nameof(SiteOptions.FooterLinks)}[{i}]";
+
+            if (string.IsNullOrWhiteSpace(link.Label))
+                failures.Add($"{key}.{nameof(FooterLink.Label)} must not be empty.");
+
+            if (link.Url is not Uri url || !IsServable(url))
+                failures.Add($"{key}.{nameof(FooterLink.Url)} must be an absolute http or https URL, such as 'https://github.com/octocat'.");
+        }
+
         if (!string.IsNullOrWhiteSpace(options.ContentDirectory) && !string.IsNullOrWhiteSpace(options.OutputDirectory)
             && ViolatesBoundary(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
         {
@@ -70,10 +82,11 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
 
     #region Helpers
 
-    // A relative URL carries no origin to resolve a link against, and Scheme throws when read from one.
-    private static bool IsServable(Uri baseUrl) =>
-        baseUrl.IsAbsoluteUri && (baseUrl.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
-            || baseUrl.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
+    // A relative URL carries no origin to resolve a link against, and Scheme throws when read from one. The
+    // scheme test is also what keeps a javascript: or data: footer link out of an anchor the build publishes.
+    private static bool IsServable(Uri url) =>
+        url.IsAbsoluteUri && (url.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
+            || url.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
 
     // The build would publish an output inside the content directory as content, `gelyn clean` would remove
     // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it

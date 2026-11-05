@@ -62,6 +62,122 @@ public class SiteOptionsValidatorTests
     }
 
     /// <summary>
+    ///     Verifies that a footer link carrying a label and an absolute web URL is accepted.
+    /// </summary>
+    [Test]
+    [Arguments("https://github.com/octocat")]
+    [Arguments("http://example.com/a?b=c")]
+    public async Task Validate_Test_ServableFooterLink_Succeeds(string url)
+    {
+        // Arrange
+        var options = new SiteOptions { FooterLinks = [new FooterLink { Label = "GitHub", Url = new Uri(url) }] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that a footer link whose URL carries no origin, or a scheme that would run or embed content
+    ///     in place of navigating, is rejected under a message naming the entry and the member at fault.
+    /// </summary>
+    [Test]
+    [Arguments("example.com")]
+    [Arguments("/feed.xml")]
+    [Arguments("javascript:alert(1)")]
+    [Arguments("data:text/html,x")]
+    [Arguments("ftp://example.com")]
+    public async Task Validate_Test_UnservableFooterLinkUrl_Fails(string url)
+    {
+        // Arrange
+        var link = new FooterLink { Label = "Broken", Url = new Uri(url, UriKind.RelativeOrAbsolute) };
+        var options = new SiteOptions { FooterLinks = [link] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Url");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a footer link declaring no URL is rejected, which is the state a configuration entry
+    ///     omitting the member binds to.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_AbsentFooterLinkUrl_Fails()
+    {
+        // Arrange
+        var options = new SiteOptions { FooterLinks = [new FooterLink { Label = "GitHub" }] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Url");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a footer link with a blank label is rejected, because the anchor would read as nothing.
+    /// </summary>
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
+    public async Task Validate_Test_BlankFooterLinkLabel_Fails(string label)
+    {
+        // Arrange
+        var link = new FooterLink { Label = label, Url = new Uri("https://github.com/octocat") };
+        var options = new SiteOptions { FooterLinks = [link] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Label");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a failure names the index of the broken entry and leaves the valid one beside it alone.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_FooterLinkFailure_NamesTheIndex()
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            FooterLinks =
+            [
+                new FooterLink { Label = "GitHub", Url = new Uri("https://github.com/octocat") },
+                new FooterLink { Label = "Broken", Url = new Uri("/relative", UriKind.Relative) },
+            ],
+        };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.FailureMessage).Contains("FooterLinks[1].Url");
+            await Assert.That(result.FailureMessage).DoesNotContain("FooterLinks[0]");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that every setting the tool cannot work without is rejected when it is blank, under a
     ///     message naming the setting at fault.
     /// </summary>
