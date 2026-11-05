@@ -52,8 +52,7 @@ internal static class Sitemap
 
         if (options.BaseUrl is not Uri baseUrl) return [];
 
-        // Without the trailing slash, resolving against it would drop the last segment of the path.
-        var root = new Uri(StringUtils.EnsureEndsOn(baseUrl.AbsoluteUri, '/'));
+        Uri root = UrlUtils.AsDirectory(baseUrl);
 
         var settings = new XmlWriterSettings
         {
