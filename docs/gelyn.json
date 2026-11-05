@@ -9,6 +9,10 @@
     {
       "Label": "GitHub",
       "Url": "https://github.com/StefanGreve/gelyn"
+    },
+    {
+      "Label": "llms.txt",
+      "Url": "https://stefangreve.github.io/gelyn/llms.txt"
     }
   ],
   "ContentDirectory": "docs",

@@ -1,8 +1,8 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-04
-description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, and the versioning scheme.
+revised: 2026-11-05
+description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 ---
 
 # Development
@@ -185,6 +185,32 @@ same reason, and `git fetch --unshallow --tags` restores it.
 breaking changes, so it belongs in the binding identity while the patch number does not; the target comes out
 once 1.0.0 ships.
 
+## Notes on Deployment
+
+`gelyn-build.yml` publishes `docs/` to GitHub Pages once a `Build` run on `master` succeeds. Besides the rendered
+pages, the site carries three files that `gelyn build` doesn't produce: `schema.json`, which is a copy of
+`gelyn.schema.json`, and `llms.txt` with `llms-full.txt` for agents. The workflow writes all three after the
+build, because the build reconciles `_docs` and deletes every file it didn't publish itself.
+
+`scripts/generate-llms-txt.sh` writes the two agent files. `llms.txt` is the index the [llms.txt
+proposal][llms-txt] specifies, and `llms-full.txt` carries the pages it lists as one Markdown file, so an agent
+can read the documentation in a single request. Neither file is checked in, because the script derives both
+from the pages and `docs/gelyn.json` on every run.
+
+To check the output locally, build the site first, then run the script against it:
+
+```sh
+make gelyn
+bash scripts/generate-llms-txt.sh -b https://stefangreve.github.io/gelyn -r https://github.com/StefanGreve/gelyn
+```
+
+`--output` writes to another directory, which has to exist already. The script reads `docs/gelyn.json` with
+[`jq`][jq], which Git Bash doesn't include, so install it once on Windows:
+
+```powershell
+winget install -e --id jqlang.jq
+```
+
 <!-- References -->
 
 [tunit]: https://tunit.dev
@@ -198,3 +224,5 @@ once 1.0.0 ships.
 [dotnet-download]: https://dotnet.microsoft.com/download/dotnet
 [coreutils]: https://github.com/microsoft/coreutils
 [winget-uninstall]: https://learn.microsoft.com/en-us/windows/package-manager/winget/uninstall
+[llms-txt]: https://llmstxt.org
+[jq]: https://jqlang.org
