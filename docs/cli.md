@@ -1,11 +1,16 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-10-24
+revised: 2026-11-05
 description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
 ---
 
 # CLI
+
+Gelyn has three commands: `build` generates your site, `serve` previews it while you edit, and `clean` removes
+the output directory. This page covers how to run them, from tab completion to the exit code a run reports. The
+flags that set a configuration value are listed under
+[Where settings come from](configuration.md#where-settings-come-from).
 
 ## Tab completion
 
