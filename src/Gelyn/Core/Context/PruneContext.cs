@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace Gelyn.Core.Context;
 
 /// <summary>
@@ -23,5 +25,5 @@ internal sealed record PruneContext
     /// <summary>
     ///     Receives the output-relative path of each file that was deleted.
     /// </summary>
-    public required List<string> Removed { get; init; }
+    public required Collection<string> Removed { get; init; }
 }

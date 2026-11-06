@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO.Abstractions;
 
@@ -128,7 +129,7 @@ internal sealed class SiteBuilder
         long writeTicks = isMeasuring ? write.WriteTicks + Stopwatch.GetTimestamp() - copyStarted : 0;
 
         long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-        List<string> removed = this.PruneOutput(items, generated, outputDirectory, cancellationToken);
+        Collection<string> removed = this.PruneOutput(items, generated, outputDirectory, cancellationToken);
         long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
 
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
@@ -412,7 +413,7 @@ internal sealed class SiteBuilder
         return copied;
     }
 
-    private List<string> PruneOutput(
+    private Collection<string> PruneOutput(
         IReadOnlyList<ContentItem> items,
         List<string> generated,
         string outputDirectory,

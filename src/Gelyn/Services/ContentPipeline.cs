@@ -234,7 +234,7 @@ internal sealed class ContentPipeline
     private IReadOnlyList<string> ResolveAssets(
         ContentItem page,
         IReadOnlyList<string> placed,
-        List<string?>? declared,
+        IReadOnlyList<string?>? declared,
         ContentKind kind,
         Dictionary<string, ContentItem> files)
     {

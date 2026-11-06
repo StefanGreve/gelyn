@@ -58,11 +58,11 @@ internal sealed record FrontMatter
     ///     The stylesheets the page links in addition to the ones placement gives it, as paths relative to the
     ///     page's own file, or <see langword="null"/> when the block omits them.
     /// </summary>
-    public List<string?>? Stylesheets { get; set; }
+    public IReadOnlyList<string?>? Stylesheets { get; set; }
 
     /// <summary>
     ///     The scripts the page loads in addition to the ones placement gives it, as paths relative to the
     ///     page's own file, or <see langword="null"/> when the block omits them.
     /// </summary>
-    public List<string?>? Scripts { get; set; }
+    public IReadOnlyList<string?>? Scripts { get; set; }
 }

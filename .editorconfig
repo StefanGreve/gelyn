@@ -96,6 +96,9 @@ dotnet_code_quality_unused_parameters = all:suggestion
 # Suppression preferences
 dotnet_remove_unnecessary_suppression_exclusions = none
 
+# CA1002: Do not expose generic lists, on internal types too, which is all this tool declares
+dotnet_code_quality.CA1002.api_surface = public, internal
+
 #### C# Coding Conventions ####
 [*.cs]
 
