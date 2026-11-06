@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
+using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -235,7 +236,7 @@ public class FooterComponentTests
         {
             Options = options,
             Navigation = [],
-            Documents = documents,
+            Documents = new DocumentCatalog(documents),
             Page = page,
         });
     }

@@ -69,7 +69,7 @@ internal static class HeadComponent
             }
 
             // Announced only for a feed the build will write, which takes a page that qualifies as an entry.
-            if (options.EnableFeed && AtomFeed.HasEntries(context.Documents))
+            if (options.EnableFeed && context.Documents.HasFeedEntries)
             {
                 Uri root = UrlUtils.AsDirectory(baseUrl);
 

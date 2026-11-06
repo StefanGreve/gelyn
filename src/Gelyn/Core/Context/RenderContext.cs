@@ -19,9 +19,9 @@ internal sealed record RenderContext
     public required IReadOnlyList<ContentPage> Navigation { get; init; }
 
     /// <summary>
-    ///     Every page the site is built from, landing page first.
+    ///     What the build knows about every page at once, shared by every page it renders.
     /// </summary>
-    public required IReadOnlyList<ContentPage> Documents { get; init; }
+    public required DocumentCatalog Documents { get; init; }
 
     /// <summary>
     ///     The page currently being rendered.

@@ -173,6 +173,7 @@ internal sealed class SiteBuilder
     {
         IPath path = this._fileSystem.Path;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
+        var documents = new DocumentCatalog(pages);
 
         var written = new List<string>(pages.Count);
         long composeTicks = 0;
@@ -188,7 +189,7 @@ internal sealed class SiteBuilder
 
         foreach (ContentPage page in pages)
         {
-            var context = page.ToRenderContext(options, navigation, pages);
+            var context = page.ToRenderContext(options, navigation, documents);
 
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
             string html = ComposeDocument(context, banners, footers);

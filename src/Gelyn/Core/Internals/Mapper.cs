@@ -56,7 +56,7 @@ internal static class Mapper
     ///     The pages the site navigation links, landing page first.
     /// </param>
     /// <param name="documents">
-    ///     Every page the site is built from, landing page first.
+    ///     What the build knows about every page at once, built once and shared by every context.
     /// </param>
     /// <returns>
     ///     The new context.
@@ -65,7 +65,7 @@ internal static class Mapper
         this ContentPage page,
         SiteOptions options,
         IReadOnlyList<ContentPage> navigation,
-        IReadOnlyList<ContentPage> documents) =>
+        DocumentCatalog documents) =>
         new()
         {
             Options = options,

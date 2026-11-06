@@ -22,7 +22,6 @@ internal static class TableOfDocumentsComponent
     /// </summary>
     internal const string Marker = "<p>[TOD]</p>";
 
-    private const string IndexFileName = "index.html";
     private const string FileType = "file";
     private const string FolderType = "folder";
 
@@ -52,13 +51,15 @@ internal static class TableOfDocumentsComponent
 
         string current = context.Page.OutputPath;
         int scopeLength = ResolveScopeLength(current);
+        IReadOnlyList<ContentPage> listed = context.Documents.ListedIn(current.AsSpan(0, scopeLength));
 
-        List<(ContentPage Page, string Type)> rows = [];
+        List<(ContentPage Page, string Type)> rows = new(listed.Count);
 
-        foreach (ContentPage page in context.Documents)
+        // The listing comes ordered, and dropping the marker page from it leaves the rest in that order.
+        foreach (ContentPage page in listed)
         {
-            if (ResolveRow(page, current, scopeLength) is string type)
-                rows.Add((page, type));
+            if (!string.Equals(page.OutputPath, current, StringComparison.Ordinal))
+                rows.Add((page, ResolveType(page, scopeLength)));
         }
 
         if (rows.Count == 0) return string.Empty;
@@ -77,11 +78,7 @@ internal static class TableOfDocumentsComponent
         table.AppendLine("</thead>");
         table.AppendLine("<tbody>");
 
-        IOrderedEnumerable<(ContentPage Page, string Type)> orderedRows = rows
-            .OrderByDescending(static row => row.Page.Date)
-            .ThenBy(static row => row.Page.Title, StringComparer.Ordinal);
-
-        foreach ((ContentPage page, string type) in orderedRows)
+        foreach ((ContentPage page, string type) in rows)
         {
             table.AppendLine($"""<tr data-type="{type}">""");
 
@@ -105,34 +102,14 @@ internal static class TableOfDocumentsComponent
     private static int ResolveScopeLength(string outputPath) =>
         outputPath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
 
-    // The rejections run before the slice, which counts from the scope's length and is meaningless outside it.
-    // The last segment is matched in full, because a page named myindex.md ends the same way.
-    private static string? ResolveRow(ContentPage page, string current, int scopeLength)
-    {
-        ReadOnlySpan<char> outputPath = page.OutputPath;
-
-        bool listed = !IsDraft(page)
-            && !page.IsNotFoundPage
-            && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
-            && outputPath.StartsWith(current.AsSpan(0, scopeLength), StringComparison.Ordinal);
-
-        if (!listed) return null;
-
-        ReadOnlySpan<char> relativePath = outputPath[scopeLength..];
-        int separator = relativePath.IndexOf(Path.DirectorySeparatorChar);
-
-        if (separator < 0) return FileType;
-
-        return relativePath[(separator + 1)..].Equals(IndexFileName, StringComparison.Ordinal)
+    // The catalog lists a page directly in the scope or an index one level below it and nothing else, so a
+    // separator past the scope is all that tells a directory from a file.
+    private static string ResolveType(ContentPage page, int scopeLength) =>
+        page.OutputPath.AsSpan(scopeLength).Contains(Path.DirectorySeparatorChar)
             ? FolderType
-            : null;
-    }
+            : FileType;
 
-    // A document declares a date once it is ready to be found, so the absence of one is what marks it unfinished.
-    private static bool IsDraft(ContentPage page) =>
-        page.Date is null;
-
-    // ResolveRow rejects a dateless page as a draft, so the throw states an invariant and is never reached.
+    // The catalog lists no dateless page, so the throw states an invariant and is never reached.
     private static string RenderDate(ContentPage page)
     {
         DateOnly date = page.Date

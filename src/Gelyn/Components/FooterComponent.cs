@@ -63,7 +63,7 @@ internal static class FooterComponent
         {
             string prefix = UrlUtils.ResolveBasePath(baseUrl);
 
-            if (options.EnableFeed && AtomFeed.HasEntries(context.Documents))
+            if (options.EnableFeed && context.Documents.HasFeedEntries)
                 links.Add(("Feed", StringUtils.JoinSegments(prefix, [], AtomFeed.FileName, '/')));
 
             if (options.EnableSitemap)
