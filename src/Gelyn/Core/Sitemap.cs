@@ -38,8 +38,9 @@ internal static class Sitemap
     ///     The site configuration, whose base URL every location is resolved against.
     /// </param>
     /// <param name="pages">
-    ///     Every page the site publishes, listed in the order it is given them. The protocol assigns the order
-    ///     of the locations no meaning, so none is imposed here.
+    ///     Every page the site publishes, listed in the order it is given them except for the not-found page,
+    ///     which has no address of its own to list. The protocol assigns the order of the locations no meaning,
+    ///     so none is imposed here.
     /// </param>
     /// <returns>
     ///     The UTF-8 bytes of the document, or an empty array when the configuration declares no base URL,
@@ -67,7 +68,7 @@ internal static class Sitemap
             writer.WriteStartDocument();
             writer.WriteStartElement("urlset", Namespace);
 
-            foreach (ContentPage page in pages)
+            foreach (ContentPage page in pages.Where(static page => !page.IsNotFoundPage))
                 writer.WriteLocation(root, page);
 
             writer.WriteEndElement();

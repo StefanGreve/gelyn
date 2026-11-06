@@ -9,6 +9,8 @@ using Gelyn.Model;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
 
+using SharpYaml;
+
 namespace Gelyn.Tests.Services;
 
 /// <summary>
@@ -54,6 +56,33 @@ public class ContentPipelineTests
             .Select(item => item.Href);
 
         await Assert.That(linked).IsEquivalentTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that <c>404.md</c> at the root is the not-found page and stays out of the navigation, while
+    ///     one further down is an ordinary page, no host looking for <c>404.html</c> anywhere but the root.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_RootNotFoundPage_IsLeftOutOfTheNavigation()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .Write("404.md", "Page not found")
+            .Write("blog/404.md", "A post about status codes");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem root = items.Single(item => item.Href == "/404.html");
+        ContentItem nested = items.Single(item => item.Href == "/blog/404.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(root.IsNotFoundPage).IsTrue();
+            await Assert.That(root.InNavigation).IsFalse();
+            await Assert.That(nested.IsNotFoundPage).IsFalse();
+            await Assert.That(items.Single(item => item.Href == "/about.html").InNavigation).IsTrue();
+        }
     }
 
     /// <summary>
@@ -767,6 +796,107 @@ public class ContentPipelineTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a declared stylesheet follows the ones placement gives the page, resolved against the
+    ///     page's own directory, and that it reaches the declaring page alone.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_DeclaredStylesheet_FollowsThePlacedOnes()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled()
+            .WriteFile("assets/chart.css", "svg{width:100%}")
+            .WriteFile("blog/hello.md", Declaring("stylesheets: [../assets/chart.css]"));
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Stylesheets(pages, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css,/assets/chart.css");
+            await Assert.That(Stylesheets(pages, "/blog/index.html")).IsEqualTo("/styles.css,/blog/blog.css");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that declared scripts follow the ones placement gives the page, in the order declared,
+    ///     which is the order they run in.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_DeclaredScripts_FollowThePlacedOnesInOrder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateScripted()
+            .WriteFile("assets/lib.js", "globalThis.lib = 1")
+            .WriteFile("assets/chart.js", "globalThis.chart = lib")
+            .WriteFile("about.md", Declaring("scripts: [assets/lib.js, assets/chart.js]"));
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+
+        // Assert
+        await Assert.That(Scripts(pages, "/about.html")).IsEqualTo("/app.js,/assets/lib.js,/assets/chart.js");
+    }
+
+    /// <summary>
+    ///     Verifies that declaring a stylesheet placement already gives the page links it once, at the
+    ///     position placement gave it.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_DeclaredStylesheetAlreadyPlaced_IsLinkedOnce()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled()
+            .WriteFile("blog/hello.md", Declaring("stylesheets: [../styles.css]"));
+
+        // Act
+        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+
+        // Assert
+        await Assert.That(Stylesheets(pages, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
+    }
+
+    /// <summary>
+    ///     Verifies that a declaration naming no stylesheet the scan located stops the build: a missing file,
+    ///     a script declared as a stylesheet, a rooted path and an empty entry.
+    /// </summary>
+    [Test]
+    [Arguments("stylesheets: [assets/missing.css]")]
+    [Arguments("stylesheets: [assets/chart.js]")]
+    [Arguments("stylesheets: [/assets/chart.css]")]
+    [Arguments("stylesheets: ['']")]
+    public async Task RenderAsync_Test_UnresolvedDeclaration_Throws(string line)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("assets/chart.css", "svg{width:100%}")
+            .WriteFile("assets/chart.js", "globalThis.chart = 1")
+            .WriteFile("about.md", Declaring(line));
+
+        // Act and Assert
+        await Assert.That(async () => await RenderAsync(fixture)).Throws<YamlException>();
+    }
+
+    /// <summary>
+    ///     Verifies that an excluded stylesheet cannot be declared, the exclusion leaving it unpublished and
+    ///     the link pointing at nothing.
+    /// </summary>
+    [Test]
+    public async Task RenderAsync_Test_ExcludedStylesheet_CannotBeDeclared()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("assets/draft.css", "body{outline:1px solid red}")
+            .WriteFile("about.md", Declaring("stylesheets: [assets/draft.css]"))
+            .WithExcludePatterns("draft.css");
+
+        // Act and Assert
+        await Assert.That(async () => await RenderAsync(fixture)).Throws<YamlException>();
+    }
+
     #endregion // RenderAsync Tests
 
     #region Helpers
@@ -786,6 +916,15 @@ public class ContentPipelineTests
 
     private static string? Favicon(IReadOnlyList<ContentItem> items, string href) =>
         items.Single(item => item.Href == href).Favicon;
+
+    private static string Stylesheets(IReadOnlyList<ContentPage> pages, string href) =>
+        string.Join(',', pages.Single(page => page.Href == href).Stylesheets);
+
+    private static string Scripts(IReadOnlyList<ContentPage> pages, string href) =>
+        string.Join(',', pages.Single(page => page.Href == href).Scripts);
+
+    private static string Declaring(string line) =>
+        string.Join(Environment.NewLine, "---", line, "---");
 
     private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
         fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);

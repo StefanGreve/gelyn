@@ -219,6 +219,7 @@ public class FooterComponentTests
             EnableDiagramRendering = false,
             Html = "<p>Home</p>",
             InNavigation = true,
+            IsNotFoundPage = false,
             InFeed = false,
             Stylesheets = [],
             Scripts = [],

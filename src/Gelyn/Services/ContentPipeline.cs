@@ -9,6 +9,8 @@ using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
 
+using SharpYaml;
+
 namespace Gelyn.Services;
 
 /// <summary>
@@ -29,6 +31,7 @@ internal sealed class ContentPipeline
 {
     private const string IndexFileName = "index.md";
     private const string IndexOutputFileName = "index.html";
+    private const string NotFoundFileName = "404.md";
     private const string MarkdownExtension = ".md";
     private const string StylesheetExtension = ".css";
     private const string ScriptExtension = ".js";
@@ -90,26 +93,38 @@ internal sealed class ContentPipeline
     }
 
     /// <summary>
-    ///     Reads each located page and renders its Markdown.
+    ///     Reads each located page, renders its Markdown and resolves the files its front matter declares.
     /// </summary>
-    /// <param name="pages">
-    ///     The <see cref="ContentKind.Page"/> items a scan located, in the order they are to be rendered.
+    /// <param name="items">
+    ///     Every item a scan located, in the order the pages among them are to be rendered. The other items
+    ///     are the files a page's front matter may declare.
     /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
     /// </param>
     /// <returns>
-    ///     Every page, in the order it was given.
+    ///     Every <see cref="ContentKind.Page"/>, in the order it was given.
     /// </returns>
+    /// <exception cref="YamlException">
+    ///     A front matter block is not well-formed YAML, or declares a stylesheet or a script the scan did not
+    ///     locate.
+    /// </exception>
     public async Task<IReadOnlyList<ContentPage>> RenderAsync(
-        IReadOnlyList<ContentItem> pages,
+        IReadOnlyList<ContentItem> items,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(pages);
+        ArgumentNullException.ThrowIfNull(items);
 
-        var rendered = new List<ContentPage>(pages.Count);
+        IPath path = this._fileSystem.Path;
 
-        foreach (ContentItem item in pages)
+        // Ordinal on every platform, so a declaration in the wrong case fails on Windows too and not only once served.
+        var files = items
+            .Where(static item => item.Kind is not ContentKind.Page)
+            .ToDictionary(item => path.GetFullPath(item.SourcePath), StringComparer.Ordinal);
+
+        var rendered = new List<ContentPage>(items.Count - files.Count);
+
+        foreach (ContentItem item in items.Where(static item => item.Kind is ContentKind.Page))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -118,7 +133,16 @@ internal sealed class ContentPipeline
                 .ConfigureAwait(false);
 
             RenderedMarkdown document = MarkdownRenderer.Render(markdown);
-            rendered.Add(item.ToContentPage(document));
+            FrontMatter? frontMatter = document.FrontMatter;
+
+            IReadOnlyList<string> stylesheets = this.ResolveAssets(item, item.Stylesheets, frontMatter?.Stylesheets, ContentKind.Stylesheet, files);
+            IReadOnlyList<string> scripts = this.ResolveAssets(item, item.Scripts, frontMatter?.Scripts, ContentKind.Script, files);
+
+            rendered.Add(item.ToContentPage(document) with
+            {
+                Stylesheets = stylesheets,
+                Scripts = scripts
+            });
         }
 
         return rendered;
@@ -147,18 +171,13 @@ internal sealed class ContentPipeline
             .Where(entry => !IsDenied(entry, context.Excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
-        IEnumerable<string> Linked(ContentKind kind) => entries
-            .OfType<IFileInfo>()
-            .Where(file => Classify(file) == kind)
-            .Select(file => CombineHref(context.HrefPrefix, context.Prefix, file.Name));
-
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
         // it, and shared by reference with every page at this level instead of copied per page.
-        string[] stylesheets = [.. context.Stylesheets, .. Linked(ContentKind.Stylesheet)];
-        string[] scripts = [.. context.Scripts, .. Linked(ContentKind.Script)];
+        string[] stylesheets = [.. context.Stylesheets, .. CollectHrefs(entries, context, ContentKind.Stylesheet)];
+        string[] scripts = [.. context.Scripts, .. CollectHrefs(entries, context, ContentKind.Script)];
 
         // The nearest declaration wins, because a document carries one icon and not a chain of them.
-        string? favicon = Linked(ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
+        string? favicon = CollectHrefs(entries, context, ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
@@ -173,6 +192,7 @@ internal sealed class ContentPipeline
             ContentKind kind = Classify(file);
             bool isPage = kind is ContentKind.Page;
             bool isIndex = file.Name.Equals(IndexFileName, StringComparison.Ordinal);
+            bool isNotFound = context.Prefix.Count == 0 && file.Name.Equals(NotFoundFileName, StringComparison.Ordinal);
             string slug = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
 
             // A copy keeps its own name, so only a rendered page is renamed to the extension it is served as.
@@ -189,7 +209,8 @@ internal sealed class ContentPipeline
                 Href = CombineHref(context.HrefPrefix, context.Prefix, name),
                 Kind = kind,
                 FallbackTitle = isIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : slug,
-                InNavigation = isPage && IsInNavigation(segments),
+                InNavigation = isPage && !isNotFound && IsInNavigation(segments),
+                IsNotFoundPage = isNotFound,
                 Stylesheets = isPage ? stylesheets : [],
                 Scripts = isPage ? scripts : [],
                 Favicon = isPage ? favicon : null,
@@ -210,6 +231,38 @@ internal sealed class ContentPipeline
         return items;
     }
 
+    private IReadOnlyList<string> ResolveAssets(
+        ContentItem page,
+        IReadOnlyList<string> placed,
+        List<string?>? declared,
+        ContentKind kind,
+        Dictionary<string, ContentItem> files)
+    {
+        if (declared is null || declared.Count == 0) return placed;
+
+        IPath path = this._fileSystem.Path;
+        string directory = path.GetDirectoryName(page.SourcePath) ?? string.Empty;
+        List<string> hrefs = [.. placed];
+
+        foreach (string? value in declared)
+        {
+            string? source = string.IsNullOrWhiteSpace(value) ? null : path.GetFullPath(path.Combine(directory, value));
+
+            if (source is null || !files.TryGetValue(source, out ContentItem? file) || file.Kind != kind)
+            {
+                string key = kind is ContentKind.Stylesheet ? "stylesheets" : "scripts";
+                string noun = kind is ContentKind.Stylesheet ? "stylesheet" : "script";
+
+                throw new YamlException($"'{value}' under {key} in '{page.SourcePath}' is not a {noun} in the content directory.");
+            }
+
+            if (!hrefs.Contains(file.Href, StringComparer.Ordinal))
+                hrefs.Add(file.Href);
+        }
+
+        return hrefs;
+    }
+
     // The symlink rule is not configurable: a link lets the walk leave the content directory, one resolving
     // to an ancestor makes the walk unbounded, and File.Copy would publish the target's bytes, not the link.
     private static bool IsDenied(IFileSystemInfo entry, IReadOnlyList<string> excluded) =>
@@ -225,6 +278,12 @@ internal sealed class ContentPipeline
             var extension when extension.Equals(FaviconExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
             _ => ContentKind.MiscFile,
         };
+
+    // The files of one kind directly in this directory, never below it, as the hrefs they are served at.
+    private static IEnumerable<string> CollectHrefs(IFileSystemInfo[] entries, ScanContext context, ContentKind kind) =>
+        entries.OfType<IFileInfo>()
+               .Where(file => Classify(file) == kind)
+               .Select(file => CombineHref(context.HrefPrefix, context.Prefix, file.Name));
 
     private static string CombineHref(string prefix, IReadOnlyList<string> segments, string last) =>
         StringUtils.JoinSegments(prefix, segments, last, '/');

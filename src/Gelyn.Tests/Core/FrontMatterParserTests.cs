@@ -52,6 +52,34 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
+    ///     Verifies that the declared stylesheets and scripts are read as lists in the order written, in both
+    ///     the block and the flow style of a YAML sequence.
+    /// </summary>
+    [Test]
+    public async Task Parse_Test_StylesheetsAndScripts_AreReadInOrder()
+    {
+        // Arrange
+        const string block = """
+            ---
+            stylesheets:
+              - assets/chart.css
+              - ../shared/print.css
+            scripts: [assets/chart.js]
+            ---
+        """;
+
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(block);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(string.Join(',', result?.Stylesheets ?? [])).IsEqualTo("assets/chart.css,../shared/print.css");
+            await Assert.That(string.Join(',', result?.Scripts ?? [])).IsEqualTo("assets/chart.js");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that both spellings of a boolean are read, and that a block omitting the key is
     ///     distinguishable from one declaring it false.
     /// </summary>

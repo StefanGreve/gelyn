@@ -36,10 +36,16 @@ internal sealed record ContentItem
 
     /// <summary>
     ///     Indicates whether the site navigation links the page. The landing page, root-level pages and
-    ///     section indexes are linked; pages inside a section are not, and nor is a
+    ///     section indexes are linked; pages inside a section are not, and nor are the not-found page and a
     ///     <see cref="ContentKind.MiscFile"/>.
     /// </summary>
     public required bool InNavigation { get; init; }
+
+    /// <summary>
+    ///     Indicates whether the file is <c>404.md</c> at the root of the content directory, whose
+    ///     <c>404.html</c> the host serves in place of any address that has no page of its own.
+    /// </summary>
+    public required bool IsNotFoundPage { get; init; }
 
     /// <summary>
     ///     The root-relative URLs of the stylesheets that apply to the file, outermost first, so that a

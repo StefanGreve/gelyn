@@ -71,6 +71,27 @@ public class SitemapTests
     }
 
     /// <summary>
+    ///     Verifies that the not-found page is left out, because the host serves it at whichever address
+    ///     missed and it has no address of its own to list.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_NotFoundPage_IsLeftOut()
+    {
+        // Arrange
+        ContentPage[] pages =
+        [
+            Page("index.html", "2026-01-01"),
+            Page("404.html", "2026-01-01") with { InNavigation = false, IsNotFoundPage = true },
+        ];
+
+        // Act
+        string locations = Locations(Render(Options(), pages));
+
+        // Assert
+        await Assert.That(locations).IsEqualTo("https://example.com/index.html");
+    }
+
+    /// <summary>
     ///     Verifies that a page declaring neither date is listed without a revision date, the element being
     ///     optional and there being nothing to put in it.
     /// </summary>
@@ -284,6 +305,7 @@ public class SitemapTests
             EnableDiagramRendering = false,
             Html = string.Empty,
             InNavigation = true,
+            IsNotFoundPage = false,
             InFeed = false,
             Stylesheets = [],
             Scripts = [],

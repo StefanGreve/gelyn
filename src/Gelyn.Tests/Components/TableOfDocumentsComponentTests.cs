@@ -425,6 +425,7 @@ public partial class TableOfDocumentsComponentTests
             EnableDiagramRendering = false,
             Html = string.Empty,
             InNavigation = false,
+            IsNotFoundPage = false,
             InFeed = false,
             Stylesheets = [],
             Scripts = [],

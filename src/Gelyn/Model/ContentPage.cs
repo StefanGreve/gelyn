@@ -71,9 +71,15 @@ internal sealed record ContentPage
 
     /// <summary>
     ///     Indicates whether the site navigation links the page. The landing page, root-level pages
-    ///     and section indexes are linked; pages inside a section are not.
+    ///     and section indexes are linked; pages inside a section are not, and nor is the not-found page.
     /// </summary>
     public required bool InNavigation { get; init; }
+
+    /// <summary>
+    ///     Indicates whether the page is the one the host serves in place of any address that has no page of
+    ///     its own. Such a page is neither listed nor indexed, because it has no address of its own to list.
+    /// </summary>
+    public required bool IsNotFoundPage { get; init; }
 
     /// <summary>
     ///     Indicates whether the feed publishes the page, as declared in its front matter. A page that declares
@@ -83,13 +89,14 @@ internal sealed record ContentPage
 
     /// <summary>
     ///     The root-relative URLs of the stylesheets that apply to the page, outermost first, so that a
-    ///     stylesheet deeper in the tree overrides one above it.
+    ///     stylesheet deeper in the tree overrides one above it. The ones the front matter declares follow
+    ///     last, in the order declared.
     /// </summary>
     public required IReadOnlyList<string> Stylesheets { get; init; }
 
     /// <summary>
     ///     The root-relative URLs of the scripts that apply to the page, outermost first, which is the order
-    ///     they run in.
+    ///     they run in. The ones the front matter declares follow last, in the order declared.
     /// </summary>
     public required IReadOnlyList<string> Scripts { get; init; }
 

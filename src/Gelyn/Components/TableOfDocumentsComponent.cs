@@ -112,6 +112,7 @@ internal static class TableOfDocumentsComponent
         ReadOnlySpan<char> outputPath = page.OutputPath;
 
         bool listed = !IsDraft(page)
+            && !page.IsNotFoundPage
             && !string.Equals(page.OutputPath, current, StringComparison.Ordinal)
             && outputPath.StartsWith(current.AsSpan(0, scopeLength), StringComparison.Ordinal);
 

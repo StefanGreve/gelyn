@@ -33,6 +33,14 @@ internal static class HeadComponent
 
         head.AppendLine("""<meta charset="utf-8">""");
         head.AppendLine("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
+
+        // Served at whichever address missed, so relative links must resolve against the root instead.
+        if (context.Page.IsNotFoundPage)
+        {
+            string root = $"{UrlUtils.ResolveBasePath(options.BaseUrl)}/";
+            head.AppendLine($"""<base href="{WebUtility.HtmlEncode(root)}">""");
+        }
+
         head.AppendLine($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
 
         if (!string.IsNullOrWhiteSpace(options.Author))
@@ -49,10 +57,16 @@ internal static class HeadComponent
             head.AppendLine($"""<meta name="revised" content="{date}">""");
         }
 
+        if (context.Page.IsNotFoundPage)
+            head.AppendLine("""<meta name="robots" content="noindex">""");
+
         if (options.BaseUrl is Uri baseUrl)
         {
-            string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
-            head.AppendLine($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+            if (!context.Page.IsNotFoundPage)
+            {
+                string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
+                head.AppendLine($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+            }
 
             // Announced only for a feed the build will write, which takes a page that qualifies as an entry.
             if (options.EnableFeed && AtomFeed.HasEntries(context.Documents))

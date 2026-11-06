@@ -53,4 +53,16 @@ internal sealed record FrontMatter
     ///     Indicates whether the feed publishes the page, or <see langword="null"/> when the block omits it.
     /// </summary>
     public bool? EnableFeed { get; set; }
+
+    /// <summary>
+    ///     The stylesheets the page links in addition to the ones placement gives it, as paths relative to the
+    ///     page's own file, or <see langword="null"/> when the block omits them.
+    /// </summary>
+    public List<string?>? Stylesheets { get; set; }
+
+    /// <summary>
+    ///     The scripts the page loads in addition to the ones placement gives it, as paths relative to the
+    ///     page's own file, or <see langword="null"/> when the block omits them.
+    /// </summary>
+    public List<string?>? Scripts { get; set; }
 }

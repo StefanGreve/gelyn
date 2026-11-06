@@ -104,10 +104,8 @@ internal sealed class SiteBuilder
         IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
         long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
 
-        IReadOnlyList<ContentItem> sources = [.. items.Where(static item => item.Kind is ContentKind.Page)];
-
         IReadOnlyList<ContentPage> pages = await this._pipeline
-            .RenderAsync(sources, cancellationToken)
+            .RenderAsync(items, cancellationToken)
             .ConfigureAwait(false);
 
         long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
@@ -379,7 +377,7 @@ internal sealed class SiteBuilder
             return null;
         }
 
-        // Always a document from here on. Every page is listed, and the scan fails a tree holding none.
+        // Always a document from here on. The landing page is always listed, and the scan fails a tree without one.
         byte[] document = Sitemap.Render(options, pages);
 
         string destination = this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName);

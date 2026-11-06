@@ -432,6 +432,7 @@ public class AtomFeedTests
             EnableDiagramRendering = false,
             Html = string.Empty,
             InNavigation = false,
+            IsNotFoundPage = false,
             InFeed = inFeed,
             Stylesheets = [],
             Scripts = [],

@@ -200,6 +200,66 @@ public class HeadComponentTests
 
     #endregion // Revision Tests
 
+    #region Not Found Tests
+
+    /// <summary>
+    ///     Verifies that every other page is canonical at its own address and carries no robots directive.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Page_IsCanonicalAndIndexable()
+    {
+        // Act
+        string head = Render(new SiteOptions { BaseUrl = new Uri("https://example.com/blog") });
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(head).Contains("""<link rel="canonical" href="https://example.com/index.html">""");
+            await Assert.That(head).DoesNotContain("""name="robots""");
+            await Assert.That(head).DoesNotContain("<base");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the not-found page resolves its relative links against the site root, because the host
+    ///     serves it at whichever address missed, however deep that is.
+    /// </summary>
+    [Test]
+    [Arguments("https://example.com/blog", """<base href="/blog/">""")]
+    [Arguments("https://example.com", """<base href="/">""")]
+    [Arguments(null, """<base href="/">""")]
+    public async Task Render_Test_NotFoundPage_ResolvesLinksAgainstTheRoot(string? baseUrl, string expected)
+    {
+        // Arrange
+        var options = new SiteOptions { BaseUrl = baseUrl is null ? null : new Uri(baseUrl) };
+
+        // Act
+        string head = Render(options, isNotFound: true);
+
+        // Assert
+        await Assert.That(head).Contains(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that the not-found page names no canonical address and asks not to be indexed, because the
+    ///     host serves it at whichever address missed.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_NotFoundPage_IsNeitherCanonicalNorIndexed()
+    {
+        // Act
+        string head = Render(new SiteOptions { BaseUrl = new Uri("https://example.com/blog") }, isNotFound: true);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(head).DoesNotContain("""rel="canonical""");
+            await Assert.That(head).Contains("""<meta name="robots" content="noindex">""");
+        }
+    }
+
+    #endregion // Not Found Tests
+
     #region Feed Tests
 
     /// <summary>
@@ -331,7 +391,8 @@ public class HeadComponentTests
         string? favicon = null,
         string? date = null,
         string? revised = null,
-        bool hasFeedEntry = false)
+        bool hasFeedEntry = false,
+        bool isNotFound = false)
     {
         var page = new ContentPage
         {
@@ -346,6 +407,7 @@ public class HeadComponentTests
             EnableDiagramRendering = false,
             Html = "<p>Home</p>",
             InNavigation = true,
+            IsNotFoundPage = isNotFound,
             InFeed = false,
             Stylesheets = [],
             Scripts = [],
