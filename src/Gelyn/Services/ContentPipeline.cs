@@ -4,6 +4,7 @@ using System.IO.Enumeration;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -266,7 +267,7 @@ internal sealed class ContentPipeline
     // The symlink rule is not configurable: a link lets the walk leave the content directory, one resolving
     // to an ancestor makes the walk unbounded, and File.Copy would publish the target's bytes, not the link.
     private static bool IsDenied(IFileSystemInfo entry, IReadOnlyList<string> excluded) =>
-        entry.LinkTarget is not null
+        entry.IsLink
         || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
 
     private static ContentKind Classify(IFileInfo file) =>

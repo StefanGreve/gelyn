@@ -476,7 +476,7 @@ internal sealed class SiteBuilder
             cancellationToken.ThrowIfCancellationRequested();
 
             // A dotfile belongs to the deploy target, and deleting through a link would reach past the output root.
-            if (entry.Name.StartsWith('.') || entry.LinkTarget is not null)
+            if (entry.Name.StartsWith('.') || entry.IsLink)
             {
                 occupied = true;
                 continue;
