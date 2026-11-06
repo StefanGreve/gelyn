@@ -342,6 +342,82 @@ internal sealed class ContentFixture
             .WriteDated("blogs/other.md", "Other", "2026-04-01");
 
     /// <summary>
+    ///     Creates a fixture holding every kind of input the builder turns into output, so that a test about
+    ///     the build as a whole reaches each fragment, each cascade and each copied file at least once.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     favicon.ico
+    ///     styles.css
+    ///     app.js
+    ///     robots.txt
+    ///     index.md             -> index.html              2026-01-01, revised 2026-01-10
+    ///     about.md             -> about.html              no date, math
+    ///     blog/index.md        -> blog/index.html         2026-02-01   carries [TOD]
+    ///     blog/hello.md        -> blog/hello.html         2026-03-01   in the feed, footnote
+    ///     blog/pipeline.md     -> blog/pipeline.html      no date, diagram
+    ///     blog/2026/index.md   -> blog/2026/index.html    2026-06-01
+    ///     blog/2026/retro.md   -> blog/2026/retro.html    2026-07-01   in the feed
+    ///     </code>
+    ///     The feed, the sitemap and the footer links depend on options the tree cannot carry, so a test
+    ///     switches them on itself.
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateExhaustive(LogLevel verbosity = LogLevel.Debug) =>
+        CreateEmpty(verbosity)
+            .WriteBytes("favicon.ico", [0x00, 0x00, 0x01, 0x00])
+            .WriteFile("styles.css", "body{margin:0}")
+            .WriteFile("app.js", "globalThis.app = 1")
+            .WriteFile("robots.txt", "User-agent: *")
+            .WriteRevised("index.md", "Home", "2026-01-01", "2026-01-10")
+            .WriteFile(
+                "about.md",
+                string.Join(
+                    Environment.NewLine,
+                    "---",
+                    "title: About",
+                    "enableMathRendering: true",
+                    "---",
+                    string.Empty,
+                    "$e^{i\\pi} + 1 = 0$"))
+            .WriteDated("blog/index.md", "Blog", "2026-02-01", "[TOD]")
+            .WriteFile(
+                "blog/hello.md",
+                string.Join(
+                    Environment.NewLine,
+                    "---",
+                    "title: Hello",
+                    "date: 2026-03-01",
+                    "enableFeed: true",
+                    "---",
+                    string.Empty,
+                    "## Greeting",
+                    string.Empty,
+                    "Hello[^1].",
+                    string.Empty,
+                    "[^1]: A note."))
+            .WriteFile(
+                "blog/pipeline.md",
+                string.Join(
+                    Environment.NewLine,
+                    "---",
+                    "title: Pipeline",
+                    "enableDiagramRendering: true",
+                    "---",
+                    string.Empty,
+                    "```mermaid",
+                    "flowchart LR",
+                    "    A --> B",
+                    "```"))
+            .WriteDated("blog/2026/index.md", "Year 2026", "2026-06-01")
+            .WriteSyndicated("blog/2026/retro.md", "Retro", "2026-07-01");
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory, for a test that supplies its own tree.
     /// </summary>
     /// <param name="verbosity">

@@ -1652,7 +1652,72 @@ public partial class SiteBuilderTests
 
     #endregion // Counter Tests
 
+    #region Determinism Tests
+
+    /// <summary>
+    ///     Verifies that the same tree builds to the same files and the same bytes, whether the same builder
+    ///     builds it again, as a rebuild under serve does, or another builder builds it, as the next run of the
+    ///     command does.
+    /// </summary>
+    /// <remarks>
+    ///     A page's bytes depend on its own sources and the tool version alone. A counter kept across builds or an
+    ///     order taken from a hash would end that without failing any other test, and so would a clock precise
+    ///     enough to move between two builds. A coarser one, such as today's date, is left to
+    ///     <c>DeterminismTests</c>, since every build here falls on the same day.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_SameTree_ProducesIdenticalBytes()
+    {
+        // Arrange
+        ContentFixture fixture = Exhaustive();
+        ContentFixture other = Exhaustive();
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        IReadOnlyDictionary<string, byte[]> first = Snapshot(fixture);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await other.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        IReadOnlyDictionary<string, byte[]> rebuilt = Snapshot(fixture);
+        IReadOnlyDictionary<string, byte[]> independent = Snapshot(other);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(first.Keys).Contains("feed.xml");
+            await Assert.That(first.Keys).Contains("sitemap.xml");
+            await Assert.That(rebuilt.Keys).IsEquivalentTo(first.Keys);
+            await Assert.That(independent.Keys).IsEquivalentTo(first.Keys);
+            await Assert.That(Differing(first, rebuilt)).IsEmpty();
+            await Assert.That(Differing(first, independent)).IsEmpty();
+        }
+    }
+
+    #endregion // Determinism Tests
+
     #region Helpers
+
+    private static ContentFixture Exhaustive() =>
+        ContentFixture.CreateExhaustive()
+            .WithBaseUrl("https://example.com/blog")
+            .WithFeed()
+            .WithSitemap()
+            .WithFooterLinks(new FooterLink { Label = "GitHub", Url = new Uri("https://github.com/octocat") });
+
+    private static IReadOnlyDictionary<string, byte[]> Snapshot(ContentFixture fixture) =>
+        fixture.EnumerateOutput("*").ToDictionary(
+            path => fixture.FileSystem.Path.GetRelativePath(fixture.OutputRoot, path),
+            fixture.FileSystem.File.ReadAllBytes,
+            StringComparer.Ordinal);
+
+    // Compared over the paths both hold, because a path only one of them holds fails the comparison of the keys.
+    private static IEnumerable<string> Differing(
+        IReadOnlyDictionary<string, byte[]> expected,
+        IReadOnlyDictionary<string, byte[]> actual) =>
+        expected
+            .Where(entry => actual.TryGetValue(entry.Key, out byte[]? bytes) && !bytes.SequenceEqual(entry.Value))
+            .Select(entry => entry.Key);
 
     private static IEnumerable<FakeLogRecord> Reports(ContentFixture fixture, int eventId) =>
         fixture.Records.Where(record => record.Id.Id == eventId);
