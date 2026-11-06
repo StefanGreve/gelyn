@@ -72,6 +72,18 @@ internal sealed class DiskFixture : IDisposable
     public SiteBuilder Builder { get; }
 
     /// <summary>
+    ///     Indicates whether the current process may create the directory links
+    ///     <see cref="LoopContentIntoItself"/> and <see cref="LinkOutputOutside"/> make.
+    /// </summary>
+    /// <remarks>
+    ///     Any process may on macOS and Linux. Windows reserves the right to administrators, so a test needs an
+    ///     elevated shell there. Developer Mode lifts that restriction as well, but this check does not detect it,
+    ///     so a non-elevated test skips on such a machine even though it could run.
+    /// </remarks>
+    public static bool CanLinkDirectories =>
+        !OperatingSystem.IsWindows() || Environment.IsPrivilegedProcess;
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory and an empty output directory.
     /// </summary>
     /// <returns>

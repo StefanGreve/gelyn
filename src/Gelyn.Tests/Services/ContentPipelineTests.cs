@@ -69,7 +69,7 @@ public class ContentPipelineTests
     public async Task Scan_Test_DirectorySymlink_IsNotFollowed()
     {
         // Arrange
-        Skip.When(OperatingSystem.IsWindows(), "Creating a directory symlink needs elevation on Windows.");
+        Skip.Unless(DiskFixture.CanLinkDirectories, "Creating a directory symlink on Windows needs an elevated shell.");
 
         using DiskFixture fixture = DiskFixture.Create()
             .Write("index.md", "---\ntitle: Home\n---")
