@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-05
+revised: 2026-11-06
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 ---
 
@@ -43,7 +43,7 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of seven keys:
+Open a Markdown file with a YAML block to declare any of nine keys:
 
 ```markdown
 ---
@@ -54,6 +54,8 @@ description: Who I am and what I write about
 enableMathRendering: true
 enableDiagramRendering: true
 enableFeed: true
+stylesheets: [assets/about.css]
+scripts: [assets/about.js]
 ---
 ```
 
@@ -66,6 +68,8 @@ enableFeed: true
 | `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
 | `enableFeed`             | Publishes this page in the site feed. Configured in `configuration.md`.               |
+| `stylesheets`            | Links more stylesheets on this page alone. See [Stylesheets](#declared-by-a-page).    |
+| `scripts`                | Loads more scripts on this page alone. See [Scripts](#scripts).                       |
 
 Three rules are worth knowing, because none of them produces a warning:
 
@@ -77,7 +81,8 @@ Three rules are worth knowing, because none of them produces a warning:
 
 A block that isn't well-formed YAML, or that holds something other than key-value pairs, does stop the build.
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The
-message comes from the YAML reader, which names neither the file nor the line.
+message comes from the YAML reader, which names neither the file nor the line. An entry under `stylesheets` or
+`scripts` that names no file Gelyn publishes stops the build the same way, with a message that names both.
 
 ## Dates
 
@@ -126,6 +131,7 @@ page. Depth alone decides what Gelyn links.
 | `blog/index.md`      | Yes    | A section index, one level down.             |
 | `blog/hello.md`      | No     | A page inside a section.                     |
 | `blog/2026/index.md` | No     | An index below the first level.              |
+| `404.md`             | No     | See [Not found page](#not-found-page).       |
 
 No front matter key opts a page in or out. Link what the banner leaves out yourself, or let a
 [table of documents](#table-of-documents) list a whole directory for you.
@@ -326,6 +332,43 @@ uses, and matches the extension without regard to case, so `.CSS` counts.
 
 No stylesheet ships with Gelyn, so a tree with no `.css` in it produces a correct but unstyled site.
 
+### Declared by a page
+
+Placement reaches every page in a directory, so a large stylesheet that one page needs, such as one for a
+chart, would load on all of its siblings. Put it in a directory that holds no page, where placement links it
+from nowhere, and declare it in the front matter of the page that needs it:
+
+```text
+content/
+    styles.css
+    index.md
+    results.md
+    assets/
+        chart.css
+```
+
+```markdown
+---
+title: Results
+stylesheets: [assets/chart.css]
+---
+```
+
+`results.html` links `/styles.css` and then `/assets/chart.css`, and no other page links `chart.css`. Gelyn
+resolves each path against the directory of the page that declares it, so a page in `blog/` writes
+`../assets/chart.css`. The declared links follow the placed ones in the order you declare them, which makes a
+declared stylesheet override every placed one. Declaring a file that placement already links changes nothing.
+
+Each path has to name a `.css` file that Gelyn publishes. A missing file, a path outside the content
+directory, an excluded file, or a `.js` declared as a stylesheet stops the build with exit code 1:
+
+```text
+error: 'assets/chrat.css' under stylesheets in '/site/content/results.md' is not a stylesheet in the content directory.
+```
+
+The path is compared in its exact case on every platform, so `Chart.css` doesn't find `chart.css` on Windows
+either, just as it wouldn't on the Linux server that publishes your site.
+
 ## Scripts
 
 A `.js` file cascades exactly as a stylesheet does. Drop `app.js` at the content root and every page loads it;
@@ -369,6 +412,16 @@ copied whether any page loads it or not.
 > executes before the library it needs. Name them so the alphabet agrees with the dependency, such as
 > `1-katex.min.js` and `2-auto-render.min.js`, or put the library one directory up where the cascade reaches
 > it first.
+
+The `scripts` key declares a script for one page, exactly as `stylesheets` declares a stylesheet in
+[Declared by a page](#declared-by-a-page). Declared scripts run after the placed ones, in the order you
+declare them, so the front matter also settles a dependency order the alphabet gets wrong:
+
+```markdown
+---
+scripts: [assets/katex.min.js, assets/auto-render.min.js]
+---
+```
 
 > [!NOTE]
 > The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
@@ -421,6 +474,37 @@ rather than all of them.
 > [!NOTE]
 > `.ico` is the only extension Gelyn treats as an icon. A PNG or an SVG icon stays a plain copied file, so
 > link it yourself if you need one.
+
+## Not found page
+
+A host answers an address that has no page of its own with the `404.html` at the root of your site. GitHub
+Pages, Cloudflare Pages, and `gelyn serve` all look for it there and nowhere else. Write `404.md` at the root
+of your content tree, and Gelyn renders that page:
+
+```text
+content/
+    index.md      -> index.html
+    404.md        -> 404.html
+```
+
+The host serves this page at whichever address missed, not at one of its own, so Gelyn writes it differently
+from every other page:
+
+- The banner doesn't link it, and neither the sitemap nor a table of documents lists it.
+- Its head carries `<meta name="robots" content="noindex">` and no canonical link.
+- Its head carries `<base href="/">`, or the path of `BaseUrl` such as `<base href="/blog/">`, so that its
+  relative links resolve against your site root. A `[home](index.md)` in `404.md` then reaches your landing
+  page from `/a/b/c` as well as from `/c`.
+
+That base applies to every relative link on the page, including one to a heading on the same page and a
+footnote, which then lead to the root instead. Keep the page to plain links.
+
+A `404.md` anywhere else, such as `blog/404.md`, is an ordinary page, because no host looks for one there.
+
+Style the page with a stylesheet [declared in its front matter](#declared-by-a-page), so that no other page
+loads it. The documentation you are reading does that: its `404.md` declares
+`stylesheets: [assets/modern404.css]`, the not-found page that ships beside `modern.css` in the bootstrap
+themes, and draws the compass that stylesheet animates as an inline SVG.
 
 ## Mathematics
 

@@ -1,0 +1,148 @@
+/* not found page: declared by 404.md alone, as `stylesheets: [...]`, on top of modern.css */
+
+main:has(> svg.compass) {
+    --label-muted: color-mix(in oklab, var(--label) 62%, var(--bg));
+
+    align-content: center;
+    justify-items: center;
+    padding-block-end: 4rem;
+    text-align: center;
+
+    & > p {
+        max-width: 34rem;
+        color: var(--label-muted);
+        overflow-wrap: anywhere;
+    }
+
+    /* white on the dark accent falls below 4.5:1, so the dark palette takes a deeper blue */
+    & a.back {
+        display: inline-block;
+        padding: 0.6rem 1.25rem;
+        border-radius: 999px;
+        background-color: light-dark(#0071e3, #0060c7);
+        color: #ffffff;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-decoration: none;
+
+        @media (hover: hover) {
+            &:hover {
+                background-color: light-dark(#0062c4, #0071e3);
+            }
+        }
+    }
+}
+
+/* compass */
+
+svg.compass {
+    width: 13rem;
+    max-width: 100%;
+    height: auto;
+    margin-block: 1rem 0.5rem;
+    overflow: visible;
+
+    & > .compass-face {
+        fill: var(--surface);
+        stroke: var(--separator);
+        stroke-width: 1;
+    }
+
+    /* each tick is a dash on a circle 360 units long, the major ones centered on the cardinal points */
+    & > .compass-ticks {
+        fill: none;
+        stroke: color-mix(in oklab, var(--label) 30%, transparent);
+        stroke-width: 6;
+        stroke-dasharray: 0.5 5.5;
+        stroke-dashoffset: 0.25;
+    }
+
+    & > .compass-ticks-major {
+        fill: none;
+        stroke: var(--label);
+        stroke-width: 12;
+        stroke-dasharray: 1.2 88.8;
+        stroke-dashoffset: 0.6;
+    }
+
+    & > text {
+        fill: color-mix(in oklab, var(--label) 62%, var(--bg));
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-anchor: middle;
+        dominant-baseline: central;
+    }
+
+    & > .compass-north {
+        fill: var(--accent);
+    }
+
+    & > .compass-needle {
+        transform-box: view-box;
+        transform-origin: 100px 100px;
+        transform: rotate(28deg);
+        filter: drop-shadow(0 3px 4px color-mix(in oklab, var(--label) 18%, transparent));
+    }
+
+    & .compass-needle-north {
+        fill: var(--accent);
+    }
+
+    & .compass-needle-south {
+        fill: color-mix(in oklab, var(--label) 22%, var(--bg));
+    }
+
+    & .compass-cap {
+        fill: var(--bg);
+        stroke: var(--label);
+        stroke-width: 1.5;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        & > .compass-needle {
+            animation: compass-search 11s ease-in-out infinite;
+        }
+    }
+}
+
+/* short swings that overshoot and settle, then one long turn, as a needle does near something magnetic */
+
+@keyframes compass-search {
+    0%, 100% {
+        transform: rotate(28deg);
+    }
+
+    11% {
+        transform: rotate(-34deg);
+    }
+
+    19% {
+        transform: rotate(14deg);
+    }
+
+    25% {
+        transform: rotate(-6deg);
+    }
+
+    30% {
+        transform: rotate(2deg);
+    }
+
+    52% {
+        transform: rotate(152deg);
+    }
+
+    60% {
+        transform: rotate(118deg);
+    }
+
+    66% {
+        transform: rotate(134deg);
+    }
+
+    71% {
+        transform: rotate(127deg);
+    }
+}

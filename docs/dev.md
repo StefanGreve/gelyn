@@ -1,7 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-05
+revised: 2026-11-06
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 ---
 
@@ -18,7 +18,7 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 | Target         | Runs                                                                                        |
 | -------------- | ------------------------------------------------------------------------------------------- |
 | `make setup`   | Local tools, the `git` hooks, the package restore, `themes`, and the enforced `git` config. |
-| `make themes`  | Copies `classic.css` into `example/`, and `modern.css` with `modern.js` into `docs/`.       |
+| `make themes`  | Copies `classic.css` into `example/`, and the three `modern` theme files into `docs/`.      |
 | `make build`   | `dotnet build` in Release, without restoring.                                               |
 | `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.                       |
 | `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                                  |
