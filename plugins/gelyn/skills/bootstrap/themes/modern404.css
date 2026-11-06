@@ -79,11 +79,17 @@ svg.compass {
         fill: var(--accent);
     }
 
+    /* WebKit ignores the drop-shadow() shorthand on elements inside an svg (bug 246106), so the page defines the
+       shadow as an svg filter and the stylesheet keeps its color */
+    & feDropShadow {
+        flood-color: color-mix(in oklab, var(--label) 18%, transparent);
+    }
+
     & > .compass-needle {
         transform-box: view-box;
         transform-origin: 100px 100px;
         transform: rotate(28deg);
-        filter: drop-shadow(0 3px 4px color-mix(in oklab, var(--label) 18%, transparent));
+        filter: url(#compass-needle-shadow);
     }
 
     & .compass-needle-north {
