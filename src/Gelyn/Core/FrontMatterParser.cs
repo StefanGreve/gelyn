@@ -26,7 +26,7 @@ internal static class FrontMatterParser
     ///     The block is not well-formed YAML, or declares something other than a mapping.
     /// </exception>
     public static FrontMatter? Parse(ReadOnlySpan<char> block) =>
-        YamlSerializer.Deserialize<FrontMatter>(StripDelimiters(block), YamlContext.Default);
+        YamlSerializer.Deserialize(StripDelimiters(block), YamlContext.Default.FrontMatter);
 
     #region Helpers
 
