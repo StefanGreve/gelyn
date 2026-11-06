@@ -1,6 +1,7 @@
 using System.CommandLine;
 
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Services;
 
@@ -44,21 +45,8 @@ internal sealed class BuildCommand : Command
                     .BuildAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                foreach (string page in report.Pages)
-                    stdOut.MarkupLineInterpolated($"[green]created[/] {page}");
-
-                foreach (string file in report.Generated)
-                    stdOut.MarkupLineInterpolated($"[green]created[/] {file}");
-
-                foreach (string copy in report.Copies)
-                    stdOut.MarkupLineInterpolated($"[green]copied[/] {copy}");
-
-                foreach (string removal in report.Removed)
-                    stdOut.MarkupLineInterpolated($"[yellow]removed[/] {removal}");
-
-                // Formatted with Tool.Culture, because interpolating the value would use the current one.
-                string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                stdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+                // Batched, because the report has a line per file and the console flushes every write.
+                stdOut.WriteBatch(console => Print(console, report));
 
                 return ExitCodes.Success;
             }
@@ -70,4 +58,27 @@ internal sealed class BuildCommand : Command
             }
         });
     }
+
+    #region Helpers
+
+    private static void Print(IAnsiConsole console, BuildReport report)
+    {
+        foreach (string page in report.Pages)
+            console.MarkupLineInterpolated($"[green]created[/] {page}");
+
+        foreach (string file in report.Generated)
+            console.MarkupLineInterpolated($"[green]created[/] {file}");
+
+        foreach (string copy in report.Copies)
+            console.MarkupLineInterpolated($"[green]copied[/] {copy}");
+
+        foreach (string removal in report.Removed)
+            console.MarkupLineInterpolated($"[yellow]removed[/] {removal}");
+
+        // Formatted with Tool.Culture, because interpolating the value would use the current one.
+        string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
+        console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+    }
+
+    #endregion
 }
