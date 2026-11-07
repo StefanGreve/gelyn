@@ -54,8 +54,10 @@ internal static class FooterComponent
 
         foreach (FooterLink link in options.FooterLinks)
         {
-            Uri url = link.Url ?? throw new InvalidOperationException("A configured footer link always declares a URL.");
-            links.Add((link.Label, url.AbsoluteUri));
+            if (link is not { Label: string label, Url: Uri url })
+                throw new InvalidOperationException("A configured footer link always declares a label and a URL.");
+
+            links.Add((label, url.AbsoluteUri));
         }
 
         // Linked under the conditions SiteBuilder writes each document under, so that no entry leads to a 404.

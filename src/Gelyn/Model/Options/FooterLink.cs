@@ -7,9 +7,10 @@ namespace Gelyn.Model.Options;
 internal sealed class FooterLink
 {
     /// <summary>
-    ///     The text the link reads as.
+    ///     The text the link reads as, or <see langword="null"/> for a link whose configuration declares none,
+    ///     which is not a usable value.
     /// </summary>
-    public string Label { get; set; } = string.Empty;
+    public string? Label { get; set; }
 
     /// <summary>
     ///     The absolute http or https URL the link addresses, or <see langword="null"/> for a link whose

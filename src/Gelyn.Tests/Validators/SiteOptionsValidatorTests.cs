@@ -128,12 +128,14 @@ public class SiteOptionsValidatorTests
     }
 
     /// <summary>
-    ///     Verifies that a footer link with a blank label is rejected, because the anchor would read as nothing.
+    ///     Verifies that a footer link with an absent or blank label is rejected, because the anchor would read
+    ///     as nothing.
     /// </summary>
     [Test]
+    [Arguments(null)]
     [Arguments("")]
     [Arguments("   ")]
-    public async Task Validate_Test_BlankFooterLinkLabel_Fails(string label)
+    public async Task Validate_Test_BlankFooterLinkLabel_Fails(string? label)
     {
         // Arrange
         var link = new FooterLink { Label = label, Url = new Uri("https://github.com/octocat") };
