@@ -8,10 +8,10 @@ namespace Gelyn.Extensions;
 /// <summary>
 ///     Output that reaches a console in one write instead of one write per segment.
 /// </summary>
-internal static class ConsoleBatchExtensions
+internal static class ConsoleExtensions
 {
     /// <summary>
-    ///     Defines extensions for the console a batch is written to.
+    ///     Defines extensions for the console that is written to.
     /// </summary>
     /// <param name="console">
     ///     The console, used as the receiver.

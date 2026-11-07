@@ -12,9 +12,9 @@ using Spectre.Console;
 namespace Gelyn.Tests.Extensions;
 
 /// <summary>
-///     Unit tests for the <see cref="ConsoleBatchExtensions"/> class.
+///     Unit tests for the <see cref="ConsoleExtensions"/> class.
 /// </summary>
-public class ConsoleBatchExtensionsTests
+public class ConsoleExtensionsTests
 {
     #region Batch Tests
 
