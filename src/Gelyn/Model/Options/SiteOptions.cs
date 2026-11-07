@@ -66,6 +66,11 @@ internal sealed class SiteOptions
     public string MermaidVersion { get; set; } = "12.1.0";
 
     /// <summary>
+    ///     The version of Shiki requested from jsDelivr, such as <c>4.6.0</c>.
+    /// </summary>
+    public string ShikiVersion { get; set; } = "4.6.0";
+
+    /// <summary>
     ///     The directory the site is built from, holding the Markdown sources and anything published beside
     ///     them. Relative values are resolved against the content root, which is the working directory unless
     ///     <c>DOTNET_CONTENTROOT</c> points somewhere else.

@@ -126,6 +126,16 @@
         "12.1.0"
       ]
     },
+    "ShikiVersion": {
+      "description": "The version of Shiki requested from jsDelivr by a page whose front matter sets enableSyntaxHighlighting.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "4.6.0",
+      "examples": [
+        "4.6.0"
+      ]
+    },
     "ContentDirectory": {
       "description": "The directory the site is built from, holding the Markdown sources and anything published beside them. Relative values are resolved against the working directory.",
       "type": "string",

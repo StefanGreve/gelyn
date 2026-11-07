@@ -19,6 +19,7 @@
   ],
   "KaTeXVersion": "0.19.0",
   "MermaidVersion": "12.1.0",
+  "ShikiVersion": "4.6.0",
   "ContentDirectory": "example",
   "OutputDirectory": "_site",
   "ExcludePatterns": [

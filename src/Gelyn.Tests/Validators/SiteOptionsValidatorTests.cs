@@ -200,6 +200,8 @@ public class SiteOptionsValidatorTests
     [Arguments(nameof(SiteOptions.KaTeXVersion), "   ")]
     [Arguments(nameof(SiteOptions.MermaidVersion), "")]
     [Arguments(nameof(SiteOptions.MermaidVersion), "   ")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "   ")]
     public async Task Validate_Test_BlankSetting_Fails(string setting, string value)
     {
         // Arrange
