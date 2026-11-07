@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Abstractions;
 using Gelyn.Services;
 
 using Microsoft.Extensions.Logging.Testing;
@@ -38,7 +39,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     private readonly StringWriter _errorOutput = new();
     private readonly TextWriter _errorWriter;
 
-    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds)
+    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, StaticFileResolverContract? resolver)
     {
         this.Port = FreePort();
         this.Logger = new FakeLogger<FileServer>();
@@ -53,7 +54,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
         IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
 
-        var server = new FileServer(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
+        var server = new FileServer(resolver ?? fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
         // ServeAsync binds the listener before reaching its first await, so the task it returns is already
         // listening and the request below needs no readiness poll.
@@ -139,14 +140,18 @@ internal sealed class ServerHarness : IAsyncDisposable
     ///     The interval an HTML response asks the browser to reload itself after, or <see langword="null"/>
     ///     when no response carries the header.
     /// </param>
+    /// <param name="resolver">
+    ///     The resolver the server answers through, or <see langword="null"/> for the fixture's own.
+    /// </param>
     /// <returns>
     ///     The new harness.
     /// </returns>
     public static ServerHarness Start(
         OutputFixture fixture,
         DateTimeOffset? now = null,
-        int? refreshSeconds = null) =>
-        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds);
+        int? refreshSeconds = null,
+        StaticFileResolverContract? resolver = null) =>
+        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds, resolver);
 
     /// <summary>
     ///     Composes the absolute URL one request path addresses.

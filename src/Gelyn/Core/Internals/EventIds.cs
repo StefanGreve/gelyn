@@ -96,5 +96,10 @@ internal static class EventIds
     /// </summary>
     internal const int REBUILD_COMPLETED = 1_103;
 
+    /// <summary>
+    ///     A request could not be answered, for a reason other than the client hanging up.
+    /// </summary>
+    internal const int ANSWER_FAILED = 1_104;
+
     #endregion
 }

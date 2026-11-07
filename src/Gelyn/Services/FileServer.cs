@@ -225,6 +225,11 @@ internal sealed class FileServer : FileServerContract
             // routinely, or the build replaced the file under the read. Neither is the server's to report.
             response.Abort();
         }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            this._logger.LogAnswerFailed(exception, method, path);
+            response.Abort();
+        }
     }
 
     /// <returns>

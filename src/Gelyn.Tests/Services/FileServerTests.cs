@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Gelyn.Core.Internals;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
+using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging.Testing;
 
@@ -600,6 +601,38 @@ public class FileServerTests
             await Assert.That(records.Select(static record => record.Id.Id)).IsEquivalentTo([EventIds.SERVER_STARTED]);
             await Assert.That(records[0].GetStructuredStateValue("Directory")).IsEqualTo(fixture.Root);
             await Assert.That(records[0].GetStructuredStateValue("Address")).IsEqualTo(FileServer.Address(harness.Port));
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an answer failing for a reason the server does not name is reported, aborted, and
+    ///     survived, so that the next request is answered as if nothing had happened.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_FailedAnswer_IsReportedAndTheNextOneIsAnswered()
+    {
+        // Arrange
+        var fixture = OutputFixture.Create("index.html");
+        var failure = new InvalidOperationException("The resolver gave up.");
+        await using var harness = ServerHarness.Start(fixture, resolver: new FlakyResolverStub(fixture.Resolver, failure));
+
+        // Act
+        await Assert.That(async () => await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None))
+            .Throws<HttpRequestException>();
+
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+        await harness.StopAsync();
+
+        // Assert
+        FakeLogRecord[] records = [.. harness.Logger.Collector.GetSnapshot()];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(records.Select(static record => record.Id.Id)).IsEquivalentTo([EventIds.SERVER_STARTED, EventIds.ANSWER_FAILED]);
+            await Assert.That(records[1].Exception).IsSameReferenceAs(failure);
+            await Assert.That(records[1].GetStructuredStateValue("Method")).IsEqualTo("GET");
+            await Assert.That(records[1].GetStructuredStateValue("Path")).IsEqualTo("/");
             await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
     }

@@ -281,6 +281,28 @@ internal static partial class LogMessages
     internal static partial void LogServerStarted(this ILogger logger, string directory, string address);
 
     /// <summary>
+    ///     Reports a request the preview server could not answer, which it survives.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="exception">
+    ///     The exception the answer failed with.
+    /// </param>
+    /// <param name="method">
+    ///     The HTTP method of the request.
+    /// </param>
+    /// <param name="path">
+    ///     The path of the requested URL.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.ANSWER_FAILED,
+        EventName = nameof(EventIds.ANSWER_FAILED),
+        Level = LogLevel.Error,
+        Message = "Could not answer {Method} {Path}")]
+    internal static partial void LogAnswerFailed(this ILogger logger, Exception exception, string method, string path);
+
+    /// <summary>
     ///     Reports how many entries the watchers saw change before the debounce window closed.
     /// </summary>
     /// <param name="logger">

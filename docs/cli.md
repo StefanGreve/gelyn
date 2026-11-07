@@ -119,7 +119,8 @@ content directory without an `index.md`.
 
 `serve` returns `0` when you interrupt it, `2` when it rejects the configuration as `build` would, and `1`
 when the port is already taken, when the platform carries no usable `HttpListener`, or when the first build
-fails. A rebuild that fails later keeps the server up and changes no exit code.
+fails. A rebuild that fails later keeps the server up and changes no exit code, and so does a request the
+server can't answer, which it reports on standard error instead.
 
 <!-- References -->
 
