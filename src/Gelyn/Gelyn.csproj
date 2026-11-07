@@ -30,7 +30,8 @@
     <StripSymbols>true</StripSymbols>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
-    <OptimizationPreference>Size</OptimizationPreference>
+    <OptimizationPreference>Speed</OptimizationPreference>
+    <UseSizeOptimizedLinq>false</UseSizeOptimizedLinq>
   </PropertyGroup>
 
   <PropertyGroup Label="Tool packaging">
