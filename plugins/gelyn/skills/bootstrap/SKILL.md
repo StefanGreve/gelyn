@@ -52,7 +52,8 @@ keeping that name whatever the answer, so a theme can be swapped later without t
   user who would rather not write CSS. It covers the common elements, so a definition list, a footnote block
   and a task list fall back to browser defaults. Copy `modern.js` beside it as `content/theme.js`, because
   the stylesheet is half a theme without it: the script builds the sheet menu the stylesheet styles below
-  40rem, and gives a Mermaid diagram the appearance the rest of the page follows.
+  40rem, and gives a Mermaid diagram the appearance the rest of the page follows. The sheet also paints code
+  highlighted by Shiki in the palette matching that appearance.
 
 ## 4. Copy the templates
 

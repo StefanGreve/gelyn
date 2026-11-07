@@ -437,6 +437,13 @@ pre {
     line-height: 1.5;
 }
 
+/* Shiki emits both palettes per token and no colour of its own, so the sheet picks the one the scheme asks
+   for. The surface stays the sheet's, so the theme backgrounds go unused. */
+.shiki,
+.shiki span {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+}
+
 /* alert extension */
 
 div.markdown-alert {
