@@ -251,12 +251,16 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that a value the invariant culture cannot read as a date leaves the date unset and does
-    ///     not abort the block.
+    ///     Verifies that a value not written as an ISO 8601 calendar date leaves the date unset and does not
+    ///     abort the block, including the spellings the invariant culture would otherwise accept.
     /// </summary>
     [Test]
     [Arguments("not a date")]
     [Arguments("2026-13-13")]
+    [Arguments("09/13/2026")]
+    [Arguments("Sep 13, 2026")]
+    [Arguments("2026-9-3")]
+    [Arguments("2026/09/13")]
     public async Task TryParse_Test_UnparsableDate_LeavesDateUnset(string value)
     {
         // Arrange

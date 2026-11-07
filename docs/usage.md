@@ -80,8 +80,8 @@ Two rules are worth knowing, because neither produces a warning:
 
 - Open the block on the very first line. With one blank line above it, Gelyn no longer reads it as front
   matter. It renders the delimiters and the keys as content, and the title falls back to the file name.
-- Gelyn drops a `date` or a `revised` it can't parse in silence, and writes the page as though it declared
-  none.
+- Gelyn drops a `date` or a `revised` that isn't written as `YYYY-MM-DD` in silence, and writes the page as
+  though it declared none.
 
 A key Gelyn doesn't know, such as a misspelled `titel:`, produces a warning that names the key, its line and
 the file. The build carries on and writes the page as though the key were absent.

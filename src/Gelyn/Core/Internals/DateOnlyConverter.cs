@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using SharpYaml.Serialization;
 
 namespace Gelyn.Core.Internals;
@@ -8,7 +10,7 @@ namespace Gelyn.Core.Internals;
 /// <remarks>
 ///     The source generator rejects a <see cref="DateOnly"/> member outright with <c>SHARPYAML002</c> and never
 ///     falls back to reflection, so the type binds only through a converter the member names. Reading a value
-///     the configured culture cannot parse yields <see langword="null"/>, which leaves the rest of the block
+///     that is not written as <c>yyyy-MM-dd</c> yields <see langword="null"/>, which leaves the rest of the block
 ///     readable instead of failing it over one malformed date.
 /// </remarks>
 internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
@@ -24,7 +26,7 @@ internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
         // key and fault the mapping.
         reader.Read();
 
-        return DateOnly.TryParse(value, Tool.Culture, out DateOnly date)
+        return DateOnly.TryParseExact(value, Format, Tool.Culture, DateTimeStyles.None, out DateOnly date)
             ? date
             : null;
     }
