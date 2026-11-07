@@ -47,6 +47,7 @@ otherwise ignore in silence.
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
 | `ShikiVersion`     | `4.6.0`   | Pins the Shiki release a page loads when its front matter enables syntax highlighting.                  |
+| `Giscus`           | unset     | Names the GitHub Discussions backend of the comment threads. See [Comments](#comments).                 |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
 | `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to, overwriting the files already there.                  |
 | `ExcludePatterns`  | `[]`      | Lists the names Gelyn skips while walking your content tree. See [Exclude patterns](#exclude-patterns). |
@@ -226,6 +227,29 @@ body > footer a[href^="https://github.com/"]::before {
 }
 ```
 
+## Comments
+
+`Giscus` names the GitHub Discussions backend that comment threads live in. A page opts in with
+`enableComments` in its front matter, which [Usage](usage.md#comments) covers. While `Giscus` is unset, no page
+renders a thread, whatever its front matter says.
+
+```json
+"Giscus": {
+  "Repo": "octocat/blog",
+  "RepoId": "R_kgDOxxxxxxx",
+  "Category": "Comments",
+  "CategoryId": "DIC_kwDOxxxxxxxxxxxx"
+}
+```
+
+The repository has to be public, with Discussions enabled and the [giscus app](https://github.com/apps/giscus)
+installed on it. Enter it on the configuration page at [giscus.app](https://giscus.app) and pick a category,
+and the page shows the matching `data-repo`, `data-repo-id`, `data-category`, and `data-category-id`. Copy those
+four values into the members of the same name. Gelyn sets every other attribute itself.
+
+Every member must hold text, and `Repo` must read as `owner/name`. Gelyn rejects anything else before the build
+starts and names the member at fault, such as `Giscus.Repo`.
+
 ## Exclude patterns
 
 Gelyn copies every file beside your Markdown to the output directory, so name anything the build shouldn't
@@ -295,10 +319,13 @@ usable on their own. Five settings have a flag:
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
 `Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `FooterLinks`, `KaTeXVersion`,
-`MermaidVersion`, and `ShikiVersion` have none, so set them in the file or in the environment.
+`MermaidVersion`, `ShikiVersion`, and `Giscus` have none, so set them in the file or in the environment.
 
 `ExcludePatterns` and `FooterLinks` are the two collection-valued settings, which makes layer 3 awkward for them.
 An environment variable named exactly like the setting can't carry a list, so each pattern needs its own
 `ExcludePatterns__0`, `ExcludePatterns__1`, and so on, and each footer link one variable per member, such as
 `FooterLinks__0__Label` and `FooterLinks__0__Url`. The file is the practical route for both, and `--exclude` for
 the patterns.
+
+`Giscus` is an object, so it takes one variable per member in the same way, such as `Giscus__Repo` and
+`Giscus__RepoId`.

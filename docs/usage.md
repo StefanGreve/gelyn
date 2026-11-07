@@ -44,7 +44,7 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of ten keys:
+Open a Markdown file with a YAML block to declare any of the keys below:
 
 ```markdown
 ---
@@ -55,6 +55,7 @@ description: Who I am and what I write about
 enableMathRendering: true
 enableDiagramRendering: true
 enableSyntaxHighlighting: true
+enableComments: true
 enableFeed: true
 stylesheets: [assets/about.css]
 scripts: [assets/about.js]
@@ -70,6 +71,7 @@ scripts: [assets/about.js]
 | `enableMathRendering`      | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
 | `enableDiagramRendering`   | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
 | `enableSyntaxHighlighting` | Loads Shiki on this page alone. See [Syntax highlighting](#syntax-highlighting).      |
+| `enableComments`           | Renders a comment thread on this page alone. See [Comments](#comments).               |
 | `enableFeed`               | Publishes this page in the site feed. Configured in `configuration.md`.               |
 | `stylesheets`              | Links more stylesheets on this page alone. See [Stylesheets](#declared-by-a-page).    |
 | `scripts`                  | Loads more scripts on this page alone. See [Scripts](#scripts).                       |
@@ -431,7 +433,7 @@ scripts: [assets/katex.min.js, assets/auto-render.min.js]
 > The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
 > content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
 > third-party requests. KaTeX, Mermaid and Shiki are the three libraries Gelyn fetches for you, through the
-> keys described next.
+> keys described next. A page that renders [comments](#comments) also reaches giscus.app.
 
 ## Favicon
 
@@ -680,6 +682,61 @@ declare it on each page that carries code, and Gelyn writes no `integrity` attri
 yours to change. Vendoring Shiki instead isn't an option, for the reason Mermaid isn't: it loads as an ES
 module.
 
+## Comments
+
+A page can carry a comment thread that lives in GitHub Discussions, through [giscus][giscus]. Configure the
+backend once, as [`Giscus`](configuration.md#comments) in `gelyn.json`, then declare one key on each page that
+should carry a thread:
+
+```markdown
+---
+title: Hello
+enableComments: true
+---
+```
+
+Gelyn writes one section into that page, after `<main>` and before the footer:
+
+```html
+<section class="giscus" aria-label="Comments">
+<script src="https://giscus.app/client.js"
+        data-repo="octocat/blog"
+        data-repo-id="R_kgDOxxxxxxx"
+        data-category="Comments"
+        data-category-id="DIC_kwDOxxxxxxxxxxxx"
+        data-mapping="pathname"
+        data-strict="1"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="bottom"
+        data-theme="preferred_color_scheme"
+        data-loading="lazy"
+        crossorigin="anonymous"
+        async></script>
+</section>
+```
+
+The script places an iframe served by giscus.app inside the section, and loads it once a reader scrolls near
+it. Each thread is a discussion in your repository, so a reader needs a GitHub account and has to authorize
+the giscus app to comment.
+
+giscus finds the thread by the path of the page, such as `blog/hello` for `/blog/hello.html`, and matches it
+exactly, so `blog/hello` never lands in the thread of `blog/hello-world`. Rename or move the file and its page
+starts a new, empty thread, while the old discussion stays in your repository.
+
+The widget follows the colour scheme of the browser, as `modern.css` does. It renders in English whatever
+`Language` says, because giscus accepts only its own list of language codes. The `giscus` class marks the
+element the client places the iframe in, and is the hook for your stylesheet: `modern.css` sets the section on
+the measure of the content.
+
+The key doesn't cascade, so declare it on each page that should carry a thread. A page declaring it on a site
+that configures no `Giscus` renders nothing, and the [not-found page](#not-found-page) never renders a thread,
+whatever its front matter says: the host serves it at whichever address missed, and giscus would key a thread
+to each one.
+
+Gelyn writes no `integrity` attribute, because the URL of the script carries no version. giscus.app serves
+whatever is current, so there is no fixed file to hash.
+
 ## Rebuilds
 
 A build reconciles your output directory against your sources: it writes the pages, copies everything beside
@@ -765,4 +822,5 @@ warning: ContentDirectory changed. Restart gelyn serve to pick that up.
 [mermaid-docs]: https://mermaid.js.org/intro/getting-started.html
 [mermaid-theming]: https://mermaid.js.org/config/theming.html#site-wide-theme
 [shiki]: https://shiki.style
+[giscus]: https://giscus.app
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current

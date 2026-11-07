@@ -50,6 +50,12 @@ main {
     }
 }
 
+body > .giscus {
+    width: 100%;
+    max-width: var(--measure);
+    margin-inline: auto;
+}
+
 @media (prefers-reduced-motion: no-preference) {
     html {
         scroll-behavior: smooth;
