@@ -606,9 +606,13 @@ public class FileServerTests
     }
 
     /// <summary>
-    ///     Verifies that an answer failing for a reason the server does not name is reported, aborted, and
-    ///     survived, so that the next request is answered as if nothing had happened.
+    ///     Verifies that an answer failing for a reason the server does not name is reported, answered with a
+    ///     500 on every platform, and survived, so that the next request is answered as if nothing had happened.
     /// </summary>
+    /// <remarks>
+    ///     A 500 and not an abort, because the managed listener sends the headers it has on an abort, which
+    ///     would reach the browser as a 200 with no body, while HTTP.sys resets the connection.
+    /// </remarks>
     [Test]
     public async Task ServeAsync_Test_FailedAnswer_IsReportedAndTheNextOneIsAnswered()
     {
@@ -618,10 +622,9 @@ public class FileServerTests
         await using var harness = ServerHarness.Start(fixture, resolver: new FlakyResolverStub(fixture.Resolver, failure));
 
         // Act
-        await Assert.That(async () => await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None))
-            .Throws<HttpRequestException>();
-
-        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+        using HttpResponseMessage failed = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+        using HttpResponseMessage answered = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
+        await harness.WaitForEntriesAsync(2);
         await harness.StopAsync();
 
         // Assert
@@ -633,7 +636,9 @@ public class FileServerTests
             await Assert.That(records[1].Exception).IsSameReferenceAs(failure);
             await Assert.That(records[1].GetStructuredStateValue("Method")).IsEqualTo("GET");
             await Assert.That(records[1].GetStructuredStateValue("Path")).IsEqualTo("/");
-            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(harness.Lines[1]).IsEqualTo("""127.0.0.1 - - [17/Oct/2026:13:06:06 +0000] "GET / HTTP/1.1" 500 0""");
+            await Assert.That(failed.StatusCode).IsEqualTo(HttpStatusCode.InternalServerError);
+            await Assert.That(answered.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
     }
 

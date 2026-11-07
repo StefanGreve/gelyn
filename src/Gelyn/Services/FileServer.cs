@@ -228,6 +228,24 @@ internal sealed class FileServer : FileServerContract
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             this._logger.LogAnswerFailed(exception, method, path);
+            this.Fail(request, client, response);
+        }
+    }
+
+    // The managed listener sends the headers it has when a response is aborted, so the browser would see a 200
+    // with no body. The failure arrives before any header goes out, so a 500 can still be sent on every platform.
+    private void Fail(HttpListenerRequest request, string? client, HttpListenerResponse response)
+    {
+        try
+        {
+            response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            response.ContentLength64 = 0;
+            response.Close();
+
+            this.Report(request, client, HttpStatusCode.InternalServerError, written: 0);
+        }
+        catch (Exception exception) when (exception is HttpListenerException or IOException or ObjectDisposedException or InvalidOperationException)
+        {
             response.Abort();
         }
     }
