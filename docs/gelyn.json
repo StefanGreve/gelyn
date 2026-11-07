@@ -13,6 +13,10 @@
     {
       "Label": "llms.txt",
       "Url": "https://stefangreve.github.io/gelyn/llms.txt"
+    },
+    {
+      "Label": "CC BY-SA 4.0",
+      "Url": "https://creativecommons.org/licenses/by-sa/4.0/"
     }
   ],
   "ContentDirectory": "docs",

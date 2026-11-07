@@ -191,7 +191,8 @@ which is the text the link reads as, and a `Url`, which is the address it points
 ```json
 "FooterLinks": [
   { "Label": "GitHub", "Url": "https://github.com/octocat" },
-  { "Label": "Mastodon", "Url": "https://mastodon.social/@octocat" }
+  { "Label": "Mastodon", "Url": "https://mastodon.social/@octocat" },
+  { "Label": "CC BY-SA 4.0", "Url": "https://creativecommons.org/licenses/by-sa/4.0/" }
 ]
 ```
 
@@ -204,6 +205,7 @@ both published, the footer reads:
 <ul>
 <li><a href="https://github.com/octocat">GitHub</a></li>
 <li><a href="https://mastodon.social/@octocat">Mastodon</a></li>
+<li><a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a></li>
 <li><a href="/feed.xml">Feed</a></li>
 <li><a href="/sitemap.xml">Sitemap</a></li>
 </ul>
