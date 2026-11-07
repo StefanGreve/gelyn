@@ -41,11 +41,7 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(options.Language))
             failures.Add($"{nameof(SiteOptions.Language)} must not be empty.");
 
-        if (string.IsNullOrWhiteSpace(options.ContentDirectory))
-            failures.Add($"{nameof(SiteOptions.ContentDirectory)} must not be empty.");
-
-        if (string.IsNullOrWhiteSpace(options.OutputDirectory))
-            failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not be empty.");
+        failures.AddRange(this.ValidateDirectories(options.ContentDirectory, options.OutputDirectory));
 
         // An empty version addresses no package, since it goes into the URL as katex@/dist.
         if (string.IsNullOrWhiteSpace(options.KaTeXVersion))
@@ -57,26 +53,13 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(options.ShikiVersion))
             failures.Add($"{nameof(SiteOptions.ShikiVersion)} must not be empty.");
 
+        if (options.Giscus is GiscusOptions giscus)
+            failures.AddRange(ValidateGiscusOptions(giscus));
+
         if (options.BaseUrl is Uri baseUrl && !IsServable(baseUrl))
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 
-        for (int i = 0; i < options.FooterLinks.Count; i++)
-        {
-            FooterLink link = options.FooterLinks[i];
-            string key = $"{nameof(SiteOptions.FooterLinks)}[{i}]";
-
-            if (string.IsNullOrWhiteSpace(link.Label))
-                failures.Add($"{key}.{nameof(FooterLink.Label)} must not be empty.");
-
-            if (link.Url is not Uri url || !IsServable(url))
-                failures.Add($"{key}.{nameof(FooterLink.Url)} must be an absolute http or https URL, such as 'https://github.com/octocat'.");
-        }
-
-        if (!string.IsNullOrWhiteSpace(options.ContentDirectory) && !string.IsNullOrWhiteSpace(options.OutputDirectory)
-            && ViolatesBoundary(this._environment.ContentRootPath, options.ContentDirectory, options.OutputDirectory))
-        {
-            failures.Add($"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.");
-        }
+        failures.AddRange(ValidateFooterLinks(options.FooterLinks));
 
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)
@@ -85,11 +68,62 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
 
     #region Helpers
 
+    private IEnumerable<string> ValidateDirectories(string content, string output)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            yield return $"{nameof(SiteOptions.ContentDirectory)} must not be empty.";
+
+        if (string.IsNullOrWhiteSpace(output))
+            yield return $"{nameof(SiteOptions.OutputDirectory)} must not be empty.";
+
+        if (!string.IsNullOrWhiteSpace(content) && !string.IsNullOrWhiteSpace(output)
+            && ViolatesBoundary(this._environment.ContentRootPath, content, output))
+        {
+            yield return $"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.";
+        }
+    }
+
+    private static IEnumerable<string> ValidateGiscusOptions(GiscusOptions giscus)
+    {
+        string key = nameof(SiteOptions.Giscus);
+
+        if (!IsRepository(giscus.Repo))
+            yield return $"{key}.{nameof(GiscusOptions.Repo)} must name a repository as 'owner/name'.";
+
+        if (string.IsNullOrWhiteSpace(giscus.RepoId))
+            yield return $"{key}.{nameof(GiscusOptions.RepoId)} must not be empty.";
+
+        if (string.IsNullOrWhiteSpace(giscus.Category))
+            yield return $"{key}.{nameof(GiscusOptions.Category)} must not be empty.";
+
+        if (string.IsNullOrWhiteSpace(giscus.CategoryId))
+            yield return $"{key}.{nameof(GiscusOptions.CategoryId)} must not be empty.";
+    }
+
+    private static IEnumerable<string> ValidateFooterLinks(IReadOnlyList<FooterLink> links)
+    {
+        for (int i = 0; i < links.Count; i++)
+        {
+            FooterLink link = links[i];
+            string key = $"{nameof(SiteOptions.FooterLinks)}[{i}]";
+
+            if (string.IsNullOrWhiteSpace(link.Label))
+                yield return $"{key}.{nameof(FooterLink.Label)} must not be empty.";
+
+            if (link.Url is not Uri url || !IsServable(url))
+                yield return $"{key}.{nameof(FooterLink.Url)} must be an absolute http or https URL, such as 'https://github.com/octocat'.";
+        }
+    }
+
     // A relative URL carries no origin to resolve a link against, and Scheme throws when read from one. The
     // scheme test is also what keeps a javascript: or data: footer link out of an anchor the build publishes.
     private static bool IsServable(Uri url) =>
         url.IsAbsoluteUri && (url.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
             || url.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
+
+    // giscus hands the value to GitHub as owner/name, so a missing half or a third segment addresses nothing.
+    private static bool IsRepository(string? repo) =>
+        repo?.Split('/') is [{ Length: > 0 }, { Length: > 0 }] && !repo.Any(char.IsWhiteSpace);
 
     // The build would publish an output inside the content directory as content, `gelyn clean` would remove
     // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it

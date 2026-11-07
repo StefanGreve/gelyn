@@ -71,6 +71,12 @@ internal sealed class SiteOptions
     public string ShikiVersion { get; set; } = "4.6.0";
 
     /// <summary>
+    ///     The giscus backend a page declaring <c>enableComments</c> renders a comment thread from, or
+    ///     <see langword="null"/> to render none, whatever a page declares.
+    /// </summary>
+    public GiscusOptions? Giscus { get; set; }
+
+    /// <summary>
     ///     The directory the site is built from, holding the Markdown sources and anything published beside
     ///     them. Relative values are resolved against the content root, which is the working directory unless
     ///     <c>DOTNET_CONTENTROOT</c> points somewhere else.

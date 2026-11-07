@@ -136,6 +136,43 @@
         "4.6.0"
       ]
     },
+    "Giscus": {
+      "description": "The GitHub Discussions backend a page declaring enableComments renders a comment thread from. Unset, no page renders one.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["Repo", "RepoId", "Category", "CategoryId"],
+      "properties": {
+        "Repo": {
+          "description": "The repository, as owner/name.",
+          "type": "string",
+          "pattern": "^[^/\\s]+/[^/\\s]+$"
+        },
+        "RepoId": {
+          "description": "The repository id the giscus configuration page shows.",
+          "type": "string",
+          "minLength": 1
+        },
+        "Category": {
+          "description": "The discussion category giscus creates threads in.",
+          "type": "string",
+          "minLength": 1
+        },
+        "CategoryId": {
+          "description": "The category id the giscus configuration page shows.",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "default": null,
+      "examples": [
+        {
+          "Repo": "octocat/blog",
+          "RepoId": "R_kgDOxxxxxxx",
+          "Category": "Comments",
+          "CategoryId": "DIC_kwDOxxxxxxxxxxxx"
+        }
+      ]
+    },
     "ContentDirectory": {
       "description": "The directory the site is built from, holding the Markdown sources and anything published beside them. Relative values are resolved against the working directory.",
       "type": "string",

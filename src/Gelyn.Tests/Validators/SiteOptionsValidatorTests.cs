@@ -311,6 +311,103 @@ public class SiteOptionsValidatorTests
 
     #endregion // Validate Tests
 
+    #region Giscus Tests
+
+    /// <summary>
+    ///     Verifies that leaving the giscus backend unset is valid, because it is what renders no comments.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_AbsentGiscus_Succeeds()
+    {
+        // Arrange
+        var options = new SiteOptions();
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Giscus).IsNull();
+            await Assert.That(result.Succeeded).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a giscus backend declaring all four members is accepted.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_Giscus_Succeeds()
+    {
+        // Arrange
+        var options = new SiteOptions { Giscus = Giscus() };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that an absent or blank id or category is rejected under a message naming the member at fault.
+    /// </summary>
+    [Test]
+    [Arguments(nameof(GiscusOptions.RepoId), null)]
+    [Arguments(nameof(GiscusOptions.RepoId), "")]
+    [Arguments(nameof(GiscusOptions.RepoId), "   ")]
+    [Arguments(nameof(GiscusOptions.Category), null)]
+    [Arguments(nameof(GiscusOptions.Category), "")]
+    [Arguments(nameof(GiscusOptions.Category), "   ")]
+    [Arguments(nameof(GiscusOptions.CategoryId), null)]
+    [Arguments(nameof(GiscusOptions.CategoryId), "")]
+    [Arguments(nameof(GiscusOptions.CategoryId), "   ")]
+    public async Task Validate_Test_BlankGiscusSetting_Fails(string setting, string? value)
+    {
+        // Arrange
+        var options = new SiteOptions { Giscus = Giscus(setting, value) };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains($"Giscus.{setting}");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an absent repository, or one not written as <c>owner/name</c>, is rejected under a
+    ///     message naming the member at fault.
+    /// </summary>
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("octocat")]
+    [Arguments("octocat/")]
+    [Arguments("/blog")]
+    [Arguments("octo cat/blog")]
+    [Arguments("octocat/blog/extra")]
+    public async Task Validate_Test_MalformedGiscusRepo_Fails(string? repo)
+    {
+        // Arrange
+        var options = new SiteOptions { Giscus = Giscus(nameof(GiscusOptions.Repo), repo) };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains("Giscus.Repo");
+        }
+    }
+
+    #endregion // Giscus Tests
+
     #region Helpers
 
     // An explicit content root is required: the stub defaults it to string.Empty, which would leave
@@ -329,6 +426,15 @@ public class SiteOptionsValidatorTests
 
         return options;
     }
+
+    // A valid backend, with the member named by setting replaced by value.
+    private static GiscusOptions Giscus(string? setting = null, string? value = null) => new()
+    {
+        Repo = setting is nameof(GiscusOptions.Repo) ? value : "octocat/blog",
+        RepoId = setting is nameof(GiscusOptions.RepoId) ? value : "R_kgDOxxxxxxx",
+        Category = setting is nameof(GiscusOptions.Category) ? value : "Comments",
+        CategoryId = setting is nameof(GiscusOptions.CategoryId) ? value : "DIC_kwDOxxxxxxxxxxxx",
+    };
 
     #endregion
 }
