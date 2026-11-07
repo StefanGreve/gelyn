@@ -236,6 +236,27 @@ internal sealed class ContentFixture
         CreateRendered("enableDiagramRendering", verbosity);
 
     /// <summary>
+    ///     Creates a fixture holding one page that enables syntax highlighting, beside a page and above a page
+    ///     that do not, so that a test can confirm the flag reaches neither.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html             no highlighting
+    ///     blog/index.md        -> blog/index.html        highlighting
+    ///     blog/hello.md        -> blog/hello.html        no highlighting
+    ///     blog/2026/index.md   -> blog/2026/index.html   no highlighting
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateHighlighted(LogLevel verbosity = LogLevel.Debug) =>
+        CreateRendered("enableSyntaxHighlighting", verbosity);
+
+    /// <summary>
     ///     Creates a fixture holding one page that opts into the feed, beside a page and above a page that do
     ///     not, so that a test can confirm the opt-in reaches neither.
     /// </summary>
@@ -356,6 +377,7 @@ internal sealed class ContentFixture
     ///     blog/index.md        -> blog/index.html         2026-02-01   carries [TOD]
     ///     blog/hello.md        -> blog/hello.html         2026-03-01   in the feed, footnote
     ///     blog/pipeline.md     -> blog/pipeline.html      no date, diagram
+    ///     blog/snippet.md      -> blog/snippet.html       no date, highlighted code
     ///     blog/2026/index.md   -> blog/2026/index.html    2026-06-01
     ///     blog/2026/retro.md   -> blog/2026/retro.html    2026-07-01   in the feed
     ///     </code>
@@ -413,6 +435,18 @@ internal sealed class ContentFixture
                     "```mermaid",
                     "flowchart LR",
                     "    A --> B",
+                    "```"))
+            .WriteFile(
+                "blog/snippet.md",
+                string.Join(
+                    Environment.NewLine,
+                    "---",
+                    "title: Snippet",
+                    "enableSyntaxHighlighting: true",
+                    "---",
+                    string.Empty,
+                    "```sh",
+                    "gelyn build",
                     "```"))
             .WriteDated("blog/2026/index.md", "Year 2026", "2026-06-01")
             .WriteSyndicated("blog/2026/retro.md", "Retro", "2026-07-01");

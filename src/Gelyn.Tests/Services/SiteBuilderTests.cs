@@ -367,8 +367,97 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a page enabling syntax highlighting imports Shiki as a module, highlights with the
+    ///     JavaScript engine and leaves the colours to the stylesheet.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Highlighter_IsLoadedByThePageThatEnablesIt()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateHighlighted();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = Path.Combine("blog", "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadHighlighterImport(fixture, page)).IsEqualTo(Module("shiki", fixture.Options.ShikiVersion));
+
+            await Assert.That(ReadPage(fixture, page))
+                .Contains("""<script type="module">""")
+                .And.Contains("engine: createJavaScriptRegexEngine()")
+                .And.Contains("defaultColor: false");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the highlighter precedes the resources the content tree supplies, so that a script of
+    ///     the author's finds the blocks already replaced.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Highlighter_PrecedesTheCascadedResources()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateHighlighted()
+            .WriteFile("app.js", "globalThis.app = 1");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
+
+        await Assert.That(markup.IndexOf("/shiki@", StringComparison.Ordinal))
+            .IsLessThan(markup.IndexOf("/app.js", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    ///     Verifies that syntax highlighting applies to the page declaring it alone, neither to the pages
+    ///     beside it nor to the pages below it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Highlighter_IsInheritedByNoPage()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateHighlighted();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(ReadHighlighterImport(fixture, "index.html")).IsNull();
+            await Assert.That(ReadHighlighterImport(fixture, Path.Combine("blog", "hello.html"))).IsNull();
+            await Assert.That(ReadHighlighterImport(fixture, Path.Combine("blog", "2026", "index.html"))).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the configured version is the one imported, so that a newer Shiki needs no new build
+    ///     of the tool.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Highlighter_RequestsTheConfiguredVersion()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateHighlighted();
+        fixture.Options.ShikiVersion = "1.2.3";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(ReadHighlighterImport(fixture, Path.Combine("blog", "index.html")))
+            .IsEqualTo(Module("shiki", "1.2.3"));
+    }
+
+    /// <summary>
     ///     Verifies that each renderer answers to its own key, so that a page carrying math pays nothing for
-    ///     diagrams and the other way round.
+    ///     diagrams or highlighting, and the same for the other two.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Renderers_AreEnabledIndependently()
@@ -376,17 +465,23 @@ public partial class SiteBuilderTests
         // Arrange
         var mathematical = ContentFixture.CreateMathematical();
         var diagrammatic = ContentFixture.CreateDiagrammatic();
+        var highlighted = ContentFixture.CreateHighlighted();
         string page = Path.Combine("blog", "index.html");
 
         // Act
         await mathematical.Builder.BuildAsync(CancellationToken.None);
         await diagrammatic.Builder.BuildAsync(CancellationToken.None);
+        await highlighted.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(ReadDiagramImport(mathematical, page)).IsNull();
+            await Assert.That(ReadHighlighterImport(mathematical, page)).IsNull();
             await Assert.That(ReadMathAssets(diagrammatic, page)).IsEmpty();
+            await Assert.That(ReadHighlighterImport(diagrammatic, page)).IsNull();
+            await Assert.That(ReadMathAssets(highlighted, page)).IsEmpty();
+            await Assert.That(ReadDiagramImport(highlighted, page)).IsNull();
         }
     }
 
@@ -1846,8 +1941,19 @@ public partial class SiteBuilderTests
         return match.Success ? match.Groups["url"].Value : null;
     }
 
+    private static string? ReadHighlighterImport(ContentFixture fixture, string outputPath)
+    {
+        Match match = HighlighterImport().Match(ReadPage(fixture, outputPath));
+
+        return match.Success ? match.Groups["url"].Value : null;
+    }
+
     private static string Package(string name, string version) =>
         $"https://cdn.jsdelivr.net/npm/{name}@{version}/dist";
+
+    // Shiki's dist entry imports bare specifiers, so the page loads the bundled build jsDelivr serves instead.
+    private static string Module(string name, string version) =>
+        $"https://cdn.jsdelivr.net/npm/{name}@{version}/+esm";
 
     [GeneratedRegex("""<link rel="canonical" href="(?<href>[^"]*)">""")]
     private static partial Regex CanonicalLink();
@@ -1863,6 +1969,9 @@ public partial class SiteBuilderTests
 
     [GeneratedRegex("import mermaid from \"(?<url>[^\"]*)\"")]
     private static partial Regex DiagramImport();
+
+    [GeneratedRegex("import \\{[^}]*\\} from \"(?<url>[^\"]*/shiki@[^\"]*)\"")]
+    private static partial Regex HighlighterImport();
 
     [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
     private static partial Regex CurrentLink();
