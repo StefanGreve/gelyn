@@ -15,8 +15,9 @@ internal static class PageLayout
     /// </summary>
     /// <remarks>
     ///     The head is rendered here and never passed in, because its contents depend on the page: a page
-    ///     that declares no description or date carries none of the corresponding tags. The body is expanded
-    ///     on the way through, every <c>[TOD]</c> marker it carries giving way to a table of documents.
+    ///     that declares no description or date carries none of the corresponding tags. The comment thread is
+    ///     rendered here for the same reason. The body is expanded on the way through, every <c>[TOD]</c>
+    ///     marker it carries giving way to a table of documents.
     /// </remarks>
     /// <param name="context">
     ///     The context the page is rendered against.
@@ -36,6 +37,7 @@ internal static class PageLayout
 
         string language = WebUtility.HtmlEncode(context.Options.Language);
         string head = HeadComponent.Render(context);
+        string comments = CommentsComponent.Render(context);
 
         string body = context.Page.Html.Contains(TableOfDocumentsComponent.Marker, StringComparison.Ordinal)
             ? context.Page.Html.Replace(TableOfDocumentsComponent.Marker, TableOfDocumentsComponent.Render(context), StringComparison.Ordinal)
@@ -52,6 +54,7 @@ internal static class PageLayout
                 <main>
                     {body}
                 </main>
+                {comments}
                 <hr />
                 {footer}
             </body>

@@ -548,6 +548,101 @@ public partial class SiteBuilderTests
 
     #endregion // BuildAsync Tests
 
+    #region Comments Tests
+
+    /// <summary>
+    ///     Verifies that a page enabling comments on a site configuring a backend carries the thread.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Comments_AreRenderedByThePageThatEnablesThem()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateCommented();
+        fixture.Options.Giscus = Commented();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(ReadPage(fixture, Path.Combine("blog", "index.html")))
+            .Contains("""<section class="giscus" aria-label="Comments">""")
+            .And.Matches(GiscusScript());
+    }
+
+    /// <summary>
+    ///     Verifies that the thread follows the content and precedes the footer, outside <c>main</c>.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Comments_FollowTheContent()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateCommented();
+        fixture.Options.Giscus = Commented();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
+        int script = GiscusScript().Match(markup).Index;
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(script).IsGreaterThan(markup.IndexOf("</main>", StringComparison.Ordinal));
+            await Assert.That(script).IsLessThan(markup.LastIndexOf("<hr />", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the flag applies to the page declaring it alone, reaching neither a sibling nor a page
+    ///     below it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Comments_AreInheritedByNoPage()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateCommented();
+        fixture.Options.Giscus = Commented();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] pages = ["index.html", Path.Combine("blog", "hello.html"), Path.Combine("blog", "2026", "index.html")];
+
+        using (Assert.Multiple())
+        {
+            foreach (string page in pages)
+                await Assert.That(ReadPage(fixture, page)).DoesNotMatch(GiscusScript());
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page enabling comments on a site configuring no backend renders nothing at all.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Comments_AreSilentWithoutConfiguration()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateCommented();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            foreach (string page in fixture.EnumerateOutput())
+            {
+                await Assert.That(fixture.ReadOutput(page))
+                    .DoesNotMatch(GiscusScript())
+                    .And.DoesNotContain("class=\"giscus\"");
+            }
+        }
+    }
+
+    #endregion // Comments Tests
+
     #region Shared Fragment Tests
 
     /// <summary>
@@ -1849,6 +1944,14 @@ public partial class SiteBuilderTests
 
     #region Helpers
 
+    private static GiscusOptions Commented() => new()
+    {
+        Repo = "octocat/blog",
+        RepoId = "R_kgDOxxxxxxx",
+        Category = "Comments",
+        CategoryId = "DIC_kwDOxxxxxxxxxxxx",
+    };
+
     private static ContentFixture Exhaustive() =>
         ContentFixture.CreateExhaustive()
             .WithBaseUrl("https://example.com/blog")
@@ -1996,6 +2099,9 @@ public partial class SiteBuilderTests
 
     [GeneratedRegex("import \\{[^}]*\\} from \"(?<url>[^\"]*/shiki@[^\"]*)\"")]
     private static partial Regex HighlighterImport();
+
+    [GeneratedRegex("<script src=\"https://giscus\\.app/client\\.js\"")]
+    private static partial Regex GiscusScript();
 
     [GeneratedRegex("aria-current=\"page\" href=\"(?<href>[^\"]*)\"")]
     private static partial Regex CurrentLink();
