@@ -24,7 +24,7 @@ namespace Gelyn.Services;
 ///             <description><see cref="Scan"/> locates the files without reading their contents.</description>
 ///         </item>
 ///         <item>
-///             <description><see cref="RenderAsync"/> reads and renders what the scan located.</description>
+///             <description><see cref="Render"/> reads and renders what the scan located.</description>
 ///         </item>
 ///     </list>
 /// </remarks>
@@ -96,6 +96,10 @@ internal sealed class ContentPipeline
     /// <summary>
     ///     Reads each located page, renders its Markdown and resolves the files its front matter declares.
     /// </summary>
+    /// <remarks>
+    ///     Pages are rendered several at a time. When more than one fails, the failure of the first page in
+    ///     order surfaces, as it would if they were rendered one after another.
+    /// </remarks>
     /// <param name="items">
     ///     Every item a scan located, in the order the pages among them are to be rendered. The other items
     ///     are the files a page's front matter may declare.
@@ -110,9 +114,7 @@ internal sealed class ContentPipeline
     ///     A front matter block is not well-formed YAML, or declares a stylesheet or a script the scan did not
     ///     locate.
     /// </exception>
-    public async Task<IReadOnlyList<ContentPage>> RenderAsync(
-        IReadOnlyList<ContentItem> items,
-        CancellationToken cancellationToken)
+    public IReadOnlyList<ContentPage> Render(IReadOnlyList<ContentItem> items, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(items);
 
@@ -123,33 +125,31 @@ internal sealed class ContentPipeline
             .Where(static item => item.Kind is not ContentKind.Page)
             .ToDictionary(item => path.GetFullPath(item.SourcePath), StringComparer.Ordinal);
 
-        var rendered = new List<ContentPage>(items.Count - files.Count);
+        ContentItem[] pages = [.. items.Where(static item => item.Kind is ContentKind.Page)];
 
-        foreach (ContentItem item in items.Where(static item => item.Kind is ContentKind.Page))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            string markdown = await this._fileSystem.File
-                .ReadAllTextAsync(item.SourcePath, cancellationToken)
-                .ConfigureAwait(false);
-
-            RenderedMarkdown document = MarkdownRenderer.Render(markdown);
-            FrontMatter? frontMatter = document.FrontMatter;
-
-            IReadOnlyList<string> stylesheets = this.ResolveAssets(item, item.Stylesheets, frontMatter?.Stylesheets, ContentKind.Stylesheet, files);
-            IReadOnlyList<string> scripts = this.ResolveAssets(item, item.Scripts, frontMatter?.Scripts, ContentKind.Script, files);
-
-            rendered.Add(item.ToContentPage(document) with
-            {
-                Stylesheets = stylesheets,
-                Scripts = scripts
-            });
-        }
-
-        return rendered;
+        return OrderedParallel.Select(pages, item => this.RenderPage(item, files), cancellationToken);
     }
 
     #region Helpers
+
+    // Read synchronously, because the caller already runs pages in parallel and an asynchronous read of a
+    // small file costs more in overlapped I/O and continuations than it frees up.
+    private ContentPage RenderPage(ContentItem item, Dictionary<string, ContentItem> files)
+    {
+        string markdown = this._fileSystem.File.ReadAllText(item.SourcePath);
+
+        RenderedMarkdown document = MarkdownRenderer.Render(markdown);
+        FrontMatter? frontMatter = document.FrontMatter;
+
+        IReadOnlyList<string> stylesheets = this.ResolveAssets(item, item.Stylesheets, frontMatter?.Stylesheets, ContentKind.Stylesheet, files);
+        IReadOnlyList<string> scripts = this.ResolveAssets(item, item.Scripts, frontMatter?.Scripts, ContentKind.Script, files);
+
+        return item.ToContentPage(document) with
+        {
+            Stylesheets = stylesheets,
+            Scripts = scripts
+        };
+    }
 
     /// <summary>
     ///     Locates every file in one directory and in the directories below it, classifies each one and

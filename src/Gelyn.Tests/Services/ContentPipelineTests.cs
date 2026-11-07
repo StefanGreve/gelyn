@@ -720,20 +720,20 @@ public class ContentPipelineTests
 
     #endregion // Scan Tests
 
-    #region RenderAsync Tests
+    #region Render Tests
 
     /// <summary>
     ///     Verifies that Markdown nested below a section is rendered however deep it sits, and that the
     ///     output path uses the native separator while the URL uses forward slashes.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_NestedContent_IsRendered()
+    public async Task Render_Test_NestedContent_IsRendered()
     {
         // Arrange
         var fixture = ContentFixture.Create();
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
         ContentPage deep = pages.Single(page => page.Title == "Deep");
 
         // Assert
@@ -753,7 +753,7 @@ public class ContentPipelineTests
     ///     any other root-level page, and never to the name of the content directory.
     /// </remarks>
     [Test]
-    public async Task RenderAsync_Test_MissingFrontMatterTitle_FallsBackToTheName()
+    public async Task Render_Test_MissingFrontMatterTitle_FallsBackToTheName()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
@@ -762,7 +762,7 @@ public class ContentPipelineTests
             .Write("blog/index.md");
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
 
         // Assert
         using (Assert.Multiple())
@@ -778,13 +778,13 @@ public class ContentPipelineTests
     ///     neither inherited by a page below the declaration nor shared with a page beside it.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_FeedOptIn_ReachesTheDeclaringPageAlone()
+    public async Task Render_Test_FeedOptIn_ReachesTheDeclaringPageAlone()
     {
         // Arrange
         var fixture = ContentFixture.CreateSyndicated();
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
 
         // Assert
         using (Assert.Multiple())
@@ -801,7 +801,7 @@ public class ContentPipelineTests
     ///     page's own directory, and that it reaches the declaring page alone.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_DeclaredStylesheet_FollowsThePlacedOnes()
+    public async Task Render_Test_DeclaredStylesheet_FollowsThePlacedOnes()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateStyled()
@@ -809,7 +809,7 @@ public class ContentPipelineTests
             .WriteFile("blog/hello.md", Declaring("stylesheets: [../assets/chart.css]"));
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
 
         // Assert
         using (Assert.Multiple())
@@ -824,7 +824,7 @@ public class ContentPipelineTests
     ///     which is the order they run in.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_DeclaredScripts_FollowThePlacedOnesInOrder()
+    public async Task Render_Test_DeclaredScripts_FollowThePlacedOnesInOrder()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateScripted()
@@ -833,7 +833,7 @@ public class ContentPipelineTests
             .WriteFile("about.md", Declaring("scripts: [assets/lib.js, assets/chart.js]"));
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
 
         // Assert
         await Assert.That(Scripts(pages, "/about.html")).IsEqualTo("/app.js,/assets/lib.js,/assets/chart.js");
@@ -844,14 +844,14 @@ public class ContentPipelineTests
     ///     position placement gave it.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_DeclaredStylesheetAlreadyPlaced_IsLinkedOnce()
+    public async Task Render_Test_DeclaredStylesheetAlreadyPlaced_IsLinkedOnce()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateStyled()
             .WriteFile("blog/hello.md", Declaring("stylesheets: [../styles.css]"));
 
         // Act
-        IReadOnlyList<ContentPage> pages = await RenderAsync(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture);
 
         // Assert
         await Assert.That(Stylesheets(pages, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
@@ -866,7 +866,7 @@ public class ContentPipelineTests
     [Arguments("stylesheets: [assets/chart.js]")]
     [Arguments("stylesheets: [/assets/chart.css]")]
     [Arguments("stylesheets: ['']")]
-    public async Task RenderAsync_Test_UnresolvedDeclaration_Throws(string line)
+    public async Task Render_Test_UnresolvedDeclaration_Throws(string line)
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
@@ -876,7 +876,7 @@ public class ContentPipelineTests
             .WriteFile("about.md", Declaring(line));
 
         // Act and Assert
-        await Assert.That(async () => await RenderAsync(fixture)).Throws<YamlException>();
+        await Assert.That(() => Render(fixture)).Throws<YamlException>();
     }
 
     /// <summary>
@@ -884,7 +884,7 @@ public class ContentPipelineTests
     ///     the link pointing at nothing.
     /// </summary>
     [Test]
-    public async Task RenderAsync_Test_ExcludedStylesheet_CannotBeDeclared()
+    public async Task Render_Test_ExcludedStylesheet_CannotBeDeclared()
     {
         // Arrange
         ContentFixture fixture = ContentFixture.CreateEmpty()
@@ -894,10 +894,81 @@ public class ContentPipelineTests
             .WithExcludePatterns("draft.css");
 
         // Act and Assert
-        await Assert.That(async () => await RenderAsync(fixture)).Throws<YamlException>();
+        await Assert.That(() => Render(fixture)).Throws<YamlException>();
     }
 
-    #endregion // RenderAsync Tests
+    /// <summary>
+    ///     Verifies that pages come back in the order the scan located them, although they are rendered
+    ///     several at a time.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_ManyPages_KeepTheScanOrder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty().Write("index.md", "Home");
+
+        for (int index = 0; index < 200; index++)
+            fixture.Write($"page{index:D3}.md", $"Page {index}");
+
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Act
+        IReadOnlyList<ContentPage> pages = fixture.Pipeline.Render(items, CancellationToken.None);
+
+        // Assert
+        await Assert.That(string.Join(',', pages.Select(static page => page.Href)))
+            .IsEqualTo(string.Join(',', items.Select(static item => item.Href)));
+    }
+
+    /// <summary>
+    ///     Verifies that when several pages carry malformed front matter, the failure of the first one in
+    ///     scan order surfaces, which is the page a sequential render would have stopped at.
+    /// </summary>
+    [Test]
+    [Repeat(5)]
+    public async Task Render_Test_SeveralMalformedPages_SurfaceTheFirstInOrder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty().Write("index.md", "Home");
+
+        for (int index = 0; index < 100; index++)
+            fixture.Write($"page{index:D3}.md", $"Page {index}");
+
+        fixture
+            .WriteFile("page010.md", "---\ntitle: [Ten\n---")
+            .WriteFile("page050.md", "---\ntitle: \"Fifty\n---")
+            .WriteFile("page090.md", "---\ntitle: {Ninety\n---");
+
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem first = items.Single(static item => item.Href == "/page010.html");
+
+        var expected = await Assert.That(() => fixture.Pipeline.Render([first], CancellationToken.None))
+            .ThrowsExactly<YamlException>();
+
+        // Act and Assert
+        await Assert.That(() => fixture.Pipeline.Render(items, CancellationToken.None))
+            .ThrowsExactly<YamlException>()
+            .WithMessage(expected!.Message);
+    }
+
+    /// <summary>
+    ///     Verifies that a canceled token surfaces as a cancellation.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_CanceledToken_ThrowsOperationCanceledException()
+    {
+        // Arrange
+        var fixture = ContentFixture.Create();
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        // Act and Assert
+        await Assert.That(() => fixture.Pipeline.Render(items, cancellation.Token))
+            .Throws<OperationCanceledException>();
+    }
+
+    #endregion // Render Tests
 
     #region Helpers
 
@@ -926,8 +997,8 @@ public class ContentPipelineTests
     private static string Declaring(string line) =>
         string.Join(Environment.NewLine, "---", line, "---");
 
-    private static Task<IReadOnlyList<ContentPage>> RenderAsync(ContentFixture fixture) =>
-        fixture.Pipeline.RenderAsync(Scan(fixture), CancellationToken.None);
+    private static IReadOnlyList<ContentPage> Render(ContentFixture fixture) =>
+        fixture.Pipeline.Render(Scan(fixture), CancellationToken.None);
 
     #endregion
 }

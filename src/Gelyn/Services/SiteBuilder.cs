@@ -105,9 +105,7 @@ internal sealed class SiteBuilder
         IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
         long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
 
-        IReadOnlyList<ContentPage> pages = await this._pipeline
-            .RenderAsync(items, cancellationToken)
-            .ConfigureAwait(false);
+        IReadOnlyList<ContentPage> pages = this._pipeline.Render(items, cancellationToken);
 
         long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
 
