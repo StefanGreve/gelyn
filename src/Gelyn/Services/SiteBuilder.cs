@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO.Abstractions;
 
+using Gelyn.Abstractions;
 using Gelyn.Components;
 using Gelyn.Core;
 using Gelyn.Core.Context;
@@ -17,7 +18,7 @@ using Microsoft.Extensions.Options;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Writes the finished site to the output directory.
+///     <inheritdoc path="/summary/node()"/>
 /// </summary>
 /// <remarks>
 ///     The build is processed in this order:
@@ -53,9 +54,9 @@ namespace Gelyn.Services;
 ///     still lists them in input order, and a failure surfaces as the one a sequential pass would have stopped
 ///     at.
 /// </remarks>
-internal sealed class SiteBuilder
+internal sealed class SiteBuilder : SiteBuilderContract
 {
-    private readonly ContentPipeline _pipeline;
+    private readonly ContentPipelineContract _pipeline;
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
@@ -80,7 +81,7 @@ internal sealed class SiteBuilder
     ///     Receives the records the build writes.
     /// </param>
     public SiteBuilder(
-        ContentPipeline pipeline,
+        ContentPipelineContract pipeline,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
@@ -93,20 +94,12 @@ internal sealed class SiteBuilder
         this._logger = logger;
     }
 
-    /// <summary>
-    ///     Generates the whole site.
-    /// </summary>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
-    /// </param>
-    /// <returns>
-    ///     What the build produced, and how long it took.
-    /// </returns>
+    /// <inheritdoc/>
     /// <remarks>
     ///     The build runs on a thread pool thread, because its passes over the pages block until every page
     ///     is done.
     /// </remarks>
-    public Task<BuildReport> BuildAsync(CancellationToken cancellationToken) =>
+    public override Task<BuildReport> BuildAsync(CancellationToken cancellationToken) =>
         Task.Run(() => this.Build(cancellationToken), CancellationToken.None);
 
     #region Helpers
@@ -456,8 +449,8 @@ internal sealed class SiteBuilder
     ///     account for, together with the directories those deletions leave empty.
     /// </summary>
     /// <remarks>
-    ///     Recursive like <see cref="ContentPipeline.CollectItems"/>, because a flat enumeration would descend
-    ///     into a skipped directory and cost a deployed <c>.git</c> its contents.
+    ///     Recursive like the scan, because a flat enumeration would descend into a skipped directory and
+    ///     cost a deployed <c>.git</c> its contents.
     /// </remarks>
     /// <param name="directory">
     ///     The directory to walk.

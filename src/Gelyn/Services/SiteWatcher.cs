@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Threading.Channels;
 
+using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
@@ -20,7 +21,7 @@ using Spectre.Console;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Rebuilds the site whenever a source file or the configuration file changes.
+///     <inheritdoc path="/summary/node()"/>
 /// </summary>
 /// <remarks>
 ///     Two watchers report into one channel the rebuild loop reads, so a rebuild never runs on a callback
@@ -29,7 +30,7 @@ namespace Gelyn.Services;
 ///     the watcher factory of <c>TestableIO.System.IO.Abstractions.TestingHelpers</c> throwing from every
 ///     member.
 /// </remarks>
-internal sealed class SiteWatcher
+internal sealed class SiteWatcher : SiteWatcherContract
 {
     /// <summary>
     ///     How long the loop waits for further changes before it rebuilds.
@@ -57,7 +58,7 @@ internal sealed class SiteWatcher
     private readonly Dictionary<string, (DateTime Written, long Length)> _entries =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly SiteBuilder _builder;
+    private readonly SiteBuilderContract _builder;
     private readonly IConfigurationRoot _configuration;
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SiteOptions> _options;
@@ -98,7 +99,7 @@ internal sealed class SiteWatcher
     ///     Receives the records the loop writes.
     /// </param>
     public SiteWatcher(
-        SiteBuilder builder,
+        SiteBuilderContract builder,
         IConfigurationRoot configuration,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
@@ -125,20 +126,8 @@ internal sealed class SiteWatcher
     internal ChannelWriter<string> Changes =>
         this._changes.Writer;
 
-    /// <summary>
-    ///     Watches the content tree and the configuration file until the operation is cancelled, rebuilding
-    ///     the site once per burst of changes.
-    /// </summary>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
-    /// </param>
-    /// <returns>
-    ///     A task that completes once the loop has stopped.
-    /// </returns>
-    /// <exception cref="ArgumentException">
-    ///     The content directory or the directory holding the configuration file does not exist.
-    /// </exception>
-    public async Task WatchAsync(CancellationToken cancellationToken)
+    /// <inheritdoc/>
+    public override async Task WatchAsync(CancellationToken cancellationToken)
     {
         SiteOptions options = this._options.CurrentValue;
         string root = this._environment.ContentRootPath;

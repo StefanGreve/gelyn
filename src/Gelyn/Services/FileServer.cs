@@ -2,6 +2,7 @@ using System.IO.Abstractions;
 using System.Net;
 using System.Net.Mime;
 
+using Gelyn.Abstractions;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
@@ -14,14 +15,14 @@ using Spectre.Console;
 namespace Gelyn.Services;
 
 /// <summary>
-///     Answers HTTP requests for the files one build produced.
+///     <inheritdoc path="/summary/node()"/>
 /// </summary>
 /// <remarks>
 ///     Written with local development in mind. Do not use this class in a production environment: it binds
 ///     loopback and answers one request at a time. This narrow scope is what makes <see cref="HttpListener"/> a
 ///     suitable transport here, since none of the cautions in its reference applies to a preview server.
 /// </remarks>
-internal sealed class FileServer
+internal sealed class FileServer : FileServerContract
 {
     /// <summary>
     ///     The name of the <c>Refresh</c> header, spelled out because <see cref="HttpResponseHeader"/> covers
@@ -42,7 +43,7 @@ internal sealed class FileServer
     private const string LoopbackAddress = "127.0.0.1";
     private const string LoopbackName = "localhost";
 
-    private readonly StaticFileResolver _resolver;
+    private readonly StaticFileResolverContract _resolver;
     private readonly IFileSystem _fileSystem;
     private readonly IAnsiConsole _stdOut;
     private readonly IAnsiConsole _stdErr;
@@ -71,7 +72,7 @@ internal sealed class FileServer
     ///     Receives the records the server writes.
     /// </param>
     public FileServer(
-        StaticFileResolver resolver,
+        StaticFileResolverContract resolver,
         IFileSystem fileSystem,
         [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
         [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr,
@@ -121,32 +122,8 @@ internal sealed class FileServer
         string.Create(Tool.Culture, $"http://{LoopbackName}:{port}/"),
     ];
 
-    /// <summary>
-    ///     Serves one directory until the operation is cancelled.
-    /// </summary>
-    /// <param name="outputDirectory">
-    ///     The directory the generated site was written to.
-    /// </param>
-    /// <param name="port">
-    ///     The port to serve on.
-    /// </param>
-    /// <param name="launchBrowser">
-    ///     Indicates whether the announced address is opened in the default browser.
-    /// </param>
-    /// <param name="refreshSeconds">
-    ///     The interval an HTML response asks the browser to reload itself after, or <see langword="null"/>
-    ///     when no response carries the header.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
-    /// </param>
-    /// <returns>
-    ///     A task that completes once the server has stopped.
-    /// </returns>
-    /// <exception cref="PlatformNotSupportedException">
-    ///     The platform carries no usable <see cref="HttpListener"/> implementation.
-    /// </exception>
-    public async Task ServeAsync(
+    /// <inheritdoc/>
+    public override async Task ServeAsync(
         string outputDirectory,
         int port,
         bool launchBrowser,

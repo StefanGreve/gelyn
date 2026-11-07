@@ -18,10 +18,14 @@ public class DependencyTests : ArchBase
     /// <remarks>
     ///     The tool layers as commands over services over components over the model, each layer reaching
     ///     down and never up: a command drives a service, a service composes components, and a component
-    ///     reads the model. The model carries data alone, so it depends on none of the three. Each pair
-    ///     below names a layer and one of the layers it has to stay independent of.
+    ///     reads the model. The model carries data alone, so it depends on none of the three, and the
+    ///     abstractions sit beside it, each implemented by one service. Each pair below names a layer and
+    ///     one of the layers it has to stay independent of.
     /// </remarks>
     [Test]
+    [Arguments(AbstractionsNamespace, CommandsNamespace)]
+    [Arguments(AbstractionsNamespace, ComponentsNamespace)]
+    [Arguments(AbstractionsNamespace, ServicesNamespace)]
     [Arguments(ModelNamespace, CommandsNamespace)]
     [Arguments(ModelNamespace, ComponentsNamespace)]
     [Arguments(ModelNamespace, ServicesNamespace)]

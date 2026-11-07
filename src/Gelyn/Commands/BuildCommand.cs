@@ -1,9 +1,9 @@
 using System.CommandLine;
 
+using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
-using Gelyn.Services;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +29,7 @@ internal sealed class BuildCommand : Command
     ///     The console the command writes its failures to.
     /// </param>
     public BuildCommand(
-        SiteBuilder siteBuilder,
+        SiteBuilderContract siteBuilder,
         [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
         [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("build", "Generate the site into the output directory.")

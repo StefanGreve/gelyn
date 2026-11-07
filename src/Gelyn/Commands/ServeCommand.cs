@@ -2,10 +2,10 @@ using System.CommandLine;
 using System.IO.Abstractions;
 using System.Net;
 
+using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
-using Gelyn.Services;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -63,9 +63,9 @@ internal sealed class ServeCommand : Command
     ///     The console the command writes its failures to.
     /// </param>
     public ServeCommand(
-        SiteBuilder siteBuilder,
-        FileServer server,
-        SiteWatcher watcher,
+        SiteBuilderContract siteBuilder,
+        FileServerContract server,
+        SiteWatcherContract watcher,
         IHostEnvironment environment,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,

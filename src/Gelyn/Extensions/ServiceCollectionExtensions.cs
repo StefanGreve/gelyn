@@ -1,3 +1,4 @@
+using Gelyn.Abstractions;
 using Gelyn.Commands;
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -41,6 +42,9 @@ internal static class ServiceCollectionExtensions
     /// <summary>
     ///     Registers the services that discover content, generate the site and preview it.
     /// </summary>
+    /// <remarks>
+    ///     Each one is registered under its abstraction, which is the type its consumers ask for.
+    /// </remarks>
     /// <param name="services">
     ///     The collection to add the registrations to.
     /// </param>
@@ -49,11 +53,11 @@ internal static class ServiceCollectionExtensions
     /// </returns>
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        services.TryAddSingleton<ContentPipeline>();
-        services.TryAddSingleton<SiteBuilder>();
-        services.TryAddSingleton<StaticFileResolver>();
-        services.TryAddSingleton<FileServer>();
-        services.TryAddSingleton<SiteWatcher>();
+        services.TryAddSingleton<ContentPipelineContract, ContentPipeline>();
+        services.TryAddSingleton<SiteBuilderContract, SiteBuilder>();
+        services.TryAddSingleton<StaticFileResolverContract, StaticFileResolver>();
+        services.TryAddSingleton<FileServerContract, FileServer>();
+        services.TryAddSingleton<SiteWatcherContract, SiteWatcher>();
 
         return services;
     }
