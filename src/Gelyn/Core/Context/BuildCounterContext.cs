@@ -61,4 +61,9 @@ internal sealed record BuildCounterContext
     ///     How long the build took in total, measured before the reports are written.
     /// </summary>
     public required TimeSpan Elapsed { get; init; }
+
+    /// <summary>
+    ///     What the build allocated on the managed heap and what collecting it cost.
+    /// </summary>
+    public required GarbageCollectionContext GarbageCollection { get; init; }
 }

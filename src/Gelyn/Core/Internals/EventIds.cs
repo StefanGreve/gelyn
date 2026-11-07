@@ -67,6 +67,11 @@ internal static class EventIds
     /// </summary>
     internal const int SITEMAP_SKIPPED_WITHOUT_BASE_URL = 1_010;
 
+    /// <summary>
+    ///     The build has finished, and what it allocated and what collecting that cost have been counted.
+    /// </summary>
+    internal const int GARBAGE_COLLECTED = 1_011;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

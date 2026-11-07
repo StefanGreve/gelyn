@@ -115,6 +115,7 @@ internal sealed class SiteBuilder
     {
         SiteOptions options = this._options.CurrentValue;
         long started = Stopwatch.GetTimestamp();
+        var heapStarted = GarbageCollectionContext.Capture();
 
         // The total is reported either way, so only the per-page detail is worth guarding.
         bool isMeasuring = this._logger.IsEnabled(LogLevel.Debug);
@@ -161,6 +162,7 @@ internal sealed class SiteBuilder
                 WriteTicks = writeTicks,
                 RemoveTicks = removeTicks,
                 Elapsed = elapsed,
+                GarbageCollection = GarbageCollectionContext.Capture().Since(heapStarted),
             });
         }
 
@@ -528,6 +530,16 @@ internal sealed class SiteBuilder
         this._logger.LogComposeCompleted(counters.PageCount, counters.ComposeTicks.TotalMilliseconds);
         this._logger.LogWriteCompleted(counters.FileCount, counters.WriteTicks.TotalMilliseconds);
         this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
+
+        GarbageCollectionContext heap = counters.GarbageCollection;
+
+        this._logger.LogGarbageCollected(
+            heap.AllocatedBytes / (1024d * 1024d),
+            heap.Pause.TotalMilliseconds,
+            heap.Gen0Count,
+            heap.Gen1Count,
+            heap.Gen2Count);
+
         this._logger.LogBuildCompleted(counters.FileCount + counters.RemovedCount, counters.Elapsed.TotalMilliseconds);
     }
 

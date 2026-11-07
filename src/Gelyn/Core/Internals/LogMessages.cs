@@ -115,6 +115,41 @@ internal static partial class LogMessages
     internal static partial void LogRemoveCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
 
     /// <summary>
+    ///     Reports what the build allocated on the managed heap and what collecting it cost.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="allocatedMegabytes">
+    ///     The managed memory the build allocated, in megabytes.
+    /// </param>
+    /// <param name="gen0Count">
+    ///     The number of generation 0 collections during the build.
+    /// </param>
+    /// <param name="gen1Count">
+    ///     The number of generation 1 collections during the build, each of which also collected generation 0.
+    /// </param>
+    /// <param name="gen2Count">
+    ///     The number of generation 2 collections during the build, each of which also collected the lower two.
+    /// </param>
+    /// <param name="pauseMilliseconds">
+    ///     How long those collections paused the build in total.
+    /// </param>
+    [LoggerMessage(
+        EventId = EventIds.GARBAGE_COLLECTED,
+        EventName = nameof(EventIds.GARBAGE_COLLECTED),
+        Level = LogLevel.Debug,
+        SkipEnabledCheck = true,
+        Message = "Allocated {AllocatedMegabytes:F1} MB, paused {PauseMilliseconds:F2} ms for {Gen0Count}/{Gen1Count}/{Gen2Count} collection(s)")]
+    internal static partial void LogGarbageCollected(
+        this ILogger logger,
+        double allocatedMegabytes,
+        double pauseMilliseconds,
+        int gen0Count,
+        int gen1Count,
+        int gen2Count);
+
+    /// <summary>
     ///     Reports how long the whole build took.
     /// </summary>
     /// <param name="logger">

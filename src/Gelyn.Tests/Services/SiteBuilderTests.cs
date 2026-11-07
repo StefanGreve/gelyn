@@ -1463,7 +1463,8 @@ public partial class SiteBuilderTests
     #region Counter Tests
 
     /// <summary>
-    ///     Verifies that the build reports one counter per phase, in the order the phases run.
+    ///     Verifies that the build reports one counter per phase, in the order the phases run, with the heap
+    ///     figures ahead of the total.
     /// </summary>
     /// <remarks>
     ///     Compared as a joined string, because <c>IsEquivalentTo</c> disregards the order under test.
@@ -1481,6 +1482,7 @@ public partial class SiteBuilderTests
             EventIds.COMPOSE_COMPLETED,
             EventIds.WRITE_COMPLETED,
             EventIds.REMOVE_COMPLETED,
+            EventIds.GARBAGE_COLLECTED,
             EventIds.BUILD_COMPLETED,
         ];
 
@@ -1581,7 +1583,7 @@ public partial class SiteBuilderTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(fixture.Records.Count).IsEqualTo(6);
+            await Assert.That(fixture.Records.Count).IsEqualTo(7);
 
             foreach (FakeLogRecord record in fixture.Records)
                 await Assert.That(record.Level).IsEqualTo(LogLevel.Debug);
@@ -1648,6 +1650,35 @@ public partial class SiteBuilderTests
 
             await Assert.That(report.Elapsed.TotalMilliseconds)
                 .IsEqualTo(Elapsed(fixture, EventIds.BUILD_COMPLETED));
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the build reports what it allocated and how the collector responded, with the three
+    ///     generation counts nested the way collections nest.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_GarbageCollection_IsReported()
+    {
+        // Arrange
+        var fixture = ContentFixture.Create();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        FakeLogRecord record = Reported(fixture, EventIds.GARBAGE_COLLECTED);
+        int gen0 = Value<int>(record, "Gen0Count");
+        int gen1 = Value<int>(record, "Gen1Count");
+        int gen2 = Value<int>(record, "Gen2Count");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(Value<double>(record, "AllocatedMegabytes")).IsGreaterThan(0);
+            await Assert.That(Value<double>(record, "PauseMilliseconds")).IsGreaterThanOrEqualTo(0);
+            await Assert.That(gen0).IsGreaterThanOrEqualTo(gen1);
+            await Assert.That(gen1).IsGreaterThanOrEqualTo(gen2);
+            await Assert.That(gen2).IsGreaterThanOrEqualTo(0);
         }
     }
 

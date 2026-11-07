@@ -82,6 +82,7 @@ A build of the example site reports its phases like this:
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1002] Composed 17 page(s) in 0.22 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1003] Wrote 22 file(s) in 16.24 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1004] Removed 0 file(s) in 0.98 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1011] Allocated 2.1 MB, paused 0.00 ms for 0/0/0 collection(s)
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1005] Processed 22 file(s) in 20.10 ms
 ```
 
@@ -89,6 +90,12 @@ Scanning, rendering and removing are measured on their own. Composing and writin
 composes and writes pages on several threads at once, and a page is being written while others are still
 being composed. The two phases therefore share the time of that pass in proportion to the thread time each
 took, which keeps the phases adding up to the total that the last line reports.
+
+The line before the total says what the build allocated on the managed heap, how long the garbage collector
+paused it, and how many collections of generation 0, 1 and 2 ran meanwhile. A collection of a higher
+generation collects the lower ones too, so the three counts never increase from left to right. The pause is
+the figure to watch: as long as it stays a small fraction of the rendering time, allocation is not what the
+build waits on.
 
 `--verbosity` accepts any `LogLevel` name: `trace`, `debug`, `information`, `warning`, `error`, `critical`, or
 `none`. It defaults to `warning`, which is why a normal build stays quiet.
