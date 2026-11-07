@@ -59,6 +59,7 @@ internal static class Sitemap
         {
             Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             Indent = true,
+            NewLineChars = Tool.LineEnding,
         };
 
         using var buffer = new MemoryStream();

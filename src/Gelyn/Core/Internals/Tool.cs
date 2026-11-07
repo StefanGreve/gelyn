@@ -32,4 +32,10 @@ internal static class Tool
     ///     of a host that merely references the assembly, which is where stating it explicitly earns its place.
     /// </remarks>
     internal static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
+
+    /// <summary>
+    ///     The line ending every generated document ends its lines on, independent of the host and the sources.
+    /// </summary>
+    /// <seealso cref="StringUtils.NormalizeLineEndings"/>
+    internal const string LineEnding = "\n";
 }

@@ -240,7 +240,7 @@ internal sealed class SiteBuilder
         return new PageWriteContext
         {
             Written = written,
-            ComposeTicks = sharedTicks + Apportion(passTicks, composeTicks, composeTicks + writeTicks),
+            ComposeTicks = sharedTicks + ProrateTicks(passTicks, composeTicks, composeTicks + writeTicks),
         };
     }
 
@@ -288,11 +288,11 @@ internal sealed class SiteBuilder
         RenderContext context,
         Dictionary<string, string> banners,
         Dictionary<string, string> footers) =>
-        PageLayout.Render(context, banners[BannerKey(context.Page)], footers[FooterKey(context.Page)]);
+        StringUtils.NormalizeLineEndings(PageLayout.Render(context, banners[BannerKey(context.Page)], footers[FooterKey(context.Page)]));
 
     // Compose and write overlap across threads, so neither has a wall time of its own. The pass's wall time is
     // split in the ratio of the thread time each took, which keeps the phases adding up to the build total.
-    private static long Apportion(long wallTicks, long partTicks, long wholeTicks) =>
+    private static long ProrateTicks(long wallTicks, long partTicks, long wholeTicks) =>
         wholeTicks == 0 ? 0 : (long)((double)wallTicks * partTicks / wholeTicks);
 
     /// <summary>

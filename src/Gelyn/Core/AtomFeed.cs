@@ -75,6 +75,7 @@ internal static class AtomFeed
         {
             Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             Indent = true,
+            NewLineChars = Tool.LineEnding,
         };
 
         using var buffer = new MemoryStream();

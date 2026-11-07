@@ -114,14 +114,9 @@ public class SitemapTests
     #region Document Tests
 
     /// <summary>
-    ///     Verifies that the whole document is what the protocol asks for, down to the indentation and the
-    ///     order of the elements inside a location.
+    ///     Verifies that the whole document is what the protocol asks for, down to the indentation, the line
+    ///     feeds and the order of the elements inside a location.
     /// </summary>
-    /// <remarks>
-    ///     Line endings are normalized before the comparison, because
-    ///     <see cref="System.Xml.XmlWriterSettings.NewLineChars"/> defaults to the line ending of the platform
-    ///     the build ran on, as every component writing HTML does. The structure is what is under test here.
-    /// </remarks>
     [Test]
     public async Task Render_Test_Document_MatchesTheProtocol()
     {
@@ -145,7 +140,7 @@ public class SitemapTests
         string xml = Xml(Options(), pages);
 
         // Assert
-        await Assert.That(xml.ReplaceLineEndings("\n")).IsEqualTo(expected);
+        await Assert.That(xml).IsEqualTo(expected);
     }
 
     /// <summary>

@@ -1821,6 +1821,30 @@ public partial class SiteBuilderTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a page ends every line on a line feed independent of the source and the host, so that
+    ///     a build is byte-identical across platforms and not only across rebuilds on one.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Page_EndsEveryLineOnALineFeed()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("index.md", "---\r\ntitle: Home\r\n---\r\n\r\nHello\r\n\r\n```sh\r\ngelyn build\r\n```\r\n");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = ReadPage(fixture, "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(page).DoesNotContain("\r");
+            await Assert.That(page).Contains("<pre><code class=\"language-sh\">gelyn build\n</code></pre>");
+        }
+    }
+
     #endregion // Determinism Tests
 
     #region Helpers

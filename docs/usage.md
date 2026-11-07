@@ -696,9 +696,10 @@ source of a dot-prefixed file and its output stays published.
 `gelyn clean` removes the output directory outright, which is the one way to clear those entries as well.
 
 A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources
-and the tool version alone. Upgrading Gelyn moves that version in both the generator tag and the footer, so
-that one rebuild does change every page. Worth knowing if you commit your output directory or deploy it by
-diff.
+and the tool version alone. That holds across platforms too: every page, the feed and the sitemap end each
+line on a line feed, independent of the line ending your sources or the build host use. Upgrading Gelyn moves
+the version in both the generator tag and the footer, so that one rebuild does change every page. Worth
+knowing if you commit your output directory or deploy it by diff.
 
 ## Preview
 

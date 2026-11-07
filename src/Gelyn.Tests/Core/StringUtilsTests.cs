@@ -576,4 +576,65 @@ public class StringUtilsTests
     }
 
     #endregion // TrimDelimiters Tests
+
+    #region NormalizeLineEndings Tests
+
+    /// <summary>
+    ///     Verifies that a carriage return is folded into a line feed whether it comes alone or paired, at
+    ///     the start, in the middle or at the end of the text, and that a line feed is left as it is.
+    /// </summary>
+    [Test]
+    [Arguments("a\r\nb", "a\nb")]
+    [Arguments("a\rb", "a\nb")]
+    [Arguments("a\r\nb\rc\nd", "a\nb\nc\nd")]
+    [Arguments("\r\na", "\na")]
+    [Arguments("a\r\n", "a\n")]
+    [Arguments("a\r", "a\n")]
+    [Arguments("\r", "\n")]
+    [Arguments("\r\n\r\n", "\n\n")]
+    [Arguments("\n\r", "\n\n")]
+    public async Task NormalizeLineEndings_Test_CarriageReturn_BecomesALineFeed(string text, string expected)
+    {
+        // Act
+        string result = StringUtils.NormalizeLineEndings(text);
+
+        // Assert
+        await Assert.That(result).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that a text holding no carriage return comes back as the same instance, so that the
+    ///     common case on a Unix host allocates nothing.
+    /// </summary>
+    [Test]
+    [Arguments("")]
+    [Arguments("a")]
+    [Arguments("a\nb\n")]
+    public async Task NormalizeLineEndings_Test_TextWithoutACarriageReturn_IsTheSameInstance(string text)
+    {
+        // Act
+        string result = StringUtils.NormalizeLineEndings(text);
+
+        // Assert
+        await Assert.That(result).IsSameReferenceAs(text);
+    }
+
+    /// <summary>
+    ///     Verifies that the Unicode line breaks HTML treats as content are left alone, which is what sets
+    ///     the method apart from <see cref="string.ReplaceLineEndings(string)"/>.
+    /// </summary>
+    [Test]
+    public async Task NormalizeLineEndings_Test_UnicodeLineBreaks_AreLeftAlone()
+    {
+        // Arrange
+        const string text = "a\u0085b\U00002028c\U00002029d\u000Ce\r\nf";
+
+        // Act
+        string result = StringUtils.NormalizeLineEndings(text);
+
+        // Assert
+        await Assert.That(result).IsEqualTo("a\u0085b\U00002028c\U00002029d\u000Ce\nf");
+    }
+
+    #endregion // NormalizeLineEndings Tests
 }
