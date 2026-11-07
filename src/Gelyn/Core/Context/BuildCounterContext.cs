@@ -12,7 +12,7 @@ namespace Gelyn.Core.Context;
 internal sealed record BuildCounterContext
 {
     /// <summary>
-    ///     The number of files the scan located, pages and copies together.
+    ///     The number of source files the scan located, pages and copies together.
     /// </summary>
     public required int ItemCount { get; init; }
 
@@ -22,8 +22,8 @@ internal sealed record BuildCounterContext
     public required int PageCount { get; init; }
 
     /// <summary>
-    ///     The number of files that reached the output directory, the pages, the generated output and the
-    ///     copies together.
+    ///     The number of output files that reached the output directory, the pages, the generated documents
+    ///     and the copies together.
     /// </summary>
     public required int FileCount { get; init; }
 

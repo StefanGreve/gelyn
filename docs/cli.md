@@ -78,14 +78,17 @@ A build of the example site reports its phases like this:
 
 ```text
 02:10:11.991 dbug: Gelyn.Program[1006] Started in 11.06 ms
-02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 20 file(s) in 0.71 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 20 source file(s) in 0.71 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1001] Rendered 17 page(s) in 1.95 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1002] Composed 17 page(s) in 0.22 ms
-02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1003] Wrote 22 file(s) in 16.24 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1003] Wrote 22 output file(s) in 16.24 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1004] Removed 0 file(s) in 0.98 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1011] Allocated 2.1 MB, paused 0.00 ms for 0/0/0 collection(s)
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1005] Processed 22 file(s) in 20.10 ms
 ```
+
+More output files are written than source files scanned, because the feed and the sitemap have no source of
+their own, and the total adds what was removed to what was written.
 
 Scanning, rendering and removing are measured on their own. Composing and writing are not, because Gelyn
 composes and writes pages on several threads at once, and a page is being written while others are still

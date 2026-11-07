@@ -16,7 +16,7 @@ internal static partial class LogMessages
     ///     The logger the record is written to.
     /// </param>
     /// <param name="itemCount">
-    ///     The number of files the scan located.
+    ///     The number of source files the scan located, the pages and the files to copy together.
     /// </param>
     /// <param name="elapsedMilliseconds">
     ///     The duration of the scan, which reads directory metadata only.
@@ -26,7 +26,7 @@ internal static partial class LogMessages
         EventName = nameof(EventIds.SCAN_COMPLETED),
         Level = LogLevel.Debug,
         SkipEnabledCheck = true,
-        Message = "Scanned {ItemCount} file(s) in {ElapsedMilliseconds:F2} ms")]
+        Message = "Scanned {ItemCount} source file(s) in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogScanCompleted(this ILogger logger, int itemCount, double elapsedMilliseconds);
 
     /// <summary>
@@ -79,7 +79,8 @@ internal static partial class LogMessages
     ///     The logger the record is written to.
     /// </param>
     /// <param name="fileCount">
-    ///     The number of files that were written and copied.
+    ///     The number of output files that were written and copied, which exceeds the number of source files
+    ///     by the generated documents.
     /// </param>
     /// <param name="elapsedMilliseconds">
     ///     The wall time from creating the output directories to the last copy, minus the share attributed to
@@ -90,7 +91,7 @@ internal static partial class LogMessages
         EventName = nameof(EventIds.WRITE_COMPLETED),
         Level = LogLevel.Debug,
         SkipEnabledCheck = true,
-        Message = "Wrote {FileCount} file(s) in {ElapsedMilliseconds:F2} ms")]
+        Message = "Wrote {FileCount} output file(s) in {ElapsedMilliseconds:F2} ms")]
     internal static partial void LogWriteCompleted(this ILogger logger, int fileCount, double elapsedMilliseconds);
 
     /// <summary>
