@@ -30,10 +30,11 @@ public partial class SiteBuilderTests
     #region BuildAsync Tests
 
     /// <summary>
-    ///     Verifies that the landing page is written before every other page.
+    ///     Verifies that the landing page is reported before every other page, although pages are written
+    ///     several at a time.
     /// </summary>
     [Test]
-    public async Task BuildAsync_Test_LandingPage_IsWrittenFirst()
+    public async Task BuildAsync_Test_LandingPage_IsReportedFirst()
     {
         // Arrange
         var fixture = ContentFixture.Create();

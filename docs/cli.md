@@ -73,6 +73,23 @@ gelyn build > pages.txt 2> timings.txt    # each stream to its own file
 gelyn serve --verbosity debug             # the request log, plus what each rebuild did
 ```
 
+A build of the example site reports its phases like this:
+
+```text
+02:10:11.991 dbug: Gelyn.Program[1006] Started in 11.06 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 20 file(s) in 0.71 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1001] Rendered 17 page(s) in 1.95 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1002] Composed 17 page(s) in 0.22 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1003] Wrote 22 file(s) in 16.24 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1004] Removed 0 file(s) in 0.98 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1005] Processed 22 file(s) in 20.10 ms
+```
+
+Scanning, rendering and removing are measured on their own. Composing and writing are not, because Gelyn
+composes and writes pages on several threads at once, and a page is being written while others are still
+being composed. The two phases therefore share the time of that pass in proportion to the thread time each
+took, which keeps the phases adding up to the total that the last line reports.
+
 `--verbosity` accepts any `LogLevel` name: `trace`, `debug`, `information`, `warning`, `error`, `critical`, or
 `none`. It defaults to `warning`, which is why a normal build stays quiet.
 

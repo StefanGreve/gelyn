@@ -24,12 +24,17 @@ namespace Gelyn.Services;
 ///     <list type="number">
 ///         <item>
 ///             <description>
-///                 <see cref="WritePagesAsync"/> composes and writes the rendered pages.
+///                 <see cref="CreateOutputDirectories"/> creates every directory the located files land in.
 ///             </description>
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="WriteGeneratedAsync"/> writes the feed and the sitemap, each of which the
+///                 <see cref="WritePages"/> composes and writes the rendered pages.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
+///                 <see cref="WriteGenerated"/> writes the feed and the sitemap, each of which the
 ///                 configuration has to ask for.
 ///             </description>
 ///         </item>
@@ -44,6 +49,9 @@ namespace Gelyn.Services;
 ///             </description>
 ///         </item>
 ///     </list>
+///     Pages are written and files copied on several threads through <see cref="OrderedParallel"/>. The report
+///     still lists them in input order, and a failure surfaces as the one a sequential pass would have stopped
+///     at.
 /// </remarks>
 internal sealed class SiteBuilder
 {
@@ -94,7 +102,16 @@ internal sealed class SiteBuilder
     /// <returns>
     ///     What the build produced, and how long it took.
     /// </returns>
-    public async Task<BuildReport> BuildAsync(CancellationToken cancellationToken)
+    /// <remarks>
+    ///     The build runs on a thread pool thread, because its passes over the pages block until every page
+    ///     is done.
+    /// </remarks>
+    public Task<BuildReport> BuildAsync(CancellationToken cancellationToken) =>
+        Task.Run(() => this.Build(cancellationToken), CancellationToken.None);
+
+    #region Helpers
+
+    private BuildReport Build(CancellationToken cancellationToken)
     {
         SiteOptions options = this._options.CurrentValue;
         long started = Stopwatch.GetTimestamp();
@@ -113,18 +130,15 @@ internal sealed class SiteBuilder
             this._environment.ContentRootPath,
             options.OutputDirectory);
 
-        PageWriteContext write = await this
-            .WritePagesAsync(pages, options, outputDirectory, isMeasuring, cancellationToken)
-            .ConfigureAwait(false);
+        long outputStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        this.CreateOutputDirectories(items, outputDirectory);
 
-        long copyStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        PageWriteContext write = this.WritePages(pages, options, outputDirectory, isMeasuring, cancellationToken);
+        List<string> generated = this.WriteGenerated(pages, options, outputDirectory);
+        string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
 
-        List<string> generated = await this
-            .WriteGeneratedAsync(pages, options, outputDirectory, cancellationToken)
-            .ConfigureAwait(false);
-
-        List<string> copied = this.CopyAssets(items, outputDirectory, cancellationToken);
-        long writeTicks = isMeasuring ? write.WriteTicks + Stopwatch.GetTimestamp() - copyStarted : 0;
+        // Everything that reached the output directory counts as writing, except the share spent composing.
+        long writeTicks = isMeasuring ? Stopwatch.GetTimestamp() - outputStarted - write.ComposeTicks : 0;
 
         long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         Collection<string> removed = this.PruneOutput(items, generated, outputDirectory, cancellationToken);
@@ -139,7 +153,7 @@ internal sealed class SiteBuilder
             {
                 ItemCount = items.Count,
                 PageCount = pages.Count,
-                FileCount = write.Written.Count + generated.Count + copied.Count,
+                FileCount = write.Written.Count + generated.Count + copied.Length,
                 RemovedCount = removed.Count,
                 ScanTicks = scanTicks,
                 RenderTicks = renderTicks,
@@ -160,9 +174,27 @@ internal sealed class SiteBuilder
         };
     }
 
-    #region Helpers
+    // CreateDirectory probes the file system even for a directory that exists, so every directory is created
+    // once. Creating all of them ahead of the parallel writes also leaves the writes nothing to coordinate.
+    private void CreateOutputDirectories(IReadOnlyList<ContentItem> items, string outputDirectory)
+    {
+        IPath path = this._fileSystem.Path;
+        IDirectory directory = this._fileSystem.Directory;
 
-    private async Task<PageWriteContext> WritePagesAsync(
+        // The root is created first, because the generated documents land there whether any item does.
+        var created = new HashSet<string>(StringComparer.Ordinal) { outputDirectory };
+        directory.CreateDirectory(outputDirectory);
+
+        foreach (ContentItem item in items)
+        {
+            string target = path.GetDirectoryName(path.Combine(outputDirectory, item.OutputPath)) ?? outputDirectory;
+
+            if (created.Add(target))
+                directory.CreateDirectory(target);
+        }
+    }
+
+    private PageWriteContext WritePages(
         IReadOnlyList<ContentPage> pages,
         SiteOptions options,
         string outputDirectory,
@@ -170,77 +202,96 @@ internal sealed class SiteBuilder
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
+        IFile file = this._fileSystem.File;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         var documents = new DocumentCatalog(pages);
+        RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, navigation, documents))];
 
-        var written = new List<string>(pages.Count);
+        // Rendered up front, so that the parallel pass only reads the two dictionaries.
+        long started = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        Dictionary<string, string> banners = RenderBanners(contexts, navigation.Count + 1);
+        Dictionary<string, string> footers = RenderFooters(contexts);
+        long sharedTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
+
         long composeTicks = 0;
         long writeTicks = 0;
 
-        // The banner differs only in which navigation entry carries aria-current, so it needs one render per
-        // linked page plus one shared by every page the navigation leaves out, however many pages there are.
-        var banners = new Dictionary<string, string>(navigation.Count + 1, StringComparer.Ordinal);
-
-        // The footer differs only in the page's revision date, so it needs one render per distinct date plus
-        // one shared by every undated page, which also bounds the scan for feed entries the footer makes.
-        var footers = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (ContentPage page in pages)
+        string[] written = OrderedParallel.Select(contexts, context =>
         {
-            var context = page.ToRenderContext(options, navigation, documents);
-
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
             string html = ComposeDocument(context, banners, footers);
-
-            if (isMeasuring)
-                composeTicks += Stopwatch.GetTimestamp() - composeStarted;
-
-            string destination = path.Combine(outputDirectory, page.OutputPath);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
-            this._fileSystem.Directory.CreateDirectory(path.GetDirectoryName(destination) ?? outputDirectory);
-
-            await this._fileSystem.File
-                .WriteAllTextAsync(destination, html, cancellationToken)
-                .ConfigureAwait(false);
+            file.WriteAllText(path.Combine(outputDirectory, context.Page.OutputPath), html);
 
             if (isMeasuring)
-                writeTicks += Stopwatch.GetTimestamp() - writeStarted;
+            {
+                Interlocked.Add(ref composeTicks, writeStarted - composeStarted);
+                Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - writeStarted);
+            }
 
-            written.Add(page.OutputPath);
-        }
+            return context.Page.OutputPath;
+        }, cancellationToken);
+
+        long passTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - sharedTicks : 0;
 
         return new PageWriteContext
         {
             Written = written,
-            ComposeTicks = composeTicks,
-            WriteTicks = writeTicks,
+            ComposeTicks = sharedTicks + Apportion(passTicks, composeTicks, composeTicks + writeTicks),
         };
     }
+
+    // The banner differs only in which navigation entry carries aria-current, so it needs one render per
+    // linked page plus one shared by every page the navigation leaves out, however many pages there are.
+    private static Dictionary<string, string> RenderBanners(RenderContext[] contexts, int capacity)
+    {
+        var banners = new Dictionary<string, string>(capacity, StringComparer.Ordinal);
+
+        foreach (RenderContext context in contexts)
+        {
+            string key = BannerKey(context.Page);
+
+            if (!banners.ContainsKey(key))
+                banners[key] = HeaderComponent.Render(context);
+        }
+
+        return banners;
+    }
+
+    // The footer differs only in the page's revision date, so it needs one render per distinct date plus
+    // one shared by every undated page, which also bounds the scan for feed entries the footer makes.
+    private static Dictionary<string, string> RenderFooters(RenderContext[] contexts)
+    {
+        var footers = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (RenderContext context in contexts)
+        {
+            string key = FooterKey(context.Page);
+
+            if (!footers.ContainsKey(key))
+                footers[key] = FooterComponent.Render(context);
+        }
+
+        return footers;
+    }
+
+    private static string BannerKey(ContentPage page) =>
+        page.InNavigation ? page.Href : string.Empty;
+
+    private static string FooterKey(ContentPage page) =>
+        page.Revised?.ToString(DateFormat.Machine, Tool.Culture) ?? string.Empty;
 
     private static string ComposeDocument(
         RenderContext context,
         Dictionary<string, string> banners,
-        Dictionary<string, string> footers)
-    {
-        string bannerKey = context.Page.InNavigation ? context.Page.Href : string.Empty;
+        Dictionary<string, string> footers) =>
+        PageLayout.Render(context, banners[BannerKey(context.Page)], footers[FooterKey(context.Page)]);
 
-        if (!banners.TryGetValue(bannerKey, out string? header))
-        {
-            header = HeaderComponent.Render(context);
-            banners[bannerKey] = header;
-        }
-
-        string footerKey = context.Page.Revised?.ToString(DateFormat.Machine, Tool.Culture) ?? string.Empty;
-
-        if (!footers.TryGetValue(footerKey, out string? footer))
-        {
-            footer = FooterComponent.Render(context);
-            footers[footerKey] = footer;
-        }
-
-        return PageLayout.Render(context, header, footer);
-    }
+    // Compose and write overlap across threads, so neither has a wall time of its own. The pass's wall time is
+    // split in the ratio of the thread time each took, which keeps the phases adding up to the build total.
+    private static long Apportion(long wallTicks, long partTicks, long wholeTicks) =>
+        wholeTicks == 0 ? 0 : (long)((double)wallTicks * partTicks / wholeTicks);
 
     /// <summary>
     ///     Writes the documents that no source file of their own stands behind.
@@ -252,32 +303,21 @@ internal sealed class SiteBuilder
     ///     The site configuration, which switches each document on and supplies the origin both need.
     /// </param>
     /// <param name="outputDirectory">
-    ///     The absolute path of the directory the documents are written to.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
+    ///     The absolute path of the directory the documents are written to, which already exists.
     /// </param>
     /// <returns>
     ///     The output-relative paths of the documents that were written, which is what exempts them from
     ///     <see cref="PruneOutput"/>.
     /// </returns>
-    private async Task<List<string>> WriteGeneratedAsync(
-        IReadOnlyList<ContentPage> pages,
-        SiteOptions options,
-        string outputDirectory,
-        CancellationToken cancellationToken)
+    private List<string> WriteGenerated(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
     {
         List<string> generated = [];
 
-        string? feed = await this
-            .WriteFeedAsync(pages, options, outputDirectory, cancellationToken)
-            .ConfigureAwait(false);
+        string? feed = this.WriteFeed(pages, options, outputDirectory);
 
         if (feed is not null) generated.Add(feed);
 
-        string? sitemap = await this
-            .WriteSitemapAsync(pages, options, outputDirectory, cancellationToken)
-            .ConfigureAwait(false);
+        string? sitemap = this.WriteSitemap(pages, options, outputDirectory);
 
         if (sitemap is not null) generated.Add(sitemap);
 
@@ -295,19 +335,12 @@ internal sealed class SiteBuilder
     ///     The site configuration, which both switches the feed on and supplies the origin its links need.
     /// </param>
     /// <param name="outputDirectory">
-    ///     The absolute path of the directory the feed is written to.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
+    ///     The absolute path of the directory the feed is written to, which already exists.
     /// </param>
     /// <returns>
     ///     The output-relative path of the feed, or <see langword="null"/> when none was written.
     /// </returns>
-    private async Task<string?> WriteFeedAsync(
-        IReadOnlyList<ContentPage> pages,
-        SiteOptions options,
-        string outputDirectory,
-        CancellationToken cancellationToken)
+    private string? WriteFeed(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
     {
         if (!options.EnableFeed) return null;
 
@@ -332,12 +365,7 @@ internal sealed class SiteBuilder
             return null;
         }
 
-        string destination = this._fileSystem.Path.Combine(outputDirectory, AtomFeed.FileName);
-        this._fileSystem.Directory.CreateDirectory(outputDirectory);
-
-        await this._fileSystem.File
-            .WriteAllBytesAsync(destination, document, cancellationToken)
-            .ConfigureAwait(false);
+        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, AtomFeed.FileName), document);
 
         return AtomFeed.FileName;
     }
@@ -354,19 +382,12 @@ internal sealed class SiteBuilder
     ///     need.
     /// </param>
     /// <param name="outputDirectory">
-    ///     The absolute path of the directory the sitemap is written to.
-    /// </param>
-    /// <param name="cancellationToken">
-    ///     Token used to cancel the operation.
+    ///     The absolute path of the directory the sitemap is written to, which already exists.
     /// </param>
     /// <returns>
     ///     The output-relative path of the sitemap, or <see langword="null"/> when none was written.
     /// </returns>
-    private async Task<string?> WriteSitemapAsync(
-        IReadOnlyList<ContentPage> pages,
-        SiteOptions options,
-        string outputDirectory,
-        CancellationToken cancellationToken)
+    private string? WriteSitemap(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
     {
         if (!options.EnableSitemap) return null;
 
@@ -380,36 +401,26 @@ internal sealed class SiteBuilder
         // Always a document from here on. The landing page is always listed, and the scan fails a tree without one.
         byte[] document = Sitemap.Render(options, pages);
 
-        string destination = this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName);
-        this._fileSystem.Directory.CreateDirectory(outputDirectory);
-
-        await this._fileSystem.File
-            .WriteAllBytesAsync(destination, document, cancellationToken)
-            .ConfigureAwait(false);
+        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName), document);
 
         return Sitemap.FileName;
     }
 
-    private List<string> CopyAssets(
+    private string[] CopyAssets(
         IReadOnlyList<ContentItem> items,
         string outputDirectory,
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
-        List<string> copied = [];
+        IFile file = this._fileSystem.File;
+        ContentItem[] assets = [.. items.Where(static item => item.Kind is not ContentKind.Page)];
 
-        foreach (ContentItem item in items.Where(static item => item.Kind is not ContentKind.Page))
+        return OrderedParallel.Select(assets, asset =>
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            file.Copy(asset.SourcePath, path.Combine(outputDirectory, asset.OutputPath), overwrite: true);
 
-            string destination = path.Combine(outputDirectory, item.OutputPath);
-            this._fileSystem.Directory.CreateDirectory(path.GetDirectoryName(destination) ?? outputDirectory);
-            this._fileSystem.File.Copy(item.SourcePath, destination, overwrite: true);
-
-            copied.Add(item.OutputPath);
-        }
-
-        return copied;
+            return asset.OutputPath;
+        }, cancellationToken);
     }
 
     private Collection<string> PruneOutput(

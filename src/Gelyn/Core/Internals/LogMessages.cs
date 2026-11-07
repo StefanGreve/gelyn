@@ -59,7 +59,9 @@ internal static partial class LogMessages
     ///     The number of pages that were composed.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The accumulated duration of the composition, excluding the time spent writing.
+    ///     The share of the output pass attributed to composing, plus the time spent rendering the fragments
+    ///     the pages share. Pages are composed and written on several threads at once, so composing has no
+    ///     wall time of its own.
     /// </param>
     [LoggerMessage(
         EventId = EventIds.COMPOSE_COMPLETED,
@@ -80,8 +82,8 @@ internal static partial class LogMessages
     ///     The number of files that were written and copied.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The accumulated duration of the writes and the copies, including the directories created to hold
-    ///     them.
+    ///     The wall time from creating the output directories to the last copy, minus the share attributed to
+    ///     composing.
     /// </param>
     [LoggerMessage(
         EventId = EventIds.WRITE_COMPLETED,

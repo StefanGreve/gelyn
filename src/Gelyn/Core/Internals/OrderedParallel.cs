@@ -42,7 +42,9 @@ internal static class OrderedParallel
     ///         complete.
     ///     </para>
     ///     <para>
-    ///         One thread per processor suits rendering, which reads a small file and then keeps a core busy.
+    ///         One thread per processor suits both kinds of work this serves. Rendering keeps a core busy, and
+    ///         writing waits on the file system, where twice as many threads measured no faster on a 10,000-page
+    ///         site.
     ///     </para>
     /// </remarks>
     /// <exception cref="OperationCanceledException">
