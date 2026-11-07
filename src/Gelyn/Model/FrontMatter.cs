@@ -56,6 +56,11 @@ internal sealed record FrontMatter
     public bool? EnableSyntaxHighlighting { get; set; }
 
     /// <summary>
+    ///     Indicates whether the page renders a comment thread, or <see langword="null"/> when the block omits it.
+    /// </summary>
+    public bool? EnableComments { get; set; }
+
+    /// <summary>
     ///     Indicates whether the feed publishes the page, or <see langword="null"/> when the block omits it.
     /// </summary>
     public bool? EnableFeed { get; set; }

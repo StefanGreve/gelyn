@@ -71,6 +71,12 @@ internal sealed record ContentPage
     public required bool EnableSyntaxHighlighting { get; init; }
 
     /// <summary>
+    ///     Indicates whether the page renders a comment thread, as declared in its front matter. The value
+    ///     applies to the page alone and is inherited by nothing.
+    /// </summary>
+    public required bool EnableComments { get; init; }
+
+    /// <summary>
     ///     The rendered HTML body, excluding the document shell.
     /// </summary>
     public required string Html { get; init; }

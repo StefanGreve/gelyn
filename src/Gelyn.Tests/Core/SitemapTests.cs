@@ -299,6 +299,7 @@ public class SitemapTests
             EnableMathRendering = false,
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
+            EnableComments = false,
             Html = string.Empty,
             InNavigation = true,
             IsNotFoundPage = false,

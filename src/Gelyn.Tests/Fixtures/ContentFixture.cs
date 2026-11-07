@@ -257,6 +257,27 @@ internal sealed class ContentFixture
         CreateRendered("enableSyntaxHighlighting", verbosity);
 
     /// <summary>
+    ///     Creates a fixture holding one page that enables comments, beside a page and above a page that do
+    ///     not, so that a test can confirm the flag reaches neither.
+    /// </summary>
+    /// <remarks>
+    ///     <code>
+    ///     index.md             -> index.html             no comments
+    ///     blog/index.md        -> blog/index.html        comments
+    ///     blog/hello.md        -> blog/hello.html        no comments
+    ///     blog/2026/index.md   -> blog/2026/index.html   no comments
+    ///     </code>
+    /// </remarks>
+    /// <param name="verbosity">
+    ///     The lowest level <see cref="Logger"/> reports as enabled.
+    /// </param>
+    /// <returns>
+    ///     The new fixture.
+    /// </returns>
+    public static ContentFixture CreateCommented(LogLevel verbosity = LogLevel.Debug) =>
+        CreateRendered("enableComments", verbosity);
+
+    /// <summary>
     ///     Creates a fixture holding one page that opts into the feed, beside a page and above a page that do
     ///     not, so that a test can confirm the opt-in reaches neither.
     /// </summary>
@@ -809,7 +830,7 @@ internal sealed class ContentFixture
 
     #region Helpers
 
-    // One tree for both renderer flags, because what each test asserts is which pages the key reaches.
+    // One tree for every per-page flag, because what each test asserts is which pages the key reaches.
     private static ContentFixture CreateRendered(string key, LogLevel verbosity)
     {
         string block = string.Join(Environment.NewLine, "---", "title: Blog", $"{key}: true", "---");

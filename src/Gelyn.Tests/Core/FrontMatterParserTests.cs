@@ -32,6 +32,7 @@ public class FrontMatterParserTests
             enableMathRendering: true
             enableDiagramRendering: true
             enableSyntaxHighlighting: true
+            enableComments: true
             enableFeed: true
             ---
         """;
@@ -49,6 +50,7 @@ public class FrontMatterParserTests
             await Assert.That(result?.EnableMathRendering).IsTrue();
             await Assert.That(result?.EnableDiagramRendering).IsTrue();
             await Assert.That(result?.EnableSyntaxHighlighting).IsTrue();
+            await Assert.That(result?.EnableComments).IsTrue();
             await Assert.That(result?.EnableFeed).IsTrue();
         }
     }
@@ -118,6 +120,23 @@ public class FrontMatterParserTests
 
         // Assert
         await Assert.That(result?.EnableFeed).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that the comments opt-in is read as a declared boolean, and that a block omitting the key
+    ///     is distinguishable from one declaring it false.
+    /// </summary>
+    [Test]
+    [Arguments("enableComments: true", true)]
+    [Arguments("enableComments: false", false)]
+    [Arguments("title: Home", null)]
+    public async Task Parse_Test_Comments_IsReadAsADeclaredBoolean(string line, bool? expected)
+    {
+        // Act
+        FrontMatter? result = FrontMatterParser.Parse(line);
+
+        // Assert
+        await Assert.That(result?.EnableComments).IsEqualTo(expected);
     }
 
     /// <summary>

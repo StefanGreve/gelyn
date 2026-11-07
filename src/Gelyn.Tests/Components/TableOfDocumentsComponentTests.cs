@@ -425,6 +425,7 @@ public partial class TableOfDocumentsComponentTests
             EnableMathRendering = false,
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
+            EnableComments = false,
             Html = string.Empty,
             InNavigation = false,
             IsNotFoundPage = false,

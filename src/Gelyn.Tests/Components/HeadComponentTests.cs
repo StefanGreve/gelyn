@@ -407,6 +407,7 @@ public class HeadComponentTests
             EnableMathRendering = false,
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
+            EnableComments = false,
             Html = "<p>Home</p>",
             InNavigation = true,
             IsNotFoundPage = isNotFound,
