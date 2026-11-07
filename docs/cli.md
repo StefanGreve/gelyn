@@ -114,11 +114,12 @@ build waits on.
 
 Code `1` also covers a command line that Gelyn can't parse, because that's what `System.CommandLine` returns
 for one, so you can't tell an unrecognized option from a failed build. Code `2` means a setting is unusable,
-such as a `BaseUrl` that isn't an absolute `http` or `https` URL, or a `--config` path that doesn't exist.
+such as a `BaseUrl` that isn't an absolute `http` or `https` URL, a `--config` path that doesn't exist, or a
+content directory without an `index.md`.
 
-`serve` returns `0` when you interrupt it, and `1` when the port is already taken, when the platform carries
-no usable `HttpListener`, or when the first build fails. A rebuild that fails later keeps the server up and
-changes no exit code.
+`serve` returns `0` when you interrupt it, `2` when it rejects the configuration as `build` would, and `1`
+when the port is already taken, when the platform carries no usable `HttpListener`, or when the first build
+fails. A rebuild that fails later keeps the server up and changes no exit code.
 
 <!-- References -->
 

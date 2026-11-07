@@ -151,7 +151,7 @@ internal sealed class ServeCommand : Command
                 // Ctrl+C is how this command is meant to end, so it is not a failure.
                 return ExitCodes.Success;
             }
-            catch (Exception exception) when (exception is IOException or HttpListenerException or PlatformNotSupportedException)
+            catch (Exception exception) when (exception is not FileNotFoundException and (IOException or HttpListenerException or PlatformNotSupportedException))
             {
                 stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
                 return ExitCodes.Error;

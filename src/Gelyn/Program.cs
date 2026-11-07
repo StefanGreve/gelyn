@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using Spectre.Console;
 
@@ -87,11 +86,7 @@ internal static class Program
         {
             stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
 
-            return exception switch
-            {
-                OptionsValidationException or FileNotFoundException or InvalidDataException => ExitCodes.ConfigurationError,
-                _ => ExitCodes.Error,
-            };
+            return ExitCodes.For(exception);
         }
     }
 }
