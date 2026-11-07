@@ -44,7 +44,7 @@ nothing flattens or re-nests a directory.
 
 ## Front matter
 
-Open a Markdown file with a YAML block to declare any of nine keys:
+Open a Markdown file with a YAML block to declare any of ten keys:
 
 ```markdown
 ---
@@ -54,23 +54,25 @@ revised: 2026-10-08
 description: Who I am and what I write about
 enableMathRendering: true
 enableDiagramRendering: true
+enableSyntaxHighlighting: true
 enableFeed: true
 stylesheets: [assets/about.css]
 scripts: [assets/about.js]
 ---
 ```
 
-| Key                      | Description                                                                           |
-| ------------------------ | ------------------------------------------------------------------------------------- |
-| `title`                  | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
-| `date`                   | Publishes the page and dates it in a table of documents. See [Dates](#dates).         |
-| `revised`                | Dates the footer and the `revised` meta tag. See [Dates](#dates).                     |
-| `description`            | Fills the `description` meta tag, in place of the one configured for your site.       |
-| `enableMathRendering`    | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
-| `enableDiagramRendering` | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
-| `enableFeed`             | Publishes this page in the site feed. Configured in `configuration.md`.               |
-| `stylesheets`            | Links more stylesheets on this page alone. See [Stylesheets](#declared-by-a-page).    |
-| `scripts`                | Loads more scripts on this page alone. See [Scripts](#scripts).                       |
+| Key                        | Description                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------- |
+| `title`                    | Titles the document and labels its navigation entry. See [Page titles](#page-titles). |
+| `date`                     | Publishes the page and dates it in a table of documents. See [Dates](#dates).         |
+| `revised`                  | Dates the footer and the `revised` meta tag. See [Dates](#dates).                     |
+| `description`              | Fills the `description` meta tag, in place of the one configured for your site.       |
+| `enableMathRendering`      | Loads KaTeX on this page alone. See [Mathematics](#mathematics).                      |
+| `enableDiagramRendering`   | Loads Mermaid on this page alone. See [Diagrams](#diagrams).                          |
+| `enableSyntaxHighlighting` | Loads Shiki on this page alone. See [Syntax highlighting](#syntax-highlighting).      |
+| `enableFeed`               | Publishes this page in the site feed. Configured in `configuration.md`.               |
+| `stylesheets`              | Links more stylesheets on this page alone. See [Stylesheets](#declared-by-a-page).    |
+| `scripts`                  | Loads more scripts on this page alone. See [Scripts](#scripts).                       |
 
 Three rules are worth knowing, because none of them produces a warning:
 
@@ -260,7 +262,8 @@ long as a blank line separates the two.
 > [Mathematics](#mathematics) and [Mermaid][mermaid] under [Diagrams](#diagrams).
 
 Fenced code blocks carry their info string as a `language-*` class on the `<code>` element. Nothing tokenizes
-the code, so color it by styling the block as a whole, or load a highlighter the same way.
+the code at build time. Style the block as a whole, or declare a key that loads a highlighter, under
+[Syntax highlighting](#syntax-highlighting).
 
 ## Document shell
 
@@ -427,8 +430,8 @@ scripts: [assets/katex.min.js, assets/auto-render.min.js]
 > [!NOTE]
 > The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
 > content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
-> third-party requests. KaTeX and Mermaid are the two libraries Gelyn fetches for you, through the keys
-> described next.
+> third-party requests. KaTeX, Mermaid and Shiki are the three libraries Gelyn fetches for you, through the
+> keys described next.
 
 ## Favicon
 
@@ -609,6 +612,74 @@ The key doesn't cascade, so declare it on each page that carries a diagram, and 
 attribute, because the version is yours to change. Vendoring Mermaid instead isn't an option: it loads as an
 ES module, and [Scripts](#scripts) emits a plain `<script src>`, which can't carry one.
 
+## Syntax highlighting
+
+A fenced block renders to `<pre><code class="language-sh">`, with the info string as the class, and nothing
+colours it. Declare one key to get [Shiki][shiki]:
+
+````markdown
+---
+title: Build
+enableSyntaxHighlighting: true
+---
+
+```sh
+gelyn build --base-url https://example.com
+```
+````
+
+Gelyn writes one module script into the head of that page:
+
+```html
+<script type="module">
+import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "https://cdn.jsdelivr.net/npm/shiki@4.6.0/+esm";
+const blocks = new Map();
+for (const code of document.querySelectorAll("pre > code[class*='language-']")) {
+    const lang = [...code.classList].find(name => name.startsWith("language-")).slice("language-".length);
+    if (lang in bundledLanguages) blocks.set(code, lang);
+}
+if (blocks.size > 0) {
+    const themes = { light: "github-light", dark: "github-dark" };
+    const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(blocks.values())], engine: createJavaScriptRegexEngine() });
+    for (const [code, lang] of blocks) {
+        const transformers = [{ code(node) { this.addClassToHast(node, code.className); } }];
+        code.parentElement.outerHTML = highlighter.codeToHtml(code.textContent.replace(/\n$/, ""), { lang, themes, defaultColor: false, transformers });
+    }
+}
+</script>
+```
+
+The script collects every block whose language Shiki bundles, which includes the aliases, so `sh`, `js` and
+`md` all qualify. A block naming a language it lacks is left as Markdig wrote it, and so is a `text` block,
+which needs no colour. One highlighter is created for the languages the page uses, and each grammar is fetched
+once, on demand. The engine is Shiki's JavaScript one, so no WebAssembly is downloaded.
+
+Each block comes back as `<pre class="shiki ..." tabindex="0">`, with a `<span class="line">` per line, the
+original `language-*` class kept on the `<code>` element, and a `style` attribute per token. Shiki colours
+nothing itself, because the script passes `defaultColor: false`: every token carries both palettes as
+`--shiki-light` and `--shiki-dark`, and the `<pre>` carries `--shiki-light-bg` and `--shiki-dark-bg`. A theme
+is the stylesheet's business, as it is for Mermaid, so the blocks stay the colour of your text until a rule of
+yours picks one:
+
+```css
+.shiki,
+.shiki span {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+}
+```
+
+That follows the `color-scheme` of your page, which `modern.css` declares as `light dark`. The two palettes are
+GitHub's, which is the pair GitHub itself renders Markdown with. The `tabindex` makes a block that scrolls
+sideways reachable from the keyboard, at the cost of a tab stop per highlighted block.
+
+`ShikiVersion` in `gelyn.json` sets the version in that URL. It defaults to `4.6.0`.
+
+The URL ends in `+esm` where the other two end in `/dist`, because Shiki's own entry imports packages by bare
+name, which no browser resolves, and jsDelivr's bundled build rewrites them. The key doesn't cascade, so
+declare it on each page that carries code, and Gelyn writes no `integrity` attribute, because the version is
+yours to change. Vendoring Shiki instead isn't an option, for the reason Mermaid isn't: it loads as an ES
+module.
+
 ## Rebuilds
 
 A build reconciles your output directory against your sources: it writes the pages, copies everything beside
@@ -692,4 +763,5 @@ warning: ContentDirectory changed. Restart gelyn serve to pick that up.
 [mermaid]: https://mermaid.js.org
 [mermaid-docs]: https://mermaid.js.org/intro/getting-started.html
 [mermaid-theming]: https://mermaid.js.org/config/theming.html#site-wide-theme
+[shiki]: https://shiki.style
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current

@@ -20,6 +20,7 @@ Gelyn runs without configuration, so you only need a file to change a default. T
   "BaseUrl": "https://example.com/blog",
   "KaTeXVersion": "0.19.0",
   "MermaidVersion": "12.1.0",
+  "ShikiVersion": "4.6.0",
   "ContentDirectory": "content",
   "OutputDirectory": "_site",
   "ExcludePatterns": ["*.tmp", "drafts"]
@@ -44,6 +45,7 @@ otherwise ignore in silence.
 | `FooterLinks`      | `[]`      | Lists links in the footer of every page. See [Footer links](#footer-links).                             |
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
+| `ShikiVersion`     | `4.6.0`   | Pins the Shiki release a page loads when its front matter enables syntax highlighting.                  |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
 | `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to, overwriting the files already there.                  |
 | `ExcludePatterns`  | `[]`      | Lists the names Gelyn skips while walking your content tree. See [Exclude patterns](#exclude-patterns). |
@@ -291,8 +293,8 @@ usable on their own. Five settings have a flag:
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |
 
-`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `FooterLinks`, `KaTeXVersion`, and
-`MermaidVersion` have none, so set them in the file or in the environment.
+`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `FooterLinks`, `KaTeXVersion`,
+`MermaidVersion`, and `ShikiVersion` have none, so set them in the file or in the environment.
 
 `ExcludePatterns` and `FooterLinks` are the two collection-valued settings, which makes layer 3 awkward for them.
 An environment variable named exactly like the setting can't carry a list, so each pattern needs its own
