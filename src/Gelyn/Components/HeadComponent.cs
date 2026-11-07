@@ -14,6 +14,8 @@ namespace Gelyn.Components;
 internal static class HeadComponent
 {
     private const string MathRenderer = "renderMathInElement(document.body);";
+    private const string LightTheme = "github-light";
+    private const string DarkTheme = "github-dark";
 
     /// <summary>
     ///     Renders the metadata.
@@ -86,30 +88,13 @@ internal static class HeadComponent
             head.AppendLine($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
 
         if (context.Page.EnableMathRendering)
-        {
-            string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(options.KaTeXVersion)}/dist";
-
-            head.AppendLine($"""<link rel="stylesheet" href="{katex}/katex.min.css">""");
-            // The loading of KaTeX is deferred to speed up page rendering
-            head.AppendLine($"""<script defer src="{katex}/katex.min.js"></script>""");
-            // To automatically render math in text elements, include the auto-render extension
-            head.AppendLine($"""<script defer src="{katex}/contrib/auto-render.min.js" onload="{MathRenderer}"></script>""");
-        }
+            head.AppendMathRenderer(options.KaTeXVersion);
 
         if (context.Page.EnableDiagramRendering)
-        {
-            string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(options.MermaidVersion)}/dist";
+            head.AppendDiagramRenderer(options.MermaidVersion);
 
-            // The module entry is smaller than a bundle and fetches only the diagram types the page uses. A
-            // module script defers by itself, so it needs no defer attribute and runs before every script below.
-            head.AppendLine("""<script type="module">""");
-            head.AppendLine($"""import mermaid from "{mermaid}/mermaid.esm.min.mjs";""");
-            // The import binds Mermaid inside the module alone, and it draws on the load event, so the global
-            // is what lets a stylesheet's own script configure the renderer while there is still time
-            head.AppendLine("window.mermaid = mermaid;");
-            head.AppendLine("mermaid.initialize({ startOnLoad: true });");
-            head.AppendLine("</script>");
-        }
+        if (context.Page.EnableSyntaxHighlighting)
+            head.AppendSyntaxHighlighter(options.ShikiVersion);
 
         // Outermost first, so the deepest stylesheet wins the cascade.
         foreach (string stylesheet in context.Page.Stylesheets)
@@ -120,4 +105,61 @@ internal static class HeadComponent
 
         return head.ToString();
     }
+
+    #region Helpers
+
+    private static void AppendMathRenderer(this StringBuilder head, string version)
+    {
+        string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(version)}/dist";
+
+        head.AppendLine($"""<link rel="stylesheet" href="{katex}/katex.min.css">""");
+        // The loading of KaTeX is deferred to speed up page rendering
+        head.AppendLine($"""<script defer src="{katex}/katex.min.js"></script>""");
+        // To automatically render math in text elements, include the auto-render extension
+        head.AppendLine($"""<script defer src="{katex}/contrib/auto-render.min.js" onload="{MathRenderer}"></script>""");
+    }
+
+    private static void AppendDiagramRenderer(this StringBuilder head, string version)
+    {
+        string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(version)}/dist";
+
+        // A module script defers by itself. The global lets a stylesheet's own script configure Mermaid before
+        // it draws on the load event.
+        head.AppendLine($$"""
+            <script type="module">
+            import mermaid from "{{mermaid}}/mermaid.esm.min.mjs";
+            window.mermaid = mermaid;
+            mermaid.initialize({ startOnLoad: true });
+            </script>
+        """);
+    }
+
+    private static void AppendSyntaxHighlighter(this StringBuilder head, string version)
+    {
+        // The dist entry imports bare specifiers, so this is jsDelivr's bundled build.
+        string shiki = $"https://cdn.jsdelivr.net/npm/shiki@{WebUtility.HtmlEncode(version)}/+esm";
+
+        // The JavaScript engine needs no WebAssembly download. A language Shiki lacks is left as Markdig wrote
+        // it. With no default colour, the stylesheet picks between the two palettes, as it does for Mermaid.
+        head.AppendLine($$"""
+            <script type="module">
+            import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "{{shiki}}";
+            const blocks = new Map();
+            for (const code of document.querySelectorAll("pre > code[class*='language-']")) {
+                const lang = [...code.classList].find(name => name.startsWith("language-")).slice("language-".length);
+                if (lang in bundledLanguages) blocks.set(code, lang);
+            }
+            if (blocks.size > 0) {
+                const themes = { light: "{{LightTheme}}", dark: "{{DarkTheme}}" };
+                const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(blocks.values())], engine: createJavaScriptRegexEngine() });
+                for (const [code, lang] of blocks) {
+                    const transformers = [{ code(node) { this.addClassToHast(node, code.className); } }];
+                    code.parentElement.outerHTML = highlighter.codeToHtml(code.textContent.replace(/\n$/, ""), { lang, themes, defaultColor: false, transformers });
+                }
+            }
+            </script>
+        """);
+    }
+
+    #endregion
 }
