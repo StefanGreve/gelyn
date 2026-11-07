@@ -47,7 +47,9 @@ keeping that name whatever the answer, so a theme can be swapped later without t
 - `None` - write nothing. Browser defaults apply until the user adds a stylesheet by the rule in step 5.
 - `Classic` - `classic.css`, light, and short enough to read end to end. Suggest it to a user who wants to
   style the site themselves, because it gives every extension a plain treatment to edit rather than leaving
-  them a blank file to start from.
+  them a blank file to start from. Copy `classic.js` beside it as `content/theme.js`: the script links the
+  heading of every page below the content root back to the index above it, with an arrow the stylesheet
+  draws.
 - `Modern` - `modern.css`, light or dark by browser preference, and ready to use unchanged. Suggest it to a
   user who would rather not write CSS. It covers the common elements, so a definition list, a footnote block
   and a task list fall back to browser defaults. Copy `modern.js` beside it as `content/theme.js`, because

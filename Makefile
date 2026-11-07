@@ -79,6 +79,7 @@ setup:
 
 themes:
 	cp -f $(THEMES)/classic.css $(EXAMPLE)/
+	cp -f $(THEMES)/classic.js $(EXAMPLE)/
 	cp -f $(THEMES)/modern.css $(DOCS)/
 	cp -f $(THEMES)/modern.js $(DOCS)/
 	$(call MKDIR,$(DOCS)/assets)
