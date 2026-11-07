@@ -31,6 +31,7 @@ public class FrontMatterParserTests
             description: Notes about software
             enableMathRendering: true
             enableDiagramRendering: true
+            enableSyntaxHighlighting: true
             enableFeed: true
             ---
         """;
@@ -47,6 +48,7 @@ public class FrontMatterParserTests
             await Assert.That(result?.Description).IsEqualTo("Notes about software");
             await Assert.That(result?.EnableMathRendering).IsTrue();
             await Assert.That(result?.EnableDiagramRendering).IsTrue();
+            await Assert.That(result?.EnableSyntaxHighlighting).IsTrue();
             await Assert.That(result?.EnableFeed).IsTrue();
         }
     }

@@ -406,6 +406,7 @@ public class HeadComponentTests
             Revised = Parse(revised) ?? Parse(date),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
+            EnableSyntaxHighlighting = false,
             Html = "<p>Home</p>",
             InNavigation = true,
             IsNotFoundPage = isNotFound,

@@ -218,6 +218,7 @@ public class FooterComponentTests
             Revised = revised is null ? null : DateOnly.Parse(revised, CultureInfo.InvariantCulture),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
+            EnableSyntaxHighlighting = false,
             Html = "<p>Home</p>",
             InNavigation = true,
             IsNotFoundPage = false,

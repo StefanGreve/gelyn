@@ -303,6 +303,7 @@ public class SitemapTests
             Revised = Parse(revised) ?? Parse(date),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
+            EnableSyntaxHighlighting = false,
             Html = string.Empty,
             InNavigation = true,
             IsNotFoundPage = false,

@@ -424,6 +424,7 @@ public partial class TableOfDocumentsComponentTests
             Revised = Parse(date),
             EnableMathRendering = false,
             EnableDiagramRendering = false,
+            EnableSyntaxHighlighting = false,
             Html = string.Empty,
             InNavigation = false,
             IsNotFoundPage = false,

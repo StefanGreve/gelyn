@@ -34,6 +34,7 @@ internal static class Mapper
             Revised = document.FrontMatter?.Revised ?? document.FrontMatter?.Date,
             EnableMathRendering = document.FrontMatter?.EnableMathRendering ?? false,
             EnableDiagramRendering = document.FrontMatter?.EnableDiagramRendering ?? false,
+            EnableSyntaxHighlighting = document.FrontMatter?.EnableSyntaxHighlighting ?? false,
             Html = document.Html,
             InNavigation = item.InNavigation,
             IsNotFoundPage = item.IsNotFoundPage,

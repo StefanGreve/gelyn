@@ -50,6 +50,12 @@ internal sealed record FrontMatter
     public bool? EnableDiagramRendering { get; set; }
 
     /// <summary>
+    ///     Indicates whether the page loads a syntax highlighter, or <see langword="null"/> when the block
+    ///     omits it.
+    /// </summary>
+    public bool? EnableSyntaxHighlighting { get; set; }
+
+    /// <summary>
     ///     Indicates whether the feed publishes the page, or <see langword="null"/> when the block omits it.
     /// </summary>
     public bool? EnableFeed { get; set; }
