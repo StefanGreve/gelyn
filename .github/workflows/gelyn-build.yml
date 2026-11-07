@@ -62,6 +62,15 @@ jobs:
             --config ./docs/gelyn.json \
             --base-url '${{ steps.pages.outputs.base_url }}'
 
+      - name: Minify the Stylesheets and Scripts
+        run: |
+          npx --yes esbuild@0.28.2 \
+            --minify \
+            --allow-overwrite \
+            --outbase=_docs \
+            --outdir=_docs \
+            $(find _docs -type f \( -name '*.css' -o -name '*.js' \))
+
       - name: Publish the Configuration Schema
         run: cp gelyn.schema.json _docs/schema.json
 
