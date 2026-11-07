@@ -1,10 +1,30 @@
-# Contributing
+# How to Contribute
 
 Gelyn is still in a pre-release stage in which the command surface, the configuration schema, and the
 generated HTML all change without notice, so outside contributions are not being accepted yet. This will
-change once the first stable release ships.
+change once the first stable release ships. The guidelines below describe how issues and pull requests are
+handled from then on.
 
-## Before You Contribute
+## Reporting an Issue
+
+- Search the [issue list][issues] first, so that a bug which is already reported or fixed does not get a
+  second issue.
+- Give the issue a clear title and description, the Gelyn version, the platform, and as much of the
+  configuration and the content that triggers it as you can share. A page that reproduces the problem on its
+  own is the most useful attachment.
+
+## Submitting a Pull Request
+
+- Look through the open [pull requests][pulls] and [issues][issues] before you start, in case the change has
+  been discussed already or is implemented but not yet released.
+- Address one concern per pull request. A bug fix, a rename, and a dependency bump are three pull requests,
+  not one, so that each can be reviewed and reverted on its own.
+- Include tests for every behavior the change affects.
+- Discuss a change that breaks existing sites, such as a renamed setting or different generated HTML, under
+  [Ideas][discussions-ideas] before you write it. Versions follow [Semantic Versioning][semver], so a breaking
+  change may be held back until the next release that can carry it.
+
+## Contribution Etiquette
 
 - Every commit has to carry a verified signature. GitHub accepts GPG, SSH, and S/MIME; [About commit
   signature verification][commit-signing] covers generating a key and registering it with your account.
@@ -29,5 +49,8 @@ change once the first stable release ships.
 
 [changelog]: CHANGELOG.md
 [commit-signing]: https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification
+[discussions-ideas]: https://github.com/StefanGreve/gelyn/discussions/categories/ideas
 [docs-dev]: https://stefangreve.github.io/gelyn/dev.html
+[issues]: https://github.com/StefanGreve/gelyn/issues
+[pulls]: https://github.com/StefanGreve/gelyn/pulls
 [semver]: https://semver.org/spec/v2.0.0.html
