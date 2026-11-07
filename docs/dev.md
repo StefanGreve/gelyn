@@ -1,8 +1,9 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-06
+revised: 2026-11-07
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
+enableSyntaxHighlighting: true
 ---
 
 # Development
