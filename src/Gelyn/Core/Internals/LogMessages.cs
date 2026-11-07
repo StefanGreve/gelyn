@@ -256,6 +256,33 @@ internal static partial class LogMessages
     internal static partial void LogSitemapSkippedWithoutBaseUrl(this ILogger logger);
 
     /// <summary>
+    ///     Reports that one page declares a front matter key that no setting reads, which is how a misspelled
+    ///     key such as <c>titel</c> surfaces, since the setting it was meant to be takes no effect.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="key">
+    ///     The key as written in the block.
+    /// </param>
+    /// <param name="line">
+    ///     The one-based line of the source file the key is declared on.
+    /// </param>
+    /// <param name="path">
+    ///     The absolute path of the page's source file, which is the file the key is edited in.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, because every page is rendered before the first is written, so a
+    ///     failure would cost the whole build its output over one key.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.FRONT_MATTER_KEY_IGNORED,
+        EventName = nameof(EventIds.FRONT_MATTER_KEY_IGNORED),
+        Level = LogLevel.Warning,
+        Message = "Ignored {Key} on line {Line} of {Path}, because it is not a front matter key")]
+    internal static partial void LogFrontMatterKeyIgnored(this ILogger logger, string key, int line, string path);
+
+    /// <summary>
     ///     Reports the directory the preview server answers from and the address it answers on.
     /// </summary>
     /// <param name="logger">

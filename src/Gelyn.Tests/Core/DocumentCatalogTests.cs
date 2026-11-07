@@ -141,6 +141,7 @@ public class DocumentCatalogTests
             Stylesheets = [],
             Scripts = [],
             Favicon = null,
+            UnknownKeys = [],
         };
 
     private static DateOnly? Parse(string? date) =>

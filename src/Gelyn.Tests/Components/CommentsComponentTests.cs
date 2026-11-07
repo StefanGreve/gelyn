@@ -137,6 +137,7 @@ public class CommentsComponentTests
             Stylesheets = [],
             Scripts = [],
             Favicon = null,
+            UnknownKeys = [],
         };
 
         return CommentsComponent.Render(new RenderContext

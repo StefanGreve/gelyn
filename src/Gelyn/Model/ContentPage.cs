@@ -117,4 +117,10 @@ internal sealed record ContentPage
     ///     above it, or <see langword="null"/> when no icon applies.
     /// </summary>
     public required string? Favicon { get; init; }
+
+    /// <summary>
+    ///     The keys the front matter declares that no member reads, in the order declared. Each is reported
+    ///     as a warning, because the setting it was meant to be takes no effect.
+    /// </summary>
+    public required IReadOnlyList<UnknownKey> UnknownKeys { get; init; }
 }

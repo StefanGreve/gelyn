@@ -433,6 +433,7 @@ public partial class TableOfDocumentsComponentTests
             Stylesheets = [],
             Scripts = [],
             Favicon = null,
+            UnknownKeys = [],
         };
 
     private static DateOnly? Parse(string? date) =>

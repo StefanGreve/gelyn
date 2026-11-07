@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
@@ -14,13 +16,13 @@ namespace Gelyn.Tests.Core;
 /// </summary>
 public class FrontMatterParserTests
 {
-    #region Parse Tests
+    #region TryParse Tests
 
     /// <summary>
     ///     Verifies that every recognized key is read from a block, delimiters and all.
     /// </summary>
     [Test]
-    public async Task Parse_Test_RecognizedKeys_ReturnAllValues()
+    public async Task TryParse_Test_RecognizedKeys_ReturnAllValues()
     {
         // Arrange
         const string block = """
@@ -38,7 +40,7 @@ public class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         using (Assert.Multiple())
@@ -60,7 +62,7 @@ public class FrontMatterParserTests
     ///     the block and the flow style of a YAML sequence.
     /// </summary>
     [Test]
-    public async Task Parse_Test_StylesheetsAndScripts_AreReadInOrder()
+    public async Task TryParse_Test_StylesheetsAndScripts_AreReadInOrder()
     {
         // Arrange
         const string block = """
@@ -73,7 +75,7 @@ public class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         using (Assert.Multiple())
@@ -91,10 +93,10 @@ public class FrontMatterParserTests
     [Arguments("enableMathRendering: true", true)]
     [Arguments("enableMathRendering: false", false)]
     [Arguments("title: Home", null)]
-    public async Task Parse_Test_MathRendering_IsReadAsADeclaredBoolean(string line, bool? expected)
+    public async Task TryParse_Test_MathRendering_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.EnableMathRendering).IsEqualTo(expected);
@@ -113,10 +115,10 @@ public class FrontMatterParserTests
     [Arguments("enableFeed: true", true)]
     [Arguments("enableFeed: false", false)]
     [Arguments("title: Home", null)]
-    public async Task Parse_Test_FeedOptIn_IsReadAsADeclaredBoolean(string line, bool? expected)
+    public async Task TryParse_Test_FeedOptIn_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.EnableFeed).IsEqualTo(expected);
@@ -130,10 +132,10 @@ public class FrontMatterParserTests
     [Arguments("enableComments: true", true)]
     [Arguments("enableComments: false", false)]
     [Arguments("title: Home", null)]
-    public async Task Parse_Test_Comments_IsReadAsADeclaredBoolean(string line, bool? expected)
+    public async Task TryParse_Test_Comments_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.EnableComments).IsEqualTo(expected);
@@ -145,10 +147,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("")]
     [Arguments("---\n---")]
-    public async Task Parse_Test_BlockWithoutEntries_ReturnsNull(string block)
+    public async Task TryParse_Test_BlockWithoutEntries_ReturnsNull(string block)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result).IsNull();
@@ -160,10 +162,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("---\r\ntitle: Home\r\n---")]
     [Arguments("---\rtitle: Home\r---")]
-    public async Task Parse_Test_NewlineConventions_AreAllSupported(string block)
+    public async Task TryParse_Test_NewlineConventions_AreAllSupported(string block)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.Title).IsEqualTo("Home");
@@ -173,7 +175,7 @@ public class FrontMatterParserTests
     ///     Verifies that keys outside the recognized vocabulary are ignored and never rejected.
     /// </summary>
     [Test]
-    public async Task Parse_Test_UnrecognizedKeys_AreIgnored()
+    public async Task TryParse_Test_UnrecognizedKeys_AreIgnored()
     {
         // Arrange
         const string block = """
@@ -184,7 +186,7 @@ public class FrontMatterParserTests
         """;
 
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -196,10 +198,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("Title: Home")]
     [Arguments("TITLE: Home")]
-    public async Task Parse_Test_KeyCaseMismatch_LeavesTitleUnset(string line)
+    public async Task TryParse_Test_KeyCaseMismatch_LeavesTitleUnset(string line)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -211,10 +213,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("title:")]
     [Arguments("title:   ")]
-    public async Task Parse_Test_AbsentValue_LeavesTitleUnset(string line)
+    public async Task TryParse_Test_AbsentValue_LeavesTitleUnset(string line)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -227,10 +229,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("title: \"\"")]
     [Arguments("title: ''")]
-    public async Task Parse_Test_EmptyQuotedValue_IsPreserved(string line)
+    public async Task TryParse_Test_EmptyQuotedValue_IsPreserved(string line)
     {
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(line);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
 
         // Assert
         await Assert.That(result?.Title).IsEqualTo(string.Empty);
@@ -242,10 +244,10 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("just a bare sentence")]
     [Arguments("title:Home")]
-    public async Task Parse_Test_NonMappingBlock_Throws(string block)
+    public async Task TryParse_Test_NonMappingBlock_Throws(string block)
     {
         // Act and Assert
-        await Assert.That(() => FrontMatterParser.Parse(block)).Throws<YamlException>();
+        await Assert.That(() => FrontMatterParser.TryParse(block, out _, out _)).Throws<YamlException>();
     }
 
     /// <summary>
@@ -255,13 +257,13 @@ public class FrontMatterParserTests
     [Test]
     [Arguments("not a date")]
     [Arguments("2026-13-13")]
-    public async Task Parse_Test_UnparsableDate_LeavesDateUnset(string value)
+    public async Task TryParse_Test_UnparsableDate_LeavesDateUnset(string value)
     {
         // Arrange
         string block = $"title: Home\ndate: {value}";
 
         // Act
-        FrontMatter? result = FrontMatterParser.Parse(block);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
 
         // Assert
         using (Assert.Multiple())
@@ -277,7 +279,7 @@ public class FrontMatterParserTests
     /// </summary>
     [Test]
     [NotInParallel]
-    public async Task Parse_Test_DateParsing_IsCultureInvariant()
+    public async Task TryParse_Test_DateParsing_IsCultureInvariant()
     {
         // Arrange
         CultureInfo original = CultureInfo.CurrentCulture;
@@ -286,8 +288,8 @@ public class FrontMatterParserTests
         try
         {
             // Act
-            FrontMatter? iso = FrontMatterParser.Parse("date: 2026-09-13");
-            FrontMatter? dayFirst = FrontMatterParser.Parse("date: 13/09/2026");
+            FrontMatterParser.TryParse("date: 2026-09-13", out FrontMatter? iso, out _);
+            FrontMatterParser.TryParse("date: 13/09/2026", out FrontMatter? dayFirst, out _);
 
             // Assert
             using (Assert.Multiple())
@@ -302,5 +304,92 @@ public class FrontMatterParserTests
         }
     }
 
-    #endregion // Parse Tests
+    /// <summary>
+    ///     Verifies that a key no member reads is reported with the line of the file it sits on, under either
+    ///     line break, and that the keys around it are still read.
+    /// </summary>
+    [Test]
+    [Arguments("\n")]
+    [Arguments("\r\n")]
+    public async Task TryParse_Test_UnknownKey_IsReportedWithItsLine(string newLine)
+    {
+        // Arrange
+        string block = string.Join(newLine, "---", "title: Home", "titel: Typo", "date: 2026-09-13", "---");
+
+        // Act
+        bool isComplete = FrontMatterParser.TryParse(
+            block,
+            out FrontMatter? result,
+            out IReadOnlyList<UnknownKey>? unknownKeys);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(result?.Date).IsEqualTo(new DateOnly(2026, 9, 13));
+            await Assert.That(isComplete).IsFalse();
+            await Assert.That(unknownKeys).IsEquivalentTo([new UnknownKey { Name = "titel", Line = 3 }]);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an unknown key holding a mapping or a sequence is reported once, without the keys
+    ///     nested in its value, and that skipping the value leaves the keys after it readable.
+    /// </summary>
+    [Test]
+    public async Task TryParse_Test_UnknownKeyWithNestedValue_IsReportedOnce()
+    {
+        // Arrange
+        const string block = """
+            ---
+            author:
+              name: Ada
+            tags: [notes, yaml]
+            title: Home
+            ---
+            """;
+
+        // Act
+        bool isComplete = FrontMatterParser.TryParse(
+            block,
+            out FrontMatter? result,
+            out IReadOnlyList<UnknownKey>? unknownKeys);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result?.Title).IsEqualTo("Home");
+            await Assert.That(isComplete).IsFalse();
+            await Assert.That(unknownKeys?.Select(static key => key.Name)).IsEquivalentTo(["author", "tags"]);
+            await Assert.That(unknownKeys?.Select(static key => key.Line)).IsEquivalentTo([2, 4]);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a block declaring recognized keys alone succeeds and reports no unknown key.
+    /// </summary>
+    [Test]
+    public async Task TryParse_Test_RecognizedKeys_ReportNoUnknownKey()
+    {
+        // Arrange
+        const string block = """
+            ---
+            title: Home
+            enableFeed: true
+            stylesheets: [assets/home.css]
+            ---
+            """;
+
+        // Act
+        bool isComplete = FrontMatterParser.TryParse(block, out _, out IReadOnlyList<UnknownKey>? unknownKeys);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(isComplete).IsTrue();
+            await Assert.That(unknownKeys).IsNull();
+        }
+    }
+
+    #endregion // TryParse Tests
 }

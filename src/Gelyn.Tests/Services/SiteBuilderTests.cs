@@ -1942,6 +1942,79 @@ public partial class SiteBuilderTests
 
     #endregion // Determinism Tests
 
+    #region Unknown Key Tests
+
+    /// <summary>
+    ///     Verifies that a front matter key no setting reads is named by a warning that points at its file and
+    ///     line, and that the page is still written, because a misspelled key costs one setting and not the
+    ///     build.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_UnknownKey_IsReportedAndThePageIsWritten()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("about.md", string.Join(Environment.NewLine, "---", "titel: About", "---", "About"));
+
+        string source = Path.Combine(fixture.ContentRoot, "about.md");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        FakeLogRecord warning = Reported(fixture, EventIds.FRONT_MATTER_KEY_IGNORED);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+            await Assert.That(warning.GetStructuredStateValue("Key")).IsEqualTo("titel");
+            await Assert.That(warning.GetStructuredStateValue("Line")).IsEqualTo("2");
+            await Assert.That(warning.GetStructuredStateValue("Path")).IsEqualTo(source);
+            await Assert.That(report.Pages).Contains("about.html");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the warnings follow the page order and, within a page, the order the keys are
+    ///     declared in, although the pages are rendered in parallel.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_UnknownKeys_AreReportedInPageOrder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("index.md", string.Join(Environment.NewLine, "---", "titel: Home", "---"))
+            .WriteFile("about.md", string.Join(Environment.NewLine, "---", "tilte: About", "descripton: Me", "---"));
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        IEnumerable<string?> keys = Reports(fixture, EventIds.FRONT_MATTER_KEY_IGNORED)
+            .Select(static record => record.GetStructuredStateValue("Key"));
+
+        await Assert.That(string.Join(',', keys)).IsEqualTo("titel,tilte,descripton");
+    }
+
+    /// <summary>
+    ///     Verifies that a build whose pages declare recognized keys alone writes no warning about them.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_RecognizedKeys_AreNotReported()
+    {
+        // Arrange
+        var fixture = ContentFixture.Create();
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(Reports(fixture, EventIds.FRONT_MATTER_KEY_IGNORED)).IsEmpty();
+    }
+
+    #endregion // Unknown Key Tests
+
     #region Helpers
 
     private static GiscusOptions Commented() => new()

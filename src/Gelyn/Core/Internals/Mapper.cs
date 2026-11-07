@@ -43,6 +43,7 @@ internal static class Mapper
             Stylesheets = item.Stylesheets,
             Scripts = item.Scripts,
             Favicon = item.Favicon,
+            UnknownKeys = document.UnknownKeys,
         };
 
     /// <summary>

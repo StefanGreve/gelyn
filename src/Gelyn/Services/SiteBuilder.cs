@@ -120,6 +120,10 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
 
+        foreach (ContentPage page in pages)
+            foreach (UnknownKey key in page.UnknownKeys)
+                this._logger.LogFrontMatterKeyIgnored(key.Name, key.Line, page.SourcePath);
+
         string outputDirectory = this._fileSystem.Path.Combine(
             this._environment.ContentRootPath,
             options.OutputDirectory);

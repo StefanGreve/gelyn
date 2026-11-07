@@ -76,13 +76,15 @@ scripts: [assets/about.js]
 | `stylesheets`              | Links more stylesheets on this page alone. See [Stylesheets](#declared-by-a-page).    |
 | `scripts`                  | Loads more scripts on this page alone. See [Scripts](#scripts).                       |
 
-Three rules are worth knowing, because none of them produces a warning:
+Two rules are worth knowing, because neither produces a warning:
 
 - Open the block on the very first line. With one blank line above it, Gelyn no longer reads it as front
   matter. It renders the delimiters and the keys as content, and the title falls back to the file name.
-- Gelyn ignores a key it doesn't know, so `titel:` loses your title in silence.
-- Gelyn drops a `date` or a `revised` it can't parse the same way, and writes the page as though it declared
+- Gelyn drops a `date` or a `revised` it can't parse in silence, and writes the page as though it declared
   none.
+
+A key Gelyn doesn't know, such as a misspelled `titel:`, produces a warning that names the key, its line and
+the file. The build carries on and writes the page as though the key were absent.
 
 A block that isn't well-formed YAML, or that holds something other than key-value pairs, does stop the build.
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The

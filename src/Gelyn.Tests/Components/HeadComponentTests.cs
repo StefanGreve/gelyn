@@ -415,6 +415,7 @@ public class HeadComponentTests
             Stylesheets = [],
             Scripts = [],
             Favicon = favicon,
+            UnknownKeys = [],
         };
 
         // The entry sits on a second page, so the announcement is shown to follow the site and not the page.

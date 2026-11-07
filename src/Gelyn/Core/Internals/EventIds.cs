@@ -72,6 +72,11 @@ internal static class EventIds
     /// </summary>
     internal const int GARBAGE_COLLECTED = 1_011;
 
+    /// <summary>
+    ///     One page declares a front matter key that no setting reads.
+    /// </summary>
+    internal const int FRONT_MATTER_KEY_IGNORED = 1_012;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

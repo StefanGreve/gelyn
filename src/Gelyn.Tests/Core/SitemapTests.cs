@@ -307,6 +307,7 @@ public class SitemapTests
             Stylesheets = [],
             Scripts = [],
             Favicon = null,
+            UnknownKeys = [],
         };
 
     private static DateOnly? Parse(string? date) =>

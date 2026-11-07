@@ -12,6 +12,11 @@ internal sealed record RenderedMarkdown
     public required FrontMatter? FrontMatter { get; init; }
 
     /// <summary>
+    ///     The keys the front matter declares that no member reads, in the order declared.
+    /// </summary>
+    public required IReadOnlyList<UnknownKey> UnknownKeys { get; init; }
+
+    /// <summary>
     ///     The rendered HTML body, excluding the front matter block.
     /// </summary>
     public required string Html { get; init; }
