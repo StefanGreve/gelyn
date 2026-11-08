@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 
 using Gelyn.Core;
+using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -1965,6 +1967,80 @@ public partial class SiteBuilderTests
 
             await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED))
                 .IsGreaterThanOrEqualTo(scan + render + compose + write + remove);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that every counter reports the count and the duration of its own phase, so that no two
+    ///     phases can trade values unnoticed.
+    /// </summary>
+    /// <remarks>
+    ///     Driven with hand-picked values, because a build measures with <see cref="Stopwatch.GetTimestamp"/>
+    ///     and so leaves the durations to the scheduler: a swap preserves every sum and every lower bound that
+    ///     <see cref="BuildAsync_Test_Counters_AccountForEveryPhase"/> asserts, and only distinct values expose
+    ///     it. Whole seconds convert to exact milliseconds at every <see cref="Stopwatch.Frequency"/> the
+    ///     supported platforms report.
+    /// </remarks>
+    [Test]
+    public async Task ReportCounters_Test_EachCounter_ReportsItsOwnPhase()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateEmpty();
+        long second = Stopwatch.Frequency;
+
+        var counters = new BuildCounterContext
+        {
+            ItemCount = 11,
+            PageCount = 7,
+            FileCount = 13,
+            RemovedCount = 3,
+            ScanTicks = 1 * second,
+            RenderTicks = 2 * second,
+            ComposeTicks = 3 * second,
+            WriteTicks = 4 * second,
+            RemoveTicks = 5 * second,
+            Elapsed = TimeSpan.FromSeconds(17),
+            GarbageCollection = new GarbageCollectionContext
+            {
+                AllocatedBytes = 6 * 1024 * 1024,
+                Gen0Count = 9,
+                Gen1Count = 4,
+                Gen2Count = 1,
+                Pause = TimeSpan.FromMilliseconds(8),
+            },
+        };
+
+        // Act
+        fixture.Builder.ReportCounters(counters);
+
+        // Assert
+        FakeLogRecord heap = Reported(fixture, EventIds.GARBAGE_COLLECTED);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(Count(fixture, EventIds.SCAN_COMPLETED, "ItemCount")).IsEqualTo(11);
+            await Assert.That(Elapsed(fixture, EventIds.SCAN_COMPLETED)).IsEqualTo(1_000);
+
+            await Assert.That(Count(fixture, EventIds.RENDER_COMPLETED, "PageCount")).IsEqualTo(7);
+            await Assert.That(Elapsed(fixture, EventIds.RENDER_COMPLETED)).IsEqualTo(2_000);
+
+            await Assert.That(Count(fixture, EventIds.COMPOSE_COMPLETED, "PageCount")).IsEqualTo(7);
+            await Assert.That(Elapsed(fixture, EventIds.COMPOSE_COMPLETED)).IsEqualTo(3_000);
+
+            await Assert.That(Count(fixture, EventIds.WRITE_COMPLETED, "FileCount")).IsEqualTo(13);
+            await Assert.That(Elapsed(fixture, EventIds.WRITE_COMPLETED)).IsEqualTo(4_000);
+
+            await Assert.That(Count(fixture, EventIds.REMOVE_COMPLETED, "FileCount")).IsEqualTo(3);
+            await Assert.That(Elapsed(fixture, EventIds.REMOVE_COMPLETED)).IsEqualTo(5_000);
+
+            await Assert.That(Value<double>(heap, "AllocatedMegabytes")).IsEqualTo(6);
+            await Assert.That(Value<double>(heap, "PauseMilliseconds")).IsEqualTo(8);
+            await Assert.That(Value<int>(heap, "Gen0Count")).IsEqualTo(9);
+            await Assert.That(Value<int>(heap, "Gen1Count")).IsEqualTo(4);
+            await Assert.That(Value<int>(heap, "Gen2Count")).IsEqualTo(1);
+
+            await Assert.That(Count(fixture, EventIds.BUILD_COMPLETED, "FileCount")).IsEqualTo(16);
+            await Assert.That(Elapsed(fixture, EventIds.BUILD_COMPLETED)).IsEqualTo(17_000);
         }
     }
 

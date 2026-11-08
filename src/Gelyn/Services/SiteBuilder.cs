@@ -102,6 +102,39 @@ internal sealed class SiteBuilder : SiteBuilderContract
     public override Task<BuildReport> BuildAsync(CancellationToken cancellationToken) =>
         Task.Run(() => this.Build(cancellationToken), CancellationToken.None);
 
+    /// <summary>
+    ///     Writes one counter per phase, followed by the heap figures and the build total.
+    /// </summary>
+    /// <remarks>
+    ///     The seam a test drives with durations of its own choosing. A build cannot supply them, because its
+    ///     phases are timed with <see cref="Stopwatch.GetTimestamp"/>, so only distinct values set by hand show
+    ///     that no counter reports the duration of another phase.
+    /// </remarks>
+    /// <param name="counters">
+    ///     What the build counted and how long each of its phases took.
+    /// </param>
+    internal void ReportCounters(BuildCounterContext counters)
+    {
+        ArgumentNullException.ThrowIfNull(counters);
+
+        this._logger.LogScanCompleted(counters.ItemCount, counters.ScanTicks.TotalMilliseconds);
+        this._logger.LogRenderCompleted(counters.PageCount, counters.RenderTicks.TotalMilliseconds);
+        this._logger.LogComposeCompleted(counters.PageCount, counters.ComposeTicks.TotalMilliseconds);
+        this._logger.LogWriteCompleted(counters.FileCount, counters.WriteTicks.TotalMilliseconds);
+        this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
+
+        GarbageCollectionContext heap = counters.GarbageCollection;
+
+        this._logger.LogGarbageCollected(
+            heap.AllocatedBytes / (1024d * 1024d),
+            heap.Pause.TotalMilliseconds,
+            heap.Gen0Count,
+            heap.Gen1Count,
+            heap.Gen2Count);
+
+        this._logger.LogBuildCompleted(counters.FileCount + counters.RemovedCount, counters.Elapsed.TotalMilliseconds);
+    }
+
     #region Helpers
 
     private BuildReport Build(CancellationToken cancellationToken)
@@ -557,26 +590,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }
 
         return occupied;
-    }
-
-    private void ReportCounters(BuildCounterContext counters)
-    {
-        this._logger.LogScanCompleted(counters.ItemCount, counters.ScanTicks.TotalMilliseconds);
-        this._logger.LogRenderCompleted(counters.PageCount, counters.RenderTicks.TotalMilliseconds);
-        this._logger.LogComposeCompleted(counters.PageCount, counters.ComposeTicks.TotalMilliseconds);
-        this._logger.LogWriteCompleted(counters.FileCount, counters.WriteTicks.TotalMilliseconds);
-        this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
-
-        GarbageCollectionContext heap = counters.GarbageCollection;
-
-        this._logger.LogGarbageCollected(
-            heap.AllocatedBytes / (1024d * 1024d),
-            heap.Pause.TotalMilliseconds,
-            heap.Gen0Count,
-            heap.Gen1Count,
-            heap.Gen2Count);
-
-        this._logger.LogBuildCompleted(counters.FileCount + counters.RemovedCount, counters.Elapsed.TotalMilliseconds);
     }
 
     #endregion
