@@ -43,6 +43,13 @@ handled from then on.
 - The build embeds that folder in the tool, and `example/` and `docs/` name their theme in the `Theme` setting of
   their `gelyn.json`. An edit therefore shows after the next `dotnet build` or `make gelyn`. Preview another theme
   by passing `--theme` to `gelyn build` or `gelyn serve`.
+- A theme is `<name>.css` with an optional `<name>.js`. The build embeds every `.css` and `.js` file in the folder
+  and takes its base name as the name of a theme, so each distinct base name becomes a value of `--theme`. A new
+  theme therefore also needs its name in the `enum` of `Theme` in `gelyn.schema.json`, which a test compares with
+  the bundled names.
+- The folder holds theme files alone. A stylesheet that serves one site or one page, such as
+  `docs/assets/modern404.css`, belongs in that site. In the folder it would become a theme of its own and fail
+  that test.
 - For a live preview of an edit under `gelyn serve`, copy the theme's file into the content directory of the site
   that applies the theme, such as `docs/modern.css`. The copy replaces the bundled file while it exists, and every
   build warns about it. Git ignores the copy, so it never reaches a commit.

@@ -1,7 +1,7 @@
 ---
 title: Configuration
 date: 2026-10-15
-revised: 2026-11-07
+revised: 2026-11-08
 description: Every setting gelyn.json accepts, its default, and the order the sources are read in.
 enableSyntaxHighlighting: true
 ---
@@ -19,6 +19,7 @@ Gelyn runs without configuration, so you only need a file to change a default. T
   "Author": "Stefan Greve",
   "Description": "Notes on software engineering.",
   "BaseUrl": "https://example.com/blog",
+  "Theme": "modern",
   "KaTeXVersion": "0.19.0",
   "MermaidVersion": "12.1.0",
   "ShikiVersion": "4.6.0",
@@ -44,6 +45,7 @@ otherwise ignore in silence.
 | `EnableFeed`       | `false`   | Publishes a feed of the pages that ask to be in one. See [Feed](#feed).                                 |
 | `EnableSitemap`    | `false`   | Publishes a sitemap of every page the build renders. See [Sitemap](#sitemap).                           |
 | `FooterLinks`      | `[]`      | Lists links in the footer of every page. See [Footer links](#footer-links).                             |
+| `Theme`            | unset     | Styles every page with a theme that ships with Gelyn. See [Themes](#themes).                            |
 | `KaTeXVersion`     | `0.19.0`  | Pins the KaTeX release a page loads when its front matter enables math rendering.                       |
 | `MermaidVersion`   | `12.1.0`  | Pins the Mermaid release a page loads when its front matter enables diagram rendering.                  |
 | `ShikiVersion`     | `4.6.0`   | Pins the Shiki release a page loads when its front matter enables syntax highlighting.                  |
@@ -229,6 +231,48 @@ body > footer a[href^="https://github.com/"]::before {
 }
 ```
 
+## Themes
+
+`Theme` styles every page with one of the two themes that ship with Gelyn:
+
+- `classic` is light and short enough to read end to end. It gives every Markdown extension a plain treatment,
+  which makes it a starting point for a stylesheet of your own. Its script links the heading of every page below
+  the content root back to the index above it.
+- `modern` follows the reader's light or dark preference and is ready to use unchanged. It covers the common
+  elements, while a definition list, a footnote block, and a task list keep the browser's defaults. Its script
+  builds the menu that narrow screens show in place of the navigation and matches Mermaid diagrams to the
+  appearance of the page. Its stylesheet does the same for the code Shiki highlights.
+
+```json
+"Theme": "modern"
+```
+
+The build writes the theme's stylesheet and script to the root of the output directory, such as `modern.css`
+and `modern.js`, and every page links them ahead of your own files. Your stylesheets therefore override the
+theme, which is the usual way to adjust it. Removing `Theme` or naming another theme deletes the files of the
+previous theme in the next build.
+
+A file at the root of your content directory with the name of a theme file replaces that file. Gelyn copies your
+`modern.css` in place of the bundled one, links it once in the theme's place, and warns on every build:
+
+```text
+20:15:42.118 warn: Gelyn.Services.SiteBuilder[1013] Skipped modern.css of theme modern, because /site/content/modern.css replaces it
+```
+
+Such a copy is how you preview an edit to a theme under `gelyn serve`, and the warning reminds you to delete it
+afterwards. A copy under another name replaces nothing. The `styles.css` and `theme.js` the bootstrap skill
+writes are such copies, so with `Theme` set to the theme they came from, every page loads that theme twice until
+you delete them. For `modern`, that also builds its menu twice.
+
+Gelyn rejects a theme it doesn't bundle before the build starts, with exit code 2, and lists the ones it does:
+
+```text
+error: Theme must name a bundled theme: classic, modern.
+```
+
+A theme styles every page alike. A page that needs more, such as a not-found page, links a stylesheet of its own
+through its front matter, as [Declared by a page](usage.md#declared-by-a-page) describes.
+
 ## Comments
 
 `Giscus` names the GitHub Discussions backend that comment threads live in. A page opts in with
@@ -310,12 +354,13 @@ gelyn build --title "My Blog"                # flag, which wins over both of the
 ```
 
 A path you pass to `--config` must exist, unlike `gelyn.json`, which stays optional because the defaults are
-usable on their own. Five settings have a flag:
+usable on their own. Six settings have a flag:
 
 | Setting            | Flag                     |
 | ------------------ | ------------------------ |
 | `Title`            | `--title <name>`         |
 | `BaseUrl`          | `--base-url <url>`       |
+| `Theme`            | `--theme <name>`         |
 | `ContentDirectory` | `--content <directory>`  |
 | `OutputDirectory`  | `--output <directory>`   |
 | `ExcludePatterns`  | `--exclude <patterns>`   |

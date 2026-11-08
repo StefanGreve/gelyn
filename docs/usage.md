@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-07
+revised: 2026-11-08
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
@@ -338,7 +338,9 @@ to nothing under `notes/`.
 Gelyn links several stylesheets in one directory in ordinal name order, the same comparison the navigation
 uses, and matches the extension without regard to case, so `.CSS` counts.
 
-No stylesheet ships with Gelyn, so a tree with no `.css` in it produces a correct but unstyled site.
+A tree with no `.css` in it produces a correct but unstyled site, unless [`Theme`](configuration.md#themes) names
+one of the themes that ship with Gelyn. Every page links the theme's stylesheet ahead of every placed one, so your
+stylesheets override it.
 
 ### Declared by a page
 
@@ -412,7 +414,8 @@ block the parser.
 
 Everything the stylesheet rule says applies here too: a sibling branch is never reached, several scripts in
 one directory load in ordinal name order, the extension is matched without regard to case, and the file is
-copied whether any page loads it or not.
+copied whether any page loads it or not. The script of a [theme](configuration.md#themes) loads ahead of every
+placed one, so it runs first.
 
 > [!IMPORTANT]
 > Ordinal name order is the one thing to watch, because it has nothing to do with dependency order. Two
