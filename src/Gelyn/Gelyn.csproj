@@ -51,6 +51,17 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
+  <PropertyGroup Label="Themes">
+    <ThemeDirectory>$(RepositoryRoot)plugins/gelyn/skills/bootstrap/themes/</ThemeDirectory>
+  </PropertyGroup>
+
+  <ItemGroup Label="Themes">
+    <EmbeddedResource Include="$(ThemeDirectory)*.css;$(ThemeDirectory)*.js"
+                      LogicalName="themes/%(Filename)%(Extension)"
+                      Link="themes/%(Filename)%(Extension)"
+                      WithCulture="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
