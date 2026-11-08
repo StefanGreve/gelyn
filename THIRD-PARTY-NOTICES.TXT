@@ -1,16 +1,3 @@
-Gelyn uses third-party libraries and other resources that may be distributed under licenses different from
-the Gelyn software.
-
-In the event that a required notice is missing, please bring it to our attention by opening an issue at
-https://github.com/StefanGreve/gelyn/issues.
-
-Each platform-specific Gelyn package contains a native executable that has the .NET runtime compiled into it.
-The notices for the components the .NET runtime incorporates are packed beside this file as
-THIRD-PARTY-NOTICES-DOTNET.TXT, taken from the Microsoft.DotNet.ILCompiler package that compiled the
-executable.
-
-The attached notices are provided for information only.
-
 License notice for .NET Runtime and the Microsoft.Extensions libraries
 ----------------------------------------------------------------------
 
@@ -98,6 +85,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 License notice for Octicons
 ---------------------------
 
@@ -175,6 +163,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
 
 License notice for Spectre.Console
 ----------------------------------
