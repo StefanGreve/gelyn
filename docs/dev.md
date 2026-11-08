@@ -1,7 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-07
+revised: 2026-11-08
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
@@ -16,27 +16,21 @@ The repository root carries a `Makefile` that collects the commands on this page
 
 Every target below is phony, and the recipes are silenced; `make V=1 <target>` echoes them instead.
 
-| Target         | Runs                                                                                        |
-| -------------- | ------------------------------------------------------------------------------------------- |
-| `make setup`   | Local tools, the `git` hooks, the package restore, `themes`, and the enforced `git` config. |
-| `make themes`  | Copies the `classic` theme into `example/` and the `modern` theme into `docs/`.             |
-| `make build`   | `dotnet build` in Release, without restoring.                                               |
-| `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.                       |
-| `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                                  |
-| `make gelyn`   | Publishes, then builds or serves the site named by `project`.                               |
-| `make lint`    | `dotnet format` across the solution.                                                        |
-| `make clean`   | `dotnet clean` in both configurations, then clears the screen.                              |
+| Target         | Runs                                                                              |
+| -------------- | --------------------------------------------------------------------------------- |
+| `make setup`   | Local tools, the `git` hooks, the package restore, and the enforced `git` config. |
+| `make build`   | `dotnet build` in Release, without restoring.                                     |
+| `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.             |
+| `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                        |
+| `make gelyn`   | Publishes, then builds or serves the site named by `project`.                     |
+| `make lint`    | `dotnet format` across the solution.                                              |
+| `make clean`   | `dotnet clean` in both configurations, then clears the screen.                    |
 
 > [!NOTE]
 > `make setup` is the only target that is required, and it is required once after cloning.
 
 On Windows, the recipes run under `cmd.exe` regardless of the shell that invokes `make`, so cmd, PowerShell, and
-Git Bash behave alike. `make themes`, and therefore `make setup`, copies with `cp`, which [Coreutils for
-Windows][coreutils] provides:
-
-```powershell
-winget install -e --id Microsoft.Coreutils
-```
+Git Bash behave alike.
 
 What a target does depends on one of four arguments. Each is appended to the command, as
 `make <target> <argument>=<value>`:
@@ -223,7 +217,6 @@ winget install -e --id jqlang.jq
 [global-json]: https://learn.microsoft.com/en-us/dotnet/core/tools/global-json#globaljson-schema
 [lock-files]: https://learn.microsoft.com/en-us/dotnet/core/install/upgrade#package-lock-files
 [dotnet-download]: https://dotnet.microsoft.com/download/dotnet
-[coreutils]: https://github.com/microsoft/coreutils
 [winget-uninstall]: https://learn.microsoft.com/en-us/windows/package-manager/winget/uninstall
 [llms-txt]: https://llmstxt.org
 [jq]: https://jqlang.org

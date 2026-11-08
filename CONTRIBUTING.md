@@ -40,9 +40,12 @@ handled from then on.
 ## Theme Development
 
 - Themes live in `plugins/gelyn/skills/bootstrap/themes`, their single source of truth.
-- `make setup` copies the theme files into `example/` and `docs/`, which those two sites build with. Preview
-  another theme by copying it into either directory and building that site.
-- Edit the copies freely; they are git-ignored, so they never reach a commit.
+- The build embeds that folder in the tool, and `example/` and `docs/` name their theme in the `Theme` setting of
+  their `gelyn.json`. An edit therefore shows after the next `dotnet build` or `make gelyn`. Preview another theme
+  by passing `--theme` to `gelyn build` or `gelyn serve`.
+- For a live preview of an edit under `gelyn serve`, copy the theme's file into the content directory of the site
+  that applies the theme, such as `docs/modern.css`. The copy replaces the bundled file while it exists, and every
+  build warns about it. Git ignores the copy, so it never reaches a commit.
 - Copy the finished stylesheet back into `themes/` and push that file alone.
 
 <!-- References -->

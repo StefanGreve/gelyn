@@ -19,6 +19,7 @@
       "Url": "https://creativecommons.org/licenses/by-sa/4.0/"
     }
   ],
+  "Theme": "modern",
   "ContentDirectory": "docs",
   "OutputDirectory": "_docs",
   "ExcludePatterns": [

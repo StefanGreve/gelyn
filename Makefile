@@ -1,8 +1,5 @@
 SOLUTION = Gelyn.slnx
 MAIN_PROJECT = ./src/Gelyn
-THEMES = ./plugins/gelyn/skills/bootstrap/themes
-EXAMPLE = ./example
-DOCS = ./docs
 
 # A 32-bit make sees x86 and finds the host architecture in PROCESSOR_ARCHITEW6432.
 ifeq ($(OS),Windows_NT)
@@ -67,19 +64,10 @@ setup:
 	: restore project packages
 	dotnet restore $(SOLUTION)
 
-	: the stylesheets and scripts the example and doc sites build with
-	$(MAKE) themes
-
 	: enforced git settings
 	git config --local commit.gpgsign true
 	git config --local tag.gpgsign true
 	git config --local fetch.prune true
-
-themes:
-	cp -f $(THEMES)/classic.css $(EXAMPLE)/
-	cp -f $(THEMES)/classic.js $(EXAMPLE)/
-	cp -f $(THEMES)/modern.css $(DOCS)/
-	cp -f $(THEMES)/modern.js $(DOCS)/
 
 build:
 	dotnet build $(SOLUTION) --configuration Release --no-restore
@@ -105,6 +93,6 @@ clean:
 	dotnet clean --configuration Release
 	@$(CLEAR)
 
-.PHONY: setup themes build test publish gelyn lint clean
+.PHONY: setup build test publish gelyn lint clean
 
 $(V).SILENT:
