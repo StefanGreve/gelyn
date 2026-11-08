@@ -38,6 +38,7 @@ public class ConfigurationManagerExtensionsTests
         {
             [OverrideOptions.Title] = "From the flag",
             [OverrideOptions.BaseUrl] = "https://example.com/gelyn",
+            [OverrideOptions.Theme] = "modern",
             [OverrideOptions.Content] = "pages",
             [OverrideOptions.Output] = "public",
         });
@@ -53,6 +54,7 @@ public class ConfigurationManagerExtensionsTests
         {
             await Assert.That(options.Title).IsEqualTo("From the flag");
             await Assert.That(options.BaseUrl).IsEqualTo(new Uri("https://example.com/gelyn"));
+            await Assert.That(options.Theme).IsEqualTo("modern");
             await Assert.That(options.ContentDirectory).IsEqualTo("pages");
             await Assert.That(options.OutputDirectory).IsEqualTo("public");
         }
@@ -189,4 +191,35 @@ public class ConfigurationManagerExtensionsTests
     }
 
     #endregion // Footer Link Tests
+
+    #region Theme Tests
+
+    /// <summary>
+    ///     Verifies that a configuration file setting the theme to <c>null</c>, which the schema documents as
+    ///     the default, applies none, instead of naming an empty theme the validator would reject.
+    /// </summary>
+    /// <remarks>
+    ///     Driven through the JSON provider, because how a <c>null</c> reaches the binder is that provider's
+    ///     decision, and an in-memory key would not show it.
+    /// </remarks>
+    [Test]
+    public async Task Theme_Test_NullValue_AppliesNone()
+    {
+        // Arrange
+        using var json = new MemoryStream(Encoding.UTF8.GetBytes("""{ "Theme": null }"""));
+
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .AddJsonStream(json)
+            .Build();
+
+        var options = new SiteOptions();
+
+        // Act
+        configuration.Bind(options);
+
+        // Assert
+        await Assert.That(options.Theme).IsNull();
+    }
+
+    #endregion // Theme Tests
 }

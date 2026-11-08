@@ -63,6 +63,7 @@ internal static class ConfigurationManagerExtensions
         [
             (OverrideOptions.Title, nameof(SiteOptions.Title)),
             (OverrideOptions.BaseUrl, nameof(SiteOptions.BaseUrl)),
+            (OverrideOptions.Theme, nameof(SiteOptions.Theme)),
             (OverrideOptions.Content, nameof(SiteOptions.ContentDirectory)),
             (OverrideOptions.Output, nameof(SiteOptions.OutputDirectory)),
         ];

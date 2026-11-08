@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using Gelyn.Core;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Tests.Options;
@@ -71,6 +72,27 @@ public class SiteOptionsSchemaTests
                 await Assert.That(declared).IsEqualTo(initialized);
             }
         }
+    }
+
+    /// <summary>
+    ///     Verifies that the schema offers the bundled themes and <c>null</c> as the values of the theme, so that
+    ///     an editor neither flags a name the tool accepts nor offers one the validator rejects.
+    /// </summary>
+    [Test]
+    public async Task Schema_Test_ThemeEnumMatchesTheBundledThemes()
+    {
+        // Arrange
+        string?[] expected = [.. ThemeCatalog.Names, null];
+
+        // Act
+        IEnumerable<string?> documented = ReadDocumentedProperties()
+            .GetProperty(nameof(SiteOptions.Theme))
+            .GetProperty("enum")
+            .EnumerateArray()
+            .Select(value => value.GetString());
+
+        // Assert
+        await Assert.That(documented).IsEquivalentTo(expected);
     }
 
     #endregion // Schema Tests

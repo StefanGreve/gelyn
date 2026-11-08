@@ -23,6 +23,11 @@ internal static class OverrideOptions
     internal const string BaseUrl = "base-url";
 
     /// <summary>
+    ///     Overrides the bundled theme every page is styled with.
+    /// </summary>
+    internal const string Theme = "theme";
+
+    /// <summary>
     ///     Overrides the content directory.
     /// </summary>
     internal const string Content = "content";
@@ -73,6 +78,12 @@ internal static class OverrideOptions
         {
             Description = "The absolute URL the finished site is served from.",
             HelpName = "url",
+        },
+        new Option<string>($"--{Theme}") // Checked by SiteOptionsValidator, not AcceptOnlyFromAmong, for one exit code
+        {
+            Description = $"The bundled theme to style every page with: {string.Join(", ", ThemeCatalog.Names)}.",
+            HelpName = "name",
+            CompletionSources = { static _ => ThemeCatalog.Names },
         },
         new Option<string>($"--{Content}")
         {

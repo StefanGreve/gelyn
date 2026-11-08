@@ -106,6 +106,15 @@
         ]
       ]
     },
+    "Theme": {
+      "description": "The bundled theme every page is styled with. Its stylesheet and script are written to the root of the output directory and linked ahead of the site's own. Unset, no theme is applied.",
+      "type": ["string", "null"],
+      "enum": ["classic", "modern", null],
+      "default": null,
+      "examples": [
+        "modern"
+      ]
+    },
     "KaTeXVersion": {
       "description": "The version of KaTeX requested from jsDelivr by a page whose front matter sets enableMathRendering.",
       "type": "string",

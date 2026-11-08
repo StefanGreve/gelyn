@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
+using Gelyn.Core;
 using Gelyn.Model.Options;
 using Gelyn.Tests.Stubs;
 using Gelyn.Validators;
@@ -410,7 +412,78 @@ public class SiteOptionsValidatorTests
 
     #endregion // Giscus Tests
 
+    #region Theme Tests
+
+    /// <summary>
+    ///     Verifies that leaving the theme unset is valid, because it is what applies none.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_AbsentTheme_Succeeds()
+    {
+        // Arrange
+        var options = new SiteOptions();
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Theme).IsNull();
+            await Assert.That(result.Succeeded).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that every bundled theme is accepted.
+    /// </summary>
+    [Test]
+    [MethodDataSource(nameof(BundledThemes))]
+    public async Task Validate_Test_BundledTheme_Succeeds(string theme)
+    {
+        // Arrange
+        var options = new SiteOptions { Theme = theme };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that a name no bundled theme carries is rejected under a message listing the bundled ones,
+    ///     including an empty name and a name that differs from a bundled one in case alone.
+    /// </summary>
+    [Test]
+    [Arguments("plain")]
+    [Arguments("Modern")]
+    [Arguments("")]
+    public async Task Validate_Test_ThemeNotBundled_Fails(string theme)
+    {
+        // Arrange
+        var options = new SiteOptions { Theme = theme };
+        string expected = $"{nameof(SiteOptions.Theme)} must name a bundled theme: {string.Join(", ", ThemeCatalog.Names)}.";
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains(expected);
+        }
+    }
+
+    #endregion // Theme Tests
+
     #region Helpers
+
+    /// <summary>
+    ///     The names of the bundled themes.
+    /// </summary>
+    public static IEnumerable<string> BundledThemes() => ThemeCatalog.Names;
 
     // An explicit content root is required: the stub defaults it to string.Empty, which would leave
     // GetFullPath resolving the relative settings against the working directory.

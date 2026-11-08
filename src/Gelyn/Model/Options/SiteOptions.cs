@@ -56,6 +56,11 @@ internal sealed class SiteOptions
     public IReadOnlyList<FooterLink> FooterLinks { get; set; } = [];
 
     /// <summary>
+    ///     The name of the bundled theme every page is styled with, or <see langword="null"/> to apply none.
+    /// </summary>
+    public string? Theme { get; set; }
+
+    /// <summary>
     ///     The version of KaTeX requested from jsDelivr, such as <c>0.19.0</c>.
     /// </summary>
     public string KaTeXVersion { get; set; } = "0.19.0";

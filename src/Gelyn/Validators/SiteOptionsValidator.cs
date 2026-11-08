@@ -1,3 +1,4 @@
+using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
@@ -60,6 +61,9 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
             failures.Add($"{nameof(SiteOptions.BaseUrl)} must be an absolute http or https URL, such as 'https://example.com/blog'.");
 
         failures.AddRange(ValidateFooterLinks(options.FooterLinks));
+
+        if (options.Theme is string theme && !ThemeCatalog.Names.Contains(theme, StringComparer.Ordinal))
+            failures.Add($"{nameof(SiteOptions.Theme)} must name a bundled theme: {string.Join(", ", ThemeCatalog.Names)}.");
 
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)
