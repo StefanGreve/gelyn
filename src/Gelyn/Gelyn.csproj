@@ -64,6 +64,14 @@
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../THIRD-PARTY-NOTICES.TXT" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Packed straight from the compiler package, so the notices always match the runtime compiled into the binary. -->
+  <ItemGroup Condition="'$(ILCompilerTargetsPath)' != ''">
+    <None Include="$([System.IO.Path]::GetDirectoryName('$(ILCompilerTargetsPath)'))/../THIRD-PARTY-NOTICES.TXT"
+          Pack="true"
+          PackagePath="/THIRD-PARTY-NOTICES-DOTNET.TXT" />
   </ItemGroup>
 
   <ItemGroup>
