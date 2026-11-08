@@ -19,7 +19,7 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 | Target         | Runs                                                                                        |
 | -------------- | ------------------------------------------------------------------------------------------- |
 | `make setup`   | Local tools, the `git` hooks, the package restore, `themes`, and the enforced `git` config. |
-| `make themes`  | Copies `classic.css` into `example/`, and the three `modern` theme files into `docs/`.      |
+| `make themes`  | Copies the `classic` theme into `example/` and the `modern` theme into `docs/`.             |
 | `make build`   | `dotnet build` in Release, without restoring.                                               |
 | `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.                       |
 | `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                                  |

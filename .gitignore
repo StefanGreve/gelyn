@@ -73,7 +73,6 @@ _docs/
 # plugins/gelyn/skills/bootstrap/themes
 /docs/*.css
 /docs/modern.js
-/docs/assets/
 /example/*.css
 /example/classic.js
 

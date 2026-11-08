@@ -36,11 +36,9 @@ ifeq ($(PLATFORM),win)
 SHELL := cmd.exe
 BINARY = gelyn.exe
 CLEAR = cls
-MKDIR = if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
 else
 BINARY = gelyn
 CLEAR = clear
-MKDIR = mkdir -p $(1)
 endif
 
 # Native AOT cannot cross-compile between operating systems, so the host decides the runtime.
@@ -82,8 +80,6 @@ themes:
 	cp -f $(THEMES)/classic.js $(EXAMPLE)/
 	cp -f $(THEMES)/modern.css $(DOCS)/
 	cp -f $(THEMES)/modern.js $(DOCS)/
-	$(call MKDIR,$(DOCS)/assets)
-	cp -f $(THEMES)/modern404.css $(DOCS)/assets/
 
 build:
 	dotnet build $(SOLUTION) --configuration Release --no-restore

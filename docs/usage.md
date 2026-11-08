@@ -510,9 +510,7 @@ footnote, which then lead to the root instead. Keep the page to plain links.
 A `404.md` anywhere else, such as `blog/404.md`, is an ordinary page, because no host looks for one there.
 
 Style the page with a stylesheet [declared in its front matter](#declared-by-a-page), so that no other page
-loads it. The documentation you are reading does that: its `404.md` declares
-`stylesheets: [assets/modern404.css]`, the not-found page that ships beside `modern.css` in the bootstrap
-themes, and draws the compass that stylesheet animates as an inline SVG.
+loads it. The documentation you are reading does that: its `404.md` declares `stylesheets: [assets/modern404.css]`.
 
 ## Mathematics
 
