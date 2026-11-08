@@ -720,6 +720,97 @@ public class ContentPipelineTests
 
     #endregion // Scan Tests
 
+    #region Theme Tests
+
+    /// <summary>
+    ///     Verifies that every page links the stylesheet and the script of the configured theme ahead of the
+    ///     files placed in the tree, so that a placed file overrides the theme.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Theme_IsLinkedAheadOfThePlacedFiles()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateStyled()
+            .WriteFile("blog/blog.js", "globalThis.blog = 1")
+            .WithTheme("modern");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(items.Count(item => item.Kind is ContentKind.Page)).IsEqualTo(5);
+
+            await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/modern.css,/styles.css");
+            await Assert.That(Stylesheets(items, "/about.html")).IsEqualTo("/modern.css,/styles.css");
+            await Assert.That(Stylesheets(items, "/blog/index.html"))
+                .IsEqualTo("/modern.css,/styles.css,/blog/blog.css");
+
+            await Assert.That(Stylesheets(items, "/blog/hello.html"))
+                .IsEqualTo("/modern.css,/styles.css,/blog/blog.css");
+
+            await Assert.That(Stylesheets(items, "/blog/2026/index.html"))
+                .IsEqualTo("/modern.css,/styles.css,/blog/blog.css,/blog/2026/year.css");
+
+            await Assert.That(Scripts(items, "/index.html")).IsEqualTo("/modern.js");
+            await Assert.That(Scripts(items, "/blog/hello.html")).IsEqualTo("/modern.js,/blog/blog.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the path of the base URL reaches the files of the theme as well as a page link, however
+    ///     deep the page that links them sits.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_BaseUrlPath_IsPrefixedToTheTheme()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WithBaseUrl("https://example.com/gelyn")
+            .WithTheme("modern");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Stylesheets(items, "/gelyn/blog/2026/q3/deep.html")).IsEqualTo("/gelyn/modern.css");
+            await Assert.That(Scripts(items, "/gelyn/blog/2026/q3/deep.html")).IsEqualTo("/gelyn/modern.js");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a file at the root of the content directory sharing its name with a file of the theme
+    ///     is linked once and in the theme's place, ahead of a placed file whose name sorts before it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_RootFileReplacingTheTheme_IsLinkedOnceInItsPlace()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("custom.css", "body{margin:0}")
+            .WriteFile("modern.css", "body{color:teal}")
+            .WriteFile("modern.js", "globalThis.preview = 1")
+            .Write("index.md", "Home")
+            .Write("blog/index.md", "Blog")
+            .WithTheme("modern");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(Stylesheets(items, "/index.html")).IsEqualTo("/modern.css,/custom.css");
+            await Assert.That(Stylesheets(items, "/blog/index.html")).IsEqualTo("/modern.css,/custom.css");
+            await Assert.That(Scripts(items, "/index.html")).IsEqualTo("/modern.js");
+        }
+    }
+
+    #endregion // Theme Tests
+
     #region Render Tests
 
     /// <summary>

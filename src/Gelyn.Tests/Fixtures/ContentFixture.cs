@@ -788,6 +788,23 @@ internal sealed class ContentFixture
     }
 
     /// <summary>
+    ///     Applies a theme to the fixture's options, as a configuration file or the <c>--theme</c> flag would.
+    /// </summary>
+    /// <param name="theme">
+    ///     The name of a bundled theme. Only names the validator would accept are useful here, because the
+    ///     build trusts it to have run.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public ContentFixture WithTheme(string theme)
+    {
+        this.Options.Theme = theme;
+
+        return this;
+    }
+
+    /// <summary>
     ///     Applies exclude patterns to the fixture's options, as a configuration file or the
     ///     <c>--exclude</c> flag would.
     /// </summary>

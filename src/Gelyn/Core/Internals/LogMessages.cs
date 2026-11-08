@@ -283,6 +283,34 @@ internal static partial class LogMessages
     internal static partial void LogFrontMatterKeyIgnored(this ILogger logger, string key, int line, string path);
 
     /// <summary>
+    ///     Reports that one file of the configured theme was not written, because a file of the same name at
+    ///     the root of the content directory replaces it.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="fileName">
+    ///     The name of the theme's file, which is also its path relative to the output root.
+    /// </param>
+    /// <param name="theme">
+    ///     The name of the configured theme.
+    /// </param>
+    /// <param name="path">
+    ///     The absolute path of the file that replaces it, which is the file to delete once the theme's own
+    ///     should apply again.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, because such a copy is how an edit to a theme is previewed under
+    ///     <c>gelyn serve</c>. The warning keeps a copy left behind afterwards from going unnoticed.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.THEME_FILE_REPLACED,
+        EventName = nameof(EventIds.THEME_FILE_REPLACED),
+        Level = LogLevel.Warning,
+        Message = "Skipped {FileName} of theme {Theme}, because {Path} replaces it")]
+    internal static partial void LogThemeFileReplaced(this ILogger logger, string fileName, string theme, string path);
+
+    /// <summary>
     ///     Reports the directory the preview server answers from and the address it answers on.
     /// </summary>
     /// <param name="logger">

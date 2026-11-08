@@ -70,12 +70,13 @@ internal sealed class ContentPipeline : ContentPipelineContract
             throw new FileNotFoundException($"No landing page found at '{home}'.", home);
 
         string hrefPrefix = UrlUtils.ResolveBasePath(options.BaseUrl);
+        IReadOnlyList<ThemeFile> theme = options.Theme is string name ? ThemeCatalog.Files(name) : [];
 
         return this.CollectItems(this._fileSystem.DirectoryInfo.New(root), new ScanContext
         {
             Prefix = [],
-            Stylesheets = [],
-            Scripts = [],
+            Stylesheets = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Stylesheet),
+            Scripts = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Script),
             Favicon = null,
             HrefPrefix = hrefPrefix,
             Excluded = options.ExcludePatterns,
@@ -143,8 +144,8 @@ internal sealed class ContentPipeline : ContentPipelineContract
 
         // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
         // it, and shared by reference with every page at this level instead of copied per page.
-        string[] stylesheets = [.. context.Stylesheets, .. CollectHrefs(entries, context, ContentKind.Stylesheet)];
-        string[] scripts = [.. context.Scripts, .. CollectHrefs(entries, context, ContentKind.Script)];
+        string[] stylesheets = AppendHrefs(context.Stylesheets, CollectHrefs(entries, context, ContentKind.Stylesheet));
+        string[] scripts = AppendHrefs(context.Scripts, CollectHrefs(entries, context, ContentKind.Script));
 
         // The nearest declaration wins, because a document carries one icon and not a chain of them.
         string? favicon = CollectHrefs(entries, context, ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
@@ -254,6 +255,14 @@ internal sealed class ContentPipeline : ContentPipelineContract
         entries.OfType<IFileInfo>()
                .Where(file => Classify(file) == kind)
                .Select(file => CombineHref(context.HrefPrefix, context.Prefix, file.Name));
+
+    // An href the level already inherits is left out. Only a root file replacing a file of the theme can be one,
+    // so the replacement is linked once and in the theme's place.
+    private static string[] AppendHrefs(IReadOnlyList<string> inherited, IEnumerable<string> placed) =>
+        [.. inherited, .. placed.Where(href => !inherited.Contains(href, StringComparer.Ordinal))];
+
+    private static string[] CollectThemeHrefs(IReadOnlyList<ThemeFile> theme, string prefix, ContentKind kind) =>
+        [.. theme.Where(file => file.Kind == kind).Select(file => CombineHref(prefix, [], file.FileName))];
 
     private static string CombineHref(string prefix, IReadOnlyList<string> segments, string last) =>
         StringUtils.JoinSegments(prefix, segments, last, '/');

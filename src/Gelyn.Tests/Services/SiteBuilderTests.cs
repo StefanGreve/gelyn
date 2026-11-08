@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
+using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -1437,6 +1438,153 @@ public partial class SiteBuilderTests
 
     #endregion // Sitemap Tests
 
+    #region Theme Tests
+
+    /// <summary>
+    ///     Verifies that the files of the configured theme are written to the root of the output with the bytes
+    ///     the tool embeds, reported as generated and linked by the pages, without a warning.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Theme_IsWrittenWithTheEmbeddedBytes()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEquivalentTo(["modern.css", "modern.js"]);
+            await Assert.That(ReadStylesheets(fixture, "index.html")).IsEqualTo("/modern.css");
+            await Assert.That(ReadScripts(fixture, "index.html")).IsEqualTo("/modern.js");
+            await Assert.That(Warnings(fixture)).IsEmpty();
+
+            foreach (ThemeFile file in ThemeCatalog.Files("modern"))
+            {
+                string expected = Convert.ToBase64String(ThemeCatalog.Read(file));
+
+                await Assert.That(ReadBase64(fixture, file.FileName)).IsEqualTo(expected);
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the files of the theme survive the build that follows the one writing them, which no
+    ///     source accounts for and the prune would otherwise delete.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Theme_SurvivesTheNextBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
+
+        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Act
+        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(second.Removed).IsEmpty();
+            await Assert.That(second.Generated).IsEquivalentTo(first.Generated);
+            await Assert.That(fixture.OutputHolds("modern.css")).IsTrue();
+            await Assert.That(fixture.OutputHolds("modern.js")).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the files a build wrote for the theme are deleted once the setting is unset, because the
+    ///     prune exempts what the build generated and not whatever carries the name of a theme file.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Theme_IsRemovedOnceTheSettingIsUnset()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Options.Theme = null;
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo(["modern.css", "modern.js"]);
+            await Assert.That(fixture.OutputHolds("modern.css")).IsFalse();
+            await Assert.That(fixture.OutputHolds("modern.js")).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that switching to another theme writes its files and deletes those of the previous theme in
+    ///     the same build.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Theme_ReplacesThePreviousThemeOnceSwitched()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Options.Theme = "classic";
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Generated).IsEquivalentTo(["classic.css", "classic.js"]);
+            await Assert.That(report.Removed).IsEquivalentTo(["modern.css", "modern.js"]);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a file at the root of the content directory sharing its name with a file of the theme
+    ///     is copied in its place and reported as a copy, while the other file of the theme is still written,
+    ///     and that one warning points at the copy.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Theme_RootFileReplacesTheThemeFile()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteFile("modern.css", "body{color:teal}")
+            .WithTheme("modern");
+
+        string source = Path.Combine(fixture.ContentRoot, "modern.css");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        FakeLogRecord warning = Reported(fixture, EventIds.THEME_FILE_REPLACED);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Copies).Contains("modern.css");
+            await Assert.That(report.Generated).IsEquivalentTo(["modern.js"]);
+
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "modern.css")))
+                .IsEqualTo("body{color:teal}");
+
+            await Assert.That(ReadStylesheets(fixture, "index.html")).IsEqualTo("/modern.css");
+            await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+            await Assert.That(warning.GetStructuredStateValue("FileName")).IsEqualTo("modern.css");
+            await Assert.That(warning.GetStructuredStateValue("Theme")).IsEqualTo("modern");
+            await Assert.That(warning.GetStructuredStateValue("Path")).IsEqualTo(source);
+        }
+    }
+
+    #endregion // Theme Tests
+
     #region PruneOutput Tests
 
     /// <summary>
@@ -2093,6 +2241,10 @@ public partial class SiteBuilderTests
 
     private static string ReadPage(ContentFixture fixture, string outputPath) =>
         fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));
+
+    // Encoded as base64, which is sensitive to the order of the bytes where IsEquivalentTo is not.
+    private static string ReadBase64(ContentFixture fixture, string outputPath) =>
+        Convert.ToBase64String(fixture.FileSystem.File.ReadAllBytes(Path.Combine(fixture.OutputRoot, outputPath)));
 
     private static string ReadFooter(ContentFixture fixture, string outputPath) =>
         FooterBlock().Match(ReadPage(fixture, outputPath)).Value;

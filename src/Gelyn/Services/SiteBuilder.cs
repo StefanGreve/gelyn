@@ -35,8 +35,8 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="WriteGenerated"/> writes the feed and the sitemap, each of which the
-///                 configuration has to ask for.
+///                 <see cref="WriteGenerated"/> writes the feed, the sitemap and the files of the theme, each
+///                 of which the configuration has to ask for.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -132,7 +132,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
         this.CreateOutputDirectories(items, outputDirectory);
 
         PageWriteContext write = this.WritePages(pages, options, outputDirectory, isMeasuring, cancellationToken);
-        List<string> generated = this.WriteGenerated(pages, options, outputDirectory);
+        List<string> generated = this.WriteGenerated(items, pages, options, outputDirectory);
         string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
 
         // Everything that reached the output directory counts as writing, except the share spent composing.
@@ -293,13 +293,18 @@ internal sealed class SiteBuilder : SiteBuilderContract
         wholeTicks == 0 ? 0 : (long)((double)wallTicks * partTicks / wholeTicks);
 
     /// <summary>
-    ///     Writes the documents that no source file of their own stands behind.
+    ///     Writes the documents that no source file of their own stands behind: the feed, the sitemap and the
+    ///     files of the theme.
     /// </summary>
+    /// <param name="items">
+    ///     Every file the scan located, among which a file replacing one of the theme's is found.
+    /// </param>
     /// <param name="pages">
-    ///     Every page the site is built from, which is what both documents are assembled from.
+    ///     Every page the site is built from, which is what the feed and the sitemap are assembled from.
     /// </param>
     /// <param name="options">
-    ///     The site configuration, which switches each document on and supplies the origin both need.
+    ///     The site configuration, which switches each document on, supplies the origin the feed and the
+    ///     sitemap need, and names the theme.
     /// </param>
     /// <param name="outputDirectory">
     ///     The absolute path of the directory the documents are written to, which already exists.
@@ -308,7 +313,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
     ///     The output-relative paths of the documents that were written, which is what exempts them from
     ///     <see cref="PruneOutput"/>.
     /// </returns>
-    private List<string> WriteGenerated(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
+    private List<string> WriteGenerated(
+        IReadOnlyList<ContentItem> items,
+        IReadOnlyList<ContentPage> pages,
+        SiteOptions options,
+        string outputDirectory)
     {
         List<string> generated = [];
 
@@ -319,6 +328,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
         string? sitemap = this.WriteSitemap(pages, options, outputDirectory);
 
         if (sitemap is not null) generated.Add(sitemap);
+
+        generated.AddRange(this.WriteTheme(items, options, outputDirectory));
 
         return generated;
     }
@@ -403,6 +414,34 @@ internal sealed class SiteBuilder : SiteBuilderContract
         this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName), document);
 
         return Sitemap.FileName;
+    }
+
+    // A file at the root of the content directory replaces the theme's file of the same name, which is how an edit
+    // to a theme is previewed: gelyn serve rebuilds on a change to the content, never on one to the tool.
+    private List<string> WriteTheme(IReadOnlyList<ContentItem> items, SiteOptions options, string outputDirectory)
+    {
+        List<string> written = [];
+
+        if (options.Theme is not string theme) return written;
+
+        IPath path = this._fileSystem.Path;
+
+        foreach (ThemeFile file in ThemeCatalog.Files(theme))
+        {
+            ContentItem? replacement = items
+                .FirstOrDefault(item => item.OutputPath.Equals(file.FileName, StringComparison.Ordinal));
+
+            if (replacement is not null)
+            {
+                this._logger.LogThemeFileReplaced(file.FileName, theme, replacement.SourcePath);
+                continue;
+            }
+
+            this._fileSystem.File.WriteAllBytes(path.Combine(outputDirectory, file.FileName), ThemeCatalog.Read(file));
+            written.Add(file.FileName);
+        }
+
+        return written;
     }
 
     private string[] CopyAssets(

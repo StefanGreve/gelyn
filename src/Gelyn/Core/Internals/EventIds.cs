@@ -77,6 +77,12 @@ internal static class EventIds
     /// </summary>
     internal const int FRONT_MATTER_KEY_IGNORED = 1_012;
 
+    /// <summary>
+    ///     One file of the configured theme was not written, because a file of the same name at the root of the
+    ///     content directory replaces it.
+    /// </summary>
+    internal const int THEME_FILE_REPLACED = 1_013;
+
     #endregion
 
     #region Serving (1_100 - 1_199)
