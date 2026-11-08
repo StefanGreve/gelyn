@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <None Include="$(RepositoryRoot)gelyn.schema.json" Link="gelyn.schema.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepositoryRoot)THIRD-PARTY-NOTICES.TXT" Link="THIRD-PARTY-NOTICES.TXT" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepositoryRoot)src/Gelyn/packages.lock.json" Link="Gelyn.packages.lock.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepositoryRoot)plugins/gelyn/skills/bootstrap/themes/*"
           Link="themes/%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
