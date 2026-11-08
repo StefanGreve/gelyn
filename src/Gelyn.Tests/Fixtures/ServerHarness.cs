@@ -27,6 +27,7 @@ namespace Gelyn.Tests.Fixtures;
 /// </remarks>
 internal sealed class ServerHarness : IAsyncDisposable
 {
+    private const int BindAttempts = 5;
     private const int EntryTimeoutMilliseconds = 10_000;
     private const int PollMilliseconds = 5;
 
@@ -41,7 +42,6 @@ internal sealed class ServerHarness : IAsyncDisposable
 
     private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, StaticFileResolverContract? resolver)
     {
-        this.Port = FreePort();
         this.Logger = new FakeLogger<FileServer>();
         this.TimeProvider = new FakeTimeProvider(now);
 
@@ -56,14 +56,23 @@ internal sealed class ServerHarness : IAsyncDisposable
 
         var server = new FileServer(resolver ?? fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
-        // ServeAsync binds the listener before reaching its first await, so the task it returns is already
-        // listening and the request below needs no readiness poll.
-        this._serving = server.ServeAsync(
-            fixture.Root,
-            this.Port,
-            launchBrowser: false,
-            refreshSeconds,
-            this._cancellation.Token);
+        // ServeAsync binds before its first await, so the returned task is already listening, and a taken port
+        // faults it at once, before anything is written.
+        for (int attempt = 1; ; attempt++)
+        {
+            this.Port = FreePort();
+            this._serving = server.ServeAsync(
+                fixture.Root,
+                this.Port,
+                launchBrowser: false,
+                refreshSeconds,
+                this._cancellation.Token);
+
+            bool portTaken = this._serving is { IsFaulted: true, Exception.InnerException: HttpListenerException };
+
+            if (!portTaken || attempt == BindAttempts)
+                break;
+        }
     }
 
     /// <summary>
@@ -233,7 +242,8 @@ internal sealed class ServerHarness : IAsyncDisposable
     #region Helpers
 
     // HttpListener cannot bind port 0, so the kernel assigns one to a probe socket and the number is handed
-    // on. The window between the probe closing and the listener binding is what that costs.
+    // on. The window between the probe closing and the listener binding is what that costs, and the
+    // constructor retries with a fresh port when the window was lost.
     private static int FreePort()
     {
         using var probe = new TcpListener(IPAddress.Loopback, 0);
