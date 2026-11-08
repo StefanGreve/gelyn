@@ -478,6 +478,53 @@ public class SiteOptionsValidatorTests
 
     #endregion // Theme Tests
 
+    #region Port Tests
+
+    /// <summary>
+    ///     Verifies that the default port and both ends of the range a listener can bind are accepted.
+    /// </summary>
+    [Test]
+    [Arguments(9_624)]
+    [Arguments(1)]
+    [Arguments(65_535)]
+    public async Task Validate_Test_PortInRange_Succeeds(int port)
+    {
+        // Arrange
+        var options = new SiteOptions { Port = port };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that a port no listener can bind is rejected before the server starts, instead of
+    ///     surfacing as an error code from the listener.
+    /// </summary>
+    [Test]
+    [Arguments(0)]
+    [Arguments(-1)]
+    [Arguments(65_536)]
+    public async Task Validate_Test_PortOutOfRange_Fails(int port)
+    {
+        // Arrange
+        var options = new SiteOptions { Port = port };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.Port)} must be between 1 and 65535.");
+        }
+    }
+
+    #endregion // Port Tests
+
     #region Helpers
 
     /// <summary>

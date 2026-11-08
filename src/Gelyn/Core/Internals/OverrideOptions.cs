@@ -28,6 +28,16 @@ internal static class OverrideOptions
     internal const string Theme = "theme";
 
     /// <summary>
+    ///     Overrides whether the build writes a syndication feed.
+    /// </summary>
+    internal const string Feed = "feed";
+
+    /// <summary>
+    ///     Overrides whether the build writes a sitemap.
+    /// </summary>
+    internal const string Sitemap = "sitemap";
+
+    /// <summary>
     ///     Overrides the content directory.
     /// </summary>
     internal const string Content = "content";
@@ -59,7 +69,16 @@ internal static class OverrideOptions
     internal const int ExcludeOffset = 1_000;
 
     /// <summary>
-    ///     The command line options these overrides arrive through, one per overridable setting.
+    ///     Overrides the port <c>gelyn serve</c> listens on.
+    /// </summary>
+    /// <remarks>
+    ///     Not among <see cref="Definitions"/>, because only <c>serve</c> declares it.
+    /// </remarks>
+    internal const string Port = "port";
+
+    /// <summary>
+    ///     The command line options these overrides arrive through, one per setting every building command
+    ///     overrides.
     /// </summary>
     /// <remarks>
     ///     These options carry values into <c>SiteOptions</c> through <c>AddSiteConfiguration</c>, and no
@@ -84,6 +103,18 @@ internal static class OverrideOptions
             Description = $"The bundled theme to style every page with: {string.Join(", ", ThemeCatalog.Names)}.",
             HelpName = "name",
             CompletionSources = { static _ => ThemeCatalog.Names },
+        },
+        new Option<bool>($"--{Feed}")
+        {
+            Description = "Whether to write a syndication feed of the pages that ask to be in one.",
+            HelpName = "true|false",
+            Arity = ArgumentArity.ExactlyOne,
+        },
+        new Option<bool>($"--{Sitemap}")
+        {
+            Description = "Whether to write a sitemap of the pages the site publishes.",
+            HelpName = "true|false",
+            Arity = ArgumentArity.ExactlyOne,
         },
         new Option<string>($"--{Content}")
         {

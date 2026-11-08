@@ -64,8 +64,11 @@ internal static class ConfigurationManagerExtensions
             (OverrideOptions.Title, nameof(SiteOptions.Title)),
             (OverrideOptions.BaseUrl, nameof(SiteOptions.BaseUrl)),
             (OverrideOptions.Theme, nameof(SiteOptions.Theme)),
+            (OverrideOptions.Feed, nameof(SiteOptions.EnableFeed)),
+            (OverrideOptions.Sitemap, nameof(SiteOptions.EnableSitemap)),
             (OverrideOptions.Content, nameof(SiteOptions.ContentDirectory)),
             (OverrideOptions.Output, nameof(SiteOptions.OutputDirectory)),
+            (OverrideOptions.Port, nameof(SiteOptions.Port)),
         ];
 
         Dictionary<string, string?> overrides = [];

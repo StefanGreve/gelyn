@@ -32,7 +32,7 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 On Windows, the recipes run under `cmd.exe` regardless of the shell that invokes `make`, so cmd, PowerShell, and
 Git Bash behave alike.
 
-What a target does depends on one of four arguments. Each is appended to the command, as
+What a target does depends on the arguments below. Each is appended to the command, as
 `make <target> <argument>=<value>`:
 
 | Argument            | Read by            | Default                | Effect                                                   |
@@ -42,7 +42,7 @@ What a target does depends on one of four arguments. Each is appended to the com
 | `refresh=<seconds>` | `gelyn`            | unset                  | Seconds between page reloads while serving               |
 | `RID=<rid>`         | `publish`, `gelyn` | host platform and arch | [Runtime identifier][known-rids] the binary is built for |
 
-Either of the two sites in this repository builds through the `gelyn` target:
+Each site in this repository builds through the `gelyn` target:
 
 ```sh
 make gelyn                                   # build docs/
@@ -183,8 +183,8 @@ once 1.0.0 ships.
 ## Notes on Deployment
 
 `gelyn-build.yml` publishes `docs/` to GitHub Pages once a `Build` run on `master` succeeds. Besides the rendered
-pages, the site carries three files that `gelyn build` doesn't produce: `schema.json`, which is a copy of
-`gelyn.schema.json`, and `llms.txt` with `llms-full.txt` for agents. The workflow writes all three after the
+pages, the site carries files that `gelyn build` doesn't produce: `schema.json`, which is a copy of
+`gelyn.schema.json`, and `llms.txt` with `llms-full.txt` for agents. The workflow writes them after the
 build, because the build reconciles `_docs` and deletes every file it didn't publish itself.
 
 `scripts/generate-llms-txt.sh` writes the two agent files. `llms.txt` is the index the [llms.txt

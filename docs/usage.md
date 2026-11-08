@@ -116,7 +116,7 @@ deleting it.
 
 ## Page titles
 
-Gelyn resolves the title of a page in three steps, and the first match wins:
+Gelyn titles a page with the first of these that applies:
 
 1. `title` in the front matter.
 2. The name of the containing folder, when the file is a section `index.md`.
@@ -176,7 +176,7 @@ content/
             retro.md  -> blog/2026/retro.html   a directory down, so listed by 2026/ instead
 ```
 
-the table holds two rows, newest first: `2026/index.html`, then `hello.html`. Five rules decide what any
+the table holds two rows, newest first: `2026/index.html`, then `hello.html`. These rules decide what any
 table holds:
 
 | Rule   | Detail                                                                                               |
@@ -437,7 +437,7 @@ scripts: [assets/katex.min.js, assets/auto-render.min.js]
 > [!NOTE]
 > The cascade reaches no CDN, because placement is its only mechanism. To use a library, put its `.js` in your
 > content tree and let the cascade pick it up. That costs a file in your repository and buys a site with no
-> third-party requests. KaTeX, Mermaid and Shiki are the three libraries Gelyn fetches for you, through the
+> third-party requests. KaTeX, Mermaid and Shiki are the libraries Gelyn fetches for you, through the
 > keys described next. A page that renders [comments](#comments) also reaches giscus.app.
 
 ## Favicon
@@ -807,9 +807,9 @@ rebuilt 8 file(s) in 13.04 ms after content/gelyn.json changed.
 ```
 
 A change to `gelyn.json` is reloaded before the rebuild that follows it, so a new `Title` reaches the next page
-Gelyn writes. Two settings are the exception, because the watcher and the server are bound to the directories
-the command started against: change `ContentDirectory` or `OutputDirectory` and Gelyn says so rather than
-rebuilding against them.
+Gelyn writes. The directory settings are the exception, because the watcher and the server stay bound to the
+directories the command started against: change `ContentDirectory` or `OutputDirectory` and Gelyn says so
+rather than rebuilding against them.
 
 ```text
 warning: ContentDirectory changed. Restart gelyn serve to pick that up.

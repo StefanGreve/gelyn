@@ -39,8 +39,11 @@ public class ConfigurationManagerExtensionsTests
             [OverrideOptions.Title] = "From the flag",
             [OverrideOptions.BaseUrl] = "https://example.com/gelyn",
             [OverrideOptions.Theme] = "modern",
+            [OverrideOptions.Feed] = "true",
+            [OverrideOptions.Sitemap] = "true",
             [OverrideOptions.Content] = "pages",
             [OverrideOptions.Output] = "public",
+            [OverrideOptions.Port] = "8080",
         });
 
         var options = new SiteOptions();
@@ -55,8 +58,47 @@ public class ConfigurationManagerExtensionsTests
             await Assert.That(options.Title).IsEqualTo("From the flag");
             await Assert.That(options.BaseUrl).IsEqualTo(new Uri("https://example.com/gelyn"));
             await Assert.That(options.Theme).IsEqualTo("modern");
+            await Assert.That(options.EnableFeed).IsTrue();
+            await Assert.That(options.EnableSitemap).IsTrue();
             await Assert.That(options.ContentDirectory).IsEqualTo("pages");
             await Assert.That(options.OutputDirectory).IsEqualTo("public");
+            await Assert.That(options.Port).IsEqualTo(8_080);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a switch given <c>false</c> turns off a document the configuration file enables, so
+    ///     that the flag overrides the setting in both directions.
+    /// </summary>
+    /// <remarks>
+    ///     The enabled setting is added ahead of <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>,
+    ///     which is the position the configuration file takes relative to the promoted values.
+    /// </remarks>
+    [Test]
+    [Arguments(OverrideOptions.Feed, nameof(SiteOptions.EnableFeed))]
+    [Arguments(OverrideOptions.Sitemap, nameof(SiteOptions.EnableSitemap))]
+    public async Task Overrides_Test_FalseSwitch_DisablesAConfiguredDocument(string option, string setting)
+    {
+        // Arrange
+        var configuration = new ConfigurationManager();
+
+        configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            [setting] = "true",
+            [option] = "false",
+        });
+
+        var options = new SiteOptions();
+
+        // Act
+        configuration.AddSiteConfiguration([]);
+        configuration.Bind(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.EnableFeed).IsFalse();
+            await Assert.That(options.EnableSitemap).IsFalse();
         }
     }
 

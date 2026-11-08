@@ -100,4 +100,14 @@ internal sealed class SiteOptions
     ///     wildcards. A directory that matches is not descended into.
     /// </summary>
     public IReadOnlyList<string> ExcludePatterns { get; set; } = [];
+
+    /// <summary>
+    ///     The loopback port <c>gelyn serve</c> listens on, read once when the server starts.
+    /// </summary>
+    /// <remarks>
+    ///     The default has to bind without privileges, which rules out everything below 1024, and stay clear
+    ///     of 49152-65535, where the kernel draws the ephemeral ports it hands to outbound connections and
+    ///     could take this one first.
+    /// </remarks>
+    public int Port { get; set; } = 9_624;
 }

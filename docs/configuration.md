@@ -53,6 +53,7 @@ otherwise ignore in silence.
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
 | `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to, overwriting the files already there.                  |
 | `ExcludePatterns`  | `[]`      | Lists the names Gelyn skips while walking your content tree. See [Exclude patterns](#exclude-patterns). |
+| `Port`             | `9624`    | Sets the loopback port `gelyn serve` listens on, from 1 to 65535. See [Port](#port).                    |
 
 Gelyn resolves both directories against the content root, which is the directory you run `gelyn` from unless
 the `DOTNET_CONTENTROOT` environment variable points somewhere else. No command declares a `--contentRoot`
@@ -220,7 +221,7 @@ else before the build starts and names the entry by its index, such as `FooterLi
 `javascript:` URL off every page you publish. A relative URL is rejected too, so give a page of your own site its
 full address.
 
-The two generated entries are labelled in English, like the rest of the footer, whatever `Language` says.
+The generated entries are labelled in English, like the rest of the footer, whatever `Language` says.
 
 The markup carries no icons and no classes. Icons are your stylesheet's job, which can select a link by its
 address and draw one with `::before`:
@@ -233,7 +234,7 @@ body > footer a[href^="https://github.com/"]::before {
 
 ## Themes
 
-`Theme` styles every page with one of the two themes that ship with Gelyn:
+`Theme` styles every page with one of the themes that ship with Gelyn:
 
 - `classic` is light and short enough to read end to end. It gives every Markdown extension a plain treatment,
   which makes it a starting point for a stylesheet of your own. Its script links the heading of every page below
@@ -316,7 +317,7 @@ publish in `ExcludePatterns`. Nothing is excluded by default. This is the set to
 Name your configuration file too if it sits inside the content directory. Gelyn reads `gelyn.json` before the
 scan and has no further knowledge of it, so a config file among your Markdown is copied like any other file.
 This repository does exactly that: `example/gelyn.json` configures the tree it sits in, and so carries
-`gelyn.json` as an eleventh pattern.
+`gelyn.json` as a further pattern.
 
 Symbolic links are the one exception. Gelyn always skips them, for both files and directories, and no setting
 re-enables them. A link lets the walk leave your content directory, one that resolves to an ancestor makes the
@@ -338,9 +339,27 @@ platform. Gelyn doesn't descend into a directory that matches, so excluding `dra
 > the only flag that takes several values in one token, which is why you separate them with commas: the
 > command line layer promotes one flag to one string.
 
+## Port
+
+`Port` is the loopback port [`gelyn serve`](cli.md#serve) listens on, and no other command reads it. The
+default of `9624` binds without privileges and stays clear of the range the operating system draws outbound
+ports from. Gelyn rejects a port outside 1 to 65535 before the command starts, with exit code 2.
+
+```sh
+gelyn serve --port 8080
+```
+
+The server reads `Port` once, when it starts. Changing it in `gelyn.json` while `serve` runs rebuilds the site
+as any other change does, but the server keeps listening where it started until you restart it.
+
+> [!NOTE]
+> Gelyn matches environment variables to settings without regard to case, so a `PORT` variable sets `Port`.
+> Hosting platforms and dev containers often define one, and `gelyn serve` then listens on the port it names.
+> `--port` still wins over the variable.
+
 ## Where settings come from
 
-Gelyn reads your settings from four layers, each overriding the one before it:
+Gelyn reads your settings from these layers, each overriding the one before it:
 
 1. The built-in defaults in [Settings](#settings).
 2. `gelyn.json` in the working directory, or the file you pass to `--config`.
@@ -354,25 +373,30 @@ gelyn build --title "My Blog"                # flag, which wins over both of the
 ```
 
 A path you pass to `--config` must exist, unlike `gelyn.json`, which stays optional because the defaults are
-usable on their own. Six settings have a flag:
+usable on their own. These settings have a flag:
 
-| Setting            | Flag                     |
-| ------------------ | ------------------------ |
-| `Title`            | `--title <name>`         |
-| `BaseUrl`          | `--base-url <url>`       |
-| `Theme`            | `--theme <name>`         |
-| `ContentDirectory` | `--content <directory>`  |
-| `OutputDirectory`  | `--output <directory>`   |
-| `ExcludePatterns`  | `--exclude <patterns>`   |
+| Setting            | Flag                      |
+| ------------------ | ------------------------- |
+| `Title`            | `--title <name>`          |
+| `BaseUrl`          | `--base-url <url>`        |
+| `EnableFeed`       | `--feed <true\|false>`    |
+| `EnableSitemap`    | `--sitemap <true\|false>` |
+| `Theme`            | `--theme <name>`          |
+| `ContentDirectory` | `--content <directory>`   |
+| `OutputDirectory`  | `--output <directory>`    |
+| `ExcludePatterns`  | `--exclude <patterns>`    |
+| `Port`             | `--port <number>`         |
 
-`Language`, `Author`, `Description`, `EnableFeed`, `EnableSitemap`, `FooterLinks`, `KaTeXVersion`,
-`MermaidVersion`, `ShikiVersion`, and `Giscus` have none, so set them in the file or in the environment.
+`--port` exists on `gelyn serve` alone, since no other command serves the site. `--feed` and `--sitemap` take
+`true` or `false` and have no bare form, so `--sitemap false` turns off a sitemap that `gelyn.json` enables.
 
-`ExcludePatterns` and `FooterLinks` are the two collection-valued settings, which makes layer 3 awkward for them.
-An environment variable named exactly like the setting can't carry a list, so each pattern needs its own
-`ExcludePatterns__0`, `ExcludePatterns__1`, and so on, and each footer link one variable per member, such as
-`FooterLinks__0__Label` and `FooterLinks__0__Url`. The file is the practical route for both, and `--exclude` for
-the patterns.
+`Language`, `Author`, `Description`, `FooterLinks`, `KaTeXVersion`, `MermaidVersion`, `ShikiVersion`, and
+`Giscus` have none, so set them in the file or in the environment.
+
+`ExcludePatterns` and `FooterLinks` hold collections, which makes layer 3 awkward for them. An environment
+variable named exactly like the setting can't carry a list, so each pattern needs its own `ExcludePatterns__0`,
+`ExcludePatterns__1`, and so on, and each footer link one variable per member, such as `FooterLinks__0__Label`
+and `FooterLinks__0__Url`. The file is the practical route for both, and `--exclude` for the patterns.
 
 `Giscus` is an object, so it takes one variable per member in the same way, such as `Giscus__Repo` and
 `Giscus__RepoId`.

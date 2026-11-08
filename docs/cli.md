@@ -1,15 +1,15 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-07
+revised: 2026-11-08
 description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
 
 # CLI
 
-Gelyn has three commands: `build` generates your site, `serve` previews it while you edit, and `clean` removes
-the output directory. This page covers how to run them, from tab completion to the exit code a run reports. The
+`gelyn build` generates your site, `gelyn serve` previews it while you edit, and `gelyn clean` removes the
+output directory. This page covers how to run them, from tab completion to the exit code a run reports. The
 flags that set a configuration value are listed under
 [Where settings come from](configuration.md#where-settings-come-from).
 
@@ -37,7 +37,7 @@ gelyn serve --refresh 2      # reload the page in the browser every two seconds
 
 | Option             | Default | Description                                         |
 | ------------------ | ------- | --------------------------------------------------- |
-| `--port`           | `9624`  | The loopback port to serve on, from 1 to 65535.     |
+| `--port`           | `9624`  | Overrides `Port`, the loopback port to serve on.    |
 | `--launch-browser` | off     | Opens the served address in the default browser.    |
 | `--refresh`        | off     | Reloads an HTML page every so many seconds, from 1. |
 

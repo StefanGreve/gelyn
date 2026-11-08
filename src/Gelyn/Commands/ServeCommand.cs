@@ -21,19 +21,8 @@ namespace Gelyn.Commands;
 /// </summary>
 internal sealed class ServeCommand : Command
 {
-    private const string PortOption = "port";
     private const string LaunchBrowserOption = "launch-browser";
     private const string RefreshOption = "refresh";
-
-    /// <summary>
-    ///     The port served on when <c>--port</c> is absent.
-    /// </summary>
-    /// <remarks>
-    ///     A default has to bind without privileges, which rules out everything below 1024, and stay clear of
-    ///     49152-65535, where the kernel draws the ephemeral ports it hands to outbound connections and could
-    ///     take this one first.
-    /// </remarks>
-    private const int DefaultPort = 9_624;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ServeCommand"/> class.
@@ -73,19 +62,12 @@ internal sealed class ServeCommand : Command
         [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("serve", "Serve the site over HTTP for local preview, rebuilding it as its sources change.")
     {
-        var port = new Option<int>($"--{PortOption}")
+        // Carries its value into SiteOptions.Port like the shared overrides, so the range is checked there.
+        var port = new Option<int>($"--{OverrideOptions.Port}")
         {
-            Description = $"The loopback port to serve on. Defaults to {DefaultPort}.",
+            Description = "The loopback port to serve on.",
             HelpName = "number",
-            DefaultValueFactory = static _ => DefaultPort,
         };
-
-        // Caught at parse time, since the bind would turn a bad port into an opaque HttpListener error code.
-        port.Validators.Add(static result =>
-        {
-            if (result.GetValueOrDefault<int>() is <= IPEndPoint.MinPort or > IPEndPoint.MaxPort)
-                result.AddError($"--{PortOption} must be between {IPEndPoint.MinPort + 1} and {IPEndPoint.MaxPort}.");
-        });
 
         var launchBrowser = new Option<bool>($"--{LaunchBrowserOption}")
         {
@@ -123,7 +105,6 @@ internal sealed class ServeCommand : Command
 
                 SiteOptions site = options.CurrentValue;
                 string outputDirectory = fileSystem.Path.Combine(environment.ContentRootPath, site.OutputDirectory);
-                int configuredPort = parsed.GetValue(port);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
                 stdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
@@ -132,7 +113,7 @@ internal sealed class ServeCommand : Command
 
                 Task serving = server.ServeAsync(
                     outputDirectory,
-                    configuredPort,
+                    site.Port,
                     parsed.GetValue(launchBrowser),
                     parsed.GetValue(refresh),
                     session.Token);

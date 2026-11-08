@@ -218,6 +218,16 @@
           "*.xcf"
         ]
       ]
+    },
+    "Port": {
+      "description": "The loopback port gelyn serve listens on, read once when the server starts.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "default": 9624,
+      "examples": [
+        8080
+      ]
     }
   }
 }
