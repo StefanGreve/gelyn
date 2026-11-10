@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Gelyn/Gelyn.csproj" />
+    <Project Path="src/Gelyn.Schema/Gelyn.Schema.csproj" />
     <Project Path="src/Gelyn.Tests/Gelyn.Tests.csproj" />
   </Folder>
 </Solution>

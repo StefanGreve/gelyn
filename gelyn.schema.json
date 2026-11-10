@@ -32,24 +32,33 @@
       ]
     },
     "Author": {
-      "description": "The name written to the author meta tag. Omitted from the document when absent.",
-      "type": ["string", "null"],
+      "description": "The name written to the author meta tag, or null to leave the tag out of every document.",
+      "type": [
+        "string",
+        "null"
+      ],
       "default": null,
       "examples": [
         "Stefan Greve"
       ]
     },
     "Description": {
-      "description": "The description written to the description meta tag by any page whose front matter declares none. Omitted from the document when absent.",
-      "type": ["string", "null"],
+      "description": "The description written to the description meta tag by any page whose front matter declares none, or null to leave the tag out of such pages.",
+      "type": [
+        "string",
+        "null"
+      ],
       "default": null,
       "examples": [
         "Notes on software engineering."
       ]
     },
     "BaseUrl": {
-      "description": "The absolute http or https URL the site is served from. Its path prefixes every link, and its origin gives each page a canonical URL.",
-      "type": ["string", "null"],
+      "description": "The absolute http or https URL the finished site is served from, such as https://example.com/blog, or null when no absolute URL is known. Its path prefixes every link, and is empty for null and for the root of a domain. Its origin gives each page a canonical URL.",
+      "type": [
+        "string",
+        "null"
+      ],
       "format": "uri",
       "default": null,
       "examples": [
@@ -57,7 +66,7 @@
       ]
     },
     "EnableFeed": {
-      "description": "Writes a syndication feed of the pages whose front matter declares enableFeed. Requires BaseUrl, as every entry needs an absolute URL.",
+      "description": "Indicates whether the build writes a syndication feed of the pages whose front matter declares enableFeed. Every entry carries an absolute URL, so the feed requires BaseUrl and is not written while it is null.",
       "type": "boolean",
       "default": false,
       "examples": [
@@ -65,7 +74,7 @@
       ]
     },
     "EnableSitemap": {
-      "description": "Writes a sitemap of the pages the site publishes. Requires BaseUrl, as every location in it is an absolute URL.",
+      "description": "Indicates whether the build writes a sitemap of the pages it publishes. Every location in it is an absolute URL, so the sitemap requires BaseUrl and is not written while it is null.",
       "type": "boolean",
       "default": false,
       "examples": [
@@ -73,12 +82,15 @@
       ]
     },
     "FooterLinks": {
-      "description": "Links listed in the footer of every page, in the order declared here. The feed and the sitemap are appended after them when the build publishes them.",
+      "description": "The links listed in the footer of every page, in the order declared here. The feed and the sitemap follow them whenever the build publishes those documents.",
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["Label", "Url"],
+        "required": [
+          "Label",
+          "Url"
+        ],
         "properties": {
           "Label": {
             "description": "The text the link reads as.",
@@ -107,16 +119,23 @@
       ]
     },
     "Theme": {
-      "description": "The bundled theme every page is styled with. Its stylesheet and script are written to the root of the output directory and linked ahead of the site's own. Unset, no theme is applied.",
-      "type": ["string", "null"],
-      "enum": ["classic", "modern", null],
+      "description": "The name of the bundled theme every page is styled with, or null to apply none. Its stylesheet and script are written to the root of the output directory, and every page links them ahead of the site's own.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "classic",
+        "modern",
+        null
+      ],
       "default": null,
       "examples": [
         "modern"
       ]
     },
     "KaTeXVersion": {
-      "description": "The version of KaTeX requested from jsDelivr by a page whose front matter sets enableMathRendering.",
+      "description": "The version of KaTeX that a page whose front matter sets enableMathRendering requests from jsDelivr, such as 0.19.0.",
       "type": "string",
       "minLength": 1,
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
@@ -126,7 +145,7 @@
       ]
     },
     "MermaidVersion": {
-      "description": "The version of Mermaid requested from jsDelivr by a page whose front matter sets enableDiagramRendering.",
+      "description": "The version of Mermaid that a page whose front matter sets enableDiagramRendering requests from jsDelivr, such as 12.1.0.",
       "type": "string",
       "minLength": 1,
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
@@ -136,7 +155,7 @@
       ]
     },
     "ShikiVersion": {
-      "description": "The version of Shiki requested from jsDelivr by a page whose front matter sets enableSyntaxHighlighting.",
+      "description": "The version of Shiki that a page whose front matter sets enableSyntaxHighlighting requests from jsDelivr, such as 4.6.0.",
       "type": "string",
       "minLength": 1,
       "pattern": "^\\d+\\.\\d+\\.\\d+$",
@@ -146,14 +165,23 @@
       ]
     },
     "Giscus": {
-      "description": "The GitHub Discussions backend a page declaring enableComments renders a comment thread from. Unset, no page renders one.",
-      "type": ["object", "null"],
+      "description": "The giscus backend a page declaring enableComments renders a comment thread from, or null to render none, whatever a page declares. Each thread is a GitHub discussion in the repository Repo names.",
+      "type": [
+        "object",
+        "null"
+      ],
       "additionalProperties": false,
-      "required": ["Repo", "RepoId", "Category", "CategoryId"],
+      "required": [
+        "Repo",
+        "RepoId",
+        "Category",
+        "CategoryId"
+      ],
       "properties": {
         "Repo": {
           "description": "The repository, as owner/name.",
           "type": "string",
+          "minLength": 1,
           "pattern": "^[^/\\s]+/[^/\\s]+$"
         },
         "RepoId": {
@@ -183,7 +211,7 @@
       ]
     },
     "ContentDirectory": {
-      "description": "The directory the site is built from, holding the Markdown sources and anything published beside them. Relative values are resolved against the working directory.",
+      "description": "The directory the site is built from, holding the Markdown sources and anything published beside them. Relative values are resolved against the content root, which is the working directory unless DOTNET_CONTENTROOT points elsewhere.",
       "type": "string",
       "minLength": 1,
       "default": "content",
@@ -193,7 +221,7 @@
       ]
     },
     "OutputDirectory": {
-      "description": "The directory the generated site is written to. Relative values are resolved against the working directory. Existing files are overwritten.",
+      "description": "The directory the generated site is written to. Relative values are resolved against the content root, as for ContentDirectory. Each build overwrites the files it publishes there and deletes the ones no source accounts for.",
       "type": "string",
       "minLength": 1,
       "default": "_site",
@@ -203,7 +231,7 @@
       ]
     },
     "ExcludePatterns": {
-      "description": "Patterns naming the entries the build leaves out, matched case insensitively against the name of each file and directory rather than against its path, with * and ? as the only wildcards. A directory that matches is not descended into. Nothing is excluded by default.",
+      "description": "Patterns naming the entries the build leaves out, matched case insensitively against the name of each file and directory, never against its path, with * and ? as the only wildcards. A directory that matches is not descended into.",
       "type": "array",
       "items": {
         "type": "string",
