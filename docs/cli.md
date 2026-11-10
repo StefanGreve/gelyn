@@ -1,7 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-08
+revised: 2026-11-10
 description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
@@ -16,11 +16,15 @@ flags that set a configuration value are listed under
 ## Tab completion
 
 Gelyn is built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
-[How to enable tab completion][tab-completion] to set up your machine once, then register the installed
-executable:
+[How to enable tab completion][tab-completion] to set up your shell once. A global install needs nothing
+more: `dotnet-suggest` finds every tool in `~/.dotnet/tools` by itself, so completion works as soon as
+`dotnet tool install --global Gelyn` finishes.
+
+An executable anywhere else, such as one installed with `--tool-path` or published from source, has to be
+registered once by its path:
 
 ```sh
-dotnet-suggest register --command-path "$HOME/.dotnet/tools/gelyn"
+dotnet-suggest register --command-path /path/to/gelyn
 ```
 
 ## serve

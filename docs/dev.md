@@ -1,7 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-08
+revised: 2026-11-10
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
@@ -16,15 +16,16 @@ The repository root carries a `Makefile` that collects the commands on this page
 
 Every target below is phony, and the recipes are silenced; `make V=1 <target>` echoes them instead.
 
-| Target         | Runs                                                                              |
-| -------------- | --------------------------------------------------------------------------------- |
-| `make setup`   | Local tools, the `git` hooks, the package restore, and the enforced `git` config. |
-| `make build`   | `dotnet build` in Release, without restoring.                                     |
-| `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.             |
-| `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                        |
-| `make gelyn`   | Publishes, then builds or serves the site named by `project`.                     |
-| `make lint`    | `dotnet format` across the solution.                                              |
-| `make clean`   | `dotnet clean` in both configurations, then clears the screen.                    |
+| Target         | Runs                                                                               |
+| -------------- | ---------------------------------------------------------------------------------- |
+| `make setup`   | Local tools, the `git` hooks, the package restore, and the enforced `git` config.  |
+| `make build`   | `dotnet build` in Release, without restoring.                                      |
+| `make test`    | Depends on `build`, then `dotnet test` in Release without rebuilding.              |
+| `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                         |
+| `make install` | Packs `src/Gelyn` for `RID` and installs it as a global tool, replacing any copy.  |
+| `make gelyn`   | Publishes, then builds or serves the site named by `project`.                      |
+| `make lint`    | `dotnet format` across the solution.                                               |
+| `make clean`   | `dotnet clean` in both configurations, removes the global tool, clears the screen. |
 
 > [!NOTE]
 > `make setup` is the only target that is required, and it is required once after cloning.
@@ -35,12 +36,12 @@ Git Bash behave alike.
 What a target does depends on the arguments below. Each is appended to the command, as
 `make <target> <argument>=<value>`:
 
-| Argument            | Read by            | Default                | Effect                                                   |
-| ------------------- | ------------------ | ---------------------- | -------------------------------------------------------- |
-| `project=<dir>`     | `gelyn`            | `docs`                 | Directory holding the site's `gelyn.json`                |
-| `serve=true`        | `gelyn`            | unset                  | Serves the site and rebuilds on every change             |
-| `refresh=<seconds>` | `gelyn`            | unset                  | Seconds between page reloads while serving               |
-| `RID=<rid>`         | `publish`, `gelyn` | host platform and arch | [Runtime identifier][known-rids] the binary is built for |
+| Argument            | Read by                       | Default                | Effect                                                   |
+| ------------------- | ----------------------------- | ---------------------- | -------------------------------------------------------- |
+| `project=<dir>`     | `gelyn`                       | `docs`                 | Directory holding the site's `gelyn.json`                |
+| `serve=true`        | `gelyn`                       | unset                  | Serves the site and rebuilds on every change             |
+| `refresh=<seconds>` | `gelyn`                       | unset                  | Seconds between page reloads while serving               |
+| `RID=<rid>`         | `publish`, `install`, `gelyn` | host platform and arch | [Runtime identifier][known-rids] the binary is built for |
 
 Each site in this repository builds through the `gelyn` target:
 
@@ -100,6 +101,17 @@ the runtime-specific package layout that the publish output alone does not cover
 dotnet pack && dotnet pack -r osx-arm64
 dotnet tool install --global Gelyn --prerelease
 ```
+
+`make install` runs these steps for the host's `RID`. It first deletes the packages an earlier run left in
+`artifacts/nupkg`, so that `--prerelease` cannot pick a higher version built from a later commit. It also
+uninstalls the tool before installing it, because MinVer gives every build of one commit the same version, and
+an installed copy of that version would otherwise count as up to date.
+
+> [!TIP]
+> The [tab completion](cli.md#tab-completion) shim asks `dotnet-suggest` which commands to complete once, when
+> the shell starts, so a shell that was open before the first install does not complete `gelyn`. Open a new
+> shell, or reload the profile in PowerShell with `. $PROFILE.CurrentUserAllHosts`. `make install` cannot do
+> this for you, because its recipes run in a child process that cannot change the shell that started `make`.
 
 > [!NOTE]
 > A plain `dotnet pack` emits only the pointer package listing the per-architecture ones, so the matching RID

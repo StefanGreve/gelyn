@@ -33,9 +33,13 @@ ifeq ($(PLATFORM),win)
 SHELL := cmd.exe
 BINARY = gelyn.exe
 CLEAR = cls
+NULL = nul
+DELETE_PACKAGES = if exist artifacts\nupkg del /q artifacts\nupkg\Gelyn*.nupkg
 else
 BINARY = gelyn
 CLEAR = clear
+NULL = /dev/null
+DELETE_PACKAGES = rm -f artifacts/nupkg/Gelyn*.nupkg
 endif
 
 # Native AOT cannot cross-compile between operating systems, so the host decides the runtime.
@@ -55,6 +59,9 @@ REFRESH = $(if $(refresh),--refresh $(refresh))
 project ?= docs
 
 SITE_CONFIG = ./$(project)/gelyn.json
+
+# Succeeds whether or not the tool is installed.
+UNINSTALL_TOOL = dotnet tool uninstall --global Gelyn >$(NULL) 2>&1 || exit 0
 
 setup:
 	: local tools, and the git hooks one of them installs
@@ -78,6 +85,16 @@ test: build
 publish:
 	dotnet publish $(MAIN_PROJECT) --runtime $(RID)
 
+install:
+	: the pointer package and the one for RID, with no older version beside them for --prerelease to prefer
+	$(DELETE_PACKAGES)
+	dotnet pack $(MAIN_PROJECT)
+	dotnet pack $(MAIN_PROJECT) --runtime $(RID)
+
+	: an installed copy of the same version would count as up to date, so it goes first
+	$(UNINSTALL_TOOL)
+	dotnet tool install --global Gelyn --prerelease
+
 gelyn: publish
 ifeq ($(serve),true)
 	$(GELYN) serve --config $(SITE_CONFIG) --launch-browser $(REFRESH)
@@ -91,8 +108,9 @@ lint:
 clean:
 	dotnet clean
 	dotnet clean --configuration Release
+	$(UNINSTALL_TOOL)
 	@$(CLEAR)
 
-.PHONY: setup build test publish gelyn lint clean
+.PHONY: setup build test publish install gelyn lint clean
 
 $(V).SILENT:
