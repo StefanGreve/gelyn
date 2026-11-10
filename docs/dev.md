@@ -118,6 +118,31 @@ an installed copy of that version would otherwise count as up to date.
 > has to be packed as well. `Gelyn` resolves as a package id rather than a path, so `nuget.config` declares
 > `artifacts/nupkg` as the `local` source and maps `Gelyn*` to it.
 
+### The Configuration Schema
+
+`gelyn.schema.json` is generated and never edited by hand. After every build of the solution, `src/Gelyn.Schema`
+exports it from `SiteOptions` through [`JsonSchemaExporter`][extract-schema] and rewrites the file when its
+content changed. Each part of the schema has one source:
+
+| Part                                                  | Source                                                                           |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Keys, types, `null`, `format`, `additionalProperties` | The options types in `src/Gelyn/Model/Options`                                   |
+| `description`                                         | The `<summary>` of each property                                                 |
+| `examples`                                            | Each `<example>`, as written for a string setting and as JSON for any other      |
+| `required`, `pattern`, `minimum`, `maximum`           | `[Required]`, `[RegularExpression]` and `[Range]`                                |
+| `uniqueItems`                                         | `[UniqueItems]` from `Gelyn.Attributes`                                          |
+| `minLength`                                           | Every string that excludes `null`, as `SiteOptionsValidator` rejects a blank one |
+| `default`                                             | The initializers of `SiteOptions`                                                |
+| The `enum` of `Theme`                                 | The stylesheets and scripts in the theme folder                                  |
+
+The build fails when a property has no summary or a setting has no example, so the schema never ships without
+either.
+
+Commit the regenerated file with the change that caused it. A CI build compares the file instead of writing it,
+the way restore treats a stale lock file, and fails when the two differ. The `pre-push` hook refuses a push whose
+commit lacks the regenerated file. `git push --no-verify` skips that hook, but not the check in CI. A merge
+conflict in the file is resolved by building the solution, not by editing it.
+
 ## The SDK Pin
 
 `global.json` names the exact SDK this repository builds with and sets `rollForward` to [`disable`][global-json],
@@ -220,6 +245,7 @@ winget install -e --id jqlang.jq
 
 <!-- References -->
 
+[extract-schema]: https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/extract-schema
 [tunit]: https://tunit.dev
 [tunit-docs]: https://tunit.dev/docs/intro/
 [husky]: https://alirezanet.github.io/Husky.Net

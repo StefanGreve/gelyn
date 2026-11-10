@@ -45,8 +45,9 @@ handled from then on.
   by passing `--theme` to `gelyn build` or `gelyn serve`.
 - A theme is `<name>.css` with an optional `<name>.js`. The build embeds every `.css` and `.js` file in the folder
   and takes its base name as the name of a theme, so each distinct base name becomes a value of `--theme`. A new
-  theme therefore also needs its name in the `enum` of `Theme` in `gelyn.schema.json`, which a test compares with
-  the bundled names.
+  theme therefore also needs a bullet under `Themes` in `docs/configuration.md`, which a test compares with the
+  bundled names, and an entry in the theme list of `plugins/gelyn/skills/bootstrap/SKILL.md`. The build adds the
+  name to the `enum` of `Theme` in `gelyn.schema.json`.
 - The folder holds theme files alone. A stylesheet that serves one site or one page, such as
   `docs/assets/modern404.css`, belongs in that site. In the folder it would become a theme of its own and fail
   that test.

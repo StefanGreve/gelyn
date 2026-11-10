@@ -10,7 +10,8 @@ is one, as "Closes #000".
 ## Checklist
 
 - [ ] I have read the [Contributing Guidelines](https://github.com/StefanGreve/gelyn/blob/master/CONTRIBUTING.md)
-- [ ] The documentation in `docs/` and `gelyn.schema.json` match the new behavior.
+- [ ] The documentation in `docs/`, and the summaries and examples of the options types that `gelyn.schema.json`
+      is generated from, match the new behavior.
 - [ ] Theme edits were made in `plugins/gelyn/skills/bootstrap/themes`, not in the git-ignored previews.
 - [ ] A site that built on the previous release still builds, or the description says what breaks and how to
       migrate.
