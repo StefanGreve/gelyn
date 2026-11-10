@@ -23,6 +23,7 @@ public class NamingTests : ArchBase
     /// </remarks>
     [Test]
     [Arguments(AbstractionsNamespace, "Contract")]
+    [Arguments(AttributesNamespace, "Attribute")]
     [Arguments(CommandsNamespace, "Command")]
     [Arguments(ComponentsNamespace, "Component")]
     [Arguments(ContextNamespace, "Context")]

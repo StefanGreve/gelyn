@@ -9,6 +9,7 @@ public abstract class ArchBase
 {
     private protected const string RootNamespace = "Gelyn";
     private protected const string AbstractionsNamespace = "Gelyn.Abstractions";
+    private protected const string AttributesNamespace = "Gelyn.Attributes";
     private protected const string CommandsNamespace = "Gelyn.Commands";
     private protected const string ComponentsNamespace = "Gelyn.Components";
     private protected const string CoreNamespace = "Gelyn.Core";

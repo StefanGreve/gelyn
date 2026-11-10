@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using System.Net;
+
+using Gelyn.Attributes;
 using Gelyn.Core.Internals;
 
 namespace Gelyn.Model.Options;
@@ -112,6 +116,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     0.19.0
     /// </example>
+    [RegularExpression(@"^\d+\.\d+\.\d+$")]
     public string KaTeXVersion { get; set; } = "0.19.0";
 
     /// <summary>
@@ -121,6 +126,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     12.1.0
     /// </example>
+    [RegularExpression(@"^\d+\.\d+\.\d+$")]
     public string MermaidVersion { get; set; } = "12.1.0";
 
     /// <summary>
@@ -130,6 +136,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     4.6.0
     /// </example>
+    [RegularExpression(@"^\d+\.\d+\.\d+$")]
     public string ShikiVersion { get; set; } = "4.6.0";
 
     /// <summary>
@@ -181,6 +188,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     ["*.tmp", "drafts", "*.xcf"]
     /// </example>
+    [UniqueItems]
     public IReadOnlyList<string> ExcludePatterns { get; set; } = [];
 
     /// <summary>
@@ -194,5 +202,6 @@ internal sealed class SiteOptions
     /// <example>
     ///     8080
     /// </example>
+    [Range(IPEndPoint.MinPort + 1, IPEndPoint.MaxPort)]
     public int Port { get; set; } = 9_624;
 }

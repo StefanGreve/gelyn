@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Gelyn.Model.Options;
 
 /// <summary>
@@ -12,10 +14,12 @@ internal sealed class FooterLink
     /// <summary>
     ///     The text the link reads as.
     /// </summary>
+    [Required]
     public string? Label { get; set; }
 
     /// <summary>
     ///     The absolute http or https URL the link addresses.
     /// </summary>
+    [Required]
     public Uri? Url { get; set; }
 }
