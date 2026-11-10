@@ -153,8 +153,12 @@ internal sealed class WatchHarness : IAsyncDisposable
     ///     What the loop has written, one element per line. A line the console wrapped is therefore more
     ///     than one element, which is why an assertion about wording reads <see cref="Output"/> instead.
     /// </summary>
+    /// <remarks>
+    ///     A line counts once its line break is written. The console writes a line in several calls, so a
+    ///     read between two of them would otherwise return the first segment as a line of its own.
+    /// </remarks>
     public string[] Lines =>
-        this.Output.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        CompleteLines(this.Output);
 
     /// <summary>
     ///     The number of rebuilds the loop has completed.
@@ -183,10 +187,11 @@ internal sealed class WatchHarness : IAsyncDisposable
     }
 
     /// <summary>
-    ///     What the loop has written to standard error, one element per line.
+    ///     What the loop has written to standard error, one element per line, counted as <see cref="Lines"/>
+    ///     counts them.
     /// </summary>
     public string[] ErrorLines =>
-        this.ErrorOutput.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        CompleteLines(this.ErrorOutput);
 
     /// <summary>
     ///     The lines reporting a rebuild that failed. Read off standard error, so a count also pins the
@@ -420,6 +425,13 @@ internal sealed class WatchHarness : IAsyncDisposable
 
     private int Count(int eventId) =>
         this.Records.Count(record => record.Id.Id == eventId);
+
+    private static string[] CompleteLines(string output)
+    {
+        int end = output.LastIndexOf(Environment.NewLine, StringComparison.Ordinal);
+
+        return end < 0 ? [] : output[..end].Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+    }
 
     private async Task AdvanceUntilAsync(Func<bool> reached, string expectation)
     {
