@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Core;
 using Gelyn.Model;
+using Gelyn.Model.Options;
 
 namespace Gelyn.Tests.Core;
 
@@ -15,6 +16,7 @@ namespace Gelyn.Tests.Core;
 public class ThemeCatalogTests
 {
     private const string ThemeDirectoryName = "themes";
+    private const string ConfigurationPageName = "configuration.md";
 
     #region Names Tests
 
@@ -37,6 +39,45 @@ public class ThemeCatalogTests
 
         // Assert
         await Assert.That(names).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that the theme list of the configuration page names every bundled theme and no other, so
+    ///     that a stray stylesheet in the theme folder fails, and a new theme fails until it is documented.
+    /// </summary>
+    [Test]
+    public async Task Names_Test_ConfigurationPage_DocumentsEveryBundledTheme()
+    {
+        // Arrange
+        string[] lines = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, ConfigurationPageName));
+
+        // Act
+        IEnumerable<string> documented = lines
+            .SkipWhile(static line => line != "## Themes")
+            .Skip(1)
+            .TakeWhile(static line => !line.StartsWith("## ", StringComparison.Ordinal))
+            .Where(static line => line.StartsWith("- `", StringComparison.Ordinal))
+            .Select(static line => line[3..line.IndexOf('`', 3)]);
+
+        // Assert
+        await Assert.That(documented).IsEquivalentTo(ThemeCatalog.Names);
+    }
+
+    /// <summary>
+    ///     Verifies that the sample error of the configuration page lists the bundled themes as the validator
+    ///     reports them.
+    /// </summary>
+    [Test]
+    public async Task Names_Test_ConfigurationPage_SampleErrorListsEveryBundledTheme()
+    {
+        // Arrange
+        string expected = $"error: {nameof(SiteOptions.Theme)} must name a bundled theme: {string.Join(", ", ThemeCatalog.Names)}.";
+
+        // Act
+        string[] lines = File.ReadAllLines(Path.Combine(AppContext.BaseDirectory, ConfigurationPageName));
+
+        // Assert
+        await Assert.That(lines).Contains(expected);
     }
 
     #endregion // Names Tests

@@ -95,9 +95,64 @@ public class SiteOptionsSchemaTests
         await Assert.That(documented).IsEquivalentTo(expected);
     }
 
+    /// <summary>
+    ///     Verifies that every property the schema declares, at every depth, carries a description, which is
+    ///     what an editor shows beside the key.
+    /// </summary>
+    [Test]
+    public async Task Schema_Test_EveryPropertyCarriesADescription()
+    {
+        // Arrange
+        JsonElement documented = ReadDocumentedProperties();
+
+        // Act
+        IEnumerable<string> undescribed = EnumerateProperties(documented, string.Empty)
+            .Where(static property => !property.Schema.TryGetProperty("description", out JsonElement description) || string.IsNullOrWhiteSpace(description.GetString()))
+            .Select(static property => property.Path);
+
+        // Assert
+        await Assert.That(undescribed).IsEmpty();
+    }
+
+    /// <summary>
+    ///     Verifies that every setting offers at least one example, so that an editor can suggest a value.
+    /// </summary>
+    [Test]
+    public async Task Schema_Test_EverySettingCarriesAnExample()
+    {
+        // Act
+        IEnumerable<string> unexemplified = ReadDocumentedProperties()
+            .EnumerateObject()
+            .Where(static property => !property.Name.StartsWith('$'))
+            .Where(static property => !property.Value.TryGetProperty("examples", out JsonElement examples) || examples.GetArrayLength() == 0)
+            .Select(static property => property.Name);
+
+        // Assert
+        await Assert.That(unexemplified).IsEmpty();
+    }
+
     #endregion // Schema Tests
 
     #region Helpers
+
+    // Descends into nested objects and into the objects a list holds, which is where FooterLinks keeps its keys.
+    private static IEnumerable<(string Path, JsonElement Schema)> EnumerateProperties(JsonElement properties, string prefix)
+    {
+        foreach (JsonProperty property in properties.EnumerateObject())
+        {
+            string path = $"{prefix}{property.Name}";
+
+            yield return (path, property.Value);
+
+            JsonElement schema = property.Value.TryGetProperty("items", out JsonElement items) ? items : property.Value;
+
+            if (!schema.TryGetProperty("properties", out JsonElement nested))
+                continue;
+
+            foreach ((string Path, JsonElement Schema) member in EnumerateProperties(nested, $"{path}."))
+                yield return member;
+        }
+    }
 
     private static JsonElement ReadDocumentedProperties()
     {

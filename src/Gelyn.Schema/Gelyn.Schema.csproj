@@ -7,8 +7,20 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
+  <PropertyGroup Label="Schema">
+    <SchemaPath>$(RepositoryRoot)gelyn.schema.json</SchemaPath>
+    <SchemaMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">--verify</SchemaMode>
+    <SchemaHost>$(DOTNET_HOST_PATH)</SchemaHost>
+    <SchemaHost Condition="'$(SchemaHost)' == ''">dotnet</SchemaHost>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="../Gelyn/Gelyn.csproj" />
   </ItemGroup>
+
+  <!-- CI verifies the committed file instead of writing it, as RestoreLockedMode does for the lock file -->
+  <Target Name="WriteSchema" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="&quot;$(SchemaHost)&quot; &quot;$(TargetPath)&quot; &quot;$(SchemaPath)&quot; $(SchemaMode)" LogStandardErrorAsError="true" />
+  </Target>
 
 </Project>

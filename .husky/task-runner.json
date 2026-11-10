@@ -15,6 +15,12 @@
       "args": [ "test" ]
     },
     {
+      "name": "schema",
+      "group": "pre-push",
+      "command": "git",
+      "args": [ "diff", "--exit-code", "HEAD", "--", "gelyn.schema.json" ]
+    },
+    {
       "name": "coverage",
       "group": "pre-push",
       "command": "dotnet",

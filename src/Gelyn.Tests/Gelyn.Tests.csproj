@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <None Include="$(RepositoryRoot)gelyn.schema.json" Link="gelyn.schema.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(RepositoryRoot)docs/configuration.md" Link="configuration.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepositoryRoot)THIRD-PARTY-NOTICES.TXT" Link="THIRD-PARTY-NOTICES.TXT" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepositoryRoot)src/Gelyn/packages.lock.json" Link="Gelyn.packages.lock.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RepositoryRoot)plugins/gelyn/skills/bootstrap/themes/*"
@@ -27,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Gelyn/Gelyn.csproj" />
+    <ProjectReference Include="../Gelyn.Schema/Gelyn.Schema.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
