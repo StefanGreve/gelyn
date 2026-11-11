@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
+using Gelyn.Model;
 using Gelyn.Model.Options;
+using Gelyn.Tests.Fixtures;
 
 using Microsoft.Extensions.Configuration;
 
@@ -264,4 +266,115 @@ public class ConfigurationManagerExtensionsTests
     }
 
     #endregion // Theme Tests
+
+    #region Configuration File Tests
+
+    /// <summary>
+    ///     Verifies that a file that does not parse is reported instead of thrown, so that a command which
+    ///     never reads the options still runs.
+    /// </summary>
+    [Test]
+    public async Task ConfigurationFile_Test_FileThatDoesNotParse_IsReported()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
+
+        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName));
+
+        // Act
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(status.Exists).IsTrue();
+            await Assert.That(status.Failure).IsTypeOf<InvalidDataException>();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a file requested through <c>--config</c> that does not exist is reported as missing.
+    /// </summary>
+    [Test]
+    public async Task ConfigurationFile_Test_MissingRequestedFile_IsReported()
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, "missing.json"));
+
+        // Act
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(status.Exists).IsFalse();
+            await Assert.That(status.Failure).IsTypeOf<FileNotFoundException>();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a missing <c>gelyn.json</c> is no failure, because the defaults apply without it.
+    /// </summary>
+    [Test]
+    public async Task ConfigurationFile_Test_MissingDefaultFile_IsNoFailure()
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        var configuration = new ConfigurationManager();
+        configuration.SetBasePath(fixture.Root);
+
+        // Act
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(status.Exists).IsFalse();
+            await Assert.That(status.Failure).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that only the first load is deferred, so that a reload under <c>serve</c> still reports a
+    ///     file that broke after it loaded.
+    /// </summary>
+    [Test]
+    public async Task ConfigurationFile_Test_ReloadOfABrokenFile_Throws()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": "Before" }""");
+
+        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName));
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+
+        fixture.WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
+
+        // Act and Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(status.Failure).IsNull();
+            await Assert.That(() => ((IConfigurationRoot)configuration).Reload()).Throws<InvalidDataException>();
+        }
+    }
+
+    #endregion // Configuration File Tests
+
+    #region Helpers
+
+    private static ConfigurationManager Requesting(string path)
+    {
+        var configuration = new ConfigurationManager();
+
+        configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            [ConfigurationFile.PathKey] = path,
+        });
+
+        return configuration;
+    }
+
+    #endregion
 }

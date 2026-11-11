@@ -1,5 +1,8 @@
+using System.Runtime.ExceptionServices;
+
 using Gelyn.Abstractions;
 using Gelyn.Commands;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Validators;
@@ -15,6 +18,35 @@ namespace Gelyn.Extensions;
 /// </summary>
 internal static class ServiceCollectionExtensions
 {
+    /// <summary>
+    ///     Registers what the first load of the configuration file found, and defers the failure it held back
+    ///     to the first read of <see cref="SiteOptions"/>.
+    /// </summary>
+    /// <remarks>
+    ///     Call it ahead of <see cref="AddSiteOptions"/>, so that the failure is raised before the bind runs.
+    /// </remarks>
+    /// <param name="services">
+    ///     The collection to add the registrations to.
+    /// </param>
+    /// <param name="file">
+    ///     What <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/> returned.
+    /// </param>
+    /// <returns>
+    ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
+    /// </returns>
+    public static IServiceCollection AddConfigurationFile(this IServiceCollection services, ConfigurationFileStatus file)
+    {
+        services.TryAddSingleton(file);
+
+        if (file.Failure is Exception failure)
+        {
+            services.AddOptions<SiteOptions>()
+                .Configure(_ => ExceptionDispatchInfo.Throw(failure));
+        }
+
+        return services;
+    }
+
     /// <summary>
     ///     Registers <see cref="SiteOptions"/> together with the validator that checks it.
     /// </summary>

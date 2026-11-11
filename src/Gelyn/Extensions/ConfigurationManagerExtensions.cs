@@ -1,7 +1,10 @@
 using Gelyn.Core.Internals;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.FileProviders;
 
 namespace Gelyn.Extensions;
 
@@ -15,16 +18,8 @@ internal static class ConfigurationManagerExtensions
     ///     Adds the tool's configuration file and re-applies the sources that outrank it.
     /// </summary>
     /// <remarks>
-    ///     A path supplied through <c>--config</c> must exist, whereas the conventional
-    ///     <c>gelyn.json</c> is optional, because the defaults on <see cref="SiteOptions"/> are usable on
-    ///     their own. The environment variables and the command line are added again so that they keep
-    ///     overriding the file, which is added after them and would otherwise win.
-    ///
-    ///     The file is not watched here, because establishing the watch costs around 38 ms of a 41 ms startup
-    ///     on macOS and every command but <c>serve</c> reads it once. <c>serve</c> does outlive that read and
-    ///     runs a watcher of its own in <see cref="Gelyn.Services.SiteWatcher"/>, which reloads the
-    ///     configuration and then regenerates the site, where a reload alone would update what
-    ///     <c>IOptionsMonitor</c> returns and nothing else.
+    ///     A load failure is returned instead of thrown, so that <c>--help</c> and <c>--version</c> still run. The
+    ///     file is not watched, because the watch costs most of the startup and <c>serve</c> runs its own watcher.
     /// </remarks>
     /// <param name="configuration">
     ///     The configuration to add the sources to.
@@ -33,26 +28,45 @@ internal static class ConfigurationManagerExtensions
     ///     Command line arguments passed to the tool.
     /// </param>
     /// <returns>
-    ///     The same <see cref="ConfigurationManager"/> instance, so that calls can be chained.
+    ///     What the first load of the file found, including the failure it held back.
     /// </returns>
-    public static ConfigurationManager AddSiteConfiguration(this ConfigurationManager configuration, string[] args)
+    public static ConfigurationFileStatus AddSiteConfiguration(this ConfigurationManager configuration, string[] args)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
         string? requested = configuration[ConfigurationFile.PathKey];
         IReadOnlyDictionary<string, string?> overrides = configuration.ReadOverrides();
 
-        configuration.AddJsonFile(
-            requested ?? ConfigurationFile.DefaultFileName,
-            optional: requested is null,
-            reloadOnChange: false);
+        JsonConfigurationSource? file = null;
+        Exception? failure = null;
+
+        configuration.AddJsonFile(source =>
+        {
+            source.Path = requested ?? ConfigurationFile.DefaultFileName;
+            source.Optional = requested is null;
+            source.ReloadOnChange = false;
+            source.ResolveFileProvider();
+            source.OnLoadException = context =>
+            {
+                failure = context.Exception;
+                context.Ignore = true;
+            };
+            file = source;
+        });
+
+        // Only the first load is deferred, so a reload under serve still throws into the watcher.
+        if (file is not null) file.OnLoadException = null;
 
         configuration
             .AddEnvironmentVariables()
             .AddCommandLine(args)
             .AddInMemoryCollection(overrides);
 
-        return configuration;
+        return new ConfigurationFileStatus
+        {
+            Exists = file is { FileProvider: IFileProvider provider, Path: string path } && provider.GetFileInfo(path).Exists,
+            Failure = failure,
+        };
     }
 
     #region Helpers

@@ -1,7 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-10
+revised: 2026-11-11
 description: Shell tab completion, the serve command, the request log, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
@@ -119,7 +119,8 @@ build waits on.
 Code `1` also covers a command line that Gelyn can't parse, because that's what `System.CommandLine` returns
 for one, so you can't tell an unrecognized option from a failed build. Code `2` means a setting is unusable,
 such as a `BaseUrl` that isn't an absolute `http` or `https` URL, a `--config` path that doesn't exist, or a
-content directory without an `index.md`.
+content directory without an `index.md`. Every command also returns `2` for a configuration file that doesn't
+parse. `--help` and `--version` return `0` even when the configuration file doesn't load.
 
 `serve` returns `0` when you interrupt it, `2` when it rejects the configuration as `build` would, and `1`
 when the port is already taken, when the platform carries no usable `HttpListener`, or when the first build

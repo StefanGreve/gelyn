@@ -5,6 +5,7 @@ using System.IO.Abstractions;
 using Gelyn.Commands;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
+using Gelyn.Model;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +45,7 @@ internal static class Program
         try
         {
             HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
-            builder.Configuration.AddSiteConfiguration(args);
+            ConfigurationFileStatus file = builder.Configuration.AddSiteConfiguration(args);
             builder.Logging.ConfigureDiagnostics(builder.Configuration);
 
             // Third-party registrations
@@ -55,15 +56,15 @@ internal static class Program
 
             // First-party registrations
             builder.Services.TryAddSingleton(TimeProvider.System);
+            builder.Services.AddConfigurationFile(file);
             builder.Services.AddSiteOptions();
             builder.Services.AddServices();
             builder.Services.AddCommands();
 
             using IHost host = builder.Build();
 
-            // Ensures that --help and --version execute even when the configuration holds invalid values:
-            // consumers read their options lazily, so validation surfaces here and only for a real command.
-            // A configuration file that cannot be parsed is the exception, because loading it is eager.
+            // Ensures that --help and --version execute even when the configuration file fails to load or a value
+            // is invalid: consumers read their options lazily, so both surface here and only for a real command.
             var configuration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
 
             ParseResult parsed = host.Services
