@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Configuration;
+
 namespace Gelyn.Core.Internals;
 
 /// <summary>
@@ -20,4 +22,19 @@ internal static class ConfigurationFile
     ///     The option that overrides <see cref="DefaultFileName"/>.
     /// </summary>
     internal const string OptionName = $"--{PathKey}";
+
+    /// <summary>
+    ///     Resolves the path of the configuration file a configuration names, or of the default file.
+    /// </summary>
+    /// <param name="configuration">
+    ///     The configuration that carries an explicit path under <see cref="PathKey"/>.
+    /// </param>
+    /// <param name="root">
+    ///     The directory a relative path is resolved against.
+    /// </param>
+    /// <returns>
+    ///     The absolute path of the file, whether it exists or not.
+    /// </returns>
+    internal static string Resolve(IConfiguration configuration, string root) =>
+        PathBoundary.Resolve(root, configuration[PathKey] ?? DefaultFileName);
 }

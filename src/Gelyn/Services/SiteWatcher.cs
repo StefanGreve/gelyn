@@ -134,7 +134,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
         string contentDirectory = PathBoundary.Resolve(root, options.ContentDirectory);
         string outputDirectory = PathBoundary.Resolve(root, options.OutputDirectory);
-        string configurationFile = PathBoundary.Resolve(root, this.ConfigurationFileName());
+        string configurationFile = ConfigurationFile.Resolve(this._configuration, root);
 
         using FileSystemWatcher sources = Observe(
             directory: contentDirectory,
@@ -410,9 +410,6 @@ internal sealed class SiteWatcher : SiteWatcherContract
         foreach (string message in messages)
             this._stdErr.MarkupLineInterpolated($"[red]error:[/] {message}");
     }
-
-    private string ConfigurationFileName() =>
-        this._configuration[ConfigurationFile.PathKey] ?? ConfigurationFile.DefaultFileName;
 
     /// <summary>
     ///     Names the directory settings a reload has moved, which the watchers and the server cannot follow

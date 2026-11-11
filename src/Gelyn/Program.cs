@@ -63,8 +63,8 @@ internal static class Program
 
             using IHost host = builder.Build();
 
-            // Ensures that --help and --version execute even when the configuration file fails to load or a value
-            // is invalid: consumers read their options lazily, so both surface here and only for a real command.
+            // Ensures that --help, --version and --info execute even when the configuration file fails to load or a
+            // value is invalid: consumers read their options lazily, so both surface here and only for a real command.
             var configuration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
 
             ParseResult parsed = host.Services

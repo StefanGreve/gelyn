@@ -13,10 +13,11 @@ public partial class ToolTests
     #region Metadata Tests
 
     /// <summary>
-    ///     Verifies that the build stamps the author, the repository and the license into the assembly.
+    ///     Verifies that the build stamps the author, the repository, the license and the SDK version into the
+    ///     assembly.
     /// </summary>
     [Test]
-    public async Task Metadata_Test_AuthorRepositoryAndLicense_AreStamped()
+    public async Task Metadata_Test_AuthorRepositoryLicenseAndSdk_AreStamped()
     {
         // Assert
         using (Assert.Multiple())
@@ -24,6 +25,7 @@ public partial class ToolTests
             await Assert.That(Tool.Author).IsNotNullOrEmpty();
             await Assert.That(Tool.RepositoryUrl).IsNotNullOrEmpty();
             await Assert.That(Tool.License).IsNotNullOrEmpty();
+            await Assert.That(Tool.SdkVersion).IsNotNullOrEmpty();
         }
     }
 

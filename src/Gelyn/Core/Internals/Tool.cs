@@ -48,6 +48,11 @@ internal static class Tool
     internal static string? Revision { get; } = ReadMetadata("SourceRevisionId");
 
     /// <summary>
+    ///     The version of the .NET SDK the tool was built with, or <see langword="null"/> when the build stamped none.
+    /// </summary>
+    internal static string? SdkVersion { get; } = ReadMetadata("NETCoreSdkVersion");
+
+    /// <summary>
     ///     The culture every value is formatted and parsed against, so that what a build produces depends on
     ///     no setting of the machine it ran on.
     /// </summary>

@@ -82,6 +82,7 @@
 
   <ItemGroup Label="Assembly metadata">
     <AssemblyMetadata Include="PackageLicenseExpression" Value="$(PackageLicenseExpression)" />
+    <AssemblyMetadata Include="NETCoreSdkVersion" Value="$(NETCoreSdkVersion)" />
   </ItemGroup>
 
   <!-- SourceLink sets $(SourceRevisionId) in a target, so a static item would read it empty. -->

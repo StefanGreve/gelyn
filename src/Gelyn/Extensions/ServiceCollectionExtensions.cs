@@ -2,6 +2,7 @@ using System.Runtime.ExceptionServices;
 
 using Gelyn.Abstractions;
 using Gelyn.Commands;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -95,11 +96,11 @@ internal static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    ///     Registers the root command and every subcommand it dispatches to.
+    ///     Registers the root command, every subcommand it dispatches to, and the <c>--info</c> option.
     /// </summary>
     /// <remarks>
-    ///     <see cref="Program"/> resolves only the root command, and the subcommands reach it through its
-    ///     constructor, so each one is registered here instead of constructed by hand.
+    ///     <see cref="Program"/> resolves only the root command, and the others reach it through its constructor,
+    ///     so each one is registered here instead of constructed by hand.
     /// </remarks>
     /// <param name="services">
     ///     The collection to add the registrations to.
@@ -112,6 +113,7 @@ internal static class ServiceCollectionExtensions
         services.TryAddSingleton<BuildCommand>();
         services.TryAddSingleton<CleanCommand>();
         services.TryAddSingleton<ServeCommand>();
+        services.TryAddSingleton<InfoOption>();
         services.TryAddSingleton<GelynCommand>();
 
         return services;
