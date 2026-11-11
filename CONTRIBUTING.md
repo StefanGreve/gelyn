@@ -9,7 +9,7 @@ handled from then on.
 
 - Search the [issue list][issues] first, so that a bug which is already reported or fixed does not get a
   second issue.
-- Give the issue a clear title and description, the Gelyn version, the platform, and as much of the
+- Give the issue a clear title and description, the output of `gelyn --info`, and as much of the
   configuration and the content that triggers it as you can share. A page that reproduces the problem on its
   own is the most useful attachment.
 
