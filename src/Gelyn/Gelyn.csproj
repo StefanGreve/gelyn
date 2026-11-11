@@ -48,6 +48,7 @@
     <PackageTags>dotnet;dotnet-tool;markdown-to-html;ssg;static-site-generator</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/StefanGreve/gelyn</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
 
@@ -78,6 +79,19 @@
     <InternalsVisibleTo Include="Gelyn.Schema" />
     <InternalsVisibleTo Include="Gelyn.Tests" />
   </ItemGroup>
+
+  <ItemGroup Label="Assembly metadata">
+    <AssemblyMetadata Include="PackageLicenseExpression" Value="$(PackageLicenseExpression)" />
+  </ItemGroup>
+
+  <!-- SourceLink sets $(SourceRevisionId) in a target, so a static item would read it empty. -->
+  <Target Name="StampSourceRevision"
+          DependsOnTargets="InitializeSourceControlInformation"
+          BeforeTargets="GetAssemblyAttributes">
+    <ItemGroup Condition="'$(SourceRevisionId)' != ''">
+      <AssemblyMetadata Include="SourceRevisionId" Value="$(SourceRevisionId)" />
+    </ItemGroup>
+  </Target>
 
   <Target Name="CleanPublishDirectory" BeforeTargets="PrepareForPublish">
     <RemoveDir Directories="$(PublishDir)" />

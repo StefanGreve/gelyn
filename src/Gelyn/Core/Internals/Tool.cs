@@ -24,6 +24,30 @@ internal static class Tool
         ?.InformationalVersion ?? "0.0.0";
 
     /// <summary>
+    ///     The author the assembly names as its company, or <see langword="null"/> when it names none.
+    /// </summary>
+    internal static string? Author { get; } = typeof(Tool).Assembly
+        .GetCustomAttribute<AssemblyCompanyAttribute>()
+        ?.Company;
+
+    /// <summary>
+    ///     The repository the tool is developed in, or <see langword="null"/> when the build stamped none.
+    /// </summary>
+    internal static string? RepositoryUrl { get; } = ReadMetadata("RepositoryUrl");
+
+    /// <summary>
+    ///     The SPDX expression of the license the tool ships under, or <see langword="null"/> when the build
+    ///     stamped none.
+    /// </summary>
+    internal static string? License { get; } = ReadMetadata("PackageLicenseExpression");
+
+    /// <summary>
+    ///     The commit the tool was built from, or <see langword="null"/> when the build ran outside a git
+    ///     repository.
+    /// </summary>
+    internal static string? Revision { get; } = ReadMetadata("SourceRevisionId");
+
+    /// <summary>
     ///     The culture every value is formatted and parsed against, so that what a build produces depends on
     ///     no setting of the machine it ran on.
     /// </summary>
@@ -38,4 +62,14 @@ internal static class Tool
     /// </summary>
     /// <seealso cref="StringUtils.NormalizeLineEndings"/>
     internal const string LineEnding = "\n";
+
+    #region Helpers
+
+    private static string? ReadMetadata(string key) =>
+        typeof(Tool).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => attribute.Key == key)
+            ?.Value;
+
+    #endregion
 }
