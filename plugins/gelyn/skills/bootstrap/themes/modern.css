@@ -390,7 +390,7 @@ main > h3 {
     line-height: 1.3;
 }
 
-:is(h1, h2, h3) {
+:is(h1, h2, h3, h4, h5, h6) {
     scroll-margin-block-start: 5rem;
 }
 
@@ -527,6 +527,39 @@ th {
 
 tbody > tr:last-child > td {
     border-block-end: none;
+}
+
+/* table of contents extension */
+
+nav.toc {
+    & ol {
+        margin-block: 0;
+        padding-inline-start: 0;
+        list-style-type: none;
+        counter-reset: toc;
+    }
+
+    & li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 0.5rem;
+        counter-increment: toc;
+
+        &::before {
+            content: counters(toc, ".");
+            color: var(--label-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        & > ol {
+            grid-column: 2;
+        }
+    }
+
+    & li + li,
+    & li > ol {
+        margin-block-start: 0.4rem;
+    }
 }
 
 /* footer */

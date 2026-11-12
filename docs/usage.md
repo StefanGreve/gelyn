@@ -8,6 +8,8 @@ enableSyntaxHighlighting: true
 
 # Usage
 
+[TOC]
+
 Your content tree is your site: the name and the position of each file decide what it becomes, so you write no
 templates and maintain no manifest. One command builds it:
 

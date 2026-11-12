@@ -8,8 +8,12 @@ enableSyntaxHighlighting: true
 
 # Configuration
 
-Gelyn runs without configuration, so you only need a file to change a default. To change one, create a
-`gelyn.json` beside `content/` in the directory you run `gelyn` from:
+[TOC]
+
+This page lists every setting Gelyn accepts, its default, and the four layers a value can arrive from, each
+overriding the one before it. Gelyn runs without configuration, so you only need a file to change a default,
+and no setting is required. To change one, create a `gelyn.json` beside `content/` in the directory you run
+`gelyn` from:
 
 ```json
 {

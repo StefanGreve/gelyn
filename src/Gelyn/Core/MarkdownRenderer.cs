@@ -4,6 +4,7 @@ using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using Markdig.Extensions.AutoLinks;
 using Markdig.Extensions.EmphasisExtras;
+using Markdig.Extensions.TableOfContents;
 using Markdig.Extensions.Tables;
 using Markdig.Extensions.Yaml;
 using Markdig.Syntax;
@@ -21,7 +22,7 @@ internal sealed class MarkdownRenderer
         .UseAlertBlocks()
         .UseAbbreviations()
         .UseAutoIdentifiers(AutoIdentifierOptions.GitHub)
-        .UseTableOfContents()
+        .UseTableOfContents(new TableOfContentsOptions { ListKind = TableOfContentsListKind.Ordered, MinLevel = 2 })
         .UseCitations()
         .UseDefinitionLists()
         .UseEmphasisExtras(EmphasisExtraOptions.Strikethrough)

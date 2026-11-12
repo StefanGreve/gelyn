@@ -1,0 +1,47 @@
+/*
+    Styles the heading anchors that anchors.js injects; neither half does anything on its own. This site
+    builds with the modern theme, whose --accent this borrows, so the two are expected to load together.
+*/
+
+/* heading anchors */
+
+a.heading-anchor {
+    display: inline-flex;
+    margin-inline-start: 0.3em;
+    padding-inline: 0.15em;
+    color: var(--accent);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+
+    & > svg {
+        width: 0.8em;
+        height: 0.8em;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    & > .icon-check {
+        display: none;
+    }
+
+    :is(h1, h2, h3, h4, h5, h6):hover > &,
+    &:focus-visible {
+        opacity: 1;
+    }
+
+    &[data-copied] {
+        opacity: 1;
+
+        & > .icon-link {
+            display: none;
+        }
+
+        & > .icon-check {
+            display: block;
+        }
+    }
+}

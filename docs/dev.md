@@ -1,12 +1,14 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-10
+revised: 2026-11-12
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
 
 # Development
+
+[TOC]
 
 The repository root carries a `Makefile` that collects the commands on this page into named targets.
 

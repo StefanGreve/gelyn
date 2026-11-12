@@ -52,7 +52,7 @@ body {
 
 /* navigation */
 
-nav {
+header > nav {
     & > ul {
         list-style-type: none;
         margin: 0;
@@ -224,6 +224,12 @@ table {
     & > thead {
         text-align: start;
     }
+}
+
+/* table of contents extension */
+
+nav.toc > ol {
+    padding-inline-start: 2em;
 }
 
 /* list extras extension */

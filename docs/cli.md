@@ -1,12 +1,14 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-11
+revised: 2026-11-12
 description: Shell tab completion, the serve command, the request log, diagnostics, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
 
 # CLI
+
+[TOC]
 
 `gelyn build` generates your site, `gelyn serve` previews it while you edit, and `gelyn clean` removes the
 output directory. This page covers how to run them, from tab completion to the exit code a run reports. The
