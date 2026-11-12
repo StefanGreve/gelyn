@@ -3,7 +3,6 @@ using System.CommandLine.Invocation;
 using System.IO.Abstractions;
 using System.Runtime.InteropServices;
 
-using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
@@ -30,17 +29,17 @@ internal sealed class InfoOption : Option<bool>
 
     private const string Unknown = "unknown";
 
+    private const string Undefined = "(undefined)";
+
     private static readonly Style HeadingStyle = new(foreground: Color.Teal);
     private static readonly Style ValueStyle = new(decoration: Decoration.Dim);
-    private static readonly Style SuccessStyle = new(foreground: Color.Green);
-    private static readonly Style FailureStyle = new(foreground: Color.Red);
+    private static readonly Style UndefinedStyle = new(foreground: Color.Yellow);
 
     // The os-release specification makes the second file the fallback for the first.
     private static readonly string[] OsReleasePaths = ["/etc/os-release", "/usr/lib/os-release"];
 
     private readonly IConfiguration _configuration;
     private readonly IHostEnvironment _environment;
-    private readonly ConfigurationFileStatus _file;
     private readonly IFileSystem _fileSystem;
     private readonly IAnsiConsole _stdOut;
 
@@ -53,21 +52,18 @@ internal sealed class InfoOption : Option<bool>
     /// <param name="environment">
     ///     The host environment whose content root the configuration file is resolved against.
     /// </param>
-    /// <param name="file">
-    ///     What the first load of the configuration file found.
-    /// </param>
     /// <param name="fileSystem">
-    ///     Reads the name and the version of a Linux distribution from its os-release file.
+    ///     Tells whether a configuration file is present, and reads the name and the version of a Linux
+    ///     distribution from its os-release file.
     /// </param>
     /// <param name="stdOut">
     ///     The console on standard output, whose capabilities decide whether the report is colored.
     /// </param>
-    public InfoOption(IConfiguration configuration, IHostEnvironment environment, ConfigurationFileStatus file, IFileSystem fileSystem, [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut)
+    public InfoOption(IConfiguration configuration, IHostEnvironment environment, IFileSystem fileSystem, [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut)
         : base(OptionName)
     {
         this._configuration = configuration;
         this._environment = environment;
-        this._file = file;
         this._fileSystem = fileSystem;
         this._stdOut = stdOut;
 
@@ -86,11 +82,12 @@ internal sealed class InfoOption : Option<bool>
 
     #region Helpers
 
-    private string Report(bool color)
+    private string Report(ParseResult parseResult, bool color)
     {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         (string osName, string osVersion, string osPlatform) = this.HostOperatingSystem();
-        (string path, string state, Style stateStyle) = this.ConfigurationFileState(home);
+        string appSettings = this.AppSettings(parseResult, home);
+        Style appSettingsStyle = appSettings == Undefined ? UndefinedStyle : ValueStyle;
 
         Entry[] entries =
         [
@@ -106,7 +103,7 @@ internal sealed class InfoOption : Option<bool>
             new("Runtime Environment", "SDK", Tool.SdkVersion ?? Unknown),
             new("Configuration", "Bundled Themes", string.Join(", ", ThemeCatalog.Names)),
             new("Configuration", "Content root", ShortenPath(this._environment.ContentRootPath, home)),
-            new("Configuration", "File", path, (state, stateStyle)),
+            new("Configuration", "AppSettings", appSettings, appSettingsStyle),
         ];
 
         string? group = null;
@@ -133,11 +130,7 @@ internal sealed class InfoOption : Option<bool>
                 group = entry.Group;
             }
 
-            writer.Write("  ").Write((entry.Label + ":").PadRight(width)).Write(entry.Value, ValueStyle, null);
-
-            if (entry.State is (string text, Style style)) writer.Write(" ").Write($"({text})", style, null);
-
-            writer.WriteLine();
+            writer.Write("  ").Write((entry.Label + ":").PadRight(width)).Write(entry.Value, entry.Style ?? ValueStyle, null).WriteLine();
         }
 
         return report.ToString();
@@ -154,7 +147,6 @@ internal sealed class InfoOption : Option<bool>
         if (!OperatingSystem.IsLinux()) return (Unknown, release, Unknown);
 
         Dictionary<string, string> osRelease = this.ReadOsRelease();
-
         return (osRelease.GetValueOrDefault("NAME", "Linux"), osRelease.GetValueOrDefault("VERSION_ID", Unknown), "Linux");
     }
 
@@ -174,20 +166,36 @@ internal sealed class InfoOption : Option<bool>
         return fields;
     }
 
-    private (string Path, string State, Style Style) ConfigurationFileState(string home)
+    // An explicit path outranks the default file, and one that names no JSON file falls back to it, so the
+    // report names the file a reader can open instead of the one the loader was pointed at.
+    private string AppSettings(ParseResult parseResult, string home)
     {
-        string path = ShortenPath(ConfigurationFile.Resolve(this._configuration, this._environment.ContentRootPath), home);
+        string root = this._environment.ContentRootPath;
 
-        (string state, Style style) = this._file switch
+        if ((RequestedPath(parseResult) ?? this._configuration[ConfigurationFile.PathKey]) is string requested)
         {
-            { Failure: FileNotFoundException } => ("not found", FailureStyle),
-            { Failure: Exception failure } => ($"not readable: {ShortenPaths(failure.GetBaseException().Message, home)}", FailureStyle),
-            { Exists: true } => ("read", SuccessStyle),
-            _ => ("not found, the defaults apply", ValueStyle),
-        };
+            string path = PathBoundary.Resolve(root, requested);
 
-        return (path, state, style);
+            if (this.IsJsonFile(path)) return ShortenPath(path, home);
+        }
+
+        string file = PathBoundary.Resolve(root, ConfigurationFile.DefaultFileName);
+        return this._fileSystem.File.Exists(file) ? ShortenPath(file, home) : Undefined;
     }
+
+    // The extension is compared without case everywhere, a file named .JSON being JSON on any file system.
+    private bool IsJsonFile(string path) =>
+        this._fileSystem.File.Exists(path) && Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase);
+
+    // The parsed value is read first, because the command line configuration provider pairs a valueless option
+    // such as --info with the token behind it, which swallows a --config written after it.
+    private static string? RequestedPath(ParseResult parseResult) =>
+        parseResult.RootCommandResult.Command.Options.FirstOrDefault(IsConfigurationOption) is Option<string> option
+            ? parseResult.GetValue(option)
+            : null;
+
+    private static bool IsConfigurationOption(Option option) =>
+        option.Name.Equals(ConfigurationFile.OptionName, StringComparison.Ordinal);
 
     private static string ShortenPath(string path, string home)
     {
@@ -199,12 +207,9 @@ internal sealed class InfoOption : Option<bool>
             : path;
     }
 
-    private static string ShortenPaths(string text, string home) =>
-        home.Length == 0 ? text : text.Replace(home + Path.DirectorySeparatorChar, "~" + Path.DirectorySeparatorChar, PathComparison);
-
     #endregion
 
-    private readonly record struct Entry(string Group, string Label, string Value, (string Text, Style Style)? State = null);
+    private readonly record struct Entry(string Group, string Label, string Value, Style? Style = null);
 
     private sealed class InfoAction(InfoOption option) : SynchronousCommandLineAction
     {
@@ -214,7 +219,7 @@ internal sealed class InfoOption : Option<bool>
             if (parseResult.Errors.Count > 0)
                 return new ParseErrorAction().Invoke(parseResult);
 
-            parseResult.InvocationConfiguration.Output.Write(option.Report(option.UsesColor));
+            parseResult.InvocationConfiguration.Output.Write(option.Report(parseResult, option.UsesColor));
 
             return ExitCodes.Success;
         }

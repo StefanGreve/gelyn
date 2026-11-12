@@ -111,8 +111,18 @@ build waits on.
 `none`. It defaults to `warning`, which is why a normal build stays quiet.
 
 `gelyn --info` prints build, platform and configuration information to paste into a bug report. It runs even
-when the configuration file doesn't load, and then says why. Paths below your home directory start with `~`, so
-the report doesn't put your user name into a public issue.
+when the configuration file doesn't load. Paths below your home directory start with `~`, so the report doesn't
+put your user name into a public issue.
+
+The `AppSettings` line names the configuration file the run reads. A `--config` path takes precedence when it
+exists and ends in `.json`; otherwise the `gelyn.json` of the working directory applies. The line reads
+`(undefined)` when neither is present, which is the case Gelyn builds with its defaults:
+
+```sh
+gelyn --info                      # AppSettings: ~/site/gelyn.json
+gelyn --info --config other.json  # AppSettings: ~/site/other.json
+gelyn --info                      # AppSettings: (undefined), run where no gelyn.json is
+```
 
 ## Exit codes
 

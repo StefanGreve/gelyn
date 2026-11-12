@@ -59,22 +59,6 @@ public class ServiceCollectionExtensionsTests
         await Assert.That(() => options.CurrentValue).ThrowsNothing();
     }
 
-    /// <summary>
-    ///     Verifies that the status resolves as the instance it was registered with.
-    /// </summary>
-    [Test]
-    public async Task AddConfigurationFile_Test_Status_ResolvesAsRegistered()
-    {
-        // Arrange
-        var file = new ConfigurationFileStatus { Exists = false, Failure = null };
-
-        // Act
-        await using ServiceProvider provider = Build(file);
-
-        // Assert
-        await Assert.That(provider.GetRequiredService<ConfigurationFileStatus>()).IsSameReferenceAs(file);
-    }
-
     #endregion // Configuration File Tests
 
     #region Helpers

@@ -20,8 +20,8 @@ namespace Gelyn.Extensions;
 internal static class ServiceCollectionExtensions
 {
     /// <summary>
-    ///     Registers what the first load of the configuration file found, and defers the failure it held back
-    ///     to the first read of <see cref="SiteOptions"/>.
+    ///     Defers the failure the first load of the configuration file held back to the first read of
+    ///     <see cref="SiteOptions"/>.
     /// </summary>
     /// <remarks>
     ///     Call it ahead of <see cref="AddSiteOptions"/>, so that the failure is raised before the bind runs.
@@ -37,8 +37,6 @@ internal static class ServiceCollectionExtensions
     /// </returns>
     public static IServiceCollection AddConfigurationFile(this IServiceCollection services, ConfigurationFileStatus file)
     {
-        services.TryAddSingleton(file);
-
         if (file.Failure is Exception failure)
         {
             services.AddOptions<SiteOptions>()

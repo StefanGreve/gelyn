@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-08
+revised: 2026-11-12
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
