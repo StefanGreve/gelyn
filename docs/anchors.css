@@ -15,17 +15,20 @@ a.heading-anchor {
     transition: opacity 150ms ease-out;
 
     & > svg {
-        width: 0.8em;
-        height: 0.8em;
+        width: 0.55em;
+        height: 0.55em;
         fill: none;
         stroke: currentColor;
-        stroke-width: 2;
+        stroke-width: 2.25;
         stroke-linecap: round;
         stroke-linejoin: round;
     }
 
     & > .icon-check {
         display: none;
+        width: 0.75em;
+        height: 0.75em;
+        stroke-width: 2.5;
     }
 
     :is(h1, h2, h3, h4, h5, h6):hover > &,
