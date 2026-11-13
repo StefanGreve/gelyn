@@ -12,6 +12,9 @@ updates:
       - dependency-name: "*"
         update-types:
           - version-update:semver-patch
+      - dependency-name: Microsoft.Extensions.*
+        update-types:
+          - version-update:semver-major
     groups:
       testing:
         patterns:
