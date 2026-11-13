@@ -46,6 +46,7 @@
     <Description>A simple, cross-platform, and high-performance static site generator for Markdown.</Description>
     <PackageProjectUrl>https://stefangreve.github.io/gelyn/</PackageProjectUrl>
     <PackageTags>dotnet;dotnet-tool;markdown-to-html;ssg;static-site-generator</PackageTags>
+    <PackageIcon>gelyn-icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/StefanGreve/gelyn</RepositoryUrl>
@@ -65,6 +66,7 @@
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../assets/gelyn-icon.png" Pack="true" PackagePath="/" />
     <None Include="../../THIRD-PARTY-NOTICES.TXT" Pack="true" PackagePath="/" />
   </ItemGroup>
 

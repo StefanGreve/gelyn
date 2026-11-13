@@ -1,7 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-12
+revised: 2026-11-13
 description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
@@ -26,6 +26,7 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 | `make publish` | `dotnet publish` of `src/Gelyn` for `RID`.                                         |
 | `make install` | Packs `src/Gelyn` for `RID` and installs it as a global tool, replacing any copy.  |
 | `make gelyn`   | Publishes, then builds or serves the site named by `project`.                      |
+| `make icon`    | Renders the package icon `assets/gelyn-icon.png` from its SVG source.              |
 | `make lint`    | `dotnet format` across the solution.                                               |
 | `make clean`   | `dotnet clean` in both configurations, removes the global tool, clears the screen. |
 
@@ -145,6 +146,29 @@ the way restore treats a stale lock file, and fails when the two differ. The `pr
 commit lacks the regenerated file. `git push --no-verify` skips that hook, but not the check in CI. A merge
 conflict in the file is resolved by building the solution, not by editing it.
 
+### The Package Icon
+
+The NuGet package icon `assets/gelyn-icon.png` is rendered from `assets/gelyn-icon-black.svg` and never edited
+by hand. NuGet [accepts only JPEG and PNG][package-icon] for an icon, so the SVG cannot be packed itself. After
+changing the SVG, render the PNG again and commit both:
+
+```sh
+make icon
+```
+
+The PNG is committed, not ignored, because `dotnet pack` packs it and fails with `NU5046` when it is missing.
+Rendering it during the build would require ImageMagick on every machine and runner for a file that rarely
+changes. The target leaves the time stamps out of the PNG, so rendering an unchanged SVG reproduces the
+committed file byte for byte. Other ImageMagick builds can rasterize the edges differently, which is a reason to
+run the target only when the SVG has changed.
+
+`make icon` requires [ImageMagick][imagemagick] on `PATH`:
+
+```sh
+winget install -e --id ImageMagick.ImageMagick   # Windows
+brew install imagemagick                         # macOS
+```
+
 ## The SDK Pin
 
 `global.json` names the exact SDK this repository builds with and sets `rollForward` to [`disable`][global-json],
@@ -248,6 +272,8 @@ winget install -e --id jqlang.jq
 <!-- References -->
 
 [extract-schema]: https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/extract-schema
+[package-icon]: https://learn.microsoft.com/en-us/nuget/reference/msbuild-targets#packing-an-icon-image-file
+[imagemagick]: https://imagemagick.org
 [tunit]: https://tunit.dev
 [tunit-docs]: https://tunit.dev/docs/intro/
 [husky]: https://alirezanet.github.io/Husky.Net

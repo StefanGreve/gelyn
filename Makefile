@@ -102,6 +102,11 @@ else
 	$(GELYN) build --config $(SITE_CONFIG)
 endif
 
+# Rasterized at four times the target size, so the downscale smooths the edges. Without the time chunks, an
+# unchanged image is an unchanged file.
+icon:
+	magick -background none -density 384 assets/gelyn-icon-black.svg -resize 128x128 -define png:exclude-chunks=date,time PNG32:assets/gelyn-icon.png
+
 lint:
 	dotnet format $(SOLUTION)
 
@@ -111,6 +116,6 @@ clean:
 	$(UNINSTALL_TOOL)
 	@$(CLEAR)
 
-.PHONY: setup build test publish install gelyn lint clean
+.PHONY: setup build test publish install gelyn icon lint clean
 
 $(V).SILENT:
