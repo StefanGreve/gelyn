@@ -1,11 +1,12 @@
 <div align="center">
 
-<h1>
+<p>
+<a name="gelyn"></a>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/gelyn-white.svg">
   <img src="assets/gelyn-black.svg" alt="Gelyn" height="96">
 </picture>
-</h1>
+</p>
 
 *A simple, cross-platform, and high-performance static site generator (SSG) for Markdown.*
 
