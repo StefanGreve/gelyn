@@ -1,4 +1,13 @@
-# Gelyn
+<div align="center">
+
+<h1>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/gelyn-white.svg">
+  <img src="assets/gelyn-black.svg" alt="Gelyn" height="96">
+</picture>
+</h1>
+
+*A simple, cross-platform, and high-performance static site generator (SSG) for Markdown.*
 
 [![Build][build-badge]][build-workflow]
 [![CodeQL][codeql-badge]][codeql-workflow]
@@ -6,8 +15,7 @@
 [![.NET][dotnet-badge]][dotnet-download]
 [![Platform][platform-badge]][known-rids]
 [![License][license-badge]][license]
-
-A simple, cross-platform, and high-performance static site generator (SSG) for Markdown.
+</div>
 
 Gelyn is a deliberately opinionated SSG that cares about semantically correct HTML output. The HTML
 skeleton is fixed by design, with no plugin system or template engine. Pages can be customized through
