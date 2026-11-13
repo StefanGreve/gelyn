@@ -4,8 +4,7 @@ updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
-      interval: weekly
-      day: friday
+      interval: monthly
       time: "08:00"
       timezone: Europe/Berlin
     open-pull-requests-limit: 10
@@ -30,13 +29,12 @@ updates:
       # TestingHelpers ships in lockstep with the library it fakes, so the two have to move in one pull request.
       io-abstractions:
         patterns:
-          - System.IO.Abstractions*
+          - TestableIO.System.IO.Abstractions*
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      day: friday
+      interval: monthly
       time: "08:00"
       timezone: Europe/Berlin
     ignore:
