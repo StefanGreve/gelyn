@@ -56,6 +56,12 @@ body > .giscus {
     margin-inline: auto;
 }
 
+html {
+    scrollbar-color: color-mix(in oklab, var(--label) 30%, transparent) transparent;
+    scrollbar-width: thin;
+    scrollbar-gutter: stable;
+}
+
 @media (prefers-reduced-motion: no-preference) {
     html {
         scroll-behavior: smooth;
