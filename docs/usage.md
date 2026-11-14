@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-12
+revised: 2026-11-14
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
@@ -229,8 +229,8 @@ Gelyn substitutes a marker standing alone as its own paragraph and nothing else,
 span or a fenced block is published as you wrote it, and `[TOD] with trailing text` renders as text.
 
 > [!NOTE]
-> `[TOD]` is not `[TOC]`. A table of documents lists the other documents around it; a table of contents lists
-> the headings inside one. Gelyn renders no `[TOC]` today.
+> `[TOD]` is not `[TOC]`. A table of documents lists the other documents around it, while a table of contents
+> lists the headings inside one, as described under [Markdown](#markdown).
 
 ## Markdown
 
@@ -242,6 +242,7 @@ Gelyn renders your Markdown with [Markdig][markdig]: CommonMark plus the followi
 | Alert blocks      | `> [!NOTE]`              | A GitHub style callout, icon included                     |
 | Abbreviations     | `*[HTML]: HyperText ...` | `<abbr title="...">` around every later mention           |
 | Auto identifiers  | `## A Heading`           | `id="a-heading"`, GitHub style                            |
+| Table of contents | `[TOC]`                  | `<nav class="toc">`, a numbered list of the headings      |
 | Citations         | `""quoted""`             | `<cite>`                                                  |
 | Definition lists  | `Term`, then `:   Text`  | `<dl>`, `<dt>`, `<dd>`                                    |
 | Strikethrough     | `~~text~~`               | `<del>`                                                   |
@@ -258,6 +259,23 @@ Gelyn renders your Markdown with [Markdig][markdig]: CommonMark plus the followi
 Two of these need more care than the table suggests. Indent a definition far enough that its text starts at the
 fourth column, so `:   Text` makes a definition list and `: Text` makes a paragraph. Strikethrough is the only
 emphasis extra switched on, so `==mark==`, `^super^`, and `~sub~` render as the literal characters.
+
+`[TOC]` alone on a line becomes a table of contents for the page it stands in: a `<nav class="toc"
+role="doc-toc">` holding an `<ol>` of every heading from `##` down, nested by level, each entry linking to the
+`id` its heading carries. The `#` heading names the page and is left out, so a page whose sections are all `#`
+headings gets no table, and the marker renders nothing at all. As with `[TOD]`, only a marker standing as its own
+paragraph counts, so `[TOC]` inside a sentence or a code span is published as written:
+
+```markdown
+# Usage
+
+[TOC]
+
+## Install
+```
+
+The modern theme numbers a nested entry after its parent, as `2.1`, while the classic theme keeps the browser's
+own numbering, which starts again at `1` on every level.
 
 Raw HTML passes through, blocks and inline alike, and Gelyn still renders Markdown inside a block element as
 long as a blank line separates the two.
