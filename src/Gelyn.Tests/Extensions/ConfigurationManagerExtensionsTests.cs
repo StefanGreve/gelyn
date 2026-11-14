@@ -311,6 +311,8 @@ public class ConfigurationManagerExtensionsTests
         // Assert
         using (Assert.Multiple())
         {
+            await Assert.That(status.Path).IsEqualTo(path);
+            await Assert.That(status.Optional).IsFalse();
             await Assert.That(status.Exists).IsFalse();
             await Assert.That(status.Failure).IsTypeOf<FileNotFoundException>();
         }
@@ -333,8 +335,37 @@ public class ConfigurationManagerExtensionsTests
         // Assert
         using (Assert.Multiple())
         {
+            await Assert.That(status.Path).IsEqualTo(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName));
+            await Assert.That(status.Optional).IsTrue();
             await Assert.That(status.Exists).IsFalse();
             await Assert.That(status.Failure).IsNull();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a relative path climbing out of the base directory is reported as the file it names, which
+    ///     the loader cannot reach through a provider confined to that directory.
+    /// </summary>
+    [Test]
+    public async Task ConfigurationFile_Test_RelativePathOutsideTheBase_IsReportedAsTheFileItNames()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .WriteOutside("shared.json", """{ "Title": "Shared" }""");
+
+        string site = Directory.CreateDirectory(Path.Combine(fixture.Root, "site")).FullName;
+        var configuration = new ConfigurationManager();
+        configuration.SetBasePath(site);
+
+        // Act
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], "../shared.json");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(status.Path).IsEqualTo(Path.Combine(fixture.Root, "shared.json"));
+            await Assert.That(status.Exists).IsFalse();
+            await Assert.That(status.Failure).IsTypeOf<FileNotFoundException>();
         }
     }
 

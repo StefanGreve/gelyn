@@ -70,12 +70,22 @@ internal static class ConfigurationManagerExtensions
 
         return new ConfigurationFileStatus
         {
+            Path = FullPath(file, requested ?? ConfigurationFile.DefaultFileName),
+            Optional = requested is null,
             Exists = file is { FileProvider: IFileProvider provider, Path: string path } && provider.GetFileInfo(path).Exists,
             Failure = failure,
         };
     }
 
     #region Helpers
+
+    // The provider's root is where a relative path is read from: the content root, or the directory of a rooted path.
+    private static string FullPath(JsonConfigurationSource? source, string given)
+    {
+        if (source is { FileProvider: PhysicalFileProvider provider, Path: string path }) return Path.GetFullPath(Path.Combine(provider.Root, path));
+
+        return Path.GetFullPath(given);
+    }
 
     private static Dictionary<string, string?> ReadOverrides(this ConfigurationManager configuration)
     {

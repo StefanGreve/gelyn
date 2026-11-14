@@ -31,7 +31,7 @@ public class ServiceCollectionExtensionsTests
         // Arrange
         var failure = new InvalidDataException("Failed to load configuration from file 'gelyn.json'.");
 
-        await using ServiceProvider provider = Build(new ConfigurationFileStatus { Exists = true, Failure = failure });
+        await using ServiceProvider provider = Build(new ConfigurationFileStatus { Path = Path.GetFullPath("/site/gelyn.json"), Optional = true, Exists = true, Failure = failure });
         var options = provider.GetRequiredService<IOptionsMonitor<SiteOptions>>();
 
         // Act
@@ -52,7 +52,7 @@ public class ServiceCollectionExtensionsTests
     public async Task AddConfigurationFile_Test_StatusWithoutFailure_LeavesTheOptionsReadable()
     {
         // Arrange
-        await using ServiceProvider provider = Build(new ConfigurationFileStatus { Exists = true, Failure = null });
+        await using ServiceProvider provider = Build(new ConfigurationFileStatus { Path = Path.GetFullPath("/site/gelyn.json"), Optional = true, Exists = true, Failure = null });
         var options = provider.GetRequiredService<IOptionsMonitor<SiteOptions>>();
 
         // Act and Assert
