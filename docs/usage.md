@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-14
+revised: 2026-11-15
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
@@ -124,9 +124,10 @@ Gelyn titles a page with the first of these that applies:
 2. The name of the containing folder, when the file is a section `index.md`.
 3. The file name without its extension.
 
-So `blog/index.md` is titled `blog`, and `blog/hello-world.md` is titled `hello-world`. The landing page is the
-one case where the fallback is rarely what you want. `content/index.md` has no folder above it, so it lands on
-the file name, and your navigation reads `index` until the front matter declares something else.
+So `blog/index.md` is titled `blog`, and `blog/hello-world.md` is titled `hello-world`. The browser tab follows
+the page title with your site's [`Title`](configuration.md#settings), as `hello-world - My Blog`. The landing
+page is the exception: its banner entry and its tab show the site's `Title` alone, so its own title appears only
+where a feed lists it.
 
 ## Navigation
 

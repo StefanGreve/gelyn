@@ -20,6 +20,8 @@ using Gelyn.Tests.Fixtures;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
+using TUnit.Assertions.Enums;
+
 namespace Gelyn.Tests.Services;
 
 /// <summary>
@@ -546,6 +548,28 @@ public partial class SiteBuilderTests
                 await Assert.That(navigation).IsEquivalentTo(expected);
                 await Assert.That(navigation[0]).IsEqualTo("/index.html");
             }
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the banner names the landing page after the site and every other entry after its page, so
+    ///     that the configured title labels the banner on every page.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Navigation_NamesTheLandingPageAfterTheSite()
+    {
+        // Arrange
+        var fixture = ContentFixture.Create();
+        fixture.Options.Title = "My Notebook";
+        string[] expected = ["My Notebook", "About", "Blog"];
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        foreach (string page in fixture.EnumerateOutput())
+        {
+            await Assert.That(ReadNavigationTitles(fixture, page)).IsEquivalentTo(expected, CollectionOrdering.Matching);
         }
     }
 
@@ -2425,6 +2449,9 @@ public partial class SiteBuilderTests
     [GeneratedRegex("href=\"(?<href>[^\"]*)\"")]
     private static partial Regex NavigationLink();
 
+    [GeneratedRegex("<a[^>]*>(?<title>[^<]*)</a>")]
+    private static partial Regex NavigationTitle();
+
     private static IEnumerable<string> ReadNavigation(ContentFixture fixture, string path)
     {
         string navigation = NavigationBlock().Match(fixture.ReadOutput(path)).Value;
@@ -2432,6 +2459,15 @@ public partial class SiteBuilderTests
         return NavigationLink()
             .Matches(navigation)
             .Select(match => match.Groups["href"].Value);
+    }
+
+    private static IEnumerable<string> ReadNavigationTitles(ContentFixture fixture, string path)
+    {
+        string navigation = NavigationBlock().Match(fixture.ReadOutput(path)).Value;
+
+        return NavigationTitle()
+            .Matches(navigation)
+            .Select(match => match.Groups["title"].Value);
     }
 
     #endregion // Helpers

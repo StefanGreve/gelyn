@@ -16,6 +16,7 @@ internal static class HeadComponent
     private const string MathRenderer = "renderMathInElement(document.body);";
     private const string LightTheme = "github-light";
     private const string DarkTheme = "github-dark";
+    private const string LandingPage = "index.html";
 
     /// <summary>
     ///     Renders the metadata.
@@ -82,7 +83,8 @@ internal static class HeadComponent
             }
         }
 
-        head.AppendLine($"<title>{WebUtility.HtmlEncode(context.Page.Title)}</title>");
+        string documentTitle = context.Page.OutputPath.Equals(LandingPage, StringComparison.Ordinal) ? options.Title : $"{context.Page.Title} - {options.Title}";
+        head.AppendLine($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
 
         if (context.Page.Favicon is string favicon)
             head.AppendLine($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");

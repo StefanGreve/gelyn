@@ -1,7 +1,7 @@
 ---
 title: Configuration
 date: 2026-10-15
-revised: 2026-11-12
+revised: 2026-11-15
 description: Every setting gelyn.json accepts, its default, and the order the sources are read in.
 enableSyntaxHighlighting: true
 ---
@@ -41,7 +41,7 @@ otherwise ignore in silence.
 
 | Setting            | Default   | Description                                                                                             |
 | ------------------ | --------- | ------------------------------------------------------------------------------------------------------- |
-| `Title`            | `Gelyn`   | Names your site. The header shows it as a link back to the landing page.                                |
+| `Title`            | `Gelyn`   | Names your site. The header links it to the landing page, and every browser tab names it.               |
 | `Language`         | `en`      | Sets the `lang` attribute of every document. Use a BCP 47 tag.                                          |
 | `Author`           | unset     | Fills the `author` meta tag. While unset, Gelyn omits the tag.                                          |
 | `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
@@ -70,7 +70,8 @@ when you run `gelyn clean`. A sibling is fine, including one whose name merely b
 command starts, with exit code 2.
 
 A page title is separate from the name of your site. It comes from the page's own front matter, falling back to
-the file name, or to the folder name for a section index. Gelyn never uses `Title` as a page title.
+the file name, or to the folder name for a section index. Gelyn never uses `Title` as a page title, but the
+browser tab joins the two: `About - My Blog` for a page titled `About`, and `My Blog` alone for the landing page.
 
 A page can also override `Description` in its front matter:
 

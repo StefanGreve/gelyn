@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
@@ -381,6 +382,60 @@ public class HeadComponentTests
 
     #endregion // Feed Tests
 
+    #region Title Tests
+
+    /// <summary>
+    ///     Verifies that the landing page is titled after the site alone.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Title_LandingPage_IsTheSiteTitle()
+    {
+        // Arrange
+        var options = new SiteOptions { Title = "Gelyn" };
+
+        // Act
+        string head = Render(options);
+
+        // Assert
+        await Assert.That(head).Contains("<title>Gelyn</title>");
+    }
+
+    /// <summary>
+    ///     Verifies that every other page follows its own title with the site title, a section index included.
+    /// </summary>
+    [Test]
+    [Arguments("about.html", "About", "About - Gelyn")]
+    [Arguments("blog/index.html", "Blog", "Blog - Gelyn")]
+    public async Task Render_Test_Title_OtherPage_EndsWithTheSiteTitle(string outputPath, string pageTitle, string expected)
+    {
+        // Arrange
+        var options = new SiteOptions { Title = "Gelyn" };
+
+        // Act
+        string head = Render(options, outputPath: Path.Combine(outputPath.Split('/')), pageTitle: pageTitle);
+
+        // Assert
+        await Assert.That(head).Contains($"<title>{expected}</title>");
+    }
+
+    /// <summary>
+    ///     Verifies that both titles are escaped for the element they are written into.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_Title_EscapesBothTitles()
+    {
+        // Arrange
+        var options = new SiteOptions { Title = "Ann & Bob" };
+
+        // Act
+        string head = Render(options, outputPath: "faq.html", pageTitle: "Q&A");
+
+        // Assert
+        await Assert.That(head).Contains("<title>Q&amp;A - Ann &amp; Bob</title>");
+    }
+
+    #endregion // Title Tests
+
     #region Helpers
 
     private static DateOnly? Parse(string? date) =>
@@ -393,14 +448,16 @@ public class HeadComponentTests
         string? date = null,
         string? revised = null,
         bool hasFeedEntry = false,
-        bool isNotFound = false)
+        bool isNotFound = false,
+        string outputPath = "index.html",
+        string pageTitle = "Home")
     {
         var page = new ContentPage
         {
             SourcePath = "index.md",
-            OutputPath = "index.html",
-            Href = "/index.html",
-            Title = "Home",
+            OutputPath = outputPath,
+            Href = $"/{outputPath.Replace('\\', '/')}",
+            Title = pageTitle,
             Description = pageDescription,
             Date = Parse(date),
             Revised = Parse(revised) ?? Parse(date),

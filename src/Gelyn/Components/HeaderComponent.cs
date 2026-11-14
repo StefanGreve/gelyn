@@ -22,14 +22,15 @@ internal static class HeaderComponent
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var navItems = context.Navigation.Select(page =>
+        var navItems = context.Navigation.Select((page, index) =>
         {
             bool isCurrent = string.Equals(context.Page.Href, page.Href, StringComparison.Ordinal);
             string current = isCurrent ? " aria-current=\"page\"" : string.Empty;
+            string title = index == 0 ? context.Options.Title : page.Title;
 
             return $"""
                 <li>
-                    <a{current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(page.Title)}</a>
+                    <a{current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(title)}</a>
                 </li>
             """;
         });
