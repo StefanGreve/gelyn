@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
 using System.IO.Abstractions;
@@ -10,6 +9,8 @@ using System.Threading.Tasks;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
+using Gelyn.Model;
 using Gelyn.Tests.Fixtures;
 using Gelyn.Tests.Stubs;
 
@@ -179,7 +180,8 @@ public class InfoOptionTests
     #region Configuration Tests
 
     /// <summary>
-    ///     Verifies that a working directory without a configuration file reports no path at all.
+    ///     Verifies that a working directory without a configuration file reports no path at all, which is the case
+    ///     the defaults apply to.
     /// </summary>
     [Test]
     public async Task Configuration_Test_WithoutAConfigurationFile_IsUndefined()
@@ -196,103 +198,92 @@ public class InfoOptionTests
     }
 
     /// <summary>
-    ///     Verifies that the default file in the working directory is reported when no path was requested.
+    ///     Verifies that a file the loader read is reported by its path, whether it is the default file or one the
+    ///     command line requested.
     /// </summary>
     [Test]
-    public async Task Configuration_Test_DefaultFileInTheWorkingDirectory_IsReported()
+    [Arguments("gelyn.json", true)]
+    [Arguments("site.json", false)]
+    public async Task Configuration_Test_FileThatWasRead_IsReportedByItsPath(string name, bool optional)
     {
         // Arrange
-        string root = Path.Combine(Home, "site");
-        IFileSystem fileSystem = Holding(Path.Combine(root, ConfigurationFile.DefaultFileName));
+        ConfigurationFileStatus file = Status(Path.Combine(Home, "site", name), optional, exists: true);
 
         // Act
-        string output = Report(Create(contentRoot: root, fileSystem: fileSystem));
+        string output = Report(Create(file));
 
         // Assert
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}{ConfigurationFile.DefaultFileName}");
+        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}{name}");
     }
 
     /// <summary>
-    ///     Verifies that a requested path that exists and names a JSON file outranks the default file, whether it
-    ///     is given relative to the working directory or in full.
+    ///     Verifies that a requested file the loader did not find is reported as missing, which is the run that
+    ///     stops with a configuration error.
     /// </summary>
     [Test]
-    [Arguments("site.json")]
-    [Arguments(null)]
-    public async Task Configuration_Test_RequestedJsonFile_OutranksTheDefaultFile(string? relativePath)
+    public async Task Configuration_Test_RequestedFileThatIsMissing_IsReportedAsNotFound()
     {
         // Arrange
-        string root = Path.Combine(Home, "site");
-        string path = Path.Combine(root, "site.json");
-        IFileSystem fileSystem = Holding(path, Path.Combine(root, ConfigurationFile.DefaultFileName));
+        string path = Path.Combine(Home, "site", "prod.json");
+        ConfigurationFileStatus file = Status(path, optional: false, exists: false, new FileNotFoundException("not found", path));
 
         // Act
-        string output = Report(Create(requested: relativePath ?? path, contentRoot: root, fileSystem: fileSystem));
+        string output = Report(Create(file));
 
         // Assert
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}site.json");
+        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}prod.json (not found)");
     }
 
     /// <summary>
-    ///     Verifies that a requested path that is absent or names no JSON file is disregarded, which leaves the
-    ///     default file when one is present and nothing when it is not.
+    ///     Verifies that a file that does not parse is reported with the innermost message, which carries the
+    ///     position of the error, with the home directory shortened as in every other path.
     /// </summary>
     [Test]
-    [Arguments("absent.json", false)]
-    [Arguments("site.txt", false)]
-    [Arguments("absent.json", true)]
-    [Arguments("site.txt", true)]
-    public async Task Configuration_Test_RequestedPathThatIsNoJsonFile_FallsBackToTheDefaultFile(string requested, bool hasDefault)
+    public async Task Configuration_Test_FileThatDoesNotParse_IsReportedAsNotReadable()
     {
         // Arrange
-        string root = Path.Combine(Home, "site");
-        string[] present = hasDefault
-            ? [Path.Combine(root, "site.txt"), Path.Combine(root, ConfigurationFile.DefaultFileName)]
-            : [Path.Combine(root, "site.txt")];
+        string path = Path.Combine(Home, "site", ConfigurationFile.DefaultFileName);
+        var cause = new FormatException($"'{path}' is not valid JSON. LineNumber: 0 | BytePositionInLine: 11.");
+        ConfigurationFileStatus file = Status(path, optional: true, exists: true, new InvalidDataException("Failed to load configuration.", cause));
 
         // Act
-        string output = Report(Create(requested: requested, contentRoot: root, fileSystem: Holding(present)));
+        string output = Report(Create(file));
 
         // Assert
-        string expected = hasDefault ? $"~{Separator}site{Separator}{ConfigurationFile.DefaultFileName}" : Undefined;
+        string shortened = $"~{Separator}site{Separator}{ConfigurationFile.DefaultFileName}";
 
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo(expected);
+        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"{shortened} (not readable: '{shortened}' is not valid JSON. LineNumber: 0 | BytePositionInLine: 11.)");
     }
 
     /// <summary>
-    ///     Verifies that a path written behind <c>--info</c> is still read, which the command line configuration
-    ///     provider loses by pairing the valueless option with the token that follows it.
+    ///     Verifies that the report names what the loader made of the command line, so that it cannot disagree with
+    ///     the run, including for a path behind <c>--info</c> and for a file that does not parse.
     /// </summary>
     [Test]
-    public async Task Configuration_Test_RequestedPathBehindTheOption_IsStillRead()
+    [Arguments("""{ "Title": "Read" }""", false)]
+    [Arguments("""{ "Title": """, true)]
+    public async Task Configuration_Test_ThroughTheLoader_MatchesTheRun(string contents, bool fails)
     {
         // Arrange
-        string root = Path.Combine(Home, "site");
-        IFileSystem fileSystem = Holding(Path.Combine(root, "site.json"), Path.Combine(root, ConfigurationFile.DefaultFileName));
-        InfoOption option = Create(contentRoot: root, fileSystem: fileSystem);
+        using DiskFixture fixture = DiskFixture.Create()
+            .WriteOutside("site.json", contents);
+
+        string path = Path.Combine(fixture.Root, "site.json");
+        string[] args = [InfoOption.OptionName, ConfigurationFile.OptionName, path];
+        ConfigurationFileStatus file = new ConfigurationManager().AddSiteConfiguration(args, ConfigurationFile.Requested(args));
 
         // Act
-        (_, string output, _) = Invoke(option, InfoOption.OptionName, ConfigurationFile.OptionName, "site.json");
+        (_, string output, _) = Invoke(Create(file), args);
 
         // Assert
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}site.json");
-    }
+        string reported = Value(output, "AppSettings");
+        string named = path.StartsWith(Home, StringComparison.OrdinalIgnoreCase) ? $"~{path[Home.Length..]}" : path;
 
-    /// <summary>
-    ///     Verifies that the extension is matched without regard to case, a file named <c>.JSON</c> being JSON on
-    ///     any file system.
-    /// </summary>
-    [Test]
-    public async Task Configuration_Test_RequestedJsonFileSpelledInCapitals_IsReported()
-    {
-        // Arrange
-        string root = Path.Combine(Home, "site");
-
-        // Act
-        string output = Report(Create(requested: "Site.JSON", contentRoot: root, fileSystem: Holding(Path.Combine(root, "Site.JSON"))));
-
-        // Assert
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}Site.JSON");
+        using (Assert.Multiple())
+        {
+            await Assert.That(reported).StartsWith(named);
+            await Assert.That(reported.Contains("(not readable: ", StringComparison.Ordinal)).IsEqualTo(fails);
+        }
     }
 
     /// <summary>
@@ -365,36 +356,15 @@ public class InfoOptionTests
 
     #region Helpers
 
-    private static InfoOption Create(string? requested = null, string? contentRoot = null, IFileSystem? fileSystem = null, IAnsiConsole? stdOut = null)
-    {
-        var builder = new ConfigurationBuilder();
-
-        if (requested is not null)
-        {
-            builder.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                [ConfigurationFile.PathKey] = requested,
-            });
-        }
-
-        return new InfoOption(
-            builder.Build(),
+    private static InfoOption Create(ConfigurationFileStatus? file = null, string? contentRoot = null, IFileSystem? fileSystem = null, IAnsiConsole? stdOut = null) =>
+        new(
+            file ?? Status(Path.GetFullPath("/site/gelyn.json"), optional: true, exists: false),
             new HostEnvironmentStub { ContentRootPath = contentRoot ?? Path.GetFullPath("/site") },
             fileSystem ?? new MockFileSystem(),
             stdOut ?? CapturedConsole.Create(TextWriter.Null));
-    }
 
-    private static IFileSystem Holding(params string[] paths)
-    {
-        var fileSystem = new MockFileSystem();
-
-        foreach (string path in paths)
-        {
-            fileSystem.AddFile(path, new MockFileData("{}"));
-        }
-
-        return fileSystem;
-    }
+    private static ConfigurationFileStatus Status(string path, bool optional, bool exists, Exception? failure = null) =>
+        new() { Path = path, Optional = optional, Exists = exists, Failure = failure };
 
     private static IAnsiConsole Terminal(bool isTerminal, ColorSystemSupport colors) =>
         AnsiConsole.Create(new AnsiConsoleSettings

@@ -3,9 +3,9 @@ using System.CommandLine.Invocation;
 using System.IO.Abstractions;
 using System.Runtime.InteropServices;
 
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -34,11 +34,12 @@ internal sealed class InfoOption : Option<bool>
     private static readonly Style HeadingStyle = new(foreground: Color.Teal);
     private static readonly Style ValueStyle = new(decoration: Decoration.Dim);
     private static readonly Style UndefinedStyle = new(foreground: Color.Yellow);
+    private static readonly Style FailureStyle = new(foreground: Color.Red);
 
     // The os-release specification makes the second file the fallback for the first.
     private static readonly string[] OsReleasePaths = ["/etc/os-release", "/usr/lib/os-release"];
 
-    private readonly IConfiguration _configuration;
+    private readonly ConfigurationFileStatus _file;
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
     private readonly IAnsiConsole _stdOut;
@@ -46,23 +47,22 @@ internal sealed class InfoOption : Option<bool>
     /// <summary>
     ///     Initializes a new instance of the <see cref="InfoOption"/> class.
     /// </summary>
-    /// <param name="configuration">
-    ///     The configuration that names the configuration file, read as written.
+    /// <param name="file">
+    ///     What the first load of the configuration file found, which names the file the run applies.
     /// </param>
     /// <param name="environment">
-    ///     The host environment whose content root the configuration file is resolved against.
+    ///     The host environment, whose content root the report names.
     /// </param>
     /// <param name="fileSystem">
-    ///     Tells whether a configuration file is present, and reads the name and the version of a Linux
-    ///     distribution from its os-release file.
+    ///     Reads the name and the version of a Linux distribution from its os-release file.
     /// </param>
     /// <param name="stdOut">
     ///     The console on standard output, whose capabilities decide whether the report is colored.
     /// </param>
-    public InfoOption(IConfiguration configuration, IHostEnvironment environment, IFileSystem fileSystem, [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut)
+    public InfoOption(ConfigurationFileStatus file, IHostEnvironment environment, IFileSystem fileSystem, [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut)
         : base(OptionName)
     {
-        this._configuration = configuration;
+        this._file = file;
         this._environment = environment;
         this._fileSystem = fileSystem;
         this._stdOut = stdOut;
@@ -82,12 +82,11 @@ internal sealed class InfoOption : Option<bool>
 
     #region Helpers
 
-    private string Report(ParseResult parseResult, bool color)
+    private string Report(bool color)
     {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         (string osName, string osVersion, string osPlatform) = this.HostOperatingSystem();
-        string appSettings = this.AppSettings(parseResult, home);
-        Style appSettingsStyle = appSettings == Undefined ? UndefinedStyle : ValueStyle;
+        (string appSettings, Style appSettingsStyle) = this.AppSettings(home);
 
         Entry[] entries =
         [
@@ -166,36 +165,22 @@ internal sealed class InfoOption : Option<bool>
         return fields;
     }
 
-    // An explicit path outranks the default file, and one that names no JSON file falls back to it, so the
-    // report names the file a reader can open instead of the one the loader was pointed at.
-    private string AppSettings(ParseResult parseResult, string home)
+    // Read from the loader's record, so the line names the file the run applies and cannot disagree with it.
+    private (string Value, Style Style) AppSettings(string home)
     {
-        string root = this._environment.ContentRootPath;
+        string path = ShortenPath(this._file.Path, home);
 
-        if ((RequestedPath(parseResult) ?? this._configuration[ConfigurationFile.PathKey]) is string requested)
+        return this._file switch
         {
-            string path = PathBoundary.Resolve(root, requested);
-
-            if (this.IsJsonFile(path)) return ShortenPath(path, home);
-        }
-
-        string file = PathBoundary.Resolve(root, ConfigurationFile.DefaultFileName);
-        return this._fileSystem.File.Exists(file) ? ShortenPath(file, home) : Undefined;
+            { Failure: FileNotFoundException } => ($"{path} (not found)", FailureStyle),
+            { Failure: Exception failure } => ($"{path} (not readable: {ShortenPaths(failure.GetBaseException().Message, home)})", FailureStyle),
+            { Exists: true } => (path, ValueStyle),
+            _ => (Undefined, UndefinedStyle),
+        };
     }
 
-    // The extension is compared without case everywhere, a file named .JSON being JSON on any file system.
-    private bool IsJsonFile(string path) =>
-        this._fileSystem.File.Exists(path) && Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase);
-
-    // The parsed value is read first, because the command line configuration provider pairs a valueless option
-    // such as --info with the token behind it, which swallows a --config written after it.
-    private static string? RequestedPath(ParseResult parseResult) =>
-        parseResult.RootCommandResult.Command.Options.FirstOrDefault(IsConfigurationOption) is Option<string> option
-            ? parseResult.GetValue(option)
-            : null;
-
-    private static bool IsConfigurationOption(Option option) =>
-        option.Name.Equals(ConfigurationFile.OptionName, StringComparison.Ordinal);
+    private static string ShortenPaths(string text, string home) =>
+        home.Length == 0 ? text : text.Replace(home + Path.DirectorySeparatorChar, "~" + Path.DirectorySeparatorChar, PathComparison);
 
     private static string ShortenPath(string path, string home)
     {
@@ -219,7 +204,7 @@ internal sealed class InfoOption : Option<bool>
             if (parseResult.Errors.Count > 0)
                 return new ParseErrorAction().Invoke(parseResult);
 
-            parseResult.InvocationConfiguration.Output.Write(option.Report(parseResult, option.UsesColor));
+            parseResult.InvocationConfiguration.Output.Write(option.Report(option.UsesColor));
 
             return ExitCodes.Success;
         }
