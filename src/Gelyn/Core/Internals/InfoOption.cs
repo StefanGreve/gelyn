@@ -18,7 +18,7 @@ namespace Gelyn.Core.Internals;
 /// </summary>
 /// <remarks>
 ///     Its action replaces the command's, as the action of <c>--version</c> does, and reads no
-///     <see cref="SiteOptions"/>, so it runs while the configuration file fails to load.
+///     <see cref="SiteOptions"/>, so it runs while the configuration file is missing or does not parse.
 /// </remarks>
 internal sealed class InfoOption : Option<bool>
 {

@@ -1,7 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-12
+revised: 2026-11-14
 description: Shell tab completion, the serve command, the request log, diagnostics, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
@@ -111,17 +111,20 @@ build waits on.
 `none`. It defaults to `warning`, which is why a normal build stays quiet.
 
 `gelyn --info` prints build, platform and configuration information to paste into a bug report. It runs even
-when the configuration file doesn't load. Paths below your home directory start with `~`, so the report doesn't
-put your user name into a public issue.
+when the configuration file is missing or doesn't parse. Paths below your home directory start with `~`, so the
+report doesn't put your user name into a public issue.
 
-The `AppSettings` line names the configuration file the run reads. A `--config` path takes precedence when it
-exists and ends in `.json`; otherwise the `gelyn.json` of the working directory applies. The line reads
-`(undefined)` when neither is present, which is the case Gelyn builds with its defaults:
+The `AppSettings` line names the configuration file the run reads: the `--config` path when you give one, and
+the `gelyn.json` of the working directory otherwise. When that file can't be read, the line says why, which is
+the reason the run would stop with exit code `2`. It reads `(undefined)` when you give no `--config` and no
+`gelyn.json` exists, which is the case Gelyn builds with its defaults:
 
 ```sh
-gelyn --info                      # AppSettings: ~/site/gelyn.json
-gelyn --info --config other.json  # AppSettings: ~/site/other.json
-gelyn --info                      # AppSettings: (undefined), run where no gelyn.json is
+gelyn --info                        # AppSettings: ~/site/gelyn.json
+gelyn --info --config other.json    # AppSettings: ~/site/other.json
+gelyn --info --config missing.json  # AppSettings: ~/site/missing.json (not found)
+gelyn --info                        # AppSettings: ~/site/gelyn.json (not readable: ...), when it doesn't parse
+gelyn --info                        # AppSettings: (undefined), run where no gelyn.json is
 ```
 
 ## Exit codes
@@ -136,7 +139,8 @@ Code `1` also covers a command line that Gelyn can't parse, because that's what 
 for one, so you can't tell an unrecognized option from a failed build. Code `2` means a setting is unusable,
 such as a `BaseUrl` that isn't an absolute `http` or `https` URL, a `--config` path that doesn't exist, or a
 content directory without an `index.md`. Every command also returns `2` for a configuration file that doesn't
-parse. `--help`, `--version` and `--info` return `0` even when the configuration file doesn't load.
+parse. `--help`, `--version` and `--info` return `0` even when the configuration file is missing or doesn't
+parse.
 
 `serve` returns `0` when you interrupt it, `2` when it rejects the configuration as `build` would, and `1`
 when the port is already taken, when the platform carries no usable `HttpListener`, or when the first build

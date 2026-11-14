@@ -18,8 +18,10 @@ internal static class ConfigurationManagerExtensions
     ///     Adds the tool's configuration file and re-applies the sources that outrank it.
     /// </summary>
     /// <remarks>
-    ///     A load failure is returned instead of thrown, so that <c>--help</c> and <c>--version</c> still run. The
-    ///     file is not watched, because the watch costs most of the startup and <c>serve</c> runs its own watcher.
+    ///     A missing or unparsable file is returned as a failure instead of thrown, so that <c>--help</c> and
+    ///     <c>--version</c> still run. A file that cannot be opened at all still throws, because the provider opens it
+    ///     outside its error handler. The file is not watched, because the watch costs most of the startup and
+    ///     <c>serve</c> runs its own watcher.
     /// </remarks>
     /// <param name="configuration">
     ///     The configuration to add the sources to.
