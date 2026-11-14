@@ -73,8 +73,17 @@ header() {
     printf '# %s\n\n> %s\n' "$TITLE" "$SUMMARY"
 }
 
+# A [TOC] marker turns into a table of contents on the site and means nothing in plain Markdown, so it is dropped
+# with the blank line after it. One inside a fenced block is an example and stays.
 page_body() {
-    awk 'NR == 1 && $0 == "---" { fm = 1; next } fm && $0 == "---" { fm = 0; next } !fm' "${CONTENT_DIR}/$1.md"
+    awk '
+        NR == 1 && $0 == "---" { fm = 1; next }
+        fm { if ($0 == "---") fm = 0; next }
+        /^(```|~~~)/ { fence = !fence }
+        !fence && $0 == "[TOC]" { toc = 1; next }
+        toc && $0 == "" { toc = 0; next }
+        { toc = 0; print }
+    ' "${CONTENT_DIR}/$1.md"
 }
 
 # The first heading names the entry instead of the title, which for index.md is the name of the site. A note
