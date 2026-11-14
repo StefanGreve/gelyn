@@ -31,31 +31,13 @@ handled from then on.
   signature verification][commit-signing] covers generating a key and registering it with your account.
 - `make setup` enables signing and installs the git hooks that format staged C# before a commit and run the
   tests before a push. Do not bypass them with `--no-verify`; CI verifies both.
-- [Development][docs-dev] describes the toolchain, the build, and the test suite.
+- [Development][docs-dev] describes the toolchain, the build, the test suite, and
+  [theme development][docs-themes].
 - Record every new feature and every bug fix in [`CHANGELOG.md`][changelog] once the first release has
   shipped. Until then the file carries its template alone, a pre-release changing without notice.
 - Versions follow [Semantic Versioning][semver], with the minor number carrying the breaking changes until
   1.0.0 ships. No project file declares a version; each one is derived from a signed, `v`-prefixed git tag,
   so no pull request changes one. [Development][docs-dev] covers how a release is cut.
-
-## Theme Development
-
-- Themes live in `plugins/gelyn/skills/bootstrap/themes`, their single source of truth.
-- The build embeds that folder in the tool, and `example/` and `docs/` name their theme in the `Theme` setting of
-  their `gelyn.json`. An edit therefore shows after the next `dotnet build` or `make gelyn`. Preview another theme
-  by passing `--theme` to `gelyn build` or `gelyn serve`.
-- A theme is `<name>.css` with an optional `<name>.js`. The build embeds every `.css` and `.js` file in the folder
-  and takes its base name as the name of a theme, so each distinct base name becomes a value of `--theme`. A new
-  theme therefore also needs a bullet under `Themes` in `docs/configuration.md`, which a test compares with the
-  bundled names, and an entry in the theme list of `plugins/gelyn/skills/bootstrap/SKILL.md`. The build adds the
-  name to the `enum` of `Theme` in `gelyn.schema.json`.
-- The folder holds theme files alone. A stylesheet that serves one site or one page, such as
-  `docs/assets/modern404.css`, belongs in that site. In the folder it would become a theme of its own and fail
-  that test.
-- For a live preview of an edit under `gelyn serve`, copy the theme's file into the content directory of the site
-  that applies the theme, such as `docs/modern.css`. The copy replaces the bundled file while it exists, and every
-  build warns about it. Git ignores the copy, so it never reaches a commit.
-- Copy the finished stylesheet back into `themes/` and push that file alone.
 
 <!-- References -->
 
@@ -63,6 +45,7 @@ handled from then on.
 [commit-signing]: https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification
 [discussions-ideas]: https://github.com/StefanGreve/gelyn/discussions/categories/ideas
 [docs-dev]: https://stefangreve.github.io/gelyn/dev.html
+[docs-themes]: https://stefangreve.github.io/gelyn/dev.html#theme-development
 [issues]: https://github.com/StefanGreve/gelyn/issues
 [pulls]: https://github.com/StefanGreve/gelyn/pulls
 [security]: SECURITY.md

@@ -1,8 +1,8 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-13
-description: Building Gelyn from source, the make targets, the git hooks, the SDK pin, versioning, and deployment.
+revised: 2026-11-14
+description: Building from source, make targets, git hooks, theme development, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
 
@@ -168,6 +168,27 @@ run the target only when the SVG has changed.
 winget install -e --id ImageMagick.ImageMagick   # Windows
 brew install imagemagick                         # macOS
 ```
+
+## Theme Development
+
+The bundled themes live in `plugins/gelyn/skills/bootstrap/themes`, their single source of truth. A theme is
+`<name>.css` with an optional `<name>.js`. The build embeds every `.css` and `.js` file in that folder in the tool
+and takes each base name as the name of a theme, so every distinct base name becomes a value of `--theme`.
+`example/` and `docs/` name their theme in the `Theme` setting of their `gelyn.json`, so an edit shows after the
+next `dotnet build` or `make gelyn`. Pass `--theme` to `gelyn build` or `gelyn serve` to preview another theme.
+
+A new theme needs two entries beside its files: a bullet under `Themes` in `docs/configuration.md`, which a test
+compares with the bundled names, and an entry in the theme list of `plugins/gelyn/skills/bootstrap/SKILL.md`. The
+build adds the name to the `enum` of `Theme` in `gelyn.schema.json` by itself.
+
+The folder holds theme files alone. A stylesheet that serves one site or one page, such as
+`docs/assets/modern404.css` or `docs/logo.css`, belongs in that site. In the theme folder it would become a theme
+of its own and fail that test.
+
+To see an edit live under `gelyn serve`, copy the theme's file into the content directory of the site that
+applies the theme, such as `docs/modern.css`. The copy replaces the bundled file while it exists, and every build
+logs a warning naming it. Git ignores the copy, so it never reaches a commit. Copy the finished file back into
+`themes/` and commit that file alone.
 
 ## The SDK Pin
 
