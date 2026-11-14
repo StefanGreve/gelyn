@@ -45,7 +45,7 @@ internal static class Program
         try
         {
             HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
-            ConfigurationFileStatus file = builder.Configuration.AddSiteConfiguration(args);
+            ConfigurationFileStatus file = builder.Configuration.AddSiteConfiguration(args, ConfigurationFile.Requested(args));
             builder.Logging.ConfigureDiagnostics(builder.Configuration);
 
             // Third-party registrations

@@ -29,13 +29,8 @@ internal sealed class GelynCommand : RootCommand
     public GelynCommand(BuildCommand buildCommand, CleanCommand cleanCommand, ServeCommand serveCommand, InfoOption infoOption)
         : base("A static site generator.")
     {
-        // Read by AddSiteConfiguration before the host exists, because it selects a configuration source.
-        var configuration = new Option<string>(ConfigurationFile.OptionName)
-        {
-            Description = $"Path to the configuration file. Defaults to {ConfigurationFile.DefaultFileName}.",
-            HelpName = "path",
-            Recursive = true,
-        };
+        // Read by ConfigurationFile.Requested before the host exists, because it selects a configuration source.
+        Option<string> configuration = ConfigurationFile.CreateOption();
 
         // Read by Program before the host exists, because it selects the minimum level of the log providers.
         var verbosity = new Option<LogLevel>(VerbosityOption.OptionName)

@@ -27,15 +27,21 @@ internal static class ConfigurationManagerExtensions
     /// <param name="args">
     ///     Command line arguments passed to the tool.
     /// </param>
+    /// <param name="requested">
+    ///     The path given to <see cref="ConfigurationFile.OptionName"/>, as <see cref="ConfigurationFile.Requested"/>
+    ///     reads it from the parsed command line, or <see langword="null"/> for the default file.
+    /// </param>
     /// <returns>
     ///     What the first load of the file found, including the failure it held back.
     /// </returns>
-    public static ConfigurationFileStatus AddSiteConfiguration(this ConfigurationManager configuration, string[] args)
+    public static ConfigurationFileStatus AddSiteConfiguration(this ConfigurationManager configuration, string[] args, string? requested)
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
-        string? requested = configuration[ConfigurationFile.PathKey];
-        IReadOnlyDictionary<string, string?> overrides = configuration.ReadOverrides();
+        Dictionary<string, string?> overrides = configuration.ReadOverrides();
+
+        // Outranks the command line provider's pairing, so a later reader such as the serve watcher sees this path.
+        overrides[ConfigurationFile.PathKey] = requested;
 
         JsonConfigurationSource? file = null;
         Exception? failure = null;

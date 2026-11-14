@@ -51,7 +51,7 @@ public class ConfigurationManagerExtensionsTests
         var options = new SiteOptions();
 
         // Act
-        configuration.AddSiteConfiguration([]);
+        configuration.AddSiteConfiguration([], requested: null);
         configuration.Bind(options);
 
         // Assert
@@ -93,7 +93,7 @@ public class ConfigurationManagerExtensionsTests
         var options = new SiteOptions();
 
         // Act
-        configuration.AddSiteConfiguration([]);
+        configuration.AddSiteConfiguration([], requested: null);
         configuration.Bind(options);
 
         // Assert
@@ -162,7 +162,7 @@ public class ConfigurationManagerExtensionsTests
         var options = new SiteOptions();
 
         // Act
-        configuration.AddSiteConfiguration([]);
+        configuration.AddSiteConfiguration([], requested: null);
         configuration.Bind(options);
 
         // Assert
@@ -280,10 +280,11 @@ public class ConfigurationManagerExtensionsTests
         using DiskFixture fixture = DiskFixture.Create()
             .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
 
-        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName));
+        string path = Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName);
+        var configuration = new ConfigurationManager();
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
 
         // Assert
         using (Assert.Multiple())
@@ -301,10 +302,11 @@ public class ConfigurationManagerExtensionsTests
     {
         // Arrange
         using var fixture = DiskFixture.Create();
-        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, "missing.json"));
+        string path = Path.Combine(fixture.Root, "missing.json");
+        var configuration = new ConfigurationManager();
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
 
         // Assert
         using (Assert.Multiple())
@@ -326,7 +328,7 @@ public class ConfigurationManagerExtensionsTests
         configuration.SetBasePath(fixture.Root);
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], requested: null);
 
         // Assert
         using (Assert.Multiple())
@@ -347,8 +349,9 @@ public class ConfigurationManagerExtensionsTests
         using DiskFixture fixture = DiskFixture.Create()
             .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": "Before" }""");
 
-        ConfigurationManager configuration = Requesting(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName));
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([]);
+        string path = Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName);
+        var configuration = new ConfigurationManager();
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
 
         fixture.WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
 
@@ -360,21 +363,29 @@ public class ConfigurationManagerExtensionsTests
         }
     }
 
-    #endregion // Configuration File Tests
-
-    #region Helpers
-
-    private static ConfigurationManager Requesting(string path)
+    /// <summary>
+    ///     Verifies that the configuration reports the path the loader was given, whatever an earlier source holds
+    ///     under the same key, because the watcher of <c>serve</c> reads the key to pick the file it watches.
+    /// </summary>
+    [Test]
+    [Arguments("site.json")]
+    [Arguments(null)]
+    public async Task ConfigurationFile_Test_RequestedPath_OutranksAnEarlierKey(string? requested)
     {
+        // Arrange
         var configuration = new ConfigurationManager();
 
         configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            [ConfigurationFile.PathKey] = path,
+            [ConfigurationFile.PathKey] = "paired-by-the-provider.json",
         });
 
-        return configuration;
+        // Act
+        configuration.AddSiteConfiguration([], requested);
+
+        // Assert
+        await Assert.That(configuration[ConfigurationFile.PathKey]).IsEqualTo(requested);
     }
 
-    #endregion
+    #endregion // Configuration File Tests
 }
