@@ -12,6 +12,7 @@ handled from then on.
 - Give the issue a clear title and description, the output of `gelyn --info`, and as much of the
   configuration and the content that triggers it as you can share. A page that reproduces the problem on its
   own is the most useful attachment.
+- Report a vulnerability privately instead, as described in the [security policy][security].
 
 ## Submitting a Pull Request
 
@@ -64,4 +65,5 @@ handled from then on.
 [docs-dev]: https://stefangreve.github.io/gelyn/dev.html
 [issues]: https://github.com/StefanGreve/gelyn/issues
 [pulls]: https://github.com/StefanGreve/gelyn/pulls
+[security]: SECURITY.md
 [semver]: https://semver.org/spec/v2.0.0.html
