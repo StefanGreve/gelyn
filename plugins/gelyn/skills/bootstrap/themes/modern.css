@@ -533,20 +533,24 @@ tbody > tr:last-child > td {
 
 nav.toc {
     & ol {
-        margin-block: 0;
-        padding-inline-start: 0;
-        list-style-type: none;
-        counter-reset: toc;
-    }
-
-    & li {
         display: grid;
         grid-template-columns: auto 1fr;
         column-gap: 0.5rem;
+        margin-block: 0;
+        padding-inline-start: 0;
+        counter-reset: toc;
+    }
+
+    /* Every entry takes the columns of its list, so the numbers of one list share the width of the widest. */
+    & li {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
         counter-increment: toc;
 
         &::before {
             content: counters(toc, ".");
+            justify-self: end;
             color: var(--label-secondary);
             font-variant-numeric: tabular-nums;
         }
