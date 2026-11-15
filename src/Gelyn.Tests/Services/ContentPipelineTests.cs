@@ -328,6 +328,34 @@ public class ContentPipelineTests
     }
 
     /// <summary>
+    ///     Verifies that every directory and file name is percent-encoded once in the href, after the already
+    ///     encoded path of the base URL, so that a '#' cannot start a fragment and a '%' cannot start an escape,
+    ///     while the output path keeps the names as they are on disk.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_ReservedCharactersInNames_ArePercentEncodedInTheHref()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md")
+            .Write("c# tips/a b%20.md")
+            .WriteFile("c# tips/x#1.css")
+            .WithBaseUrl("https://example.com/my site/");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem page = items.Single(item => item.Kind is ContentKind.Page && item.OutputPath != "index.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(page.Href).IsEqualTo("/my%20site/c%23%20tips/a%20b%2520.html");
+            await Assert.That(page.OutputPath).IsEqualTo(Path.Combine("c# tips", "a b%20.html"));
+            await Assert.That(page.Stylesheets).Contains("/my%20site/c%23%20tips/x%231.css");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a page links the stylesheet of every directory above it as well as its own, ordered
     ///     outermost first so that the deepest one wins the cascade, and that the one at the root reaches
     ///     every page because the root is every page's ancestor and not a special case.

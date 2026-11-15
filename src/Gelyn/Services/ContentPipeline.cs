@@ -177,7 +177,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
             {
                 SourcePath = file.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
-                Href = CombineHref(context.HrefPrefix, context.Prefix, name),
+                Href = CombineHref(context.HrefPrefix, name),
                 Kind = kind,
                 FallbackTitle = isIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : slug,
                 InNavigation = isPage && !isNotFound && IsInNavigation(segments),
@@ -193,6 +193,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
             items.AddRange(this.CollectItems(child, context with
             {
                 Prefix = [.. context.Prefix, child.Name],
+                HrefPrefix = CombineHref(context.HrefPrefix, child.Name),
                 Stylesheets = stylesheets,
                 Scripts = scripts,
                 Favicon = favicon,
@@ -254,7 +255,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
     private static IEnumerable<string> CollectHrefs(IFileSystemInfo[] entries, ScanContext context, ContentKind kind) =>
         entries.OfType<IFileInfo>()
                .Where(file => Classify(file) == kind)
-               .Select(file => CombineHref(context.HrefPrefix, context.Prefix, file.Name));
+               .Select(file => CombineHref(context.HrefPrefix, file.Name));
 
     // An href the level already inherits is left out. Only a root file replacing a file of the theme can be one,
     // so the replacement is linked once and in the theme's place.
@@ -262,10 +263,11 @@ internal sealed class ContentPipeline : ContentPipelineContract
         [.. inherited, .. placed.Where(href => !inherited.Contains(href, StringComparer.Ordinal))];
 
     private static string[] CollectThemeHrefs(IReadOnlyList<ThemeFile> theme, string prefix, ContentKind kind) =>
-        [.. theme.Where(file => file.Kind == kind).Select(file => CombineHref(prefix, [], file.FileName))];
+        [.. theme.Where(file => file.Kind == kind).Select(file => CombineHref(prefix, file.FileName))];
 
-    private static string CombineHref(string prefix, IReadOnlyList<string> segments, string last) =>
-        StringUtils.JoinSegments(prefix, segments, last, '/');
+    // A name may hold '#', '?' or '%', which would end the path or start an escape if it were copied as is.
+    private static string CombineHref(string prefix, string name) =>
+        $"{prefix}/{Uri.EscapeDataString(name)}";
 
     private static bool IsInNavigation(string[] segments) =>
         segments.Length switch

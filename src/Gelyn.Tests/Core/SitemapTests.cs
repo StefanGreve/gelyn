@@ -250,6 +250,23 @@ public class SitemapTests
         await Assert.That(Value(url, "lastmod")).IsEqualTo("2026-03-04");
     }
 
+    /// <summary>
+    ///     Verifies that the percent-encoding of an href survives the resolution against the base URL, so that
+    ///     an encoded '#' or '%' in a name neither starts a fragment nor gets encoded a second time.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_PercentEncodedHref_KeepsItsEncoding()
+    {
+        // Arrange
+        ContentPage page = Page("index.html", "2026-01-01") with { Href = "/c%23%20tips/a%20b%2520.html" };
+
+        // Act
+        XElement url = Urls(Render(Options(), [page])).Single();
+
+        // Assert
+        await Assert.That(Value(url, "loc")).IsEqualTo("https://example.com/c%23%20tips/a%20b%2520.html");
+    }
+
     #endregion // Document Tests
 
     #region Determinism Tests

@@ -5,9 +5,9 @@ namespace Gelyn.Core.Context;
 /// </summary>
 /// <remarks>
 ///     Two kinds of value sit here and the distinction is worth keeping in mind when the walk is changed:
-///     <see cref="HrefPrefix"/> and <see cref="Excluded"/> are fixed for the whole scan, while the rest are
-///     recomputed per directory and handed down with a <c>with</c> expression. A directory therefore reads
-///     its own state and never writes to a parent's.
+///     <see cref="Excluded"/> is fixed for the whole scan, while the rest are recomputed per directory and
+///     handed down with a <c>with</c> expression. A directory therefore reads its own state and never writes
+///     to a parent's.
 /// </remarks>
 internal sealed record ScanContext
 {
@@ -35,8 +35,9 @@ internal sealed record ScanContext
     public required string? Favicon { get; init; }
 
     /// <summary>
-    ///     The path of the configured base URL, or an empty string when the site is served from the root of
-    ///     a domain. Fixed for the whole scan.
+    ///     The root-relative URL of the directory being walked without a trailing slash, which opens with the
+    ///     path of the configured base URL and percent-encodes every directory name after it. Empty at the
+    ///     content root of a site served from the root of a domain.
     /// </summary>
     public required string HrefPrefix { get; init; }
 
