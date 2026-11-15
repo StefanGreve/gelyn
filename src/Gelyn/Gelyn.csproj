@@ -51,6 +51,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/StefanGreve/gelyn</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <PackageReleaseNotes>$(RepositoryUrl)/blob/master/CHANGELOG.md</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Label="Themes">
