@@ -448,9 +448,8 @@ test-results/
 .AppleDouble
 .LSOverride
 
-# Icon must end with two \r
-Icon
-
+# The brackets hold a literal carriage return, because macOS names the file Icon\r
+Icon[]
 
 # Thumbnails
 ._*
