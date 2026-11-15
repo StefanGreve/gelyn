@@ -16,7 +16,10 @@
   </Target>
 
   <Target Name="CleanRepositoryOutput" AfterTargets="Clean">
-    <RemoveDir Directories="$(RepositoryRoot)_site;$(RepositoryRoot)artifacts;$(RepositoryRoot)TestResults" />
+    <RemoveDir Directories="$(RepositoryRoot)_docs;
+                            $(RepositoryRoot)_site;
+                            $(RepositoryRoot)artifacts;
+                            $(RepositoryRoot)TestResults" />
   </Target>
 
 </Project>
