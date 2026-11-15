@@ -52,7 +52,7 @@ updates:
   - package-ecosystem: dotnet-sdk
     directory: /
     schedule:
-      interval: monthly
+      interval: quarterly
       time: "08:00"
       timezone: Europe/Berlin
     ignore:
