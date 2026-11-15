@@ -4,7 +4,7 @@
 ###############################################################################
 # Dotnet
 #
-# The diff option is needed for earlier builds of msysgit that does not have it
+# The diff option is needed for earlier builds of msysgit that do not have it
 # on by default for csharp files. (Note: This is only used by command line)
 ###############################################################################
 *.cs            text eol=lf diff=csharp
@@ -52,21 +52,17 @@ COPYING         text eol=lf
 ###############################################################################
 # Scripts
 #
-# Windows adopted Unicode before UTF-8 was recommended by the Unicode Consortium,
-# which is why Windows initially was based on UCS-2. By the time UTF-8 and UTF-16
-# grew in popularity, it was too late for Windows to change over to UTF-8 without
-# breaking a magnitude of existing code, however UTF-16 is backwards
-# compatible with UCS-2 which is the primary reason why Windows PowerShell scripts
-# (Version 5.1) uses UTF-16LE. If necessary, this can be specified here with adding
-# 'working-tree-encoding=UTF-16' to the affected line.
+# Windows PowerShell 5.1 reads a script without a byte order mark in the legacy
+# ANSI code page, so a script with non-ASCII characters needs a UTF-8 BOM to
+# run there. UTF-16LE is what its Out-File cmdlet and the '>' operator write by
+# default, not what it expects of a script. A file that has to stay UTF-16 in
+# the working tree can add 'working-tree-encoding=UTF-16' to its line.
 #
-# If a file with this attribute is added to Git, then Git reencodes the content
-# from the specified encoding to UTF-8. Finally, Git stores the UTF-8 encoded
-# content in its internal data structure (called "the index"). On checkout the
-# content is reencoded back to the specified encoding.
+# Git converts a file with this attribute to UTF-8 when it is added and stores
+# that content in the index. On checkout, Git converts it back to the declared
+# encoding.
 #
-# Fortunately, PowerShell Core (Version 7) defaults to BOM-less UTF-8, which
-# stays in line with Unix-like platforms.
+# PowerShell 7 defaults to BOM-less UTF-8, like Unix-like platforms.
 ###############################################################################
 *.bat           text eol=crlf
 *.cmd           text eol=crlf
