@@ -96,7 +96,8 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="CleanPublishDirectory" BeforeTargets="PrepareForPublish">
+  <!-- PackTool ships every file in the publish directory, so only a pack, never a plain publish, clears it. -->
+  <Target Name="CleanPublishDirectory" BeforeTargets="PrepareForPublish" Condition="'$(_IsPacking)' == 'true'">
     <RemoveDir Directories="$(PublishDir)" />
   </Target>
 
