@@ -139,7 +139,7 @@
       "description": "The version of KaTeX that a page whose front matter sets enableMathRendering requests from jsDelivr, such as 0.19.0.",
       "type": "string",
       "minLength": 1,
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
       "default": "0.19.0",
       "examples": [
         "0.19.0"
@@ -149,7 +149,7 @@
       "description": "The version of Mermaid that a page whose front matter sets enableDiagramRendering requests from jsDelivr, such as 12.1.0.",
       "type": "string",
       "minLength": 1,
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
       "default": "12.1.0",
       "examples": [
         "12.1.0"
@@ -159,7 +159,7 @@
       "description": "The version of Shiki that a page whose front matter sets enableSyntaxHighlighting requests from jsDelivr, such as 4.6.0.",
       "type": "string",
       "minLength": 1,
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
       "default": "4.6.0",
       "examples": [
         "4.6.0"

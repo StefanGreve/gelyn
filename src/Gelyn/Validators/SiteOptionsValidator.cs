@@ -50,20 +50,23 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
         // Author and Description are optional, but an empty lang attribute is worse than none at all.
         if (string.IsNullOrWhiteSpace(options.Language))
             failures.Add($"{nameof(SiteOptions.Language)} must not be empty.");
-        else if (!LanguageTagRegex().IsMatch(options.Language))
+        else if (!MatchesPattern(LanguageTagRegex(), options.Language))
             failures.Add($"{nameof(SiteOptions.Language)} must be a BCP 47 language tag, such as 'en' or 'de-DE'.");
 
         failures.AddRange(this.ValidateDirectories(options.ContentDirectory, options.OutputDirectory));
 
-        // An empty version addresses no package, since it goes into the URL as katex@/dist.
-        if (string.IsNullOrWhiteSpace(options.KaTeXVersion))
-            failures.Add($"{nameof(SiteOptions.KaTeXVersion)} must not be empty.");
+        // A version goes into a jsDelivr URL inside a module script, where no escaping applies.
+        if (!MatchesPattern(VersionRegex(), options.KaTeXVersion))
+            failures.Add($"{nameof(SiteOptions.KaTeXVersion)} must be a version such as '0.19.0'.");
 
-        if (string.IsNullOrWhiteSpace(options.MermaidVersion))
-            failures.Add($"{nameof(SiteOptions.MermaidVersion)} must not be empty.");
+        if (!MatchesPattern(VersionRegex(), options.MermaidVersion))
+            failures.Add($"{nameof(SiteOptions.MermaidVersion)} must be a version such as '12.1.0'.");
 
-        if (string.IsNullOrWhiteSpace(options.ShikiVersion))
-            failures.Add($"{nameof(SiteOptions.ShikiVersion)} must not be empty.");
+        if (!MatchesPattern(VersionRegex(), options.ShikiVersion))
+            failures.Add($"{nameof(SiteOptions.ShikiVersion)} must be a version such as '4.6.0'.");
+
+        if (options.ExcludePatterns.Distinct(StringComparer.Ordinal).Count() != options.ExcludePatterns.Count)
+            failures.Add($"{nameof(SiteOptions.ExcludePatterns)} must not list a pattern twice.");
 
         if (options.Giscus is GiscusOptions giscus)
             failures.AddRange(ValidateGiscusOptions(giscus));
@@ -112,7 +115,8 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
     {
         string key = nameof(SiteOptions.Giscus);
 
-        if (!IsRepository(giscus.Repo))
+        // giscus hands the value to GitHub as owner/name, so a missing half or a third segment addresses nothing.
+        if (!MatchesPattern(RepositoryRegex(), giscus.Repo))
             yield return $"{key}.{nameof(GiscusOptions.Repo)} must name a repository as 'owner/name'.";
 
         if (string.IsNullOrWhiteSpace(giscus.RepoId))
@@ -146,13 +150,19 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
         url.IsAbsoluteUri && (url.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.Ordinal)
             || url.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.Ordinal));
 
-    // giscus hands the value to GitHub as owner/name, so a missing half or a third segment addresses nothing.
-    private static bool IsRepository(string? repo) =>
-        repo?.Split('/') is [{ Length: > 0 }, { Length: > 0 }] && !repo.Any(char.IsWhiteSpace);
+    // In .NET, $ also matches before a final newline, which the schema's ECMA-262 pattern rejects.
+    private static bool MatchesPattern(Regex regex, string? value) =>
+        value is not null && regex.Match(value) is { Success: true } match && match.Length == value.Length;
 
-    // The same pattern the schema declares, so an editor and the build reject the same values.
-    [GeneratedRegex(SiteOptions.LanguageTagPattern)]
+    // The same patterns the schema declares, so an editor and the build reject the same values.
+    [GeneratedRegex(ValidationPatterns.LanguageTag)]
     private static partial Regex LanguageTagRegex();
+
+    [GeneratedRegex(ValidationPatterns.Version)]
+    private static partial Regex VersionRegex();
+
+    [GeneratedRegex(ValidationPatterns.Repository)]
+    private static partial Regex RepositoryRegex();
 
     // The build would publish an output inside the content directory as content, `gelyn clean` would remove
     // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it

@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+using Gelyn.Core.Internals;
+
 namespace Gelyn.Model.Options;
 
 /// <summary>
@@ -15,7 +17,7 @@ internal sealed class GiscusOptions
     ///     The repository, as <c>owner/name</c>.
     /// </summary>
     [Required]
-    [RegularExpression(@"^[^/\s]+/[^/\s]+$")]
+    [RegularExpression(ValidationPatterns.Repository)]
     public string? Repo { get; set; }
 
     /// <summary>

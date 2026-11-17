@@ -463,6 +463,7 @@ public class SiteOptionsValidatorTests
     [Arguments("/blog")]
     [Arguments("octo cat/blog")]
     [Arguments("octocat/blog/extra")]
+    [Arguments("octocat/blog\n")]
     public async Task Validate_Test_MalformedGiscusRepo_Fails(string? repo)
     {
         // Arrange
@@ -627,6 +628,7 @@ public class SiteOptionsValidatorTests
     [Arguments("en-")]
     [Arguments("en US")]
     [Arguments("englishlanguage")]
+    [Arguments("en\n")]
     public async Task Validate_Test_NotALanguageTag_Fails(string language)
     {
         // Arrange
@@ -644,6 +646,98 @@ public class SiteOptionsValidatorTests
     }
 
     #endregion // Language Tests
+
+    #region Version Tests
+
+    /// <summary>
+    ///     Verifies that a version of three numbers is accepted for every library a page can load.
+    /// </summary>
+    [Test]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "0.19.0")]
+    [Arguments(nameof(SiteOptions.MermaidVersion), "12.1.0")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "10.20.300")]
+    public async Task Validate_Test_Version_Succeeds(string setting, string version)
+    {
+        // Arrange
+        SiteOptions options = Blank(setting, version);
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that a value the schema rejects is rejected by the build as well, including the trailing
+    ///     newline and the non-ASCII digits that the .NET regex dialect would otherwise accept.
+    /// </summary>
+    [Test]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "latest")]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "4.6.0 ")]
+    [Arguments(nameof(SiteOptions.KaTeXVersion), "4.6,0")]
+    [Arguments(nameof(SiteOptions.MermaidVersion), "12.1")]
+    [Arguments(nameof(SiteOptions.MermaidVersion), "12.1.0-beta.1")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "4.6.0\n")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "\U00000664.6.0")]
+    [Arguments(nameof(SiteOptions.ShikiVersion), "4.6.0\";alert(1);\"")]
+    public async Task Validate_Test_NotAVersion_Fails(string setting, string version)
+    {
+        // Arrange
+        SiteOptions options = Blank(setting, version);
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains($"{setting} must be a version such as");
+        }
+    }
+
+    #endregion // Version Tests
+
+    #region Exclude Pattern Tests
+
+    /// <summary>
+    ///     Verifies that a pattern listed twice is rejected, as the schema's <c>uniqueItems</c> rejects it.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_DuplicateExcludePattern_Fails()
+    {
+        // Arrange
+        var options = new SiteOptions { ExcludePatterns = ["*.tmp", "drafts", "*.tmp"] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.ExcludePatterns)} must not list a pattern twice.");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that patterns differing in case alone are distinct, as they are to the schema.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_ExcludePatternsDifferingInCase_Succeed()
+    {
+        // Arrange
+        var options = new SiteOptions { ExcludePatterns = ["Drafts", "drafts"] };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    #endregion // Exclude Pattern Tests
 
     #region Helpers
 

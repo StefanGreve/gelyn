@@ -13,12 +13,6 @@ namespace Gelyn.Model.Options;
 internal sealed class SiteOptions
 {
     /// <summary>
-    ///     The shape of a BCP 47 language tag: a first subtag of letters, then any number of subtags of letters
-    ///     and digits, each at most eight characters long and joined by a hyphen.
-    /// </summary>
-    internal const string LanguageTagPattern = "^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*$";
-
-    /// <summary>
     ///     The name of the site.
     /// </summary>
     /// <example>
@@ -42,7 +36,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     de-DE
     /// </example>
-    [RegularExpression(LanguageTagPattern)]
+    [RegularExpression(ValidationPatterns.LanguageTag)]
     public string Language { get; set; } = "en";
 
     /// <summary>
@@ -123,7 +117,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     0.19.0
     /// </example>
-    [RegularExpression(@"^\d+\.\d+\.\d+$")]
+    [RegularExpression(ValidationPatterns.Version)]
     public string KaTeXVersion { get; set; } = "0.19.0";
 
     /// <summary>
@@ -133,7 +127,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     12.1.0
     /// </example>
-    [RegularExpression(@"^\d+\.\d+\.\d+$")]
+    [RegularExpression(ValidationPatterns.Version)]
     public string MermaidVersion { get; set; } = "12.1.0";
 
     /// <summary>
@@ -143,7 +137,7 @@ internal sealed class SiteOptions
     /// <example>
     ///     4.6.0
     /// </example>
-    [RegularExpression(@"^\d+\.\d+\.\d+$")]
+    [RegularExpression(ValidationPatterns.Version)]
     public string ShikiVersion { get; set; } = "4.6.0";
 
     /// <summary>
