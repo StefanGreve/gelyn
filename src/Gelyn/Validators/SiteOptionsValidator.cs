@@ -2,6 +2,7 @@ using System.Net;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Hosting;
@@ -19,6 +20,7 @@ namespace Gelyn.Validators;
 internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
 {
     private readonly IHostEnvironment _environment;
+    private readonly ConfigurationFileStatus _file;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteOptionsValidator"/> class.
@@ -26,9 +28,13 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
     /// <param name="environment">
     ///     The host environment the directory settings are resolved against.
     /// </param>
-    public SiteOptionsValidator(IHostEnvironment environment)
+    /// <param name="file">
+    ///     The configuration file the run reads, which the output directory must not hold.
+    /// </param>
+    public SiteOptionsValidator(IHostEnvironment environment, ConfigurationFileStatus file)
     {
         this._environment = environment;
+        this._file = file;
     }
 
     /// <inheritdoc/>
@@ -86,11 +92,17 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         if (string.IsNullOrWhiteSpace(output))
             yield return $"{nameof(SiteOptions.OutputDirectory)} must not be empty.";
 
-        if (!string.IsNullOrWhiteSpace(content) && !string.IsNullOrWhiteSpace(output)
-            && ViolatesBoundary(this._environment.ContentRootPath, content, output))
-        {
+        if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(output)) yield break;
+
+        string root = PathBoundary.Resolve(this._environment.ContentRootPath);
+        string resolved = PathBoundary.Resolve(root, output);
+
+        if (ViolatesBoundary(root, content, output))
             yield return $"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.";
-        }
+        else if (EnclosesPath(resolved, root))
+            yield return $"{nameof(SiteOptions.OutputDirectory)} must not resolve to or above the content root.";
+        else if (EnclosesPath(resolved, this._file.Path))
+            yield return $"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{this._file.Path}'.";
     }
 
     private static IEnumerable<string> ValidateGiscusOptions(GiscusOptions giscus)
@@ -140,6 +152,11 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
     // just wrote, so neither may contain the other.
     private static bool ViolatesBoundary(string root, string content, string output) =>
         PathBoundary.Overlap(PathBoundary.Resolve(root, content), PathBoundary.Resolve(root, output));
+
+    // A build deletes every file in the output directory it did not write, and `gelyn clean` deletes the
+    // directory itself. Case insensitive like Overlap, because rejecting too much is the safe direction.
+    private static bool EnclosesPath(string directory, string path) =>
+        path.Equals(directory, StringComparison.OrdinalIgnoreCase) || StringUtils.StartsWithSegment(path, directory, Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
 
     #endregion
 }

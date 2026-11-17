@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Tests.Stubs;
 
@@ -67,7 +68,17 @@ public class ExitCodesTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddSingleton<IHostEnvironment>(new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") });
+        services.AddSingleton<IHostEnvironment>(new HostEnvironmentStub
+        {
+            ContentRootPath = Path.GetFullPath("/site")
+        });
+        services.AddConfigurationFile(new ConfigurationFileStatus
+        {
+            Path = Path.GetFullPath("/site/gelyn.json"),
+            Optional = true,
+            Exists = false,
+            Failure = null
+        });
         services.AddSiteOptions();
 
         await using ServiceProvider provider = services.BuildServiceProvider();

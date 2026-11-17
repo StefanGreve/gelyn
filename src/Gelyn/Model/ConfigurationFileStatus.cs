@@ -1,7 +1,7 @@
 namespace Gelyn.Model;
 
 /// <summary>
-///     What the first load of the configuration file found.
+///     Describes the configuration file a run reads and the outcome of its first load.
 /// </summary>
 internal sealed record ConfigurationFileStatus
 {

@@ -69,6 +69,12 @@ when you run `gelyn clean`. A sibling is fine, including one whose name merely b
 `content-old`. Gelyn therefore rejects `--output content/dist`, `--output .`, and `--content .` before the
 command starts, with exit code 2.
 
+`OutputDirectory` also can't be the content root or a directory above it, and can't hold your configuration
+file, even when `ContentDirectory` lies elsewhere. A build deletes every file in the output directory that it
+didn't write, and `gelyn clean` deletes the directory itself, so such a setting would take `gelyn.json`, your
+sources and your repository with it. Gelyn rejects `--content ../notes --output .` with exit code 2 for that
+reason.
+
 A page title is separate from the name of your site. It comes from the page's own front matter, falling back to
 the file name, or to the folder name for a section index. Gelyn never uses `Title` as a page title, but the
 browser tab joins the two: `About - My Blog` for a page titled `About`, and `My Blog` alone for the landing page.

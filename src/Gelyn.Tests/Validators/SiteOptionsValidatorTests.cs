@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Tests.Stubs;
 using Gelyn.Validators;
@@ -313,6 +314,74 @@ public class SiteOptionsValidatorTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that an output directory resolving to the content root is rejected even when the content
+    ///     directory lies elsewhere, because a build deletes every file in it that it did not write and
+    ///     <c>gelyn clean</c> deletes it whole.
+    /// </summary>
+    /// <remarks>
+    ///     A directory above the content root would also hold the sibling content directory, so the boundary
+    ///     check rejects it first. The last case differs from the content root in case alone, which is rejected
+    ///     on every platform as the safe direction.
+    /// </remarks>
+    [Test]
+    [Arguments(".")]
+    [Arguments("../SITE")]
+    public async Task Validate_Test_OutputDirectoryAtContentRoot_Fails(string output)
+    {
+        // Arrange
+        var options = new SiteOptions { ContentDirectory = "../notes", OutputDirectory = output };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).IsEqualTo($"{nameof(SiteOptions.OutputDirectory)} must not resolve to or above the content root.");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an output directory holding a configuration file that lies outside the content root is
+    ///     rejected under a message naming the file, because the build would delete the file it just read.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_OutputDirectoryHoldingTheConfigurationFile_Fails()
+    {
+        // Arrange
+        var options = new SiteOptions { ContentDirectory = "../notes", OutputDirectory = "../shared" };
+        string configuration = Path.GetFullPath("/shared/gelyn.json");
+
+        // Act
+        ValidateOptionsResult result = Validate(options, configuration);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).IsEqualTo($"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{configuration}'.");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an output directory beside the content root is accepted when it holds neither the root
+    ///     nor the configuration file, which is the layout of a site built from content kept elsewhere.
+    /// </summary>
+    [Test]
+    public async Task Validate_Test_OutputDirectoryBesideContentRoot_Succeeds()
+    {
+        // Arrange
+        var options = new SiteOptions { ContentDirectory = "../notes", OutputDirectory = "../www" };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
     #endregion // Validate Tests
 
     #region Giscus Tests
@@ -534,9 +603,13 @@ public class SiteOptionsValidatorTests
 
     // An explicit content root is required: the stub defaults it to string.Empty, which would leave
     // GetFullPath resolving the relative settings against the working directory.
-    private static ValidateOptionsResult Validate(SiteOptions options) =>
-        new SiteOptionsValidator(new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") })
-            .Validate(name: null, options);
+    private static ValidateOptionsResult Validate(SiteOptions options, string configuration = "/site/gelyn.json")
+    {
+        var environment = new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") };
+        var file = new ConfigurationFileStatus { Path = Path.GetFullPath(configuration), Optional = true, Exists = true, Failure = null };
+
+        return new SiteOptionsValidator(environment, file).Validate(name: null, options);
+    }
 
     // Assigned by name, because the alternative is one test per setting; every setting under test is a
     // string, so no conversion is involved.
