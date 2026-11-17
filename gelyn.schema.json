@@ -24,6 +24,7 @@
       "description": "The language of the generated pages, written to the lang attribute of every document as a BCP 47 tag.",
       "type": "string",
       "minLength": 1,
+      "pattern": "^[A-Za-z]{1,8}(-[A-Za-z0-9]{1,8})*$",
       "default": "en",
       "examples": [
         "en",

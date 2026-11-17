@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
@@ -17,7 +18,7 @@ namespace Gelyn.Validators;
 ///     Written by hand, because <c>ValidateDataAnnotations</c> is annotated <c>RequiresUnreferencedCode</c>
 ///     and cannot see members the trimmer may have removed.
 /// </remarks>
-internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
+internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOptions>
 {
     private readonly IHostEnvironment _environment;
     private readonly ConfigurationFileStatus _file;
@@ -49,6 +50,8 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
         // Author and Description are optional, but an empty lang attribute is worse than none at all.
         if (string.IsNullOrWhiteSpace(options.Language))
             failures.Add($"{nameof(SiteOptions.Language)} must not be empty.");
+        else if (!LanguageTagRegex().IsMatch(options.Language))
+            failures.Add($"{nameof(SiteOptions.Language)} must be a BCP 47 language tag, such as 'en' or 'de-DE'.");
 
         failures.AddRange(this.ValidateDirectories(options.ContentDirectory, options.OutputDirectory));
 
@@ -146,6 +149,10 @@ internal sealed class SiteOptionsValidator : IValidateOptions<SiteOptions>
     // giscus hands the value to GitHub as owner/name, so a missing half or a third segment addresses nothing.
     private static bool IsRepository(string? repo) =>
         repo?.Split('/') is [{ Length: > 0 }, { Length: > 0 }] && !repo.Any(char.IsWhiteSpace);
+
+    // The same pattern the schema declares, so an editor and the build reject the same values.
+    [GeneratedRegex(SiteOptions.LanguageTagPattern)]
+    private static partial Regex LanguageTagRegex();
 
     // The build would publish an output inside the content directory as content, `gelyn clean` would remove
     // a content directory inside the output, and `gelyn serve` would retrigger its own watcher on what it

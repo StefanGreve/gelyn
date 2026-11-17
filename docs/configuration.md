@@ -42,7 +42,7 @@ otherwise ignore in silence.
 | Setting            | Default   | Description                                                                                             |
 | ------------------ | --------- | ------------------------------------------------------------------------------------------------------- |
 | `Title`            | `Gelyn`   | Names your site. The header links it to the landing page, and every browser tab names it.               |
-| `Language`         | `en`      | Sets the `lang` attribute of every document. Use a BCP 47 tag.                                          |
+| `Language`         | `en`      | Sets the `lang` attribute of every document, as a BCP 47 tag such as `en` or `de-DE`.                   |
 | `Author`           | unset     | Fills the `author` meta tag. While unset, Gelyn omits the tag.                                          |
 | `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
@@ -368,9 +368,8 @@ The server reads `Port` once, when it starts. Changing it in `gelyn.json` while 
 as any other change does, but the server keeps listening where it started until you restart it.
 
 > [!NOTE]
-> Gelyn matches environment variables to settings without regard to case, so a `PORT` variable sets `Port`.
-> Hosting platforms and dev containers often define one, and `gelyn serve` then listens on the port it names.
-> `--port` still wins over the variable.
+> An environment variable sets `Port` only as `GELYN_PORT`. A plain `PORT`, which hosting platforms and dev
+> containers often define, doesn't reach Gelyn. `--port` still wins over the variable.
 
 ## Where settings come from
 
@@ -378,14 +377,18 @@ Gelyn reads your settings from these layers, each overriding the one before it:
 
 1. The built-in defaults in [Settings](#settings).
 2. `gelyn.json` in the working directory, or the file you pass to `--config`.
-3. An environment variable named exactly like the setting.
+3. An environment variable named like the setting with the prefix `GELYN_`, such as `GELYN_TITLE`.
 4. A command line flag.
 
 ```sh
-Title="My Blog" gelyn build                  # environment variable
+GELYN_TITLE="My Blog" gelyn build            # environment variable
 gelyn build --config config/production.json  # a different file
 gelyn build --title "My Blog"                # flag, which wins over both of the others
 ```
+
+Gelyn matches the name of a variable without regard to case and ignores every variable without the prefix, so
+names that your desktop or your host sets for its own use, such as `LANGUAGE` or `PORT`, can't change your
+site. A setting inside another one joins the two names with a double underscore, as in `GELYN_GISCUS__REPO`.
 
 A path you pass to `--config` must exist, unlike `gelyn.json`, which stays optional because the defaults are
 usable on their own. These settings have a flag:

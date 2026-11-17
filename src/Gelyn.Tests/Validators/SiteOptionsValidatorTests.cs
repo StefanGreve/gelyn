@@ -594,6 +594,57 @@ public class SiteOptionsValidatorTests
 
     #endregion // Port Tests
 
+    #region Language Tests
+
+    /// <summary>
+    ///     Verifies that language tags of the BCP 47 shape are accepted, from a bare language to one with a
+    ///     script and a region, and a private-use tag.
+    /// </summary>
+    [Test]
+    [Arguments("en")]
+    [Arguments("de-DE")]
+    [Arguments("zh-Hant-TW")]
+    [Arguments("x-klingon")]
+    public async Task Validate_Test_LanguageTag_Succeeds(string language)
+    {
+        // Arrange
+        var options = new SiteOptions { Language = language };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        await Assert.That(result.Succeeded).IsTrue();
+    }
+
+    /// <summary>
+    ///     Verifies that a value outside the BCP 47 shape is rejected, such as the gettext value a Linux desktop
+    ///     sets in <c>LANGUAGE</c>, which would otherwise reach the lang attribute of every page.
+    /// </summary>
+    [Test]
+    [Arguments("de_DE:de")]
+    [Arguments("en_US")]
+    [Arguments("en-")]
+    [Arguments("en US")]
+    [Arguments("englishlanguage")]
+    public async Task Validate_Test_NotALanguageTag_Fails(string language)
+    {
+        // Arrange
+        var options = new SiteOptions { Language = language };
+
+        // Act
+        ValidateOptionsResult result = Validate(options);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(result.Failed).IsTrue();
+            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.Language)} must be a BCP 47 language tag, such as 'en' or 'de-DE'.");
+        }
+    }
+
+    #endregion // Language Tests
+
     #region Helpers
 
     /// <summary>

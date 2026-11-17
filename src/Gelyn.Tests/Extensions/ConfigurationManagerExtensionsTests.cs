@@ -419,4 +419,49 @@ public class ConfigurationManagerExtensionsTests
     }
 
     #endregion // Configuration File Tests
+
+    #region Environment Variable Tests
+
+    /// <summary>
+    ///     Verifies that an environment variable reaches a setting only under the <c>GELYN_</c> prefix, so that a
+    ///     variable such as <c>LANGUAGE</c>, which Linux desktops set for gettext, leaves the site alone.
+    /// </summary>
+    /// <remarks>
+    ///     Environment variables are process-wide, so the test runs alone and restores both values. Description
+    ///     is the setting under test, because no test running beside this one reads it.
+    /// </remarks>
+    [Test]
+    [NotInParallel]
+    public async Task EnvironmentVariables_Test_OnlyPrefixedNames_ReachTheSettings()
+    {
+        // Arrange
+        string? language = Environment.GetEnvironmentVariable("LANGUAGE");
+        string? description = Environment.GetEnvironmentVariable("GELYN_DESCRIPTION");
+        var configuration = new ConfigurationManager();
+        var options = new SiteOptions();
+
+        try
+        {
+            Environment.SetEnvironmentVariable("LANGUAGE", "de_DE:de");
+            Environment.SetEnvironmentVariable("GELYN_DESCRIPTION", "From the environment");
+
+            // Act
+            configuration.AddSiteConfiguration([], requested: null);
+            configuration.Bind(options);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("LANGUAGE", language);
+            Environment.SetEnvironmentVariable("GELYN_DESCRIPTION", description);
+        }
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Language).IsEqualTo("en");
+            await Assert.That(options.Description).IsEqualTo("From the environment");
+        }
+    }
+
+    #endregion // Environment Variable Tests
 }

@@ -14,6 +14,9 @@ namespace Gelyn.Extensions;
 /// </summary>
 internal static class ConfigurationManagerExtensions
 {
+    // Prefixed, because names such as LANGUAGE, PORT and TITLE are set by desktops and hosts for their own use.
+    private const string SettingVariablePrefix = "GELYN_";
+
     /// <summary>
     ///     Adds the tool's configuration file and re-applies the sources that outrank it.
     /// </summary>
@@ -66,7 +69,7 @@ internal static class ConfigurationManagerExtensions
         if (file is not null) file.OnLoadException = null;
 
         configuration
-            .AddEnvironmentVariables()
+            .AddEnvironmentVariables(prefix: SettingVariablePrefix)
             .AddCommandLine(args)
             .AddInMemoryCollection(overrides);
 
