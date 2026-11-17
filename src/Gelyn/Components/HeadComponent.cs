@@ -13,7 +13,6 @@ namespace Gelyn.Components;
 /// </summary>
 internal static class HeadComponent
 {
-    private const string MathRenderer = "renderMathInElement(document.body);";
     private const string LightTheme = "github-light";
     private const string DarkTheme = "github-dark";
     private const string LandingPage = "index.html";
@@ -114,11 +113,13 @@ internal static class HeadComponent
     {
         string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(version)}/dist";
 
-        head.AppendLine($"""<link rel="stylesheet" href="{katex}/katex.min.css">""");
-        // The loading of KaTeX is deferred to speed up page rendering
-        head.AppendLine($"""<script defer src="{katex}/katex.min.js"></script>""");
-        // To automatically render math in text elements, include the auto-render extension
-        head.AppendLine($"""<script defer src="{katex}/contrib/auto-render.min.js" onload="{MathRenderer}"></script>""");
+        // The loading of KaTeX is deferred to speed up page rendering.
+        // To automatically render math in text elements, include the auto-render extension.
+        head.AppendLine($$"""
+            <link rel="stylesheet" href="{{katex}}/katex.min.css">
+            <script defer src="{{katex}}/katex.min.js"></script>
+            <script defer src="{{katex}}/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+        """);
     }
 
     private static void AppendDiagramRenderer(this StringBuilder head, string version)
