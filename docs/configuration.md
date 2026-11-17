@@ -393,7 +393,8 @@ names that your desktop or your host sets for its own use, such as `LANGUAGE` or
 site. A setting inside another one joins the two names with a double underscore, as in `GELYN_GISCUS__REPO`.
 
 A path you pass to `--config` must exist, unlike `gelyn.json`, which stays optional because the defaults are
-usable on their own. These settings have a flag:
+usable on their own. A relative path resolves against the content root and may lead out of it, as
+`../shared.json` does. These settings have a flag:
 
 | Setting            | Flag                      |
 | ------------------ | ------------------------- |

@@ -48,12 +48,16 @@ internal static class ConfigurationManagerExtensions
         // Outranks the command line provider's pairing, so a later reader such as the serve watcher sees this path.
         overrides[ConfigurationFile.PathKey] = requested;
 
+        // Rooted, so that the source reads it through a provider of its own directory: the base directory's provider
+        // refuses a path that climbs out of it, such as ../shared.json.
+        string fullPath = Path.GetFullPath(requested ?? ConfigurationFile.DefaultFileName, configuration.ResolveBaseDirectory());
+
         JsonConfigurationSource? file = null;
         Exception? failure = null;
 
         configuration.AddJsonFile(source =>
         {
-            source.Path = requested ?? ConfigurationFile.DefaultFileName;
+            source.Path = fullPath;
             source.Optional = requested is null;
             source.ReloadOnChange = false;
             source.ResolveFileProvider();
@@ -75,7 +79,7 @@ internal static class ConfigurationManagerExtensions
 
         return new ConfigurationFileStatus
         {
-            Path = FullPath(file, requested ?? ConfigurationFile.DefaultFileName),
+            Path = fullPath,
             Optional = requested is null,
             Exists = file is { FileProvider: IFileProvider provider, Path: string path } && provider.GetFileInfo(path).Exists,
             Failure = failure,
@@ -84,13 +88,9 @@ internal static class ConfigurationManagerExtensions
 
     #region Helpers
 
-    // The provider's root is where a relative path is read from: the content root, or the directory of a rooted path.
-    private static string FullPath(JsonConfigurationSource? source, string given)
-    {
-        if (source is { FileProvider: PhysicalFileProvider provider, Path: string path }) return Path.GetFullPath(Path.Combine(provider.Root, path));
-
-        return Path.GetFullPath(given);
-    }
+    // The host points the builder's file provider at the content root.
+    private static string ResolveBaseDirectory(this ConfigurationManager configuration) =>
+        configuration.GetFileProvider() is PhysicalFileProvider provider ? provider.Root : Directory.GetCurrentDirectory();
 
     private static Dictionary<string, string?> ReadOverrides(this ConfigurationManager configuration)
     {
