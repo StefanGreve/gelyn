@@ -107,8 +107,9 @@ gelyn build --base-url https://example.com/blog
 <a href="/blog/about.html">About</a>
 ```
 
-A trailing slash makes no difference, and a URL that addresses the root of a domain contributes no prefix at
-all, so `https://example.com` leaves every link exactly as it would be with no `BaseUrl` configured. Gelyn
+Gelyn keeps the origin and the non-empty segments of the path. A trailing or doubled slash, a query and a
+fragment make no difference. A URL that addresses the root of a domain contributes no prefix at all, so
+`https://example.com` leaves every link exactly as it would be with no `BaseUrl` configured. Gelyn
 accepts only absolute `http` and `https` URLs, and rejects anything else before the build starts. While
 `BaseUrl` is unset, Gelyn writes no canonical reference at all, because a relative one would carry no meaning.
 
