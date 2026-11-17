@@ -1690,6 +1690,29 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that removals are reported in ordinal name order, whatever order the file system enumerates
+    ///     them in, so that the removed lines read the same on every file system.
+    /// </summary>
+    /// <remarks>
+    ///     Compared as a joined string, because <c>IsEquivalentTo</c> disregards the order under test.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_Removals_AreReportedInOrdinalOrder()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .WriteOutput("c.txt")
+            .WriteOutput("a.txt")
+            .WriteOutput("B.txt");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(string.Join(',', report.Removed)).IsEqualTo("B.txt,a.txt,c.txt");
+    }
+
+    /// <summary>
     ///     Verifies that a source the exclude patterns start matching has its output removed, which is what
     ///     proves the prune subtracts what the scan reports and not what is still on disk.
     /// </summary>
