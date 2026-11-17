@@ -44,6 +44,9 @@ internal sealed class CleanCommand : Command
         [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
         : base("clean", "Remove the output directory.")
     {
+        foreach (Option option in OverrideOptions.DirectoryDefinitions)
+            this.Options.Add(option);
+
         this.SetAction(_ =>
         {
             SiteOptions site = options.CurrentValue;

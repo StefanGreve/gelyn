@@ -116,20 +116,37 @@ internal static class OverrideOptions
             HelpName = "true|false",
             Arity = ArgumentArity.ExactlyOne,
         },
-        new Option<string>($"--{Content}")
-        {
-            Description = "The directory the site is built from.",
-            HelpName = "directory",
-        },
-        new Option<string>($"--{Output}")
-        {
-            Description = "The directory the generated site is written to.",
-            HelpName = "directory",
-        },
+        CreateContentOption(),
+        CreateOutputOption(),
         new Option<string>($"--{Exclude}")
         {
             Description = $"Further name patterns to skip, separated by '{ExcludeSeparator}'.",
             HelpName = "patterns",
         },
     ];
+
+    /// <summary>
+    ///     The command line options that override the content and the output directory, which is the subset
+    ///     <c>clean</c> declares.
+    /// </summary>
+    /// <remarks>
+    ///     Every read returns new instances, as for <see cref="Definitions"/>.
+    /// </remarks>
+    internal static IReadOnlyList<Option> DirectoryDefinitions =>
+    [
+        CreateContentOption(),
+        CreateOutputOption(),
+    ];
+
+    private static Option<string> CreateContentOption() => new($"--{Content}")
+    {
+        Description = "The directory the site is built from.",
+        HelpName = "directory",
+    };
+
+    private static Option<string> CreateOutputOption() => new($"--{Output}")
+    {
+        Description = "The directory the generated site is written to.",
+        HelpName = "directory",
+    };
 }

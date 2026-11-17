@@ -408,7 +408,8 @@ usable on their own. A relative path resolves against the content root and may l
 | `ExcludePatterns`  | `--exclude <patterns>`    |
 | `Port`             | `--port <number>`         |
 
-`--port` exists on `gelyn serve` alone, since no other command serves the site. `--feed` and `--sitemap` take
+`--port` exists on `gelyn serve` alone, since no other command serves the site. `gelyn clean` takes `--content`
+and `--output` alone, since it builds nothing. See [clean](cli.md#clean). `--feed` and `--sitemap` take
 `true` or `false` and have no bare form, so `--sitemap false` turns off a sitemap that `gelyn.json` enables.
 
 `Language`, `Author`, `Description`, `FooterLinks`, `KaTeXVersion`, `MermaidVersion`, `ShikiVersion`, and

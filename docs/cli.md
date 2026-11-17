@@ -66,6 +66,25 @@ Serving HTTP on 127.0.0.1 port 9624 (http://127.0.0.1:9624/) ...
 
 The two `-` fields are the identity and the authenticated user, neither of which a preview server has.
 
+## clean
+
+`gelyn clean` removes the output directory and everything in it. A directory that doesn't exist leaves nothing to
+remove, which still exits with code `0`:
+
+```sh
+gelyn clean                 # the configured OutputDirectory, _site by default
+gelyn clean --output public # another directory
+```
+
+| Option      | Description                                                                         |
+| ----------- | ----------------------------------------------------------------------------------- |
+| `--output`  | Overrides `OutputDirectory`, the directory to remove.                               |
+| `--content` | Overrides `ContentDirectory`, which the output directory is checked against first. |
+
+These are the only `build` options `clean` takes, because it builds nothing. Pass the same `--content` and
+`--output` you build with: `clean` refuses every output directory a build refuses, such as one that is or holds
+the content directory, so it never removes your sources.
+
 ## Diagnostics
 
 Gelyn writes results to standard output and diagnostics to standard error, so you can separate the two. A
