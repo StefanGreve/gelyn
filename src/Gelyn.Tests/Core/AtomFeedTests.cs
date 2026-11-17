@@ -274,15 +274,18 @@ public class AtomFeedTests
     #region Metadata Tests
 
     /// <summary>
-    ///     Verifies that a site declaring no author is published as anonymous, RFC 4287 requiring an author of
-    ///     a feed whose entries declare none and no page carrying one to declare.
+    ///     Verifies that a site declaring no author, or a blank one, is published as anonymous, RFC 4287
+    ///     requiring an author of a feed whose entries declare none and no page carrying one to declare.
     /// </summary>
     [Test]
-    public async Task Render_Test_AbsentAuthor_FallsBackToAnonymous()
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("   ")]
+    public async Task Render_Test_AbsentAuthor_FallsBackToAnonymous(string? author)
     {
         // Arrange
         SiteOptions options = Options();
-        options.Author = null;
+        options.Author = author;
 
         // Act
         XElement feed = Render(options, [Page("post.html", "Post", "2026-01-01", inFeed: true)]);

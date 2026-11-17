@@ -148,7 +148,7 @@ internal static class AtomFeed
         writer.WriteLink("alternate", root.AbsoluteUri, MediaTypeNames.Text.Html);
 
         writer.WriteStartElement("author", Namespace);
-        writer.WriteElementString("name", Namespace, options.Author ?? AnonymousAuthor);
+        writer.WriteElementString("name", Namespace, string.IsNullOrWhiteSpace(options.Author) ? AnonymousAuthor : options.Author);
         writer.WriteEndElement();
 
         writer.WriteStartElement("generator", Namespace);
