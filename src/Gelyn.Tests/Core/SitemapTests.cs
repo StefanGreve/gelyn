@@ -291,6 +291,49 @@ public class SitemapTests
 
     #endregion // Determinism Tests
 
+    #region Limit Tests
+
+    /// <summary>
+    ///     Verifies that a sitemap at a limit of the protocol stays within it, and that one location or one byte
+    ///     more goes past it.
+    /// </summary>
+    [Test]
+    [Arguments(Sitemap.MaxLocations, Sitemap.MaxBytes, false)]
+    [Arguments(Sitemap.MaxLocations + 1, 0, true)]
+    [Arguments(0, Sitemap.MaxBytes + 1, true)]
+    public async Task ExceedsLimits_Test_Boundaries_AreInclusive(int locations, int bytes, bool expected)
+    {
+        // Act
+        bool exceeds = Sitemap.ExceedsLimits(locations, bytes);
+
+        // Assert
+        await Assert.That(exceeds).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that the count leaves out the not-found page, so that the warning counts what the document
+    ///     lists.
+    /// </summary>
+    [Test]
+    public async Task CountLocations_Test_NotFoundPage_IsNotCounted()
+    {
+        // Arrange
+        ContentPage[] pages =
+        [
+            Page("index.html", "2026-01-01"),
+            Page("post.html", "2026-01-02"),
+            Page("404.html", date: null) with { IsNotFoundPage = true },
+        ];
+
+        // Act
+        int locations = Sitemap.CountLocations(pages);
+
+        // Assert
+        await Assert.That(locations).IsEqualTo(2);
+    }
+
+    #endregion // Limit Tests
+
     #region Helpers
 
     // Only the base URL is read, every other setting reaching the document by way of no element at all.

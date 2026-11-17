@@ -83,6 +83,11 @@ internal static class EventIds
     /// </summary>
     internal const int THEME_FILE_REPLACED = 1_013;
 
+    /// <summary>
+    ///     The sitemap was written past a limit of the protocol, which a crawler may reject it for.
+    /// </summary>
+    internal const int SITEMAP_LIMIT_EXCEEDED = 1_014;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

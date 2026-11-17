@@ -173,6 +173,10 @@ Two switches have to be on, and no page has to opt in:
 
 Neither fails a build. Gelyn writes no sitemap and warns once if `BaseUrl` is unset.
 
+The protocol allows one sitemap at most 50,000 locations and 50 MB uncompressed. Gelyn writes a single
+`sitemap.xml` regardless, and warns when it goes past either limit, since a crawler may then reject it. Gelyn
+doesn't split a sitemap into an index yet.
+
 Every page is listed, including one that declares no `date`. Such a page is a draft only in the sense that no table
 of documents links it, and a crawler reaches it through your navigation anyway, so leaving it out of the inventory
 would hide it from nothing. No front matter key keeps a single page out. Name the file in `ExcludePatterns` to keep

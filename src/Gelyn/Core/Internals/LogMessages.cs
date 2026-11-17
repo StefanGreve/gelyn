@@ -256,6 +256,30 @@ internal static partial class LogMessages
     internal static partial void LogSitemapSkippedWithoutBaseUrl(this ILogger logger);
 
     /// <summary>
+    ///     Reports that the sitemap lists more locations or takes more bytes than the protocol allows, so that a
+    ///     crawler may reject it.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="locations">
+    ///     The number of locations the sitemap lists.
+    /// </param>
+    /// <param name="bytes">
+    ///     The size of the sitemap in bytes, uncompressed.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, because the sitemap is still written and the rest of the site is
+    ///     unaffected. Splitting it into a sitemap index is not supported yet.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.SITEMAP_LIMIT_EXCEEDED,
+        EventName = nameof(EventIds.SITEMAP_LIMIT_EXCEEDED),
+        Level = LogLevel.Warning,
+        Message = "The sitemap lists {Locations} locations in {Bytes} bytes, past the protocol's limit of 50,000 locations or 52,428,800 bytes, so a crawler may reject it")]
+    internal static partial void LogSitemapLimitExceeded(this ILogger logger, int locations, int bytes);
+
+    /// <summary>
     ///     Reports that one page declares a front matter key that no setting reads, which is how a misspelled
     ///     key such as <c>titel</c> surfaces, since the setting it was meant to be takes no effect.
     /// </summary>

@@ -447,6 +447,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         // Always a document from here on. The landing page is always listed, and the scan fails a tree without one.
         byte[] document = Sitemap.Render(options, pages);
+        int locations = Sitemap.CountLocations(pages);
+
+        // Splitting the sitemap into an index is not supported yet, so a site past a limit learns of it here.
+        if (Sitemap.ExceedsLimits(locations, document.Length))
+            this._logger.LogSitemapLimitExceeded(locations, document.Length);
 
         this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName), document);
 
