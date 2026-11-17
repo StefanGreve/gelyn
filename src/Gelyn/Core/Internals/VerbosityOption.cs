@@ -29,9 +29,9 @@ internal static class VerbosityOption
     /// <returns>
     ///     A new option, which applies to every subcommand.
     /// </returns>
-    internal static Option<LogLevel> CreateOption() => new(OptionName)
+    internal static Option<LogLevel> CreateOption() => new(OptionName) // Listed in the description, as the help name sets the column width
     {
-        Description = "How much diagnostic output to write to standard error.",
+        Description = $"How much diagnostic output to write to standard error: {string.Join(", ", Enum.GetNames<LogLevel>())}.",
         HelpName = "level",
         DefaultValueFactory = static _ => DefaultLevel,
         Recursive = true,
