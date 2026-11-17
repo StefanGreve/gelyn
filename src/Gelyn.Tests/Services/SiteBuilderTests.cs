@@ -1822,6 +1822,36 @@ public partial class SiteBuilderTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that the build refuses an output directory that is itself a link, before it writes a page,
+    ///     so that a link into the content directory can neither receive the output nor lose its sources.
+    /// </summary>
+    /// <remarks>
+    ///     Driven against the real file system for the reason the test above gives.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_OutputDirectoryThatIsALink_IsRefused()
+    {
+        // Arrange
+        Skip.Unless(DiskFixture.CanLinkDirectories, "Creating a directory symlink on Windows needs an elevated shell.");
+
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "---\ntitle: Home\n---")
+            .LinkOutputToContent();
+
+        // Act
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("is a link");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(fixture.Holds("content/index.md")).IsTrue();
+            await Assert.That(fixture.Holds("content/index.html")).IsFalse();
+        }
+    }
+
     #endregion // PruneOutput Tests
 
     #region Counter Tests

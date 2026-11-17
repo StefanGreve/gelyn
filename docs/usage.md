@@ -774,6 +774,10 @@ what keeps a `_site` deployed as a git worktree from losing its `.git`, and a Gi
 your output directory. The cost of both rules is that such an entry is never reconciled either: delete the
 source of a dot-prefixed file and its output stays published.
 
+The output directory itself can't be a link. A build would write its pages wherever the link points and then
+delete everything there that it didn't write, so Gelyn refuses to build into one and exits with code 1. On
+such a directory, `gelyn clean` removes the link and leaves its target alone.
+
 `gelyn clean` removes the output directory outright, which is the one way to clear those entries as well.
 
 A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources

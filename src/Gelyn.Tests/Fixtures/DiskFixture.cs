@@ -169,6 +169,21 @@ internal sealed class DiskFixture : IDisposable
     }
 
     /// <summary>
+    ///     Replaces the output directory with a link to the content directory, which is the shape that would let
+    ///     the build write its pages among the sources and the prune delete them.
+    /// </summary>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public DiskFixture LinkOutputToContent()
+    {
+        Directory.Delete(this.OutputRoot);
+        Directory.CreateSymbolicLink(this.OutputRoot, this.ContentRoot);
+
+        return this;
+    }
+
+    /// <summary>
     ///     Indicates whether the fixture still holds a file at the given path.
     /// </summary>
     /// <param name="relativePath">

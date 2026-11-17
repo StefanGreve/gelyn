@@ -161,6 +161,10 @@ internal sealed class SiteBuilder : SiteBuilderContract
             this._environment.ContentRootPath,
             options.OutputDirectory);
 
+        // Writing through a link is dangerous, since the prune deletes any data at its target the build did not write.
+        if (this._fileSystem.DirectoryInfo.New(outputDirectory).IsLink)
+            throw new IOException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
+
         long outputStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         this.CreateOutputDirectories(items, outputDirectory);
 
