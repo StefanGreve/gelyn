@@ -105,8 +105,8 @@ internal static class AtomFeed
     ///     Every page the site is built from, in any order.
     /// </param>
     /// <returns>
-    ///     <see langword="true"/> when at least one page declares the feed and carries a date,
-    ///     <see langword="false"/> otherwise.
+    ///     <see langword="true"/> when at least one page other than the not-found page declares the feed and
+    ///     carries a date, <see langword="false"/> otherwise.
     /// </returns>
     internal static bool HasEntries(IReadOnlyList<ContentPage> pages) =>
         pages.Any(IsEntry);
@@ -114,9 +114,10 @@ internal static class AtomFeed
     #region Helpers
 
     // Factored out so that whether a feed can be written and which pages it then carries stay one rule: the
-    // page asks for the feed and declares the date Atom requires of an entry.
+    // page asks for the feed, declares the date Atom requires of an entry, and has an address of its own,
+    // which the not-found page lacks because the host serves it at whichever address missed.
     private static bool IsEntry(ContentPage page) =>
-        page.InFeed && page.Date is not null;
+        page.InFeed && page.Date is not null && !page.IsNotFoundPage;
 
     /// <summary>
     ///     Writes the elements that describe the feed itself, ahead of its entries.

@@ -53,6 +53,27 @@ public class AtomFeedTests
         await Assert.That(feed).IsEmpty();
     }
 
+    /// <summary>
+    ///     Verifies that a dated not-found page that opts into the feed does not make the feed qualify on its
+    ///     own, so that a site without any other entry writes no feed.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_OnlyTheNotFoundPageQualifying_WritesNothing()
+    {
+        // Arrange
+        ContentPage notFound = Page("404.html", "Not Found", "2026-01-01", inFeed: true) with { IsNotFoundPage = true };
+
+        // Act
+        byte[] feed = AtomFeed.Render(Options(), [notFound]);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(feed).IsEmpty();
+            await Assert.That(AtomFeed.HasEntries([notFound])).IsFalse();
+        }
+    }
+
     #endregion // Gate Tests
 
     #region Membership Tests
@@ -73,6 +94,27 @@ public class AtomFeedTests
             Page("in.html", "In", "2026-01-01", inFeed: true),
             Page("out.html", "Out", "2026-01-02"),
             Page("dateless.html", "Dateless", date: null, inFeed: true),
+        ];
+
+        // Act
+        string titles = Titles(Render(Options(), pages));
+
+        // Assert
+        await Assert.That(titles).IsEqualTo("In");
+    }
+
+    /// <summary>
+    ///     Verifies that the not-found page is left out even when it opts in and declares a date, because the
+    ///     host serves it at whichever address missed and it has no address of its own to link.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_NotFoundPage_IsLeftOut()
+    {
+        // Arrange
+        ContentPage[] pages =
+        [
+            Page("in.html", "In", "2026-01-01", inFeed: true),
+            Page("404.html", "Not Found", "2026-01-02", inFeed: true) with { IsNotFoundPage = true },
         ];
 
         // Act

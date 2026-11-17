@@ -522,7 +522,8 @@ content/
 The host serves this page at whichever address missed, not at one of its own, so Gelyn writes it differently
 from every other page:
 
-- The banner doesn't link it, and neither the sitemap nor a table of documents lists it.
+- The banner doesn't link it, and neither the sitemap, the feed, nor a table of documents lists it, even when
+  its front matter declares `enableFeed` and a `date`.
 - Its head carries `<meta name="robots" content="noindex">` and no canonical link.
 - Its head carries `<base href="/">`, or the path of `BaseUrl` such as `<base href="/blog/">`, so that its
   relative links resolve against your site root. A `[home](index.md)` in `404.md` then reaches your landing
