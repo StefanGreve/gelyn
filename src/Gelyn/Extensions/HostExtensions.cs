@@ -30,10 +30,13 @@ internal static class HostExtensions
             .AddEnvironmentVariables(prefix: HostVariablePrefix)
             .AddCommandLine(args);
 
+        // The host resolves a relative content root against the tool's install directory, not the caller's.
+        string? contentRoot = configuration[HostDefaults.ContentRootKey];
+
         return Host.CreateEmptyApplicationBuilder(new HostApplicationBuilderSettings
         {
             Configuration = configuration,
-            ContentRootPath = configuration[HostDefaults.ContentRootKey] ?? Directory.GetCurrentDirectory(),
+            ContentRootPath = string.IsNullOrEmpty(contentRoot) ? Directory.GetCurrentDirectory() : Path.GetFullPath(contentRoot),
         });
     }
 }

@@ -76,6 +76,43 @@ public class HostExtensionsTests
         await Assert.That(Normalize(builder.Environment.ContentRootPath)).IsEqualTo(Normalize(fixture.Root));
     }
 
+    /// <summary>
+    ///     Verifies that a relative content root resolves against the working directory, not against the
+    ///     directory the tool is installed in.
+    /// </summary>
+    /// <remarks>
+    ///     The working directory is process-wide, so the test runs alone.
+    /// </remarks>
+    [Test]
+    [NotInParallel]
+    public async Task CreateLeanApplicationBuilder_Test_RelativeContentRoot_ResolvesAgainstTheWorkingDirectory()
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        string original = Directory.GetCurrentDirectory();
+        string[] args = [$"--{HostDefaults.ContentRootKey}", "site"];
+
+        // The host requires the content root to exist.
+        Directory.CreateDirectory(Path.Combine(fixture.Root, "site"));
+
+        try
+        {
+            Directory.SetCurrentDirectory(fixture.Root);
+            string expected = Path.Combine(Directory.GetCurrentDirectory(), "site");
+
+            // Act
+            HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
+            string actual = Normalize(builder.Environment.ContentRootPath);
+
+            // Assert
+            await Assert.That(actual).IsEqualTo(Normalize(expected));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(original);
+        }
+    }
+
     #endregion // Content Root Tests
 
     #region Helpers

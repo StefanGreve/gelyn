@@ -60,8 +60,9 @@ otherwise ignore in silence.
 | `Port`             | `9624`    | Sets the loopback port `gelyn serve` listens on, from 1 to 65535. See [Port](#port).                    |
 
 Gelyn resolves both directories against the content root, which is the directory you run `gelyn` from unless
-the `DOTNET_CONTENTROOT` environment variable points somewhere else. No command declares a `--contentRoot`
-flag, so passing one fails as an unrecognized argument.
+the `DOTNET_CONTENTROOT` environment variable points somewhere else. A relative `DOTNET_CONTENTROOT` resolves
+against the directory you run `gelyn` from. No command declares a `--contentRoot` flag, so passing one fails as an
+unrecognized argument.
 
 `OutputDirectory` and `ContentDirectory` can't contain each other. An output directory inside your content
 directory becomes content in the next build, and a content directory inside your output directory disappears
