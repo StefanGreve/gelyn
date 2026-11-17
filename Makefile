@@ -43,7 +43,8 @@ DELETE_PACKAGES = rm -f artifacts/nupkg/Gelyn*.nupkg
 endif
 
 # Native AOT cannot cross-compile between operating systems, so the host decides the runtime.
-# Override it as `make publish RID=linux-x64` to pick another of the identifiers Gelyn.csproj targets.
+# Override the architecture alone, as in `make publish RID='$(PLATFORM)-arm64'`, to pick another identifier
+# Gelyn.csproj targets. The quotes keep the shell from expanding $(PLATFORM) before make does.
 RID ?= $(PLATFORM)-$(ARCHITECTURE)
 
 GELYN = $(MAIN_PROJECT)/bin/Release/net10.0/$(RID)/publish/$(BINARY)
@@ -86,7 +87,7 @@ publish:
 	dotnet publish $(MAIN_PROJECT) --runtime $(RID)
 
 install:
-	: the pointer package and the one for RID, with no older version beside them for --prerelease to prefer
+	: the pointer package and the one for RID, with no leftover higher version beside them for --prerelease to prefer
 	$(DELETE_PACKAGES)
 	dotnet pack $(MAIN_PROJECT)
 	dotnet pack $(MAIN_PROJECT) --runtime $(RID)
