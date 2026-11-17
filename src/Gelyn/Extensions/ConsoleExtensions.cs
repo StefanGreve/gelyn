@@ -6,7 +6,7 @@ using Spectre.Console;
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Output that reaches a console in one write instead of one write per segment.
+///     Provides extension methods for <see cref="IAnsiConsole"/>.
 /// </summary>
 internal static class ConsoleExtensions
 {
@@ -18,6 +18,20 @@ internal static class ConsoleExtensions
     /// </param>
     extension(IAnsiConsole console)
     {
+        /// <summary>
+        ///     Stops the console from wrapping lines when its output is not a terminal.
+        /// </summary>
+        /// <remarks>
+        ///     Spectre.Console assumes 80 columns for an output that is not a terminal, which splits long paths
+        ///     in a file or a CI log. Left-aligned text renders without padding, so the unbounded width costs
+        ///     nothing, but a widget that fills the width, such as a rule or a centered paragraph, would allocate
+        ///     it.
+        /// </remarks>
+        public void DisableWrappingWhenRedirected()
+        {
+            if (!console.Profile.Out.IsTerminal) console.Profile.Width = int.MaxValue;
+        }
+
         /// <summary>
         ///     Renders everything <paramref name="write"/> writes into memory, and passes the result to the
         ///     console's writer at once.

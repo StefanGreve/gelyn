@@ -16,6 +16,48 @@ namespace Gelyn.Tests.Extensions;
 /// </summary>
 public class ConsoleExtensionsTests
 {
+    #region Wrapping Tests
+
+    /// <summary>
+    ///     Verifies that a console whose output is not a terminal writes a line longer than 80 columns whole.
+    /// </summary>
+    [Test]
+    public async Task DisableWrappingWhenRedirected_Test_LongLine_IsWrittenWhole()
+    {
+        // Arrange
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        IAnsiConsole console = CapturedConsole.Create(writer);
+        string path = string.Join('/', Enumerable.Repeat("segment", 30));
+
+        // Act
+        console.DisableWrappingWhenRedirected();
+        console.MarkupLineInterpolated($"[green]created[/] {path}");
+
+        // Assert
+        await Assert.That(writer.ToString()).IsEqualTo($"created {path}{Environment.NewLine}");
+    }
+
+    /// <summary>
+    ///     Verifies that a batch on a redirected console writes a line longer than 80 columns whole.
+    /// </summary>
+    [Test]
+    public async Task DisableWrappingWhenRedirected_Test_Batch_IsWrittenWhole()
+    {
+        // Arrange
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        IAnsiConsole console = CapturedConsole.Create(writer);
+        string path = string.Join('/', Enumerable.Repeat("segment", 30));
+
+        // Act
+        console.DisableWrappingWhenRedirected();
+        console.WriteBatch(batch => batch.MarkupLineInterpolated($"[green]created[/] {path}"));
+
+        // Assert
+        await Assert.That(writer.ToString()).IsEqualTo($"created {path}{Environment.NewLine}");
+    }
+
+    #endregion
+
     #region Batch Tests
 
     /// <summary>

@@ -42,6 +42,9 @@ internal static class Program
             Out = new AnsiConsoleOutput(System.Console.Error),
         });
 
+        stdOut.DisableWrappingWhenRedirected();
+        stdErr.DisableWrappingWhenRedirected();
+
         try
         {
             HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
