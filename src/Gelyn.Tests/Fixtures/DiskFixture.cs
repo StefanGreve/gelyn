@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Abstractions;
 
@@ -21,6 +22,8 @@ namespace Gelyn.Tests.Fixtures;
 /// </remarks>
 internal sealed class DiskFixture : IDisposable
 {
+    private readonly List<string> _readOnly = [];
+
     private DiskFixture(string root, SiteOptions options)
     {
         this.Root = root;
@@ -132,6 +135,30 @@ internal sealed class DiskFixture : IDisposable
         this.WriteAt(this.Root, relativePath, contents);
 
     /// <summary>
+    ///     Adds one source file and marks it read-only, as a checkout from a server workspace or an extracted
+    ///     archive would leave it.
+    /// </summary>
+    /// <param name="relativePath">
+    ///     The path of the file relative to <see cref="ContentRoot"/>, separated by forward slashes.
+    /// </param>
+    /// <param name="contents">
+    ///     The text to write.
+    /// </param>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public DiskFixture WriteReadOnly(string relativePath, string contents)
+    {
+        this.WriteAt(this.ContentRoot, relativePath, contents);
+
+        string path = Locate(this.ContentRoot, relativePath);
+        File.SetAttributes(path, FileAttributes.ReadOnly);
+        this._readOnly.Add(path);
+
+        return this;
+    }
+
+    /// <summary>
     ///     Links a directory in the content tree to the content tree itself, which is the shape that makes a
     ///     walk unbounded. Any other link only makes it wider than intended.
     /// </summary>
@@ -204,6 +231,10 @@ internal sealed class DiskFixture : IDisposable
         // matters instead of with one from the cleanup.
         try
         {
+            // Cleared first, because Windows refuses to delete a read-only file.
+            foreach (string path in this._readOnly)
+                if (File.Exists(path)) File.SetAttributes(path, FileAttributes.Normal);
+
             Directory.Delete(this.Root, recursive: true);
         }
         catch (DirectoryNotFoundException)

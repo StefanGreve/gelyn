@@ -9,7 +9,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <Target Name="PatchAssemblyVersion" AfterTargets="MinVer">
+  <Target Name="PatchAssemblyVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' != ''">
     <PropertyGroup>
       <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).0.0</AssemblyVersion>
     </PropertyGroup>

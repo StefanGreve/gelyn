@@ -87,6 +87,34 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a read-only source yields a writable copy, so that a second build can overwrite it,
+    ///     while the source keeps the attribute its owner set.
+    /// </summary>
+    /// <remarks>
+    ///     Driven against the real file system, because the operating system decides which attributes a copy
+    ///     inherits.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_ReadOnlySource_LeavesTheCopyWritable()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "---\ntitle: Home\n---")
+            .WriteReadOnly("logo.png", "png");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(File.GetAttributes(Path.Combine(fixture.OutputRoot, "logo.png")).HasFlag(FileAttributes.ReadOnly)).IsFalse();
+            await Assert.That(File.GetAttributes(Path.Combine(fixture.ContentRoot, "logo.png")).HasFlag(FileAttributes.ReadOnly)).IsTrue();
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a binary file survives the copy byte for byte, which is what the copy buys over
     ///     reading the file as text and writing it back out.
     /// </summary>

@@ -487,12 +487,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
-        IFile file = this._fileSystem.File;
         ContentItem[] assets = [.. items.Where(static item => item.Kind is not ContentKind.Page)];
 
         return OrderedParallel.Select(assets, asset =>
         {
-            file.Copy(asset.SourcePath, path.Combine(outputDirectory, asset.OutputPath), overwrite: true);
+            FileUtils.CopyContent(this._fileSystem, asset.SourcePath, path.Combine(outputDirectory, asset.OutputPath));
 
             return asset.OutputPath;
         }, cancellationToken);
