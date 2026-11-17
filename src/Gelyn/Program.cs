@@ -47,9 +47,9 @@ internal static class Program
 
         try
         {
-            HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
-            ConfigurationFileStatus file = builder.Configuration.AddSiteConfiguration(args, ConfigurationFile.Requested(args));
-            builder.Logging.ConfigureDiagnostics(builder.Configuration);
+            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
+            ConfigurationFileStatus file = builder.Configuration.AddSiteConfiguration(ConfigurationFile.ReadPath(args));
+            builder.Logging.ConfigureDiagnostics(VerbosityOption.ReadLevel(args));
 
             // Third-party registrations
             builder.Services.TryAddKeyedSingleton(ConsoleTarget.StdOut, stdOut);
@@ -73,6 +73,8 @@ internal static class Program
             ParseResult parsed = host.Services
                 .GetRequiredService<GelynCommand>()
                 .Parse(args);
+
+            builder.Configuration.ApplyOverrides(parsed);
 
             double startupMilliseconds = started.ElapsedMilliseconds;
 

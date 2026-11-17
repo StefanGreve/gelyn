@@ -270,7 +270,7 @@ public class InfoOptionTests
 
         string path = Path.Combine(fixture.Root, "site.json");
         string[] args = [InfoOption.OptionName, ConfigurationFile.OptionName, path];
-        ConfigurationFileStatus file = new ConfigurationManager().AddSiteConfiguration(args, ConfigurationFile.Requested(args));
+        ConfigurationFileStatus file = new ConfigurationManager().AddSiteConfiguration(ConfigurationFile.ReadPath(args));
 
         // Act
         (_, string output, _) = Invoke(Create(file), args);

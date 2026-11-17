@@ -14,6 +14,8 @@ namespace Gelyn.Tests.Extensions;
 /// </summary>
 public class HostExtensionsTests
 {
+    private const string ContentRootVariable = "DOTNET_CONTENTROOT";
+
     #region Content Root Tests
 
     /// <summary>
@@ -42,7 +44,7 @@ public class HostExtensionsTests
             string expected = Directory.GetCurrentDirectory();
 
             // Act
-            HostApplicationBuilder builder = Array.Empty<string>().CreateLeanApplicationBuilder();
+            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
             string actual = Normalize(builder.Environment.ContentRootPath);
 
             // Assert
@@ -59,21 +61,32 @@ public class HostExtensionsTests
     }
 
     /// <summary>
-    ///     Verifies that a content root given on the command line wins over the working directory, which is
-    ///     the key the host reads out of the seeded configuration.
+    ///     Verifies that a content root given in <c>DOTNET_CONTENTROOT</c> wins over the working directory.
     /// </summary>
+    /// <remarks>
+    ///     The environment is process-wide, so the test runs alone.
+    /// </remarks>
     [Test]
+    [NotInParallel]
     public async Task CreateLeanApplicationBuilder_Test_ContentRootGiven_IsHonoured()
     {
         // Arrange
         using var fixture = DiskFixture.Create();
-        string[] args = [$"--{HostDefaults.ContentRootKey}", fixture.Root];
 
-        // Act
-        HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
+        try
+        {
+            Environment.SetEnvironmentVariable(ContentRootVariable, fixture.Root);
 
-        // Assert
-        await Assert.That(Normalize(builder.Environment.ContentRootPath)).IsEqualTo(Normalize(fixture.Root));
+            // Act
+            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
+
+            // Assert
+            await Assert.That(Normalize(builder.Environment.ContentRootPath)).IsEqualTo(Normalize(fixture.Root));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(ContentRootVariable, null);
+        }
     }
 
     /// <summary>
@@ -81,7 +94,7 @@ public class HostExtensionsTests
     ///     directory the tool is installed in.
     /// </summary>
     /// <remarks>
-    ///     The working directory is process-wide, so the test runs alone.
+    ///     The working directory and the environment are process-wide, so the test runs alone.
     /// </remarks>
     [Test]
     [NotInParallel]
@@ -90,7 +103,6 @@ public class HostExtensionsTests
         // Arrange
         using var fixture = DiskFixture.Create();
         string original = Directory.GetCurrentDirectory();
-        string[] args = [$"--{HostDefaults.ContentRootKey}", "site"];
 
         // The host requires the content root to exist.
         Directory.CreateDirectory(Path.Combine(fixture.Root, "site"));
@@ -98,10 +110,11 @@ public class HostExtensionsTests
         try
         {
             Directory.SetCurrentDirectory(fixture.Root);
+            Environment.SetEnvironmentVariable(ContentRootVariable, "site");
             string expected = Path.Combine(Directory.GetCurrentDirectory(), "site");
 
             // Act
-            HostApplicationBuilder builder = args.CreateLeanApplicationBuilder();
+            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
             string actual = Normalize(builder.Environment.ContentRootPath);
 
             // Assert
@@ -109,6 +122,7 @@ public class HostExtensionsTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable(ContentRootVariable, null);
             Directory.SetCurrentDirectory(original);
         }
     }

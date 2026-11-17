@@ -24,7 +24,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// </summary>
 public class ConfigurationFileTests
 {
-    #region Requested Tests
+    #region ReadPath Tests
 
     /// <summary>
     ///     Verifies that the path given to <c>--config</c> is read wherever it stands, including behind a valueless
@@ -37,10 +37,10 @@ public class ConfigurationFileTests
     [Arguments("build --config:site.json")]
     [Arguments("build --config=site.json")]
     [Arguments("serve --launch-browser --config site.json")]
-    public async Task Requested_Test_PathOnTheCommandLine_IsRead(string commandLine)
+    public async Task ReadPath_Test_PathOnTheCommandLine_IsRead(string commandLine)
     {
         // Act
-        string? requested = ConfigurationFile.Requested(commandLine.Split(' '));
+        string? requested = ConfigurationFile.ReadPath(commandLine.Split(' '));
 
         // Assert
         await Assert.That(requested).IsEqualTo("site.json");
@@ -50,10 +50,10 @@ public class ConfigurationFileTests
     ///     Verifies that a command line without <c>--config</c> requests no path, which leaves the default file.
     /// </summary>
     [Test]
-    public async Task Requested_Test_WithoutTheOption_IsNull()
+    public async Task ReadPath_Test_WithoutTheOption_IsNull()
     {
         // Act
-        string? requested = ConfigurationFile.Requested(["build"]);
+        string? requested = ConfigurationFile.ReadPath(["build"]);
 
         // Assert
         await Assert.That(requested).IsNull();
@@ -74,13 +74,13 @@ public class ConfigurationFileTests
     [Arguments("serve --launch-browser --port 9000 --config site.json")]
     [Arguments("clean --config site.json")]
     [Arguments("--help")]
-    public async Task Requested_Test_PathOnTheCommandLine_MatchesTheFullCommand(string commandLine)
+    public async Task ReadPath_Test_PathOnTheCommandLine_MatchesTheFullCommand(string commandLine)
     {
         // Arrange
         string[] args = commandLine.Split(' ');
 
         // Act
-        string? requested = ConfigurationFile.Requested(args);
+        string? requested = ConfigurationFile.ReadPath(args);
 
         // Assert
         await Assert.That(requested).IsEqualTo(Compose().Parse(args).GetValue<string>(ConfigurationFile.OptionName));
@@ -95,7 +95,7 @@ public class ConfigurationFileTests
     ///     does not know and leaves alone.
     /// </remarks>
     [Test]
-    public async Task Requested_Test_OptionMissingItsValue_IsRejectedByTheFullCommand()
+    public async Task ReadPath_Test_OptionMissingItsValue_IsRejectedByTheFullCommand()
     {
         // Arrange
         string[] args = ["build", "--title", ConfigurationFile.OptionName, "site.json"];
@@ -106,7 +106,7 @@ public class ConfigurationFileTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(ConfigurationFile.Requested(args)).IsEqualTo("site.json");
+            await Assert.That(ConfigurationFile.ReadPath(args)).IsEqualTo("site.json");
             await Assert.That(full.Errors).IsNotEmpty();
         }
     }
@@ -115,7 +115,7 @@ public class ConfigurationFileTests
     ///     Verifies that a path given in a response file is read, as it is by the full command.
     /// </summary>
     [Test]
-    public async Task Requested_Test_PathInAResponseFile_IsRead()
+    public async Task ReadPath_Test_PathInAResponseFile_IsRead()
     {
         // Arrange
         using DiskFixture fixture = DiskFixture.Create()
@@ -124,7 +124,7 @@ public class ConfigurationFileTests
         string[] args = ["build", $"@{Path.Combine(fixture.Root, "options.rsp")}"];
 
         // Act
-        string? requested = ConfigurationFile.Requested(args);
+        string? requested = ConfigurationFile.ReadPath(args);
 
         // Assert
         await Assert.That(requested).IsEqualTo("site.json");
@@ -135,7 +135,7 @@ public class ConfigurationFileTests
     ///     command line configuration provider used to lose.
     /// </summary>
     [Test]
-    public async Task Requested_Test_PathBehindInfo_ReachesTheLoader()
+    public async Task ReadPath_Test_PathBehindInfo_ReachesTheLoader()
     {
         // Arrange
         using DiskFixture fixture = DiskFixture.Create()
@@ -147,7 +147,7 @@ public class ConfigurationFileTests
         var options = new SiteOptions();
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration(args, ConfigurationFile.Requested(args));
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration(ConfigurationFile.ReadPath(args));
         configuration.Bind(options);
 
         // Assert
@@ -160,7 +160,7 @@ public class ConfigurationFileTests
         }
     }
 
-    #endregion // Requested Tests
+    #endregion // ReadPath Tests
 
     #region Helpers
 

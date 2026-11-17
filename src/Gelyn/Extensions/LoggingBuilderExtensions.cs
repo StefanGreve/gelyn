@@ -1,6 +1,5 @@
 using Gelyn.Core.Internals;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
@@ -20,21 +19,15 @@ internal static class LoggingBuilderExtensions
     /// <param name="logging">
     ///     The builder to configure.
     /// </param>
-    /// <param name="configuration">
-    ///     The configuration to read from.
+    /// <param name="level">
+    ///     The minimum level to write, as <see cref="VerbosityOption.ReadLevel"/> reads it.
     /// </param>
     /// <returns>
     ///     The same <see cref="ILoggingBuilder"/> instance, so that calls can be chained.
     /// </returns>
-    public static ILoggingBuilder ConfigureDiagnostics(this ILoggingBuilder logging, IConfiguration configuration)
+    public static ILoggingBuilder ConfigureDiagnostics(this ILoggingBuilder logging, LogLevel level)
     {
         ArgumentNullException.ThrowIfNull(logging);
-        ArgumentNullException.ThrowIfNull(configuration);
-
-        // The option declares the same default, but the command line provider only reports what was passed.
-        LogLevel level = Enum.TryParse(configuration[VerbosityOption.LevelKey], ignoreCase: true, out LogLevel parsed)
-            ? parsed
-            : VerbosityOption.DefaultLevel;
 
         logging.ClearProviders();
         logging.SetMinimumLevel(level);

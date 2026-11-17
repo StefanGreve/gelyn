@@ -43,8 +43,8 @@ internal static class ConfigurationFile
     /// </summary>
     /// <remarks>
     ///     Parsed by a root command that declares this option alone, because the file loads before the container
-    ///     that builds the full command exists. An option it does not know stays a token of its own, where the
-    ///     command line configuration provider pairs a valueless option such as <c>--info</c> with the path.
+    ///     that builds the full command exists. An option it does not know stays a token of its own, so that a
+    ///     valueless option such as <c>--info</c> is not taken for the path.
     /// </remarks>
     /// <param name="args">
     ///     Command line arguments passed to the tool.
@@ -52,7 +52,7 @@ internal static class ConfigurationFile
     /// <returns>
     ///     The path as given, or <see langword="null"/> when the option is absent.
     /// </returns>
-    internal static string? Requested(string[] args)
+    internal static string? ReadPath(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);
 

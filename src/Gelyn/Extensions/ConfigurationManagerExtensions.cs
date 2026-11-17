@@ -1,16 +1,20 @@
+using System.CommandLine;
+using System.CommandLine.Parsing;
+
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.FileProviders;
 
 namespace Gelyn.Extensions;
 
 /// <summary>
 ///     Configuration sources the composition root in <see cref="Program"/> layers on top of the environment
-///     variables and command line it seeds the host configuration with.
+///     variables it seeds the host configuration with.
 /// </summary>
 internal static class ConfigurationManagerExtensions
 {
@@ -18,7 +22,7 @@ internal static class ConfigurationManagerExtensions
     private const string SettingVariablePrefix = "GELYN_";
 
     /// <summary>
-    ///     Adds the tool's configuration file and re-applies the sources that outrank it.
+    ///     Adds the tool's configuration file and the environment variables that outrank it.
     /// </summary>
     /// <remarks>
     ///     A missing or unparsable file is returned as a failure instead of thrown, so that <c>--help</c> and
@@ -29,24 +33,16 @@ internal static class ConfigurationManagerExtensions
     /// <param name="configuration">
     ///     The configuration to add the sources to.
     /// </param>
-    /// <param name="args">
-    ///     Command line arguments passed to the tool.
-    /// </param>
     /// <param name="requested">
-    ///     The path given to <see cref="ConfigurationFile.OptionName"/>, as <see cref="ConfigurationFile.Requested"/>
+    ///     The path given to <see cref="ConfigurationFile.OptionName"/>, as <see cref="ConfigurationFile.ReadPath"/>
     ///     reads it from the parsed command line, or <see langword="null"/> for the default file.
     /// </param>
     /// <returns>
     ///     What the first load of the file found, including the failure it held back.
     /// </returns>
-    public static ConfigurationFileStatus AddSiteConfiguration(this ConfigurationManager configuration, string[] args, string? requested)
+    public static ConfigurationFileStatus AddSiteConfiguration(this ConfigurationManager configuration, string? requested)
     {
         ArgumentNullException.ThrowIfNull(configuration);
-
-        Dictionary<string, string?> overrides = configuration.ReadOverrides();
-
-        // Outranks the command line provider's pairing, so a later reader such as the serve watcher sees this path.
-        overrides[ConfigurationFile.PathKey] = requested;
 
         // Rooted, so that the source reads it through a provider of its own directory: the base directory's provider
         // refuses a path that climbs out of it, such as ../shared.json.
@@ -72,10 +68,14 @@ internal static class ConfigurationManagerExtensions
         // Only the first load is deferred, so a reload under serve still throws into the watcher.
         if (file is not null) file.OnLoadException = null;
 
+        var overrides = new OverrideSource();
+
+        // Recorded, so that a later reader such as the serve watcher sees the path the loader was given.
+        overrides.Provider.Set(ConfigurationFile.PathKey, requested);
+
         configuration
             .AddEnvironmentVariables(prefix: SettingVariablePrefix)
-            .AddCommandLine(args)
-            .AddInMemoryCollection(overrides);
+            .Add(overrides);
 
         return new ConfigurationFileStatus
         {
@@ -86,13 +86,48 @@ internal static class ConfigurationManagerExtensions
         };
     }
 
+    /// <summary>
+    ///     Applies the settings the command line overrides, which outrank every other source.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Read from the System.CommandLine parse, because only the parse knows the syntax the tool accepts:
+    ///         <c>--option:value</c>, <c>--option=value</c>, response files, and options that take no value.
+    ///     </para>
+    ///     <para>
+    ///         Written into the last source <see cref="AddSiteConfiguration"/> added, because adding a source once
+    ///         the host is built raises a reload, and the options monitor answers a reload by binding and validating
+    ///         at once. That would surface a configuration failure before <c>--help</c> or <c>--info</c> runs.
+    ///     </para>
+    /// </remarks>
+    /// <param name="configuration">
+    ///     The configuration <see cref="AddSiteConfiguration"/> was called on.
+    /// </param>
+    /// <param name="parseResult">
+    ///     The parse of the full command tree.
+    /// </param>
+    /// <exception cref="InvalidOperationException">
+    ///     <see cref="AddSiteConfiguration"/> was not called on <paramref name="configuration"/>.
+    /// </exception>
+    public static void ApplyOverrides(this ConfigurationManager configuration, ParseResult parseResult)
+    {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(parseResult);
+
+        if (configuration.Sources.OfType<OverrideSource>().LastOrDefault() is not OverrideSource overrides)
+            throw new InvalidOperationException($"{nameof(AddSiteConfiguration)} must be called before the overrides are applied.");
+
+        foreach ((string key, string? value) in ReadOverrides(parseResult))
+            overrides.Provider.Set(key, value);
+    }
+
     #region Helpers
 
     // The host points the builder's file provider at the content root.
     private static string ResolveBaseDirectory(this ConfigurationManager configuration) =>
         configuration.GetFileProvider() is PhysicalFileProvider provider ? provider.Root : Directory.GetCurrentDirectory();
 
-    private static Dictionary<string, string?> ReadOverrides(this ConfigurationManager configuration)
+    private static Dictionary<string, string?> ReadOverrides(ParseResult parseResult)
     {
         (string Option, string Key)[] promotions =
         [
@@ -110,10 +145,10 @@ internal static class ConfigurationManagerExtensions
 
         foreach ((string option, string key) in promotions)
         {
-            if (configuration[option] is string value) overrides[key] = value;
+            if (ReadValue(parseResult, option) is string value) overrides[key] = value;
         }
 
-        if (configuration[OverrideOptions.Exclude] is string patterns)
+        if (ReadValue(parseResult, OverrideOptions.Exclude) is string patterns)
         {
             string[] split = patterns.Split(OverrideOptions.ExcludeSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -127,5 +162,17 @@ internal static class ConfigurationManagerExtensions
         return overrides;
     }
 
+    // The token as given, so that the binder converts it as it converts the same value from the file.
+    private static string? ReadValue(ParseResult parseResult, string option) =>
+        parseResult.GetResult($"--{option}") is OptionResult { Implicit: false, Tokens: [.., Token token] } ? token.Value : null;
+
     #endregion
+
+    // Hands out one provider, so that a value written after the build reaches it without the reload of a new source.
+    private sealed class OverrideSource : IConfigurationSource
+    {
+        internal MemoryConfigurationProvider Provider { get; } = new(new MemoryConfigurationSource());
+
+        public IConfigurationProvider Build(IConfigurationBuilder builder) => this.Provider;
+    }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,34 +26,31 @@ public class ConfigurationManagerExtensionsTests
     ///     Verifies that each flag standing for one setting reaches that setting, so that a value given on
     ///     the command line outranks both the configuration file and the defaults.
     /// </summary>
-    /// <remarks>
-    ///     The promoted values are added after the file and the environment, which is what makes them win.
-    ///     Driven through <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>, because the
-    ///     promotion is what is under test, and not the binding that follows it.
-    /// </remarks>
     [Test]
     public async Task Overrides_Test_PromotedFlags_ReachTheSettingsTheyStandFor()
     {
         // Arrange
-        var configuration = new ConfigurationManager();
-
-        configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            [OverrideOptions.Title] = "From the flag",
-            [OverrideOptions.BaseUrl] = "https://example.com/gelyn",
-            [OverrideOptions.Theme] = "modern",
-            [OverrideOptions.Feed] = "true",
-            [OverrideOptions.Sitemap] = "true",
-            [OverrideOptions.Content] = "pages",
-            [OverrideOptions.Output] = "public",
-            [OverrideOptions.Port] = "8080",
-        });
-
-        var options = new SiteOptions();
+        ParseResult parsed = Parse(
+            "serve",
+            "--title",
+            "From the flag",
+            "--base-url",
+            "https://example.com/gelyn",
+            "--theme",
+            "modern",
+            "--feed",
+            "true",
+            "--sitemap",
+            "true",
+            "--content",
+            "pages",
+            "--output",
+            "public",
+            "--port",
+            "8080");
 
         // Act
-        configuration.AddSiteConfiguration([], requested: null);
-        configuration.Bind(options);
+        SiteOptions options = Bind(parsed);
 
         // Assert
         using (Assert.Multiple())
@@ -74,7 +72,7 @@ public class ConfigurationManagerExtensionsTests
     /// </summary>
     /// <remarks>
     ///     The enabled setting is added ahead of <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>,
-    ///     which is the position the configuration file takes relative to the promoted values.
+    ///     which is the position the configuration file takes relative to the overrides.
     /// </remarks>
     [Test]
     [Arguments(OverrideOptions.Feed, nameof(SiteOptions.EnableFeed))]
@@ -82,19 +80,10 @@ public class ConfigurationManagerExtensionsTests
     public async Task Overrides_Test_FalseSwitch_DisablesAConfiguredDocument(string option, string setting)
     {
         // Arrange
-        var configuration = new ConfigurationManager();
-
-        configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            [setting] = "true",
-            [option] = "false",
-        });
-
-        var options = new SiteOptions();
+        ParseResult parsed = Parse("build", $"--{option}", "false");
 
         // Act
-        configuration.AddSiteConfiguration([], requested: null);
-        configuration.Bind(options);
+        SiteOptions options = Bind(parsed, new Dictionary<string, string?> { [setting] = "true" });
 
         // Assert
         using (Assert.Multiple())
@@ -102,6 +91,109 @@ public class ConfigurationManagerExtensionsTests
             await Assert.That(options.EnableFeed).IsFalse();
             await Assert.That(options.EnableSitemap).IsFalse();
         }
+    }
+
+    /// <summary>
+    ///     Verifies that a value joined to its flag by a colon or an equals sign reaches the setting, both being
+    ///     forms System.CommandLine accepts and the command line configuration provider did not.
+    /// </summary>
+    [Test]
+    [Arguments("--title:From the flag")]
+    [Arguments("--title=From the flag")]
+    public async Task Overrides_Test_JoinedValue_ReachesTheSetting(string argument)
+    {
+        // Arrange
+        ParseResult parsed = Parse("build", argument, "--output:public");
+
+        // Act
+        SiteOptions options = Bind(parsed);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Title).IsEqualTo("From the flag");
+            await Assert.That(options.OutputDirectory).IsEqualTo("public");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the flags a response file holds reach their settings, which System.CommandLine expands
+    ///     before it parses.
+    /// </summary>
+    [Test]
+    public async Task Overrides_Test_ResponseFile_ReachesTheSettings()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .WriteOutside("options.rsp", $"--title \"From the file\"{Environment.NewLine}--output public{Environment.NewLine}");
+
+        ParseResult parsed = Parse("build", $"@{Path.Combine(fixture.Root, "options.rsp")}");
+
+        // Act
+        SiteOptions options = Bind(parsed);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(options.Title).IsEqualTo("From the file");
+            await Assert.That(options.OutputDirectory).IsEqualTo("public");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that an option taking no value leaves the token after it to the option it belongs to, where
+    ///     the command line configuration provider paired the two.
+    /// </summary>
+    [Test]
+    public async Task Overrides_Test_ValuelessOption_LeavesTheNextOptionItsValue()
+    {
+        // Arrange
+        ParseResult parsed = Parse("serve", "--launch-browser", "--port", "9000");
+
+        // Act
+        SiteOptions options = Bind(parsed);
+
+        // Assert
+        await Assert.That(options.Port).IsEqualTo(9_000);
+    }
+
+    /// <summary>
+    ///     Verifies that applying the overrides raises no reload, which the options monitor would answer by
+    ///     binding and validating before <c>--help</c> or <c>--info</c> runs.
+    /// </summary>
+    [Test]
+    public async Task ApplyOverrides_Test_Overrides_RaiseNoReload()
+    {
+        // Arrange
+        var configuration = new ConfigurationManager();
+        configuration.AddSiteConfiguration(requested: null);
+
+        bool reloaded = false;
+        ((IConfiguration)configuration).GetReloadToken().RegisterChangeCallback(_ => reloaded = true, state: null);
+
+        // Act
+        configuration.ApplyOverrides(Parse("build", "--title", "From the flag"));
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(reloaded).IsFalse();
+            await Assert.That(configuration[nameof(SiteOptions.Title)]).IsEqualTo("From the flag");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that applying the overrides to a configuration without the site sources is refused, since
+    ///     no source exists for them to outrank the others from.
+    /// </summary>
+    [Test]
+    public async Task ApplyOverrides_Test_WithoutTheSiteConfiguration_Throws()
+    {
+        // Arrange
+        var configuration = new ConfigurationManager();
+
+        // Act & Assert
+        await Assert.That(() => configuration.ApplyOverrides(Parse("build"))).Throws<InvalidOperationException>();
     }
 
     #endregion // Override Promotion Tests
@@ -145,25 +237,16 @@ public class ConfigurationManagerExtensionsTests
 
     /// <summary>
     ///     Verifies that one flag value carrying several separated patterns reaches the options as several
-    ///     entries, which is the only shape available because the command line provider promotes one flag to
-    ///     one string.
+    ///     entries, which is the only shape available because the flag takes one string.
     /// </summary>
     [Test]
     public async Task Exclude_Test_SeparatedPatterns_ReachTheOptionsIndividually()
     {
         // Arrange
-        var configuration = new ConfigurationManager();
-
-        configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            [OverrideOptions.Exclude] = $"*.tmp{OverrideOptions.ExcludeSeparator} drafts ",
-        });
-
-        var options = new SiteOptions();
+        ParseResult parsed = Parse("build", "--exclude", $"*.tmp{OverrideOptions.ExcludeSeparator} drafts ");
 
         // Act
-        configuration.AddSiteConfiguration([], requested: null);
-        configuration.Bind(options);
+        SiteOptions options = Bind(parsed);
 
         // Assert
         using (Assert.Multiple())
@@ -284,7 +367,7 @@ public class ConfigurationManagerExtensionsTests
         var configuration = new ConfigurationManager();
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration(path);
 
         // Assert
         using (Assert.Multiple())
@@ -306,7 +389,7 @@ public class ConfigurationManagerExtensionsTests
         var configuration = new ConfigurationManager();
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration(path);
 
         // Assert
         using (Assert.Multiple())
@@ -330,7 +413,7 @@ public class ConfigurationManagerExtensionsTests
         configuration.SetBasePath(fixture.Root);
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], requested: null);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration(requested: null);
 
         // Assert
         using (Assert.Multiple())
@@ -357,7 +440,7 @@ public class ConfigurationManagerExtensionsTests
         configuration.SetBasePath(site);
 
         // Act
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], "../shared.json");
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration("../shared.json");
 
         // Assert
         using (Assert.Multiple())
@@ -382,7 +465,7 @@ public class ConfigurationManagerExtensionsTests
 
         string path = Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName);
         var configuration = new ConfigurationManager();
-        ConfigurationFileStatus status = configuration.AddSiteConfiguration([], path);
+        ConfigurationFileStatus status = configuration.AddSiteConfiguration(path);
 
         fixture.WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
 
@@ -412,7 +495,7 @@ public class ConfigurationManagerExtensionsTests
         });
 
         // Act
-        configuration.AddSiteConfiguration([], requested);
+        configuration.AddSiteConfiguration(requested);
 
         // Assert
         await Assert.That(configuration[ConfigurationFile.PathKey]).IsEqualTo(requested);
@@ -446,7 +529,7 @@ public class ConfigurationManagerExtensionsTests
             Environment.SetEnvironmentVariable("GELYN_DESCRIPTION", "From the environment");
 
             // Act
-            configuration.AddSiteConfiguration([], requested: null);
+            configuration.AddSiteConfiguration(requested: null);
             configuration.Bind(options);
         }
         finally
@@ -464,4 +547,46 @@ public class ConfigurationManagerExtensionsTests
     }
 
     #endregion // Environment Variable Tests
+
+    #region Helpers
+
+    // Shaped like the real command tree, whose commands need services to construct.
+    private static ParseResult Parse(params string[] args)
+    {
+        var build = new Command("build");
+        var serve = new Command("serve");
+
+        foreach (Option option in OverrideOptions.Definitions)
+            build.Options.Add(option);
+
+        foreach (Option option in OverrideOptions.Definitions)
+            serve.Options.Add(option);
+
+        serve.Options.Add(new Option<int>($"--{OverrideOptions.Port}"));
+        serve.Options.Add(new Option<bool>("--launch-browser"));
+
+        var root = new RootCommand();
+        root.Subcommands.Add(build);
+        root.Subcommands.Add(serve);
+
+        return root.Parse(args);
+    }
+
+    // The configured values, if any, take the place of the configuration file.
+    private static SiteOptions Bind(ParseResult parsed, Dictionary<string, string?>? configured = null)
+    {
+        var configuration = new ConfigurationManager();
+
+        if (configured is not null) configuration.AddInMemoryCollection(configured);
+
+        configuration.AddSiteConfiguration(requested: null);
+        configuration.ApplyOverrides(parsed);
+
+        var options = new SiteOptions();
+        configuration.Bind(options);
+
+        return options;
+    }
+
+    #endregion
 }
