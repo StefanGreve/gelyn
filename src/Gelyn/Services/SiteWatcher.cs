@@ -394,22 +394,10 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <summary>
     ///     Writes what one failure has to say for itself.
     /// </summary>
-    /// <remarks>
-    ///     An <see cref="AggregateException"/> is reported by its contents, because its own message nests one
-    ///     "One or more errors occurred" per layer and names none of the failures underneath them.
-    /// </remarks>
     /// <param name="exception">
     ///     The exception the reload or the rebuild failed with.
     /// </param>
-    private void ReportFailure(Exception exception)
-    {
-        IEnumerable<string> messages = exception is AggregateException aggregate
-            ? aggregate.Flatten().InnerExceptions.Select(static failure => failure.Message)
-            : [exception.Message];
-
-        foreach (string message in messages)
-            this._stdErr.MarkupLineInterpolated($"[red]error:[/] {message}");
-    }
+    private void ReportFailure(Exception exception) => this._stdErr.WriteError(exception);
 
     /// <summary>
     ///     Names the directory settings a reload has moved, which the watchers and the server cannot follow

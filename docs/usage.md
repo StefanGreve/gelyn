@@ -822,10 +822,10 @@ so saving ten times in a second collapses into a single pass, as does an editor 
 and a rename. A steady stream of saves, on the other hand, is rebuilt about once per window rather than once
 you stop typing, because the rebuild is never postponed for as long as the editing lasts.
 
-A rebuild that fails writes one `error:` line and keeps serving what it last built, so the server stays up and
-your browser keeps showing whatever the previous rebuild produced. The next change is rebuilt either way. That
-covers front matter that isn't well-formed YAML, a value in `gelyn.json` the binder can't convert to the type
-of its setting, and a value the validator rejects once it can:
+A rebuild that fails writes one `error:` line per problem and keeps serving what it last built, so the server
+stays up and your browser keeps showing whatever the previous rebuild produced. The next change is rebuilt either
+way. That covers front matter that isn't well-formed YAML, a value in `gelyn.json` the binder can't convert to
+the type of its setting, and a value the validator rejects once it can:
 
 ```text
 error: BaseUrl must be an absolute http or https URL, such as 'https://example.com/blog'.

@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 
+using Microsoft.Extensions.Options;
+
 using Spectre.Console;
 
 namespace Gelyn.Extensions;
@@ -30,6 +32,26 @@ internal static class ConsoleExtensions
         public void DisableWrappingWhenRedirected()
         {
             if (!console.Profile.Out.IsTerminal) console.Profile.Width = int.MaxValue;
+        }
+
+        /// <summary>
+        ///     Writes one <c>error:</c> line for each failure an exception carries.
+        /// </summary>
+        /// <remarks>
+        ///     An <see cref="AggregateException"/> is written by its contents, because its own message nests one
+        ///     "One or more errors occurred" per layer and names none of the failures underneath them. An
+        ///     <see cref="OptionsValidationException"/> is written by its <see cref="OptionsValidationException.Failures"/>,
+        ///     because its message joins them on one line.
+        /// </remarks>
+        /// <param name="exception">
+        ///     The exception to report.
+        /// </param>
+        public void WriteError(Exception exception)
+        {
+            ArgumentNullException.ThrowIfNull(exception);
+
+            foreach (string message in CollectMessages(exception))
+                console.MarkupLineInterpolated($"[red]error:[/] {message}");
         }
 
         /// <summary>
@@ -79,6 +101,13 @@ internal static class ConsoleExtensions
             }
         }
     }
+
+    private static IEnumerable<string> CollectMessages(Exception exception) => exception switch
+    {
+        AggregateException aggregate => aggregate.InnerExceptions.SelectMany(CollectMessages),
+        OptionsValidationException validation => validation.Failures,
+        _ => [exception.Message],
+    };
 
     /// <summary>
     ///     Stands in for the console's own output while a batch is open.

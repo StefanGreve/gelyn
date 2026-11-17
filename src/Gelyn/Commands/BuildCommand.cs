@@ -52,7 +52,7 @@ internal sealed class BuildCommand : Command
             }
             catch (IOException exception) when (exception is not FileNotFoundException)
             {
-                stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+                stdErr.WriteError(exception);
 
                 return ExitCodes.Error;
             }

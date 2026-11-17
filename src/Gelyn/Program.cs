@@ -88,8 +88,7 @@ internal static class Program
         }
         catch (Exception exception)
         {
-            stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
-
+            stdErr.WriteError(exception);
             return ExitCodes.For(exception);
         }
     }

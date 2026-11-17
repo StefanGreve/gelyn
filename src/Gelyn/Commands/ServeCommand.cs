@@ -4,6 +4,7 @@ using System.Net;
 
 using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -134,7 +135,7 @@ internal sealed class ServeCommand : Command
             }
             catch (Exception exception) when (exception is not FileNotFoundException and (IOException or HttpListenerException or PlatformNotSupportedException))
             {
-                stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+                stdErr.WriteError(exception);
                 return ExitCodes.Error;
             }
         });

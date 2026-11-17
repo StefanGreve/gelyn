@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.IO.Abstractions;
 
 using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -64,7 +65,7 @@ internal sealed class CleanCommand : Command
             }
             catch (IOException exception)
             {
-                stdErr.MarkupLineInterpolated($"[red]error:[/] {exception.Message}");
+                stdErr.WriteError(exception);
 
                 return ExitCodes.Error;
             }
