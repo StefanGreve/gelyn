@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://stefangreve.github.io/gelyn/schema.json",
   "title": "Gelyn configuration",
-  "description": "Settings gelyn reads from gelyn.json in the working directory, or from the file given to --config.",
+  "description": "Settings gelyn reads from gelyn.json in the content root, or from the file given to --config.",
   "type": "object",
   "additionalProperties": false,
   "properties": {

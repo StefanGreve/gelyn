@@ -14,8 +14,8 @@ internal static class PageLayout
     ///     Renders a complete HTML document.
     /// </summary>
     /// <remarks>
-    ///     The head is rendered here and never passed in, because its contents depend on the page: a page
-    ///     that declares no description or date carries none of the corresponding tags. The comment thread is
+    ///     The head is rendered here and never passed in, because its contents depend on the page: its own
+    ///     description replaces the site's, and only a revised page carries a revision date. The comment thread is
     ///     rendered here for the same reason. The body is expanded on the way through, every <c>[TOD]</c>
     ///     marker it carries giving way to a table of documents.
     /// </remarks>

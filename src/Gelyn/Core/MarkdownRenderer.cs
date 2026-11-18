@@ -39,7 +39,7 @@ internal sealed class MarkdownRenderer
         .Build();
 
     /// <summary>
-    ///     Renders a markdown document.
+    ///     Renders a Markdown document.
     /// </summary>
     /// <param name="markdown">
     ///     The Markdown source, optionally preceded by a front matter block.

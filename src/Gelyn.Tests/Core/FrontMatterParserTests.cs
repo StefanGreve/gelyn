@@ -37,7 +37,7 @@ public class FrontMatterParserTests
             enableComments: true
             enableFeed: true
             ---
-        """;
+            """;
 
         // Act
         FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
@@ -72,7 +72,7 @@ public class FrontMatterParserTests
               - ../shared/print.css
             scripts: [assets/chart.js]
             ---
-        """;
+            """;
 
         // Act
         FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
@@ -172,6 +172,22 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
+    ///     Verifies that a block scalar keeps its final line break when the closing delimiter follows it, as it
+    ///     does before another key.
+    /// </summary>
+    [Test]
+    [Arguments("---\ntitle: |\n  Home\n---")]
+    [Arguments("---\ntitle: |\n  Home\nauthor: Stefan\n---")]
+    public async Task TryParse_Test_BlockScalar_KeepsItsFinalLineBreak(string block)
+    {
+        // Act
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+
+        // Assert
+        await Assert.That(result?.Title).IsEqualTo("Home\n");
+    }
+
+    /// <summary>
     ///     Verifies that keys outside the recognized vocabulary are ignored and never rejected.
     /// </summary>
     [Test]
@@ -183,7 +199,7 @@ public class FrontMatterParserTests
             author: Stefan
             draft: true
             ---
-        """;
+            """;
 
         // Act
         FrontMatterParser.TryParse(block, out FrontMatter? result, out _);

@@ -66,8 +66,8 @@ internal static class Program
 
             using IHost host = builder.Build();
 
-            // Ensures that --help, --version and --info execute even when the configuration file is missing or does not
-            // parse, or a value is invalid: consumers read their options lazily, so each surfaces for a real command.
+            // Lets a command's exception reach the catch block below, which writes one error line per problem and
+            // picks the exit code. The default handler would print the stack trace and return 1.
             var configuration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
 
             ParseResult parsed = host.Services

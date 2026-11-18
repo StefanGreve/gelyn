@@ -12,8 +12,8 @@ namespace Gelyn.Components;
 /// </summary>
 /// <remarks>
 ///     The marker is matched in the rendered HTML and not in the Markdown source, which is what leaves a
-///     <c>[TOD]</c> written inside a code span or a fenced block alone: Markdig escapes the brackets of both
-///     before this component ever sees them.
+///     <c>[TOD]</c> written inside a code span or a fenced block alone: Markdig wraps both in markup that never
+///     equals the marker.
 /// </remarks>
 internal static class TableOfDocumentsComponent
 {
@@ -97,8 +97,7 @@ internal static class TableOfDocumentsComponent
 
     #region Helpers
 
-    // Counting the trailing separator in makes the prefix test a directory test and not a string one: "blog"
-    // alone would match "blogs/post.html". A path carrying no separator yields zero, which every page passes.
+    // The scope keeps its trailing separator, as the catalog keys do, and is empty for a page at the output root.
     private static int ResolveScopeLength(string outputPath) =>
         outputPath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
 

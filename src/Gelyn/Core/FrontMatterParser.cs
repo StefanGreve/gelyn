@@ -1,4 +1,3 @@
-using Gelyn.Core.Internals;
 using Gelyn.Model;
 
 using SharpYaml;
@@ -10,8 +9,6 @@ namespace Gelyn.Core;
 /// </summary>
 internal static class FrontMatterParser
 {
-    private const string Delimiter = "---";
-
     /// <summary>
     ///     Parses a front matter block, including its surrounding delimiters, and reports whether every key
     ///     it declares is one a member reads.
@@ -45,8 +42,7 @@ internal static class FrontMatterParser
 
         YamlSerializerOptions options = YamlContext.Default.Options with
         {
-            // Zero-based, and counted from the top of the file, because stripping
-            // keeps the delimiter's line break.
+            // Zero-based, and counted from the top of the file, where the block starts.
             UnmappedMemberCallback = member => keys.Add(new UnknownKey
             {
                 Name = member.Name,
@@ -54,18 +50,9 @@ internal static class FrontMatterParser
             }),
         };
 
-        frontMatter = YamlSerializer.Deserialize<FrontMatter>(StripDelimiters(block), options);
+        frontMatter = YamlSerializer.Deserialize<FrontMatter>(block.ToString(), options);
         unknownKeys = keys.Count > 0 ? keys : null;
 
         return unknownKeys is null;
     }
-
-    #region Helpers
-
-    // A delimiter would otherwise open a second YAML document, which Deserialize rejects outright. Markdig
-    // closes the block at its second one, so the two it hands over are the first and the last line.
-    private static string StripDelimiters(ReadOnlySpan<char> block) =>
-        StringUtils.TrimDelimiters(block, Delimiter).ToString();
-
-    #endregion
 }

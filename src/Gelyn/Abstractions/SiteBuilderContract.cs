@@ -1,5 +1,9 @@
 using Gelyn.Model;
 
+using Microsoft.Extensions.Options;
+
+using SharpYaml;
+
 namespace Gelyn.Abstractions;
 
 /// <summary>
@@ -16,5 +20,24 @@ internal abstract class SiteBuilderContract
     /// <returns>
     ///     What the build produced, and how long it took.
     /// </returns>
+    /// <exception cref="FileNotFoundException">
+    ///     The file given to <c>--config</c> does not exist, or the content directory declares no <c>index.md</c>.
+    /// </exception>
+    /// <exception cref="InvalidDataException">
+    ///     The configuration file is not valid JSON.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    ///     A configured value cannot be converted to the type of its setting.
+    /// </exception>
+    /// <exception cref="OptionsValidationException">
+    ///     A setting holds a value its validation rejects.
+    /// </exception>
+    /// <exception cref="YamlException">
+    ///     A front matter block is not well-formed YAML, or declares a stylesheet or a script the scan did not
+    ///     locate.
+    /// </exception>
+    /// <exception cref="IOException">
+    ///     The output directory is a link, or a file cannot be written or removed.
+    /// </exception>
     public abstract Task<BuildReport> BuildAsync(CancellationToken cancellationToken);
 }

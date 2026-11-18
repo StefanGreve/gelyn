@@ -8,10 +8,11 @@ namespace Gelyn.Model;
 ///     Front matter declared in the block at the top of a content file.
 /// </summary>
 /// <remarks>
-///     A property is <see langword="null"/> only when the block declares no value for it. A value declared as an
-///     empty string is kept as one, so the two cases stay distinguishable. The properties carry a setter rather
-///     than an <c>init</c> accessor because the generated deserialization code assigns them from an ordinary
-///     statement, which C# permits only inside an object initializer or a constructor.
+///     A property is <see langword="null"/> when the block declares no value for it, and a date also when its
+///     value is not written as <c>yyyy-MM-dd</c>. A value declared as an empty string is kept as one, so the
+///     two cases stay distinguishable. The properties carry a setter rather than an <c>init</c> accessor
+///     because the generated deserialization code assigns them from an ordinary statement, which C# permits
+///     only inside an object initializer or a constructor.
 /// </remarks>
 internal sealed record FrontMatter
 {
@@ -21,14 +22,15 @@ internal sealed record FrontMatter
     public string? Title { get; set; }
 
     /// <summary>
-    ///     The publication date, or <see langword="null"/> when the block omits it.
+    ///     The publication date, or <see langword="null"/> when the block omits it or does not write it as
+    ///     <c>yyyy-MM-dd</c>.
     /// </summary>
     [YamlConverter(typeof(DateOnlyConverter))]
     public DateOnly? Date { get; set; }
 
     /// <summary>
-    ///     The date the page was last revised, or <see langword="null"/> when the block omits it, which is the
-    ///     case for a page that has not been revised since it was published.
+    ///     The date the page was last revised, or <see langword="null"/> when the block omits it or does not write
+    ///     it as <c>yyyy-MM-dd</c>. A page that has not been revised since it was published omits it.
     /// </summary>
     [YamlConverter(typeof(DateOnlyConverter))]
     public DateOnly? Revised { get; set; }

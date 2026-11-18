@@ -77,8 +77,9 @@ sources and your repository with it. Gelyn rejects `--content ../notes --output 
 reason.
 
 A page title is separate from the name of your site. It comes from the page's own front matter, falling back to
-the file name, or to the folder name for a section index. Gelyn never uses `Title` as a page title, but the
-browser tab joins the two: `About - My Blog` for a page titled `About`, and `My Blog` alone for the landing page.
+the file name without its extension, or to the folder name for a section index. Gelyn never uses `Title` as a
+page title, but the browser tab joins the two: `About - My Blog` for a page titled `About`, and `My Blog` alone
+for the landing page.
 
 A page can also override `Description` in its front matter:
 
@@ -378,7 +379,7 @@ as any other change does, but the server keeps listening where it started until 
 Gelyn reads your settings from these layers, each overriding the one before it:
 
 1. The built-in defaults in [Settings](#settings).
-2. `gelyn.json` in the working directory, or the file you pass to `--config`.
+2. `gelyn.json` in the content root, or the file you pass to `--config`.
 3. An environment variable named like the setting with the prefix `GELYN_`, such as `GELYN_TITLE`.
 4. A command line flag.
 

@@ -14,8 +14,8 @@ namespace Gelyn.Core;
 /// <remarks>
 ///     Built with <see cref="XmlWriter"/> on two grounds: <c>System.ServiceModel.Syndication</c> is a poor
 ///     fit for Native AOT, and the writer escapes every value it is handed, where the HTML components have to
-///     encode theirs. The document is assembled in memory and returned as bytes, which keeps this a pure
-///     function and leaves the single write to the caller.
+///     encode theirs. It rejects a character XML cannot carry. The document is assembled in memory and returned
+///     as bytes, which keeps this a pure function and leaves the single write to the caller.
 /// </remarks>
 /// <seealso href="https://www.rfc-editor.org/rfc/rfc4287.html">RFC 4287, The Atom Syndication Format</seealso>
 internal static class AtomFeed

@@ -296,7 +296,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
     }
 
     // The footer differs only in the page's revision date, so it needs one render per distinct date plus
-    // one shared by every undated page, which also bounds the scan for feed entries the footer makes.
+    // one shared by every undated page.
     private static Dictionary<string, string> RenderFooters(RenderContext[] contexts)
     {
         var footers = new Dictionary<string, string>(StringComparer.Ordinal);

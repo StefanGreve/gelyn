@@ -9,9 +9,9 @@ namespace Gelyn.Core.Internals;
 /// </summary>
 /// <remarks>
 ///     The source generator rejects a <see cref="DateOnly"/> member outright with <c>SHARPYAML002</c> and never
-///     falls back to reflection, so the type binds only through a converter the member names. Reading a value
+///     falls back to reflection, so the type binds only through a converter the member names. Reading a scalar
 ///     that is not written as <c>yyyy-MM-dd</c> yields <see langword="null"/>, which leaves the rest of the block
-///     readable instead of failing it over one malformed date.
+///     readable instead of failing it over one malformed date. A sequence or a mapping still fails the block.
 /// </remarks>
 internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
 {

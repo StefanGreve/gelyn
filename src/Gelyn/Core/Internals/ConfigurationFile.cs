@@ -10,7 +10,7 @@ namespace Gelyn.Core.Internals;
 internal static class ConfigurationFile
 {
     /// <summary>
-    ///     The file read from the working directory when no other path is given.
+    ///     The file read from the content root when no other path is given.
     /// </summary>
     internal const string DefaultFileName = "gelyn.json";
 

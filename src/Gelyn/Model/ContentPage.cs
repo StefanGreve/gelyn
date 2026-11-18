@@ -28,7 +28,8 @@ internal sealed record ContentPage
     public required string Href { get; init; }
 
     /// <summary>
-    ///     The page title, falling back to the file or folder name when the front matter omits it.
+    ///     The page title, falling back to the file name without its extension, or to the folder name for a
+    ///     section index, when the front matter omits it.
     /// </summary>
     public required string Title { get; init; }
 
@@ -82,8 +83,8 @@ internal sealed record ContentPage
     public required string Html { get; init; }
 
     /// <summary>
-    ///     Indicates whether the site navigation links the page. The landing page, root-level pages
-    ///     and section indexes are linked; pages inside a section are not, and nor is the not-found page.
+    ///     Indicates whether the site navigation links the page. The landing page, root-level pages and the
+    ///     index of each top-level folder are linked. No other page is, and neither is the not-found page.
     /// </summary>
     public required bool InNavigation { get; init; }
 

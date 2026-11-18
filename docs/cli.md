@@ -134,9 +134,9 @@ when the configuration file is missing or doesn't parse. Paths below your home d
 report doesn't put your user name into a public issue.
 
 The `AppSettings` line names the configuration file the run reads: the `--config` path when you give one, and
-the `gelyn.json` of the working directory otherwise. When that file can't be read, the line says why, which is
-the reason the run would stop with exit code `2`. It reads `(undefined)` when you give no `--config` and no
-`gelyn.json` exists, which is the case Gelyn builds with its defaults:
+the `gelyn.json` of the [content root](configuration.md#settings) otherwise. When that file can't be read, the
+line says why, which is the reason the run would stop with exit code `2`. It reads `(undefined)` when you give
+no `--config` and no `gelyn.json` exists, which is the case Gelyn builds with its defaults:
 
 ```sh
 gelyn --info                        # AppSettings: ~/site/gelyn.json

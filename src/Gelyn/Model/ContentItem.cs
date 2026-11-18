@@ -28,16 +28,16 @@ internal sealed record ContentItem
     public required ContentKind Kind { get; init; }
 
     /// <summary>
-    ///     The title to fall back to when the front matter declares none: the file name, or the name of the
-    ///     containing folder when the file is a section index. Meaningful for a
+    ///     The title to fall back to when the front matter declares none: the file name without its extension,
+    ///     or the name of the containing folder when the file is a section index. Meaningful for a
     ///     <see cref="ContentKind.Page"/> only.
     /// </summary>
     public required string FallbackTitle { get; init; }
 
     /// <summary>
-    ///     Indicates whether the site navigation links the page. The landing page, root-level pages and
-    ///     section indexes are linked; pages inside a section are not, and nor are the not-found page and a
-    ///     <see cref="ContentKind.MiscFile"/>.
+    ///     Indicates whether the site navigation links the page. The landing page, root-level pages and the
+    ///     index of each top-level folder are linked. No other page is, and neither are the not-found page and
+    ///     a <see cref="ContentKind.MiscFile"/>.
     /// </summary>
     public required bool InNavigation { get; init; }
 

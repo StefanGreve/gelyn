@@ -32,6 +32,9 @@ internal abstract class FileServerContract
     /// <exception cref="PlatformNotSupportedException">
     ///     The platform carries no usable <see cref="HttpListener"/> implementation.
     /// </exception>
+    /// <exception cref="HttpListenerException">
+    ///     The listener cannot start on <paramref name="port"/>, as when another process already listens on it.
+    /// </exception>
     public abstract Task ServeAsync(
         string outputDirectory,
         int port,

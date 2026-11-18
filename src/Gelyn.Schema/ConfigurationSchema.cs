@@ -100,7 +100,7 @@ internal static class ConfigurationSchema
         schema[SchemaKeyword] = Dialect;
         schema["$id"] = Id;
         schema["title"] = $"{Tool.Name} configuration";
-        schema["description"] = $"Settings {command} reads from {ConfigurationFile.DefaultFileName} in the working directory, or from the file given to {ConfigurationFile.OptionName}.";
+        schema["description"] = $"Settings {command} reads from {ConfigurationFile.DefaultFileName} in the content root, or from the file given to {ConfigurationFile.OptionName}.";
 
         // additionalProperties: false would otherwise reject the key that links a configuration to this file.
         properties.Insert(0, SchemaKeyword, new JsonObject

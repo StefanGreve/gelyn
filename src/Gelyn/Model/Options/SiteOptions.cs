@@ -197,8 +197,8 @@ internal sealed class SiteOptions
     /// </summary>
     /// <remarks>
     ///     The default has to bind without privileges, which rules out everything below 1024, and stay clear
-    ///     of 49152-65535, where the kernel draws the ephemeral ports it hands to outbound connections and
-    ///     could take this one first.
+    ///     of the range the kernel draws the ephemeral ports for outbound connections from, so that no such
+    ///     connection takes it first: 49152-65535 on Windows and macOS, and 32768-60999 on Linux.
     /// </remarks>
     /// <example>
     ///     8080

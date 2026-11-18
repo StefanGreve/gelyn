@@ -126,8 +126,8 @@ internal static class HeadComponent
     {
         string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(version)}/dist";
 
-        // A module script defers by itself. The global lets a stylesheet's own script configure Mermaid before
-        // it draws on the load event.
+        // A module script defers by itself. The global lets a theme's script configure Mermaid before it draws
+        // on the load event.
         head.AppendLine($$"""
             <script type="module">
             import mermaid from "{{mermaid}}/mermaid.esm.min.mjs";
@@ -143,7 +143,7 @@ internal static class HeadComponent
         string shiki = $"https://cdn.jsdelivr.net/npm/shiki@{WebUtility.HtmlEncode(version)}/+esm";
 
         // The JavaScript engine needs no WebAssembly download. A language Shiki lacks is left as Markdig wrote
-        // it. With no default colour, the stylesheet picks between the two palettes, as it does for Mermaid.
+        // it. With no default color, the theme's stylesheet picks between the two palettes.
         head.AppendLine($$"""
             <script type="module">
             import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "{{shiki}}";

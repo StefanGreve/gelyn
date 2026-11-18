@@ -13,8 +13,8 @@ using Microsoft.Extensions.FileProviders;
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Configuration sources the composition root in <see cref="Program"/> layers on top of the environment
-///     variables it seeds the host configuration with.
+///     Configuration sources the composition root in <see cref="Program"/> layers on top of the <c>DOTNET_</c>
+///     environment variables it seeds the host configuration with.
 /// </summary>
 internal static class ConfigurationManagerExtensions
 {
@@ -25,10 +25,10 @@ internal static class ConfigurationManagerExtensions
     ///     Adds the tool's configuration file and the environment variables that outrank it.
     /// </summary>
     /// <remarks>
-    ///     A missing or unparsable file is returned as a failure instead of thrown, so that <c>--help</c> and
-    ///     <c>--version</c> still run. A file that cannot be opened at all still throws, because the provider opens it
-    ///     outside its error handler. The file is not watched, because the watch costs most of the startup and
-    ///     <c>serve</c> runs its own watcher.
+    ///     A missing or unparsable file is returned as a failure instead of thrown, so that <c>--help</c>,
+    ///     <c>--version</c> and <c>--info</c> still run. A file that cannot be opened at all still throws,
+    ///     because the provider opens it outside its error handler. The file is not watched, because the watch
+    ///     costs most of the startup and <c>serve</c> runs its own watcher.
     /// </remarks>
     /// <param name="configuration">
     ///     The configuration to add the sources to.

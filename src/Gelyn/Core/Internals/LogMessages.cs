@@ -124,6 +124,9 @@ internal static partial class LogMessages
     /// <param name="allocatedMegabytes">
     ///     The managed memory the build allocated, in megabytes.
     /// </param>
+    /// <param name="pauseMilliseconds">
+    ///     How long the collections paused the build in total.
+    /// </param>
     /// <param name="gen0Count">
     ///     The number of generation 0 collections during the build.
     /// </param>
@@ -132,9 +135,6 @@ internal static partial class LogMessages
     /// </param>
     /// <param name="gen2Count">
     ///     The number of generation 2 collections during the build, each of which also collected the lower two.
-    /// </param>
-    /// <param name="pauseMilliseconds">
-    ///     How long those collections paused the build in total.
     /// </param>
     [LoggerMessage(
         EventId = EventIds.GARBAGE_COLLECTED,

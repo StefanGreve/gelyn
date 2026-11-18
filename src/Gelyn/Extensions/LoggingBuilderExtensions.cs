@@ -13,8 +13,8 @@ internal static class LoggingBuilderExtensions
     private const string TimestampFormat = "HH:mm:ss.fff ";
 
     /// <summary>
-    ///     Replaces the providers the host installs by default with a single console provider that writes to
-    ///     standard error, at the level <c>--verbosity</c> selects.
+    ///     Installs a single console provider that writes to standard error, at the level <c>--verbosity</c>
+    ///     selects.
     /// </summary>
     /// <param name="logging">
     ///     The builder to configure.
