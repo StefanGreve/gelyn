@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Architecture;
 /// <summary>
 ///     Architecture tests for the way the tool's types are declared.
 /// </summary>
+[Category(Categories.Architecture)]
 public class DeclarationTests : ArchBase
 {
     #region Declaration Tests

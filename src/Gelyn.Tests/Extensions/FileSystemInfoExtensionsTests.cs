@@ -10,6 +10,7 @@ namespace Gelyn.Tests.Extensions;
 /// <summary>
 ///     Unit tests for the <see cref="FileSystemInfoExtensions"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class FileSystemInfoExtensionsTests
 {
     #region Link Tests

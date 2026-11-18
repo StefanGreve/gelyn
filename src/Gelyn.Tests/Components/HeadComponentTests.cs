@@ -15,6 +15,7 @@ namespace Gelyn.Tests.Components;
 /// <summary>
 ///     Unit tests for the <see cref="HeadComponent"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class HeadComponentTests
 {
     #region Author Tests

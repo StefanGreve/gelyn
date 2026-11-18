@@ -12,6 +12,7 @@ namespace Gelyn.Tests.Architecture;
 /// <summary>
 ///     Architecture tests for the inputs the rendered output is allowed to depend on.
 /// </summary>
+[Category(Categories.Architecture)]
 public class DeterminismTests : ArchBase
 {
     // Matched by suffix against the full name of each call target. A file's last write time is listed beside the

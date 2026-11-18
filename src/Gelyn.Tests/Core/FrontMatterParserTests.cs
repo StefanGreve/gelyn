@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="FrontMatterParser"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class FrontMatterParserTests
 {
     #region TryParse Tests

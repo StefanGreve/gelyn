@@ -25,6 +25,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="InfoOption"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class InfoOptionTests
 {
     private const string Undefined = "(undefined)";
@@ -269,6 +270,7 @@ public class InfoOptionTests
     ///     the run, including for a path behind <c>--info</c> and for a file that does not parse.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     [Arguments("""{ "Title": "Read" }""", false)]
     [Arguments("""{ "Title": """, true)]
     public async Task Configuration_Test_ThroughTheLoader_MatchesTheRun(string contents, bool fails)

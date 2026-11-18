@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Architecture;
 /// <summary>
 ///     Architecture tests for the direction in which the tool's namespaces depend on one another.
 /// </summary>
+[Category(Categories.Architecture)]
 public class DependencyTests : ArchBase
 {
     #region Dependency Tests

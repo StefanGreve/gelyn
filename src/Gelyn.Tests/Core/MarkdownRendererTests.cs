@@ -13,6 +13,7 @@ namespace Gelyn.Tests.Core;
 ///     dropped from the builder changes what every page renders to and fails nothing else in the suite,
 ///     because the documents the other tests render are prose that needs no extension at all.
 /// </remarks>
+[Category(Categories.Internal)]
 public class MarkdownRendererTests
 {
     #region Extension Tests

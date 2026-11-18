@@ -16,6 +16,7 @@ namespace Gelyn.Tests;
 ///     process-wide, so every test runs alone.
 /// </remarks>
 [NotInParallel]
+[Category(Categories.Integration)]
 public class ProgramTests
 {
     private const string ContentRootVariable = "DOTNET_CONTENTROOT";

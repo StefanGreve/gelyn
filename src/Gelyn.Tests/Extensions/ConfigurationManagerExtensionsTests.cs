@@ -17,6 +17,7 @@ namespace Gelyn.Tests.Extensions;
 /// <summary>
 ///     Unit tests for the <see cref="ConfigurationManagerExtensions"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ConfigurationManagerExtensionsTests
 {
     #region Override Promotion Tests
@@ -120,6 +121,7 @@ public class ConfigurationManagerExtensionsTests
     ///     before it parses.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task Overrides_Test_ResponseFile_ReachesTheSettings()
     {
         // Arrange
@@ -252,6 +254,7 @@ public class ConfigurationManagerExtensionsTests
     ///     never reads the options still runs.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ConfigurationFile_Test_FileThatDoesNotParse_IsReported()
     {
         // Arrange
@@ -276,6 +279,7 @@ public class ConfigurationManagerExtensionsTests
     ///     Verifies that a file requested through <c>--config</c> that does not exist is reported as missing.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ConfigurationFile_Test_MissingRequestedFile_IsReported()
     {
         // Arrange
@@ -300,6 +304,7 @@ public class ConfigurationManagerExtensionsTests
     ///     Verifies that a missing <c>gelyn.json</c> is no failure, because the defaults apply without it.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ConfigurationFile_Test_MissingDefaultFile_IsNoFailure()
     {
         // Arrange
@@ -324,6 +329,7 @@ public class ConfigurationManagerExtensionsTests
     ///     Verifies that a relative path climbing out of the base directory is loaded from the file it names.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ConfigurationFile_Test_RelativePathOutsideTheBase_IsLoaded()
     {
         // Arrange
@@ -352,6 +358,7 @@ public class ConfigurationManagerExtensionsTests
     ///     file that broke after it loaded.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ConfigurationFile_Test_ReloadOfABrokenFile_Throws()
     {
         // Arrange
@@ -409,6 +416,7 @@ public class ConfigurationManagerExtensionsTests
     ///     is the setting under test, because no test running beside this one reads it.
     /// </remarks>
     [Test]
+    [Category(Categories.Integration)]
     [NotInParallel]
     public async Task EnvironmentVariables_Test_OnlyPrefixedNames_ReachTheSettings()
     {

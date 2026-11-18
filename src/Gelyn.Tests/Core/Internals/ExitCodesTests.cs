@@ -19,6 +19,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="ExitCodes"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ExitCodesTests
 {
     #region For Tests

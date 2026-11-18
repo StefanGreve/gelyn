@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Core;
 ///     it. <see cref="Entry"/> is the <c>COMMONAPACHELOG</c> pattern every such tool is built on, which is
 ///     what turns a drift away from the format into a failure here instead of a surprise downstream.
 /// </remarks>
+[Category(Categories.Internal)]
 public partial class CommonLogFormatTests
 {
     #region Compliance Tests

@@ -17,6 +17,7 @@ namespace Gelyn.Tests.Packaging;
 ///     as a direct dependency like any other, so it cannot tell the two apart, and an unclassified package is
 ///     a decision still to be made.
 /// </remarks>
+[Category(Categories.Internal)]
 public class ThirdPartyNoticesTests
 {
     private const string NoticesFileName = "THIRD-PARTY-NOTICES.TXT";

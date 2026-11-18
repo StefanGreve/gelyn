@@ -59,6 +59,11 @@ REFRESH = $(if $(refresh),--refresh $(refresh))
 # The site to build
 project ?= docs
 
+# Comma-separated test categories to run, such as integration,meta; all when unset.
+COMMA := ,
+CATEGORY_SEPARATOR := )|(Category=
+TEST_FILTER = $(if $(categories),--treenode-filter "/*/*/*/*[(Category=$(subst $(COMMA),$(CATEGORY_SEPARATOR),$(categories)))]")
+
 SITE_CONFIG = ./$(project)/gelyn.json
 
 # Succeeds whether or not the tool is installed.
@@ -81,7 +86,7 @@ build:
 	dotnet build $(SOLUTION) --configuration Release --no-restore
 
 test: build
-	dotnet test $(SOLUTION) --configuration Release --no-build
+	dotnet test $(SOLUTION) --configuration Release --no-build $(TEST_FILTER)
 
 publish:
 	dotnet publish $(MAIN_PROJECT) --runtime $(RID)

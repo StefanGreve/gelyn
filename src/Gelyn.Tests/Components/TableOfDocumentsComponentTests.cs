@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Components;
 /// <summary>
 ///     Unit tests for the <see cref="TableOfDocumentsComponent"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public partial class TableOfDocumentsComponentTests
 {
     #region Scope Tests

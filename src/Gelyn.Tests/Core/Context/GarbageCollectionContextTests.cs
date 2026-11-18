@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Core.Context;
 /// <summary>
 ///     Unit tests for the <see cref="GarbageCollectionContext"/> record.
 /// </summary>
+[Category(Categories.Internal)]
 public class GarbageCollectionContextTests
 {
     /// <summary>

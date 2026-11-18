@@ -22,6 +22,7 @@ namespace Gelyn.Tests.Services;
 ///     the watcher factory of the mock file system throws from every member, and real saves would leave every
 ///     case below to the timing of the machine it ran on.
 /// </remarks>
+[Category(Categories.Internal)]
 public class SiteWatcherTests
 {
     #region Debounce Tests

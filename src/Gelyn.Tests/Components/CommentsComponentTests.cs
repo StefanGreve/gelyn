@@ -11,6 +11,7 @@ namespace Gelyn.Tests.Components;
 /// <summary>
 ///     Unit tests for the <see cref="CommentsComponent"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class CommentsComponentTests
 {
     #region Render Tests

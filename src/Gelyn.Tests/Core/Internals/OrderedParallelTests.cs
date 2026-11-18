@@ -11,6 +11,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="OrderedParallel"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class OrderedParallelTests
 {
     #region Select Tests

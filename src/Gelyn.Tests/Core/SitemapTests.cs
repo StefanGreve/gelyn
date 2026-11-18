@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="Sitemap"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class SitemapTests
 {
     private static readonly XNamespace Sitemaps = "http://www.sitemaps.org/schemas/sitemap/0.9";

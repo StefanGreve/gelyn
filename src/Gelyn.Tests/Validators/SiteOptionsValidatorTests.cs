@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Validators;
 /// <summary>
 ///     Unit tests for the <see cref="SiteOptionsValidator"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class SiteOptionsValidatorTests
 {
     #region Validate Tests

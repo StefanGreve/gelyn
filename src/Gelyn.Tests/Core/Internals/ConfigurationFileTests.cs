@@ -22,6 +22,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="ConfigurationFile"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ConfigurationFileTests
 {
     #region ReadPath Tests
@@ -115,6 +116,7 @@ public class ConfigurationFileTests
     ///     Verifies that a path given in a response file is read, as it is by the full command.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ReadPath_Test_PathInAResponseFile_IsRead()
     {
         // Arrange
@@ -135,6 +137,7 @@ public class ConfigurationFileTests
     ///     command line configuration provider used to lose.
     /// </summary>
     [Test]
+    [Category(Categories.Integration)]
     public async Task ReadPath_Test_PathBehindInfo_ReachesTheLoader()
     {
         // Arrange

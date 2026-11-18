@@ -14,6 +14,7 @@ namespace Gelyn.Tests.Components;
 /// <summary>
 ///     Unit tests for the <see cref="FooterComponent"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class FooterComponentTests
 {
     #region Link List Tests

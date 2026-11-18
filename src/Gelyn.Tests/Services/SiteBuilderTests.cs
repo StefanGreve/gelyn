@@ -27,6 +27,7 @@ namespace Gelyn.Tests.Services;
 /// <summary>
 ///     Unit tests for the <see cref="SiteBuilder"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public partial class SiteBuilderTests
 {
     private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";
@@ -95,6 +96,7 @@ public partial class SiteBuilderTests
     ///     inherits.
     /// </remarks>
     [Test]
+    [Category(Categories.Integration)]
     public async Task BuildAsync_Test_ReadOnlySource_LeavesTheCopyWritable()
     {
         // Arrange
@@ -1866,6 +1868,7 @@ public partial class SiteBuilderTests
     ///     through a link, so it yields nothing on the far side whether the guard is present or not.
     /// </remarks>
     [Test]
+    [Category(Categories.Integration)]
     public async Task BuildAsync_Test_DirectorySymlinkInOutput_IsNotFollowed()
     {
         // Arrange
@@ -1895,6 +1898,7 @@ public partial class SiteBuilderTests
     ///     Driven against the real file system for the reason the test above gives.
     /// </remarks>
     [Test]
+    [Category(Categories.Integration)]
     public async Task BuildAsync_Test_OutputDirectoryThatIsALink_IsRefused()
     {
         // Arrange

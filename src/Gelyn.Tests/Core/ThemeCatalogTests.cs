@@ -13,6 +13,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="ThemeCatalog"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ThemeCatalogTests
 {
     private const string ThemeDirectoryName = "themes";

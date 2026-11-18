@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="StringUtils"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class StringUtilsTests
 {
     #region StartsWithSegment Tests

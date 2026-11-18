@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Architecture;
 /// <summary>
 ///     Architecture tests for the accessibility of the types the tool declares.
 /// </summary>
+[Category(Categories.Architecture)]
 public class VisibilityTests : ArchBase
 {
     #region Visibility Tests

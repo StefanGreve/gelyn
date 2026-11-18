@@ -48,6 +48,7 @@ What a target does depends on the arguments below. Each is appended to the comma
 | `serve=true`        | `gelyn`                       | unset                  | Serves the site and rebuilds on every change             |
 | `refresh=<seconds>` | `gelyn`                       | unset                  | Seconds between page reloads while serving               |
 | `RID=<rid>`         | `publish`, `install`, `gelyn` | host platform and arch | [Runtime identifier][known-rids] the binary is built for |
+| `categories=<list>` | `test`                        | unset                  | Runs the tests carrying any of the comma-separated ones  |
 
 Each site in this repository builds through the `gelyn` target:
 
@@ -85,6 +86,11 @@ dotnet test
 Tests use [`TUnit`][tunit], which runs on [`Microsoft.Testing.Platform`][mtp]; its [documentation][tunit-docs]
 covers the authoring conventions this suite follows.
 A [`Husky.Net`][husky] `pre-push` hook runs the same suite before every push.
+
+Every test carries a category from `src/Gelyn.Tests/Categories.cs`, on itself or on its class: `architecture`,
+`integration` for a test on the disk, the network or the process environment, `internal` for the rest, `meta`
+for a rule about the suite itself, and `regression` for a test that pins a fixed bug. A meta test fails for a
+test without one. `make test categories=architecture,meta` runs the tests carrying any of the listed categories.
 
 To use the tool locally, publish it and link the resulting binary onto your `PATH`:
 

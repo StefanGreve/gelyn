@@ -14,6 +14,7 @@ namespace Gelyn.Tests.Options;
 /// <summary>
 ///     Unit tests that keep <c>gelyn.schema.json</c> in step with <see cref="SiteOptions"/>.
 /// </summary>
+[Category(Categories.Internal)]
 public class SiteOptionsSchemaTests
 {
     private const string SchemaFileName = "gelyn.schema.json";

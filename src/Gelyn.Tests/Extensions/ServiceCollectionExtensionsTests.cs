@@ -17,6 +17,7 @@ namespace Gelyn.Tests.Extensions;
 /// <summary>
 ///     Unit tests for the <see cref="ServiceCollectionExtensions"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ServiceCollectionExtensionsTests
 {
     #region Configuration File Tests

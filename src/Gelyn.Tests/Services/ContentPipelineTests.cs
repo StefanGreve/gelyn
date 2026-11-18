@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Services;
 /// <summary>
 ///     Unit tests for the <see cref="ContentPipeline"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ContentPipelineTests
 {
     #region Scan Tests
@@ -95,6 +96,7 @@ public class ContentPipelineTests
     ///     mocked test cannot tell a guarded walk from an unguarded one.
     /// </remarks>
     [Test]
+    [Category(Categories.Integration)]
     public async Task Scan_Test_DirectorySymlink_IsNotFollowed()
     {
         // Arrange

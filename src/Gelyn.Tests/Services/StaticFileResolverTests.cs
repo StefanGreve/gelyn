@@ -11,6 +11,7 @@ namespace Gelyn.Tests.Services;
 /// <summary>
 ///     Unit tests for the <see cref="StaticFileResolver"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class StaticFileResolverTests
 {
     #region Directory Tests

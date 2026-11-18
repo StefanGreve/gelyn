@@ -19,6 +19,7 @@ namespace Gelyn.Tests.Options;
 /// <summary>
 ///     Unit tests for how the configuration binder the tool is built with fills <see cref="SiteOptions"/>.
 /// </summary>
+[Category(Categories.Internal)]
 public class SiteOptionsBindingTests
 {
     #region Bind Tests

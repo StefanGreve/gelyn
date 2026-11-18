@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Extensions;
 /// <summary>
 ///     Unit tests for the <see cref="ConsoleExtensions"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class ConsoleExtensionsTests
 {
     #region Wrapping Tests

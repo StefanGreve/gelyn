@@ -10,6 +10,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="FileUtils"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class FileUtilsTests
 {
     private static readonly string Source = Path.GetFullPath("/site/content/logo.png");

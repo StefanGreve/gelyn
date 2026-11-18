@@ -25,6 +25,7 @@ namespace Gelyn.Tests.Services;
 ///     Driven against a real <see cref="System.Net.HttpListener"/> over an in-memory output tree: what is
 ///     under test is the transport, which no mock of the file system reaches.
 /// </remarks>
+[Category(Categories.Integration)]
 public class FileServerTests
 {
     #region Address Tests

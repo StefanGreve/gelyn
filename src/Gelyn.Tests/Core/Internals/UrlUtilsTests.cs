@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="UrlUtils"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class UrlUtilsTests
 {
     #region AsDirectory Tests

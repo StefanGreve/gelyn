@@ -9,6 +9,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="Tool"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public partial class ToolTests
 {
     #region Metadata Tests

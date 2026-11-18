@@ -13,6 +13,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="DocumentCatalog"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class DocumentCatalogTests
 {
     #region Feed Tests

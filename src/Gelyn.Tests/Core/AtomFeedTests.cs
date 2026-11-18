@@ -16,6 +16,7 @@ namespace Gelyn.Tests.Core;
 /// <summary>
 ///     Unit tests for the <see cref="AtomFeed"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class AtomFeedTests
 {
     private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";

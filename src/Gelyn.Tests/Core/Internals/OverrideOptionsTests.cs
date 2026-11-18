@@ -8,6 +8,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="OverrideOptions"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class OverrideOptionsTests
 {
     #region Switch Tests

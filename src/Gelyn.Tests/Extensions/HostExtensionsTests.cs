@@ -12,6 +12,7 @@ namespace Gelyn.Tests.Extensions;
 /// <summary>
 ///     Unit tests for the <see cref="HostExtensions"/> class.
 /// </summary>
+[Category(Categories.Integration)]
 public class HostExtensionsTests
 {
     private const string ContentRootVariable = "DOTNET_CONTENTROOT";

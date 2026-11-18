@@ -9,6 +9,7 @@ namespace Gelyn.Tests.Core.Internals;
 /// <summary>
 ///     Unit tests for the <see cref="VerbosityOption"/> class.
 /// </summary>
+[Category(Categories.Internal)]
 public class VerbosityOptionTests
 {
     #region ReadLevel Tests
