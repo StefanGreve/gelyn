@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Gelyn.Model.Options;
 
 /// <summary>
-///     One labelled link in the footer of every page.
+///     One labeled link in the footer of every page.
 /// </summary>
 /// <remarks>
 ///     A member the configuration omits stays <see langword="null"/>, which is not a usable value.

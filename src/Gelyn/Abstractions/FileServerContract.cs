@@ -8,7 +8,7 @@ namespace Gelyn.Abstractions;
 internal abstract class FileServerContract
 {
     /// <summary>
-    ///     Serves one directory until the operation is cancelled.
+    ///     Serves one directory until the operation is canceled.
     /// </summary>
     /// <param name="outputDirectory">
     ///     The directory the generated site was written to.

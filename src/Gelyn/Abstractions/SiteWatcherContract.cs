@@ -6,7 +6,7 @@ namespace Gelyn.Abstractions;
 internal abstract class SiteWatcherContract
 {
     /// <summary>
-    ///     Watches the content tree and the configuration file until the operation is cancelled, rebuilding
+    ///     Watches the content tree and the configuration file until the operation is canceled, rebuilding
     ///     the site once per burst of changes.
     /// </summary>
     /// <param name="cancellationToken">

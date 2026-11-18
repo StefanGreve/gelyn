@@ -30,6 +30,9 @@ Every target below is phony, and the recipes are silenced; `make V=1 <target>` e
 | `make lint`    | `dotnet format` across the solution.                                               |
 | `make clean`   | `dotnet clean` in both configurations, removes the global tool, clears the screen. |
 
+`dotnet clean` also runs the `CleanRepositoryOutput` target of `Directory.Build.targets`, so `make clean` deletes
+`_site`, `_docs`, `artifacts` and `TestResults` at the repository root as well.
+
 > [!NOTE]
 > `make setup` is the only target that is required, and it is required once after cloning.
 
@@ -113,7 +116,7 @@ an installed copy of that version would otherwise count as up to date.
 > [!TIP]
 > The [tab completion](cli.md#tab-completion) shim asks `dotnet-suggest` which commands to complete once, when
 > the shell starts, so a shell that was open before the first install does not complete `gelyn`. Open a new
-> shell, or reload the profile in PowerShell with `. $PROFILE.CurrentUserAllHosts`. `make install` cannot do
+> shell, or reload the profile in PowerShell with `. $PROFILE`. `make install` cannot do
 > this for you, because its recipes run in a child process that cannot change the shell that started `make`.
 
 > [!NOTE]
@@ -177,12 +180,13 @@ and takes each base name as the name of a theme, so every distinct base name bec
 `example/` and `docs/` name their theme in the `Theme` setting of their `gelyn.json`, so an edit shows after the
 next `dotnet build` or `make gelyn`. Pass `--theme` to `gelyn build` or `gelyn serve` to preview another theme.
 
-A new theme needs two entries beside its files: a bullet under `Themes` in `docs/configuration.md`, which a test
-compares with the bundled names, and an entry in the theme list of `plugins/gelyn/skills/bootstrap/SKILL.md`. The
-build adds the name to the `enum` of `Theme` in `gelyn.schema.json` by itself.
+A new theme needs three entries beside its files: a bullet under `Themes` in `docs/configuration.md` and the
+sample error line of that section, both of which a test compares with the bundled names, and an entry in the
+theme list of `plugins/gelyn/skills/bootstrap/SKILL.md`. The build adds the name to the `enum` of `Theme` in
+`gelyn.schema.json` by itself.
 
 The folder holds theme files alone. A stylesheet that serves one site or one page, such as
-`docs/assets/modern404.css` or `docs/logo.css`, belongs in that site. In the theme folder it would become a theme
+`docs/assets/modern404.css` or `docs/anchors.css`, belongs in that site. In the theme folder it would become a theme
 of its own and fail that test.
 
 To see an edit live under `gelyn serve`, copy the theme's file into the content directory of the site that

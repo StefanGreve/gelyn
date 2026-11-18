@@ -1,10 +1,10 @@
 # Gelyn
 
 Gelyn is a deliberately opinionated SSG that cares about semantically correct HTML output. The HTML skeleton is
-fixed by design, with no plugin system or template engine. Pages can be customized through CSS, which is the
-only supported personalization route. This tool is primarily built for people who care more about content
-creation than about an abundance of customization options. If you need more control over the generated output
-and don't shy away from meddling with web development, I can recommend using [11ty](https://www.11ty.dev)
+fixed by design, with no plugin system or template engine. Pages can be customized through CSS and JavaScript,
+which are the only supported personalization routes. This tool is primarily built for people who care more about
+content creation than about an abundance of customization options. If you need more control over the generated
+output and don't shy away from meddling with web development, I can recommend using [11ty](https://www.11ty.dev)
 instead.
 
 ## Install

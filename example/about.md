@@ -18,7 +18,7 @@ Front matter
 
 *[SSG]: Static Site Generator
 
-Gelyn is an SSG, and every later mention of SSG carries the title.
+Gelyn is an SSG, and every mention of SSG on the page carries the title.
 
 A citation goes in doubled quotation marks, so ""premature optimization is the root of all evil"" becomes a
 `cite` element rather than quoted text.

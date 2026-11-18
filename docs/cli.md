@@ -19,8 +19,8 @@ flags that set a configuration value are listed under
 
 Gelyn is built on `System.CommandLine`, so shell completions work through `dotnet-suggest`. Follow
 [How to enable tab completion][tab-completion] to set up your shell once. A global install needs nothing
-more: `dotnet-suggest` finds every tool in `~/.dotnet/tools` by itself, so completion works as soon as
-`dotnet tool install --global Gelyn` finishes.
+more: `dotnet-suggest` finds every tool in `~/.dotnet/tools` by itself, so completion works in a new shell as
+soon as `dotnet tool install --global Gelyn` finishes.
 
 An executable anywhere else, such as one installed with `--tool-path` or published from source, has to be
 registered once by its path:
@@ -98,17 +98,17 @@ and drops the diagnostics beside it. Raise `--verbosity` to `debug`, and every p
 long it took:
 
 ```sh
-gelyn build --verbosity debug             # phase timings alongside the result
-gelyn build --verbosity debug 2>/dev/null # result only
-gelyn build > pages.txt 2> timings.txt    # each stream to its own file
-gelyn serve --verbosity debug             # the request log, plus what each rebuild did
+gelyn build --verbosity debug                             # phase timings alongside the result
+gelyn build --verbosity debug 2>/dev/null                # result only
+gelyn build --verbosity debug > pages.txt 2> timings.txt # each stream to its own file
+gelyn serve --verbosity debug                            # the request log, plus what each rebuild did
 ```
 
 A build of the example site reports its phases like this:
 
 ```text
 02:10:11.991 dbug: Gelyn.Program[1006] Started in 11.06 ms
-02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 20 source file(s) in 0.71 ms
+02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 18 source file(s) in 0.71 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1001] Rendered 17 page(s) in 1.95 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1002] Composed 17 page(s) in 0.22 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1003] Wrote 22 output file(s) in 16.24 ms
@@ -117,8 +117,8 @@ A build of the example site reports its phases like this:
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1005] Processed 22 file(s) in 20.10 ms
 ```
 
-More output files are written than source files scanned, because the feed and the sitemap have no source of
-their own, and the total adds what was removed to what was written.
+More output files are written than source files scanned, because the feed, the sitemap, and the stylesheet and
+script of the theme have no source of their own, and the total adds what was removed to what was written.
 
 Scanning, rendering and removing are measured on their own. Composing and writing are not, because Gelyn
 composes and writes pages on several threads at once, and a page is being written while others are still

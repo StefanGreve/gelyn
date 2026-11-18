@@ -21,8 +21,8 @@ block quote.
 
 ## Abbreviations
 
-An abbreviation is declared once, anywhere on the page, and every later mention of YAML carries the title
-without being marked up again.
+An abbreviation is declared once, anywhere on the page, and every mention of YAML carries the title without
+being marked up again, including one above the declaration.
 
 [^placement]: The note can be declared anywhere, including directly under the paragraph that refers to it.
 [^order]: Which is what makes a note safe to move with the text around it.

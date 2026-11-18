@@ -68,7 +68,7 @@ public class HostExtensionsTests
     /// </remarks>
     [Test]
     [NotInParallel]
-    public async Task CreateLeanApplicationBuilder_Test_ContentRootGiven_IsHonoured()
+    public async Task CreateLeanApplicationBuilder_Test_ContentRootGiven_IsHonored()
     {
         // Arrange
         using var fixture = DiskFixture.Create();

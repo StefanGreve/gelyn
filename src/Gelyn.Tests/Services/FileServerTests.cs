@@ -505,7 +505,7 @@ public class FileServerTests
     #region Shutdown Tests
 
     /// <summary>
-    ///     Verifies that cancelling stops the server and does not leave it blocked on the next request,
+    ///     Verifies that canceling stops the server and does not leave it blocked on the next request,
     ///     which is the whole of what Ctrl+C has to do and the one part of it no terminal test can cover.
     /// </summary>
     [Test]

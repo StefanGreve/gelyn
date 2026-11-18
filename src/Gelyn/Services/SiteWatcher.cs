@@ -155,7 +155,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
     }
 
     /// <summary>
-    ///     Reads the reported changes until the operation is cancelled, rebuilding once per debounce window.
+    ///     Reads the reported changes until the operation is canceled, rebuilding once per debounce window.
     /// </summary>
     /// <remarks>
     ///     A rebuild that fails is reported and the loop keeps running: a half-saved file that does not parse

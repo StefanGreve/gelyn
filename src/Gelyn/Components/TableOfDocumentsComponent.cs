@@ -25,7 +25,7 @@ internal static class TableOfDocumentsComponent
     private const string FileType = "file";
     private const string FolderType = "folder";
 
-    // The banner carries the other navigation landmark on every page, so this one is labelled to tell them apart.
+    // The banner carries the other navigation landmark on every page, so this one is labeled to tell them apart.
     private const string NavigationLabel = "documents";
 
     // One description of the columns, so that a column added later is an entry here and not a second edit.

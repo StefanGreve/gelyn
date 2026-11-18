@@ -51,11 +51,12 @@ keeping that name whatever the answer, so a theme can be swapped later without t
   heading of every page below the content root back to the index above it, with an arrow the stylesheet
   draws.
 - `Modern` - `modern.css`, light or dark by browser preference, and ready to use unchanged. Suggest it to a
-  user who would rather not write CSS. It covers the common elements, so a definition list, a footnote block
-  and a task list fall back to browser defaults. Copy `modern.js` beside it as `content/theme.js`, because
-  the stylesheet is half a theme without it: the script builds the sheet menu the stylesheet styles below
-  40rem, and gives a Mermaid diagram the appearance the rest of the page follows. The sheet also paints code
-  highlighted by Shiki in the palette matching that appearance.
+  user who would rather not write CSS. It covers the common elements, so a citation, a definition list, a
+  figure, the rule above the footnotes, a lettered or roman list and a task list fall back to browser
+  defaults. Copy `modern.js` beside it as `content/theme.js`, because the stylesheet is half a theme without
+  it: the script builds the sheet menu the stylesheet styles below 40rem, and gives a Mermaid diagram the
+  appearance the rest of the page follows. The sheet also paints code highlighted by Shiki in the palette
+  matching that appearance.
 
 ## 4. Copy the templates
 

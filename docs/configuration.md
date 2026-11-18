@@ -29,7 +29,7 @@ and no setting is required. To change one, create a `gelyn.json` beside `content
   "ShikiVersion": "4.6.0",
   "ContentDirectory": "content",
   "OutputDirectory": "_site",
-  "ExcludePatterns": ["*.tmp", "drafts"]
+  "ExcludePatterns": ["*.html", "*.tmp", "drafts"]
 }
 ```
 
@@ -43,8 +43,8 @@ otherwise ignore in silence.
 | ------------------ | --------- | ------------------------------------------------------------------------------------------------------- |
 | `Title`            | `Gelyn`   | Names your site. The header links it to the landing page, and every browser tab names it.               |
 | `Language`         | `en`      | Sets the `lang` attribute of every document, as a BCP 47 tag such as `en` or `de-DE`.                   |
-| `Author`           | unset     | Fills the `author` meta tag. While unset, Gelyn omits the tag.                                          |
-| `Description`      | unset     | Fills the `description` meta tag of any page whose front matter declares none.                          |
+| `Author`           | unset     | Fills the `author` meta tag and names the author of the feed. While unset, Gelyn omits the tag.         |
+| `Description`      | unset     | Fills the `description` meta tag of a page whose front matter declares none, and the feed's subtitle.   |
 | `BaseUrl`          | unset     | Sets the absolute URL your site is served from. See [Base URL](#base-url).                              |
 | `EnableFeed`       | `false`   | Publishes a feed of the pages that ask to be in one. See [Feed](#feed).                                 |
 | `EnableSitemap`    | `false`   | Publishes a sitemap of every page the build renders. See [Sitemap](#sitemap).                           |
@@ -246,7 +246,7 @@ else before the build starts and names the entry by its index, such as `FooterLi
 `javascript:` URL off every page you publish. A relative URL is rejected too, so give a page of your own site its
 full address.
 
-The generated entries are labelled in English, like the rest of the footer, whatever `Language` says.
+The generated entries are labeled in English, like the rest of the footer, whatever `Language` says.
 
 The markup carries no icons and no classes. Icons are your stylesheet's job, which can select a link by its
 address and draw one with `::before`:
@@ -265,9 +265,10 @@ body > footer a[href^="https://github.com/"]::before {
   which makes it a starting point for a stylesheet of your own. Its script links the heading of every page below
   the content root back to the index above it.
 - `modern` follows the reader's light or dark preference and is ready to use unchanged. It covers the common
-  elements, while a definition list, a footnote block, and a task list keep the browser's defaults. Its script
-  builds the menu that narrow screens show in place of the navigation and matches Mermaid diagrams to the
-  appearance of the page. Its stylesheet does the same for the code Shiki highlights.
+  elements, while a citation, a definition list, a figure, the rule above the footnotes, a lettered or roman
+  list, and a task list keep the browser's defaults. Its script builds the menu that narrow screens show in
+  place of the navigation and matches Mermaid diagrams to the appearance of the page. Its stylesheet does the
+  same for the code Shiki highlights.
 
 ```json
 "Theme": "modern"
@@ -359,8 +360,9 @@ Gelyn matches each pattern against the name of a single file or directory, not a
 platform. Gelyn doesn't descend into a directory that matches, so excluding `drafts` skips everything below it.
 
 > [!NOTE]
-> `--exclude` is the one flag that **adds** to the configured value instead of replacing it, because Gelyn
-> combines the two by index rather than overwriting. Both the file's patterns and the flag's apply. It's also
+> `--exclude` is the one flag that **adds** to the configured value instead of replacing it. Gelyn combines
+> lists by index, so a value at an index the file uses replaces that entry, and the flag writes its patterns
+> from index 1000 onward, past any list a file holds. Both the file's patterns and the flag's apply. It's also
 > the only flag that takes several values in one token, which is why you separate them with commas: the
 > command line layer promotes one flag to one string.
 
@@ -424,9 +426,12 @@ and `--output` alone, since it builds nothing. See [clean](cli.md#clean). `--fee
 `Giscus` have none, so set them in the file or in the environment.
 
 `ExcludePatterns` and `FooterLinks` hold collections, which makes layer 3 awkward for them. An environment
-variable named exactly like the setting can't carry a list, so each pattern needs its own `ExcludePatterns__0`,
-`ExcludePatterns__1`, and so on, and each footer link one variable per member, such as `FooterLinks__0__Label`
-and `FooterLinks__0__Url`. The file is the practical route for both, and `--exclude` for the patterns.
+variable named exactly like the setting can't carry a list, so each pattern needs its own
+`GELYN_EXCLUDEPATTERNS__0`, `GELYN_EXCLUDEPATTERNS__1`, and so on, and each footer link one variable per member,
+such as `GELYN_FOOTERLINKS__0__LABEL` and `GELYN_FOOTERLINKS__0__URL`. Such a variable replaces the entry at its
+position in `gelyn.json` and leaves the others in place, so `GELYN_EXCLUDEPATTERNS__0` changes the first
+pattern of the file without removing the rest. The file is the practical route for both, and `--exclude` for the
+patterns.
 
-`Giscus` is an object, so it takes one variable per member in the same way, such as `Giscus__Repo` and
-`Giscus__RepoId`.
+`Giscus` is an object, so it takes one variable per member in the same way, such as `GELYN_GISCUS__REPO` and
+`GELYN_GISCUS__REPOID`.

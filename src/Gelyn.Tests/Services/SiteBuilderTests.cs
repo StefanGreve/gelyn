@@ -401,7 +401,7 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that a page enabling syntax highlighting imports Shiki as a module, highlights with the
-    ///     JavaScript engine and leaves the colours to the stylesheet.
+    ///     JavaScript engine and leaves the colors to the stylesheet.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Highlighter_IsLoadedByThePageThatEnablesIt()

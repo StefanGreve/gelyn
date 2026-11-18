@@ -204,7 +204,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     }
 
     /// <summary>
-    ///     Stops the server without disposing the harness, so that a test can assert what cancelling does.
+    ///     Stops the server without disposing the harness, so that a test can assert what canceling does.
     /// </summary>
     /// <returns>
     ///     A task that completes once the server has stopped.

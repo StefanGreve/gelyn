@@ -86,7 +86,9 @@ Two rules are worth knowing, because neither produces a warning:
   though it declared none.
 
 A key Gelyn doesn't know, such as a misspelled `titel:`, produces a warning that names the key, its line and
-the file. The build carries on and writes the page as though the key were absent.
+the file. The build carries on and writes the page as though the key were absent. Keys are matched exactly as the
+table spells them, so `Title:` is an unknown key too, unlike a setting in `gelyn.json`, whose name Gelyn
+matches without regard to case.
 
 A block that isn't well-formed YAML, or that holds something other than key-value pairs, does stop the build.
 Gelyn exits with code 1 and writes nothing, because it renders every page before it writes the first one. The
@@ -201,7 +203,7 @@ page:
 </thead>
 <tbody>
 <tr data-type="folder">
-<td><time datetime="2026-06-01">Jun 1, 2026</time></td>
+<td><time datetime="2026-06-01">2026-06-01</time></td>
 <td><a href="/blog/2026/index.html">Year 2026</a></td>
 </tr>
 </tbody>
@@ -241,7 +243,7 @@ Gelyn renders your Markdown with [Markdig][markdig]: CommonMark plus the followi
 | Extension           | Syntax                   | Output                                                    |
 | ------------------- | ------------------------ | --------------------------------------------------------- |
 | Alert blocks        | `> [!NOTE]`              | A GitHub style callout, icon included                     |
-| Abbreviations       | `*[HTML]: HyperText ...` | `<abbr title="...">` around every later mention           |
+| Abbreviations       | `*[HTML]: HyperText ...` | `<abbr title="...">` around every mention on the page     |
 | Auto identifiers    | `## A Heading`           | `id="a-heading"`, GitHub style                            |
 | Table of contents   | `[TOC]`                  | `<nav class="toc">`, a numbered list of the headings      |
 | Citations           | `""quoted""`             | `<cite>`                                                  |
@@ -655,7 +657,7 @@ ES module, and [Scripts](#scripts) emits a plain `<script src>`, which can't car
 ## Syntax highlighting
 
 A fenced block renders to `<pre><code class="language-sh">`, with the info string as the class, and nothing
-colours it. Declare one key to get [Shiki][shiki]:
+colors it. Declare one key to get [Shiki][shiki]:
 
 ````markdown
 ---
@@ -691,14 +693,14 @@ if (blocks.size > 0) {
 
 The script collects every block whose language Shiki bundles, which includes the aliases, so `sh`, `js` and
 `md` all qualify. A block naming a language it lacks is left as Markdig wrote it, and so is a `text` block,
-which needs no colour. One highlighter is created for the languages the page uses, and each grammar is fetched
+which needs no color. One highlighter is created for the languages the page uses, and each grammar is fetched
 once, on demand. The engine is Shiki's JavaScript one, so no WebAssembly is downloaded.
 
 Each block comes back as `<pre class="shiki ..." tabindex="0">`, with a `<span class="line">` per line, the
-original `language-*` class kept on the `<code>` element, and a `style` attribute per token. Shiki colours
+original `language-*` class kept on the `<code>` element, and a `style` attribute per token. Shiki colors
 nothing itself, because the script passes `defaultColor: false`: every token carries both palettes as
 `--shiki-light` and `--shiki-dark`, and the `<pre>` carries `--shiki-light-bg` and `--shiki-dark-bg`. A theme
-is the stylesheet's business, as it is for Mermaid, so the blocks stay the colour of your text until a rule of
+is the stylesheet's business, as it is for Mermaid, so the blocks stay the color of your text until a rule of
 yours picks one:
 
 ```css
@@ -762,7 +764,7 @@ giscus finds the thread by the path of the page, such as `blog/hello` for `/blog
 exactly, so `blog/hello` never lands in the thread of `blog/hello-world`. Rename or move the file and its page
 starts a new, empty thread, while the old discussion stays in your repository.
 
-The widget follows the colour scheme of the browser, as `modern.css` does. It renders in English whatever
+The widget follows the color scheme of the browser, as `modern.css` does. It renders in English whatever
 `Language` says, because giscus accepts only its own list of language codes. The `giscus` class marks the
 element the client places the iframe in, and is the hook for your stylesheet: `modern.css` sets the section on
 the measure of the content.
@@ -794,11 +796,12 @@ such a directory, `gelyn clean` removes the link and leaves its target alone.
 
 `gelyn clean` removes the output directory outright, which is the one way to clear those entries as well.
 
-A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources
-and the tool version alone. That holds across platforms too: every page, the feed and the sitemap end each
-line on a line feed, independent of the line ending your sources or the build host use. Upgrading Gelyn moves
-the version in both the generator tag and the footer, so that one rebuild does change every page. Worth
-knowing if you commit your output directory or deploy it by diff.
+A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources,
+the configuration, the titles and dates of the pages it lists or links, and the tool version alone. That holds
+across platforms too: every page, the feed and the sitemap end each line on a line feed, independent of the line
+ending your sources or the build host use. Upgrading Gelyn moves the version in both the generator tag and the
+footer, so that one rebuild does change every page. Worth knowing if you commit your output directory or deploy
+it by diff.
 
 ## Preview
 

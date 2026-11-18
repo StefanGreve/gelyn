@@ -19,11 +19,11 @@
 </div>
 
 Gelyn is a deliberately opinionated SSG that cares about semantically correct HTML output. The HTML
-skeleton is fixed by design, with no plugin system or template engine. Pages can be customized through
-CSS, which is the only supported personalization route. This tool is primarily built for people who care
-more about content creation than about an abundance of customization options. If you need more control
-over the generated output and don't shy away from meddling with web development, I can recommend using
-[11ty][11ty] instead.
+skeleton is fixed by design, with no plugin system or template engine. Pages can be customized through CSS
+and JavaScript, which are the only supported personalization routes. This tool is primarily built for
+people who care more about content creation than about an abundance of customization options. If you need
+more control over the generated output and don't shy away from meddling with web development, I can
+recommend using [11ty][11ty] instead.
 
 > [!WARNING]
 > This project is a work in progress. Things can break and change at any time. Use at your own risk. Gelyn is
@@ -46,7 +46,7 @@ The documentation is published at [stefangreve.github.io/gelyn][docs-site], whic
 ## Claude Code Plugin
 
 If you use [Claude Code][claude-code], a plugin sets the blog up for you rather than leaving you with an
-empty directory. Register the marketplace, then install it:
+empty directory. Register the [marketplace], then install it:
 
 ```sh
 /plugin marketplace add stefangreve/claude-plugins

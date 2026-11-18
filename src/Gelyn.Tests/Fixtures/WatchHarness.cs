@@ -372,7 +372,7 @@ internal sealed class WatchHarness : IAsyncDisposable
 
     /// <summary>
     ///     Cancels the loop and waits for it to stop, as <see cref="DisposeAsync"/> does, so that a test can
-    ///     assert what cancelling does.
+    ///     assert what canceling does.
     /// </summary>
     /// <returns>
     ///     A task that completes once the loop has stopped.

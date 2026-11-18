@@ -464,7 +464,7 @@ public class SiteWatcherTests
     #region Cancellation Tests
 
     /// <summary>
-    ///     Verifies that cancelling stops the loop, which is how <c>gelyn serve</c> ends and therefore not a
+    ///     Verifies that canceling stops the loop, which is how <c>gelyn serve</c> ends and therefore not a
     ///     failure.
     /// </summary>
     [Test]

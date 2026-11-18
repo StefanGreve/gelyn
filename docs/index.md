@@ -18,6 +18,9 @@ a site you can deploy.
 dotnet tool install -g gelyn
 ```
 
+Installing requires the .NET 10 SDK or later. The tool itself runs as a native executable, without a .NET
+runtime.
+
 > [!WARNING]
 > Gelyn is not on NuGet yet, so that command does not resolve until the first release ships. Until then,
 > build it from source and link the publish onto your `PATH`, which [Development](dev.md) covers.

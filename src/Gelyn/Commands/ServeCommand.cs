@@ -122,7 +122,7 @@ internal sealed class ServeCommand : Command
 
                 Task watching = watcher.WatchAsync(session.Token);
 
-                // A faulted rebuild loop has to end the serving too, so the session is cancelled as soon as either side finishes.
+                // A faulted rebuild loop has to end the serving too, so the session is canceled as soon as either side finishes.
                 await Task.WhenAny(serving, watching).ConfigureAwait(false);
                 await session.CancelAsync().ConfigureAwait(false);
                 await Task.WhenAll(serving, watching).ConfigureAwait(false);

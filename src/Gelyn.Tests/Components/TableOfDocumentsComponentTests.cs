@@ -355,11 +355,11 @@ public partial class TableOfDocumentsComponentTests
     }
 
     /// <summary>
-    ///     Verifies that the table is wrapped in a labelled navigation landmark, the banner carrying the other
+    ///     Verifies that the table is wrapped in a labeled navigation landmark, the banner carrying the other
     ///     one on the same page.
     /// </summary>
     [Test]
-    public async Task Render_Test_Table_SitsInALabelledLandmark()
+    public async Task Render_Test_Table_SitsInALabeledLandmark()
     {
         // Act
         string table = Render(

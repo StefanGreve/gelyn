@@ -17,7 +17,7 @@ A footnote[^1] links in both directions, and a bare host like www.example.com be
 
 *[SSG]: Static Site Generator
 
-Gelyn is an SSG, and every later mention of SSG carries the title.
+Gelyn is an SSG, and every mention of SSG on the page carries the title.
 
 Front matter
 :   A YAML block at the top of the file. Its text starts at the fourth column, or this is a paragraph
@@ -29,8 +29,8 @@ Citations, figures and alphabetic lists are enabled too. The table in `usage.md`
 
 ## Code
 
-A fence carries its info string as a `language-*` class. Nothing tokenizes the code, so style the block as a
-whole or load a highlighter the same way you would any script.
+A fence carries its info string as a `language-*` class. Nothing tokenizes the code at build time. Declare
+`enableSyntaxHighlighting: true` in the front matter, and Shiki colors the block in the browser.
 
 ```csharp
 public static int Add(int left, int right) => left + right;
