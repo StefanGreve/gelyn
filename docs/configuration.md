@@ -114,6 +114,8 @@ fragment make no difference. A URL that addresses the root of a domain contribut
 `https://example.com` leaves every link exactly as it would be with no `BaseUrl` configured. Gelyn
 accepts only absolute `http` and `https` URLs, and rejects anything else before the build starts. While
 `BaseUrl` is unset, Gelyn writes no canonical reference at all, because a relative one would carry no meaning.
+`gelyn serve` serves the site under the same path, so its links work in the preview too. See
+[serve](cli.md#serve).
 
 ## Feed
 

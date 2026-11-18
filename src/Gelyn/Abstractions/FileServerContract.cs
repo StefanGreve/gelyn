@@ -13,6 +13,10 @@ internal abstract class FileServerContract
     /// <param name="outputDirectory">
     ///     The directory the generated site was written to.
     /// </param>
+    /// <param name="basePath">
+    ///     The path the site is served under, as <see cref="Core.Internals.UrlUtils.ResolveBasePath"/> resolves
+    ///     it from the configured base URL, which is empty for a site served from the root.
+    /// </param>
     /// <param name="port">
     ///     The port to serve on.
     /// </param>
@@ -37,6 +41,7 @@ internal abstract class FileServerContract
     /// </exception>
     public abstract Task ServeAsync(
         string outputDirectory,
+        string basePath,
         int port,
         bool launchBrowser,
         int? refreshSeconds,

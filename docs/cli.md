@@ -51,6 +51,10 @@ Both `http://127.0.0.1:<port>` and `http://localhost:<port>` are served, so eith
 site. Every `build` option applies unchanged, because serving implies building. `Ctrl+C` stops the server and
 exits with code `0`: interrupting it is how the command is meant to end.
 
+A [`BaseUrl`](configuration.md#base-url) with a path moves the site under that path, as it is published: with
+`https://example.com/blog`, the site starts at `http://127.0.0.1:9624/blog/`. The root redirects there, and
+every other path outside it gets the not-found page.
+
 What the rebuild loop does with a change, and what it does with one that fails to build, is covered under
 [Preview](usage.md#preview).
 

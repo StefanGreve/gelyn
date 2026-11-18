@@ -88,7 +88,7 @@ internal sealed class FileServer : FileServerContract
     }
 
     /// <summary>
-    ///     The address a reader is pointed at, which is the first of <see cref="Addresses"/>.
+    ///     The first of <see cref="Addresses"/>, which the address a reader is pointed at extends.
     /// </summary>
     /// <param name="port">
     ///     The port to serve on.
@@ -97,7 +97,23 @@ internal sealed class FileServer : FileServerContract
     ///     The prefix, in the trailing-slash form <see cref="HttpListener.Prefixes"/> requires.
     /// </returns>
     internal static string Address(int port) =>
-        string.Create(Tool.Culture, $"http://{LoopbackAddress}:{port}/");
+        Address(port, string.Empty);
+
+    /// <summary>
+    ///     The address a reader is pointed at, which is the first of <see cref="Addresses"/> followed by the
+    ///     path the site is served under.
+    /// </summary>
+    /// <param name="port">
+    ///     The port to serve on.
+    /// </param>
+    /// <param name="basePath">
+    ///     The path the site is served under, which is empty for a site served from the root.
+    /// </param>
+    /// <returns>
+    ///     The address, with a trailing slash.
+    /// </returns>
+    internal static string Address(int port, string basePath) =>
+        string.Create(Tool.Culture, $"http://{LoopbackAddress}:{port}{basePath}/");
 
     /// <summary>
     ///     Every address the server binds, all of them loopback.
@@ -125,17 +141,19 @@ internal sealed class FileServer : FileServerContract
     /// <inheritdoc/>
     public override async Task ServeAsync(
         string outputDirectory,
+        string basePath,
         int port,
         bool launchBrowser,
         int? refreshSeconds,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(outputDirectory);
+        ArgumentNullException.ThrowIfNull(basePath);
 
         if (!HttpListener.IsSupported)
             throw new PlatformNotSupportedException($"{nameof(HttpListener)} is not available on this platform.");
 
-        string address = Address(port);
+        string address = Address(port, basePath);
         string? refresh = refreshSeconds?.ToString(Tool.Culture);
 
         using var listener = new HttpListener();
@@ -170,7 +188,7 @@ internal sealed class FileServer : FileServerContract
                 break;
             }
 
-            await this.AnswerAsync(context, outputDirectory, refresh, cancellationToken).ConfigureAwait(false);
+            await this.AnswerAsync(context, outputDirectory, basePath, refresh, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -179,6 +197,7 @@ internal sealed class FileServer : FileServerContract
     private async Task AnswerAsync(
         HttpListenerContext context,
         string outputDirectory,
+        string basePath,
         string? refresh,
         CancellationToken cancellationToken)
     {
@@ -200,9 +219,21 @@ internal sealed class FileServer : FileServerContract
 
                 this.Report(request, client, HttpStatusCode.MethodNotAllowed, written: 0);
             }
+            else if (basePath.Length > 0 && path.Equals("/", StringComparison.Ordinal))
+            {
+                // Temporary, because a browser replays a cached permanent redirect for this address without
+                // asking, and the next site served on the port may have no such path.
+                response.StatusCode = (int)HttpStatusCode.Found;
+                response.RedirectLocation = $"{basePath}/";
+                response.ContentLength64 = 0;
+
+                this.Report(request, client, HttpStatusCode.Found, written: 0);
+            }
             else
             {
-                ServedFile file = this._resolver.Resolve(outputDirectory, path);
+                ServedFile file = TryStripBasePath(path, basePath, out string? relative)
+                    ? this._resolver.Resolve(outputDirectory, relative)
+                    : this._resolver.ResolveNotFound(outputDirectory);
 
                 response.StatusCode = (int)file.StatusCode;
                 response.ContentType = file.ContentType;
@@ -330,6 +361,15 @@ internal sealed class FileServer : FileServerContract
     // Bypasses the console, which would wrap the line and read a bracket in a request path as markup.
     private void Write(string line) =>
         this._stdOut.Profile.Out.Writer.WriteLine(line);
+
+    // Matched on a segment boundary, so that a base path of /docs leaves /docs-old to the not-found page.
+    private static bool TryStripBasePath(string path, string basePath, [NotNullWhen(true)] out string? relative)
+    {
+        bool isInside = path.StartsWith(basePath, StringComparison.Ordinal) && (path.Length == basePath.Length || path[basePath.Length] == '/');
+        relative = isInside ? path[basePath.Length..] : null;
+
+        return isInside;
+    }
 
     private static bool IsSupportedMethod(string method) =>
         method.Equals(WebRequestMethods.Http.Get, StringComparison.Ordinal)

@@ -291,6 +291,25 @@ public class StaticFileResolverTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that the not-found response is resolved without a request path, as it is for a request
+    ///     outside the path the site is served under, and matches the one a miss gets.
+    /// </summary>
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async Task ResolveNotFound_Test_MatchesTheResponseToAMiss(bool declaresPage)
+    {
+        // Arrange
+        var fixture = declaresPage ? OutputFixture.Create("index.html", "404.html") : OutputFixture.Create("index.html");
+
+        // Act
+        ServedFile file = fixture.Resolver.ResolveNotFound(fixture.Root);
+
+        // Assert
+        await Assert.That(file).IsEqualTo(fixture.Resolve("/nope"));
+    }
+
     #endregion // Miss Tests
 
     #region Content Type Tests

@@ -833,9 +833,9 @@ rebuilt 8 file(s) in 13.04 ms after content/gelyn.json changed.
 ```
 
 A change to `gelyn.json` is reloaded before the rebuild that follows it, so a new `Title` reaches the next page
-Gelyn writes. The directory settings are the exception, because the watcher and the server stay bound to the
-directories the command started against: change `ContentDirectory` or `OutputDirectory` and Gelyn says so
-rather than rebuilding against them.
+Gelyn writes. The directory settings and the path of `BaseUrl` are the exception, because the watcher and the
+server stay bound to the directories and the path the command started against: change `ContentDirectory`,
+`OutputDirectory` or the path of `BaseUrl` and Gelyn says so rather than rebuilding against them.
 
 ```text
 warning: ContentDirectory changed. Restart gelyn serve to pick that up.

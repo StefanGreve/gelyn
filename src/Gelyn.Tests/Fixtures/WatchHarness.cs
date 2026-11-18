@@ -84,6 +84,7 @@ internal sealed class WatchHarness : IAsyncDisposable
         this._watching = this.Watcher.RebuildOnChangeAsync(
             this.ContentDirectory,
             this.OutputDirectory,
+            UrlUtils.ResolveBasePath(content.Options.BaseUrl),
             this.ConfigurationPath,
             this._cancellation.Token);
     }

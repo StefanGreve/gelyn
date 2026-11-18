@@ -87,6 +87,14 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
             : this.NotFound(root);
     }
 
+    /// <inheritdoc/>
+    public override ServedFile ResolveNotFound(string outputDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(outputDirectory);
+
+        return this.NotFound(PathBoundary.Resolve(outputDirectory));
+    }
+
     #region Helpers
 
     /// <summary>

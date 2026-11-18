@@ -422,6 +422,43 @@ public class SiteWatcherTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a base URL whose path moved is reported and rebuilds nothing, because the server
+    ///     keeps answering under the path it started with, while a change to the origin alone rebuilds.
+    /// </summary>
+    [Test]
+    [Arguments(null, "https://example.com/docs/", true)]
+    [Arguments("https://example.com/docs", "https://www.example.com/docs/", false)]
+    public async Task RebuildOnChangeAsync_Test_MovedBasePath_IsReportedWithoutARebuild(string? started, string changed, bool isMoved)
+    {
+        // Arrange
+        var content = ContentFixture.Create();
+        content.Options.BaseUrl = started is null ? null : new Uri(started);
+
+        await using var harness = WatchHarness.Start(content);
+
+        // Act
+        content.Options.BaseUrl = new Uri(changed);
+        harness.ChangeConfiguration();
+
+        if (isMoved)
+            await harness.WaitForWarningsAsync(1);
+        else
+            await harness.WaitForRebuildsAsync(1);
+
+        await harness.QuietAsync();
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(harness.Warnings.Length).IsEqualTo(isMoved ? 1 : 0);
+            await Assert.That(harness.Rebuilds).IsEqualTo(isMoved ? 0 : 1);
+        }
+
+        if (isMoved)
+            await Assert.That(harness.ErrorOutput).Contains($"{nameof(SiteOptions.BaseUrl)} changed.");
+    }
+
     #endregion // Configuration Tests
 
     #region Cancellation Tests

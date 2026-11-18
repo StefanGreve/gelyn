@@ -114,6 +114,7 @@ internal sealed class ServeCommand : Command
 
                 Task serving = server.ServeAsync(
                     outputDirectory,
+                    UrlUtils.ResolveBasePath(site.BaseUrl),
                     site.Port,
                     parsed.GetValue(launchBrowser),
                     parsed.GetValue(refresh),

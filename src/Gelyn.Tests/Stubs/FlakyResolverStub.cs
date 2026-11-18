@@ -38,4 +38,8 @@ internal sealed class FlakyResolverStub : StaticFileResolverContract
         this._failed = true;
         throw this._failure;
     }
+
+    /// <inheritdoc/>
+    public override ServedFile ResolveNotFound(string outputDirectory) =>
+        this._inner.ResolveNotFound(outputDirectory);
 }

@@ -230,6 +230,115 @@ public class FileServerTests
 
     #endregion // Request Tests
 
+    #region Base Path Tests
+
+    /// <summary>
+    ///     Verifies that a site with a base path is served under it, with or without the trailing slash after
+    ///     the path, the way its own links address it.
+    /// </summary>
+    [Test]
+    [Arguments("/docs/", "<p>Home</p>")]
+    [Arguments("/docs", "<p>Home</p>")]
+    [Arguments("/docs/guide/", "<p>Guide</p>")]
+    [Arguments("/docs/about", "<p>About</p>")]
+    public async Task ServeAsync_Test_BasePath_ServesTheSiteUnderIt(string requestPath, string expected)
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create()
+            .Write("index.html", "<p>Home</p>")
+            .Write("guide/index.html", "<p>Guide</p>")
+            .Write("about.html", "<p>About</p>");
+
+        await using var harness = ServerHarness.Start(fixture, basePath: "/docs");
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url(requestPath), CancellationToken.None);
+        string body = await response.Content.ReadAsStringAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(body).IsEqualTo(expected);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the root redirects to the base path under a temporary status, so that no browser
+    ///     keeps the redirect for the next site served on the port.
+    /// </summary>
+    [Test]
+    [Arguments("GET")]
+    [Arguments("HEAD")]
+    public async Task ServeAsync_Test_BasePath_RootRedirectsToIt(string method)
+    {
+        // Arrange
+        var fixture = OutputFixture.Create("index.html");
+        await using var harness = ServerHarness.Start(fixture, basePath: "/docs");
+
+        using var handler = new HttpClientHandler { AllowAutoRedirect = false };
+        using var client = new HttpClient(handler);
+        using var request = new HttpRequestMessage(new HttpMethod(method), harness.Url("/"));
+
+        // Act
+        using HttpResponseMessage response = await client.SendAsync(request, CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Found);
+            await Assert.That(response.Headers.Location?.OriginalString).IsEqualTo("/docs/");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a path outside the base path is answered with the not-found page, even where a file
+    ///     in the output directory matches it, and that a sibling sharing the base path's prefix is outside.
+    /// </summary>
+    [Test]
+    [Arguments("/index.html")]
+    [Arguments("/docs-old/")]
+    [Arguments("/other/page")]
+    public async Task ServeAsync_Test_BasePath_LeavesEveryOtherPathToTheNotFoundPage(string requestPath)
+    {
+        // Arrange
+        OutputFixture fixture = OutputFixture.Create()
+            .Write("index.html", "<p>Home</p>")
+            .Write("404.html", "<p>Gone</p>");
+
+        await using var harness = ServerHarness.Start(fixture, basePath: "/docs");
+
+        // Act
+        using HttpResponseMessage response = await harness.Client.GetAsync(harness.Url(requestPath), CancellationToken.None);
+        string body = await response.Content.ReadAsStringAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+            await Assert.That(body).IsEqualTo("<p>Gone</p>");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that the banner points the reader at the base path, which is where the site starts.
+    /// </summary>
+    [Test]
+    public async Task ServeAsync_Test_BasePath_IsNamedByTheBanner()
+    {
+        // Arrange
+        var fixture = OutputFixture.Create("index.html");
+
+        // Act
+        await using var harness = ServerHarness.Start(fixture, basePath: "/docs");
+
+        // Assert
+        await Assert.That(harness.Output.TrimEnd())
+            .IsEqualTo($"Serving HTTP on 127.0.0.1 port {harness.Port} (http://127.0.0.1:{harness.Port}/docs/) ...");
+    }
+
+    #endregion // Base Path Tests
+
     #region Refresh Header Tests
 
     /// <summary>

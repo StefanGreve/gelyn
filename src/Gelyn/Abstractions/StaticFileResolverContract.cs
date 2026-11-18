@@ -21,4 +21,15 @@ internal abstract class StaticFileResolverContract
     ///     404 when nothing in the output directory does.
     /// </returns>
     public abstract ServedFile Resolve(string outputDirectory, string requestPath);
+
+    /// <summary>
+    ///     Resolves the 404 response of the output directory, for a request that no path inside it answers.
+    /// </summary>
+    /// <param name="outputDirectory">
+    ///     The directory the generated site was written to.
+    /// </param>
+    /// <returns>
+    ///     The not-found page the site declares, or a 404 without a body when it declares none.
+    /// </returns>
+    public abstract ServedFile ResolveNotFound(string outputDirectory);
 }

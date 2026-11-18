@@ -40,7 +40,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     private readonly StringWriter _errorOutput = new();
     private readonly TextWriter _errorWriter;
 
-    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, StaticFileResolverContract? resolver)
+    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, StaticFileResolverContract? resolver, string basePath)
     {
         this.Logger = new FakeLogger<FileServer>();
         this.TimeProvider = new FakeTimeProvider(now);
@@ -63,6 +63,7 @@ internal sealed class ServerHarness : IAsyncDisposable
             this.Port = FreePort();
             this._serving = server.ServeAsync(
                 fixture.Root,
+                basePath,
                 this.Port,
                 launchBrowser: false,
                 refreshSeconds,
@@ -152,6 +153,9 @@ internal sealed class ServerHarness : IAsyncDisposable
     /// <param name="resolver">
     ///     The resolver the server answers through, or <see langword="null"/> for the fixture's own.
     /// </param>
+    /// <param name="basePath">
+    ///     The path the site is served under, which is empty for a site served from the root.
+    /// </param>
     /// <returns>
     ///     The new harness.
     /// </returns>
@@ -159,8 +163,9 @@ internal sealed class ServerHarness : IAsyncDisposable
         OutputFixture fixture,
         DateTimeOffset? now = null,
         int? refreshSeconds = null,
-        StaticFileResolverContract? resolver = null) =>
-        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds, resolver);
+        StaticFileResolverContract? resolver = null,
+        string basePath = "") =>
+        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds, resolver, basePath);
 
     /// <summary>
     ///     Composes the absolute URL one request path addresses.

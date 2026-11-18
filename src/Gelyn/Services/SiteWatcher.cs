@@ -134,6 +134,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
         string contentDirectory = PathBoundary.Resolve(root, options.ContentDirectory);
         string outputDirectory = PathBoundary.Resolve(root, options.OutputDirectory);
+        string basePath = UrlUtils.ResolveBasePath(options.BaseUrl);
         string configurationFile = ConfigurationFile.Resolve(this._configuration, root);
 
         using FileSystemWatcher sources = Observe(
@@ -149,7 +150,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
             writer: this.Changes);
 
         await this
-            .RebuildOnChangeAsync(contentDirectory, outputDirectory, configurationFile, cancellationToken)
+            .RebuildOnChangeAsync(contentDirectory, outputDirectory, basePath, configurationFile, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -166,6 +167,9 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <param name="outputDirectory">
     ///     The absolute path of the directory the server answers from, as the loop was started against it.
     /// </param>
+    /// <param name="basePath">
+    ///     The path the server serves the site under, as the loop was started against it.
+    /// </param>
     /// <param name="configurationFile">
     ///     The absolute path of the configuration file, whose change reloads the configuration before the
     ///     rebuild that follows it.
@@ -179,11 +183,13 @@ internal sealed class SiteWatcher : SiteWatcherContract
     internal async Task RebuildOnChangeAsync(
         string contentDirectory,
         string outputDirectory,
+        string basePath,
         string configurationFile,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(contentDirectory);
         ArgumentNullException.ThrowIfNull(outputDirectory);
+        ArgumentNullException.ThrowIfNull(basePath);
         ArgumentNullException.ThrowIfNull(configurationFile);
 
         ChannelReader<string> reader = this._changes.Reader;
@@ -241,7 +247,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
                 continue;
             }
 
-            if (this.Moved(contentDirectory, outputDirectory, options) is string moved)
+            if (this.Moved(contentDirectory, outputDirectory, basePath, options) is string moved)
             {
                 this._stdErr.MarkupLineInterpolated($"[yellow]warning:[/] {moved} changed. Restart [bold]gelyn serve[/] to pick that up.");
                 continue;
@@ -400,8 +406,8 @@ internal sealed class SiteWatcher : SiteWatcherContract
     private void ReportFailure(Exception exception) => this._stdErr.WriteError(exception);
 
     /// <summary>
-    ///     Names the directory settings a reload has moved, which the watchers and the server cannot follow
-    ///     without being rewired.
+    ///     Names the settings a reload has moved, which the watchers and the server cannot follow without being
+    ///     rewired.
     /// </summary>
     /// <remarks>
     ///     Compared as resolved paths, never as the configured values, so that a cosmetic edit such as
@@ -413,14 +419,17 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <param name="outputDirectory">
     ///     The absolute path of the served output directory.
     /// </param>
+    /// <param name="basePath">
+    ///     The path the server serves the site under.
+    /// </param>
     /// <param name="options">
     ///     The site configuration as it reads now.
     /// </param>
     /// <returns>
-    ///     The names of the settings that moved, or <see langword="null"/> when both still resolve to the
-    ///     directories the loop was started against.
+    ///     The names of the settings that moved, or <see langword="null"/> when each still resolves to the
+    ///     directory or the path the loop was started against.
     /// </returns>
-    private string? Moved(string contentDirectory, string outputDirectory, SiteOptions options)
+    private string? Moved(string contentDirectory, string outputDirectory, string basePath, SiteOptions options)
     {
         string root = this._environment.ContentRootPath;
         List<string> moved = [];
@@ -430,6 +439,9 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
         if (!PathBoundary.Resolve(root, options.OutputDirectory).Equals(outputDirectory, StringComparison.Ordinal))
             moved.Add(nameof(SiteOptions.OutputDirectory));
+
+        if (!UrlUtils.ResolveBasePath(options.BaseUrl).Equals(basePath, StringComparison.Ordinal))
+            moved.Add(nameof(SiteOptions.BaseUrl));
 
         return moved.Count > 0
             ? string.Join(" and ", moved)
