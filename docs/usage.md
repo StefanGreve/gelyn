@@ -651,8 +651,14 @@ disagreeing.
 `MermaidVersion` in `gelyn.json` sets the version in that URL. It defaults to `12.1.0`.
 
 The key doesn't cascade, so declare it on each page that carries a diagram, and Gelyn writes no `integrity`
-attribute, because the version is yours to change. Vendoring Mermaid instead isn't an option: it loads as an
-ES module, and [Scripts](#scripts) emits a plain `<script src>`, which can't carry one.
+attribute, because the version is yours to change.
+
+> [!NOTE]
+> If you'd rather your site made no third-party request at all, leave the key unset, put
+> `dist/mermaid.min.js` of the Mermaid package in your content tree, and let [Scripts](#scripts) load it. That
+> file is a plain script, which draws every diagram on `load` by itself. It holds every diagram type in one
+> download of about 5 MB, where the module above fetches only the ones a page uses. The theme's script runs
+> before it and therefore doesn't see it, so with `modern` a vendored Mermaid ignores the dark preference.
 
 ## Syntax highlighting
 
@@ -719,8 +725,8 @@ sideways reachable from the keyboard, at the cost of a tab stop per highlighted 
 The URL ends in `+esm` where the other two end in `/dist`, because Shiki's own entry imports packages by bare
 name, which no browser resolves, and jsDelivr's bundled build rewrites them. The key doesn't cascade, so
 declare it on each page that carries code, and Gelyn writes no `integrity` attribute, because the version is
-yours to change. Vendoring Shiki instead isn't an option, for the reason Mermaid isn't: it loads as an ES
-module.
+yours to change. Vendoring Shiki instead isn't an option: it ships as ES modules alone, and
+[Scripts](#scripts) emits a plain `<script src>`, which can't load one.
 
 ## Comments
 
