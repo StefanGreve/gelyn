@@ -36,7 +36,7 @@ title: Home
 My first page.
 ```
 
-Without that file, Gelyn reports `error: No landing page found at '...'` and exits with code 1 before
+Without that file, Gelyn reports `error: No landing page found at '...'` and exits with code 2 before
 writing anything. Everything else is optional: put `about.md` beside it and the banner links it, drop a
 `.css` file in and every page in that directory and below it loads it.
 

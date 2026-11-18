@@ -42,7 +42,7 @@ nothing flattens or re-nests a directory.
 
 > [!IMPORTANT]
 > `content/index.md` is required. Without it, Gelyn stops before writing anything, reporting
-> `error: No landing page found at '...'` and exiting with code 1. Every other file is optional.
+> `error: No landing page found at '...'` and exiting with code 2. Every other file is optional.
 
 ## Front matter
 
