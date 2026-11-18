@@ -238,28 +238,34 @@ span or a fenced block is published as you wrote it, and `[TOD] with trailing te
 Gelyn renders your Markdown with [Markdig][markdig]: CommonMark plus the following
 [extensions][markdig-extensions], which are fixed rather than configurable per site.
 
-| Extension         | Syntax                   | Output                                                    |
-| ----------------- | ------------------------ | --------------------------------------------------------- |
-| Alert blocks      | `> [!NOTE]`              | A GitHub style callout, icon included                     |
-| Abbreviations     | `*[HTML]: HyperText ...` | `<abbr title="...">` around every later mention           |
-| Auto identifiers  | `## A Heading`           | `id="a-heading"`, GitHub style                            |
-| Table of contents | `[TOC]`                  | `<nav class="toc">`, a numbered list of the headings      |
-| Citations         | `""quoted""`             | `<cite>`                                                  |
-| Definition lists  | `Term`, then `:   Text`  | `<dl>`, `<dt>`, `<dd>`                                    |
-| Strikethrough     | `~~text~~`               | `<del>`                                                   |
-| Figures           | `^^^` fences             | `<figure>`, with a `<figcaption>` per fence that is named |
-| Footnotes         | `[^1]`                   | A reference, and a back-linked note at the end            |
-| Mathematics       | `$x$`, `$$x$$`           | `<span class="math">`, `<div class="math">`               |
-| Pipe tables       | `a \| b`                 | `<table>`, under GFM rules                                |
-| List extras       | `a.`, `i.`               | `<ol type="a">`, `<ol type="i">`                          |
-| Task lists        | `- [x] done`             | A disabled checkbox                                       |
-| Diagrams          | `` ```mermaid ``         | `<pre class="mermaid">`                                   |
-| Auto links        | `www.example.com`        | A link, with `https` for a `www` host                     |
-| YAML front matter | `---`                    | Read as front matter, and left out of the body            |
+| Extension           | Syntax                   | Output                                                    |
+| ------------------- | ------------------------ | --------------------------------------------------------- |
+| Alert blocks        | `> [!NOTE]`              | A GitHub style callout, icon included                     |
+| Abbreviations       | `*[HTML]: HyperText ...` | `<abbr title="...">` around every later mention           |
+| Auto identifiers    | `## A Heading`           | `id="a-heading"`, GitHub style                            |
+| Table of contents   | `[TOC]`                  | `<nav class="toc">`, a numbered list of the headings      |
+| Citations           | `""quoted""`             | `<cite>`                                                  |
+| Definition lists    | `Term`, then `:   Text`  | `<dl>`, `<dt>`, `<dd>`                                    |
+| Strikethrough       | `~~text~~`               | `<del>`                                                   |
+| Figures             | `^^^` fences             | `<figure>`, with a `<figcaption>` per fence that is named |
+| Footnotes           | `[^1]`                   | A reference, and a back-linked note at the end            |
+| Mathematics         | `$x$`, `$$x$$`           | `<span class="math">`, `<div class="math">`               |
+| Pipe tables         | `a \| b`                 | `<table>`, under GFM rules                                |
+| List extras         | `a.`, `i.`               | `<ol type="a">`, `<ol type="i">`                          |
+| Task lists          | `- [x] done`             | A disabled checkbox                                       |
+| Diagrams            | `` ```mermaid ``         | `<pre class="mermaid">`                                   |
+| Auto links          | `www.example.com`        | A link, with `https` for a `www` host                     |
+| Relative file links | `[About](about.md)`      | `href="about.html"`, a fragment kept                      |
+| YAML front matter   | `---`                    | Read as front matter, and left out of the body            |
 
 Two of these need more care than the table suggests. Indent a definition far enough that its text starts at the
 fourth column, so `:   Text` makes a definition list and `: Text` makes a paragraph. Strikethrough is the only
 emphasis extra switched on, so `==mark==`, `^super^`, and `~sub~` render as the literal characters.
+
+A link to another Markdown file names the page Gelyn renders from it, so link your sources as they sit beside
+each other. A relative link needs no base path, because the browser resolves it against the page it is on. A
+root-relative link such as `[About](/about.md)` gets no path of `BaseUrl`: with `https://example.com/blog` it
+leads to `/about.html` and not to `/blog/about.html`, so write the relative form instead.
 
 `[TOC]` alone on a line becomes a table of contents for the page it stands in: a `<nav class="toc"
 role="doc-toc">` holding an `<ol>` of every heading from `##` down, nested by level, each entry linking to the
