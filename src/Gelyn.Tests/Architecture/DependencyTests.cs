@@ -32,6 +32,8 @@ public class DependencyTests : ArchBase
     [Arguments(ComponentsNamespace, CommandsNamespace)]
     [Arguments(ComponentsNamespace, ServicesNamespace)]
     [Arguments(ServicesNamespace, CommandsNamespace)]
+    [Arguments(CoreNamespace, CommandsNamespace)]
+    [Arguments(CoreNamespace, ServicesNamespace)]
     public void Dependency_Test_TheLowerNamespaceDoesNotDependOnTheHigherOne(string lower, string higher)
     {
         // Arrange

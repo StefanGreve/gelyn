@@ -1,3 +1,4 @@
+using System;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -30,13 +31,15 @@ public partial class ToolTests
     }
 
     /// <summary>
-    ///     Verifies that the stamped revision is a full commit hash.
+    ///     Verifies that the stamped revision is a full commit hash, and that a build on CI, which always runs
+    ///     inside the repository, stamps one.
     /// </summary>
     [Test]
     public async Task Revision_Test_IsAFullCommitHash()
     {
         // Arrange
-        Skip.When(Tool.Revision is null, "Built outside a git repository, so no revision was stamped.");
+        bool isContinuousIntegration = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
+        Skip.When(Tool.Revision is null && !isContinuousIntegration, "Built outside a git repository, so no revision was stamped.");
 
         // Assert
         await Assert.That(Tool.Revision).Matches(CommitHash());

@@ -17,9 +17,9 @@ public class DeclarationTests : ArchBase
     /// </summary>
     /// <remarks>
     ///     A sealed class lets the AOT compiler dispatch calls directly, which is what
-    ///     <c>OptimizationPreference=Size</c> benefits from. A static class satisfies the rule as declared,
-    ///     the compiler emitting it as abstract and sealed, so the rule bites on the records and the service
-    ///     classes alone. An abstract class cannot be sealed, and each contract has one sealed implementation,
+    ///     <c>OptimizationPreference=Speed</c> benefits from. A static class satisfies the rule as declared,
+    ///     the compiler emitting it as abstract and sealed, so the rule bites on every class that is not
+    ///     static: the records, the options, the services, the commands and the validators. An abstract class cannot be sealed, and each contract has one sealed implementation,
     ///     which <see cref="Declaration_Test_AbstractClassesAndAbstractionsCoincide"/> keeps in its place.
     /// </remarks>
     [Test]

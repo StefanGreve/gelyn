@@ -316,7 +316,7 @@ public class HeadComponentTests
 
     /// <summary>
     ///     Verifies that no page announces a feed unless both switches are on, the file being written only
-    ///     when both are, and that a page announces none by default.
+    ///     when both are, even with an entry to publish, and that a page announces none by default.
     /// </summary>
     [Test]
     [Arguments(null, true)]
@@ -332,7 +332,7 @@ public class HeadComponentTests
         };
 
         // Act
-        string head = Render(options);
+        string head = Render(options, hasFeedEntry: true);
 
         // Assert
         await Assert.That(head).DoesNotContain("""rel="alternate""");

@@ -56,8 +56,14 @@ public class FooterComponentTests
         string footer = Render(options);
 
         // Assert
-        await Assert.That(footer.IndexOf(">Mastodon<", StringComparison.Ordinal))
-            .IsLessThan(footer.IndexOf(">GitHub<", StringComparison.Ordinal));
+        int mastodon = footer.IndexOf(">Mastodon<", StringComparison.Ordinal);
+        int gitHub = footer.IndexOf(">GitHub<", StringComparison.Ordinal);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(mastodon).IsGreaterThanOrEqualTo(0);
+            await Assert.That(gitHub).IsGreaterThan(mastodon);
+        }
     }
 
     /// <summary>
@@ -90,8 +96,14 @@ public class FooterComponentTests
         string footer = Render(options, revised: "2026-10-25");
 
         // Assert
-        await Assert.That(footer.IndexOf("</ul>", StringComparison.Ordinal))
-            .IsLessThan(footer.IndexOf("<span>", StringComparison.Ordinal));
+        int list = footer.IndexOf("</ul>", StringComparison.Ordinal);
+        int colophon = footer.IndexOf("<span>", StringComparison.Ordinal);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(list).IsGreaterThanOrEqualTo(0);
+            await Assert.That(colophon).IsGreaterThan(list);
+        }
     }
 
     #endregion // Link List Tests
@@ -168,6 +180,32 @@ public class FooterComponentTests
         await Assert.That(footer)
             .Contains("""<a href="/sitemap.xml">Sitemap</a>""")
             .And.DoesNotContain("feed.xml");
+    }
+
+    /// <summary>
+    ///     Verifies that a document whose switch is off is left out, even with a base URL and a feed entry,
+    ///     the build writing no file for the link to address, while the other document stays linked.
+    /// </summary>
+    [Test]
+    [Arguments(false, true, "/feed.xml", "/sitemap.xml")]
+    [Arguments(true, false, "/sitemap.xml", "/feed.xml")]
+    public async Task Render_Test_GeneratedEntry_IsLeftOutWhenItsSwitchIsOff(bool enableFeed, bool enableSitemap, string absent, string present)
+    {
+        // Arrange
+        var options = new SiteOptions
+        {
+            BaseUrl = new Uri("https://example.com", UriKind.Absolute),
+            EnableFeed = enableFeed,
+            EnableSitemap = enableSitemap,
+        };
+
+        // Act
+        string footer = Render(options, hasFeedEntry: true);
+
+        // Assert
+        await Assert.That(footer)
+            .Contains($"""<a href="{present}">""")
+            .And.DoesNotContain($"""<a href="{absent}">""");
     }
 
     /// <summary>

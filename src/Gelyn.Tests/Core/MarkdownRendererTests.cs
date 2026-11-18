@@ -31,6 +31,13 @@ public class MarkdownRendererTests
     [Arguments("$$x^2$$", """<span class="math">""")]
     [Arguments("[Usage](usage.md)", """<a href="usage.html">""")]
     [Arguments("[Preview](usage.md#preview)", """<a href="usage.html#preview">""")]
+    [Arguments("> [!NOTE]\n> Heads up", """class="markdown-alert markdown-alert-note""")]
+    [Arguments("*[HTML]: HyperText Markup Language\n\nWrite HTML", """<abbr title="HyperText Markup Language">HTML</abbr>""")]
+    [Arguments("[TOC]\n\n## First\n\n## Second", """<nav class="toc" role="doc-toc">""")]
+    [Arguments("a \"\"quoted\"\" work", "<cite>quoted</cite>")]
+    [Arguments("^^^\n![Logo](logo.png)\n^^^ The logo", "<figcaption>The logo</figcaption>")]
+    [Arguments("a. one\na. two", """<ol type="a">""")]
+    [Arguments("```mermaid\ngraph LR\n```", """<pre class="mermaid">""")]
     public async Task Render_Test_EnabledExtension_ReachesTheOutput(string markdown, string expected)
     {
         // Act

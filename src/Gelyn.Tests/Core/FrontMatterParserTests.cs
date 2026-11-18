@@ -9,6 +9,8 @@ using Gelyn.Model;
 
 using SharpYaml;
 
+using TUnit.Assertions.Enums;
+
 namespace Gelyn.Tests.Core;
 
 /// <summary>
@@ -188,7 +190,7 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that keys outside the recognized vocabulary are ignored and never rejected.
+    ///     Verifies that keys outside the recognized vocabulary are skipped and never fail the block.
     /// </summary>
     [Test]
     public async Task TryParse_Test_UnrecognizedKeys_AreIgnored()
@@ -380,8 +382,7 @@ public class FrontMatterParserTests
         {
             await Assert.That(result?.Title).IsEqualTo("Home");
             await Assert.That(isComplete).IsFalse();
-            await Assert.That(unknownKeys?.Select(static key => key.Name)).IsEquivalentTo(["author", "tags"]);
-            await Assert.That(unknownKeys?.Select(static key => key.Line)).IsEquivalentTo([2, 4]);
+            await Assert.That(unknownKeys?.Select(static key => (key.Name, key.Line))).IsEquivalentTo([("author", 2), ("tags", 4)], CollectionOrdering.Matching);
         }
     }
 

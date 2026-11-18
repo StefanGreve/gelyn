@@ -227,8 +227,8 @@ internal sealed class DiskFixture : IDisposable
     /// </summary>
     public void Dispose()
     {
-        // Tolerated, because a fixture whose creation failed part way leaves the test with the failure that
-        // matters instead of with one from the cleanup.
+        // Tolerated, because a fixture whose creation failed part way, or a file Windows still holds open for a
+        // moment, leaves the test with the failure that matters instead of with one from the cleanup.
         try
         {
             // Cleared first, because Windows refuses to delete a read-only file.
@@ -237,7 +237,7 @@ internal sealed class DiskFixture : IDisposable
 
             Directory.Delete(this.Root, recursive: true);
         }
-        catch (DirectoryNotFoundException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
         }
     }

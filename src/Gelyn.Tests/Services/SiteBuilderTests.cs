@@ -132,7 +132,7 @@ public partial class SiteBuilderTests
         byte[] actual = await fixture.FileSystem.File
             .ReadAllBytesAsync(Path.Combine(fixture.OutputRoot, "logo.png"), CancellationToken.None);
 
-        await Assert.That(actual).IsEquivalentTo(expected);
+        await Assert.That(actual).IsEquivalentTo(expected, CollectionOrdering.Matching);
     }
 
     /// <summary>
@@ -443,8 +443,14 @@ public partial class SiteBuilderTests
         // Assert
         string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
 
-        await Assert.That(markup.IndexOf("/shiki@", StringComparison.Ordinal))
-            .IsLessThan(markup.IndexOf("/app.js", StringComparison.Ordinal));
+        int shiki = markup.IndexOf("/shiki@", StringComparison.Ordinal);
+        int app = markup.IndexOf("/app.js", StringComparison.Ordinal);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(shiki).IsGreaterThanOrEqualTo(0);
+            await Assert.That(app).IsGreaterThan(shiki);
+        }
     }
 
     /// <summary>
@@ -567,6 +573,8 @@ public partial class SiteBuilderTests
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
+        await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
+
         foreach (string page in fixture.EnumerateOutput())
         {
             string[] navigation = [.. ReadNavigation(fixture, page)];
@@ -595,6 +603,8 @@ public partial class SiteBuilderTests
         await fixture.Builder.BuildAsync(CancellationToken.None);
 
         // Assert
+        await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
+
         foreach (string page in fixture.EnumerateOutput())
         {
             await Assert.That(ReadNavigationTitles(fixture, page)).IsEquivalentTo(expected, CollectionOrdering.Matching);
@@ -687,6 +697,8 @@ public partial class SiteBuilderTests
         // Assert
         using (Assert.Multiple())
         {
+            await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(4);
+
             foreach (string page in fixture.EnumerateOutput())
             {
                 await Assert.That(fixture.ReadOutput(page))
@@ -858,13 +870,15 @@ public partial class SiteBuilderTests
         // Assert
         string html = ReadPage(fixture, "index.html");
 
+        int header = html.IndexOf("<header>", StringComparison.Ordinal);
+        int main = html.IndexOf("<main>", StringComparison.Ordinal);
+        int footer = html.IndexOf("<footer>", StringComparison.Ordinal);
+
         using (Assert.Multiple())
         {
-            await Assert.That(html.IndexOf("<header>", StringComparison.Ordinal))
-                .IsLessThan(html.IndexOf("<main>", StringComparison.Ordinal));
-
-            await Assert.That(html.IndexOf("<main>", StringComparison.Ordinal))
-                .IsLessThan(html.IndexOf("<footer>", StringComparison.Ordinal));
+            await Assert.That(header).IsGreaterThanOrEqualTo(0);
+            await Assert.That(main).IsGreaterThan(header);
+            await Assert.That(footer).IsGreaterThan(main);
         }
     }
 
@@ -1908,6 +1922,40 @@ public partial class SiteBuilderTests
     #region Counter Tests
 
     /// <summary>
+    ///     Verifies that a build below the debug level, which is how every run starts by default, measures no
+    ///     phase and still writes and reports exactly what a measured build does.
+    /// </summary>
+    /// <remarks>
+    ///     Every fixture defaults to the debug level, so this is the one test that takes the path a build
+    ///     takes when nobody asked for its timings.
+    /// </remarks>
+    [Test]
+    public async Task BuildAsync_Test_UnmeasuredBuild_MatchesAMeasuredOne()
+    {
+        // Arrange
+        var measured = ContentFixture.Create();
+        var unmeasured = ContentFixture.Create(LogLevel.Warning);
+
+        // Act
+        BuildReport expected = await measured.Builder.BuildAsync(CancellationToken.None);
+        BuildReport actual = await unmeasured.Builder.BuildAsync(CancellationToken.None);
+
+        IReadOnlyDictionary<string, byte[]> expectedOutput = Snapshot(measured);
+        IReadOnlyDictionary<string, byte[]> actualOutput = Snapshot(unmeasured);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(actual.Pages).IsEquivalentTo(expected.Pages, CollectionOrdering.Matching);
+            await Assert.That(actual.Copies).IsEquivalentTo(expected.Copies, CollectionOrdering.Matching);
+            await Assert.That(actualOutput.Keys).IsEquivalentTo(expectedOutput.Keys);
+            await Assert.That(Differing(expectedOutput, actualOutput)).IsEmpty();
+            await Assert.That(Reports(unmeasured, EventIds.SCAN_COMPLETED)).IsEmpty();
+            await Assert.That(Reports(measured, EventIds.SCAN_COMPLETED)).IsNotEmpty();
+        }
+    }
+
+    /// <summary>
     ///     Verifies that the build reports one counter per phase, in the order the phases run, with the heap
     ///     figures ahead of the total.
     /// </summary>
@@ -2343,6 +2391,78 @@ public partial class SiteBuilderTests
     }
 
     #endregion // Unknown Key Tests
+
+    #region Document Shell Tests
+
+    /// <summary>
+    ///     Verifies that every document declares the configured language on its root element.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Document_DeclaresTheConfiguredLanguage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty().WriteFile("index.md", "# Home");
+        fixture.Options.Language = "de-DE";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(ReadPage(fixture, "index.html")).Contains("""<html lang="de-DE">""");
+    }
+
+    /// <summary>
+    ///     Verifies that markup characters in a navigation title and in the description reach the page as
+    ///     text, so that a title such as <c>Q&amp;A</c> neither breaks the banner nor injects an element.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_TitleAndDescription_AreEscaped()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("index.md", "# Home")
+            .WriteFile("about.md", "---\ntitle: \"Q&A <now>\"\n---");
+
+        fixture.Options.Description = "Tips & \"tricks\" <here>";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        string page = ReadPage(fixture, "index.html");
+
+        // Assert
+        await Assert.That(page)
+            .Contains(""">Q&amp;A &lt;now&gt;</a>""")
+            .And.Contains("""<meta name="description" content="Tips &amp; &quot;tricks&quot; &lt;here&gt;">""")
+            .And.DoesNotContain("<now>")
+            .And.DoesNotContain("<here>");
+    }
+
+    /// <summary>
+    ///     Verifies that a file name carrying URL and markup characters reaches every href percent-encoded, so
+    ///     that the name neither ends the attribute nor the path.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_FileNames_ArePercentEncodedInEveryHref()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteFile("index.md", "# Home")
+            .WriteFile("q&a.md", "# Questions")
+            .WriteFile("a&b'c.css")
+            .WriteFile("a&b'c.js");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        string page = ReadPage(fixture, "index.html");
+
+        // Assert
+        await Assert.That(page)
+            .Contains("""href="/q%26a.html">""")
+            .And.Contains("""<link rel="stylesheet" href="/a%26b%27c.css">""")
+            .And.Contains("""<script defer src="/a%26b%27c.js"></script>""");
+    }
+
+    #endregion // Document Shell Tests
 
     #region Helpers
 

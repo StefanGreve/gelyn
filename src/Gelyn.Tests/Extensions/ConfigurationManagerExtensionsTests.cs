@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
@@ -207,29 +206,17 @@ public class ConfigurationManagerExtensionsTests
     /// <remarks>
     ///     Configuration merges an array per index, so writing at index zero would yield the promoted pattern
     ///     alone and silently drop the configured one. Keys are compared numerically, which is what lets the
-    ///     offset append. Driven against the binder instead of through
-    ///     <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/>, which would read whatever
-    ///     <c>gelyn.json</c> the working directory happens to hold.
+    ///     offset append.
     /// </remarks>
     [Test]
     public async Task Exclude_Test_PromotedPatterns_AreAppendedToTheConfiguredOnes()
     {
         // Arrange
-        IConfigurationRoot configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ExcludePatterns:0"] = "from-file",
-            })
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                [$"ExcludePatterns:{OverrideOptions.ExcludeOffset}"] = "from-flag",
-            })
-            .Build();
-
-        var options = new SiteOptions();
+        ParseResult parsed = Parse("build", "--exclude", "from-flag");
+        var configured = new Dictionary<string, string?> { ["ExcludePatterns:0"] = "from-file" };
 
         // Act
-        configuration.Bind(options);
+        SiteOptions options = Bind(parsed, configured);
 
         // Assert
         await Assert.That(options.ExcludePatterns).IsEquivalentTo(["from-file", "from-flag"]);
@@ -257,98 +244,6 @@ public class ConfigurationManagerExtensionsTests
     }
 
     #endregion // Exclude Promotion Tests
-
-    #region Footer Link Tests
-
-    /// <summary>
-    ///     Verifies that indexed keys naming the members of a footer link reach the options as one link,
-    ///     which is the shape a configuration file and the environment both flatten to.
-    /// </summary>
-    [Test]
-    public async Task FooterLinks_Test_IndexedKeys_ReachTheOptions()
-    {
-        // Arrange
-        IConfigurationRoot configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["FooterLinks:0:Label"] = "GitHub",
-                ["FooterLinks:0:Url"] = "https://github.com/octocat",
-            })
-            .Build();
-
-        var options = new SiteOptions();
-
-        // Act
-        configuration.Bind(options);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(options.FooterLinks).Count().IsEqualTo(1);
-            await Assert.That(options.FooterLinks[0].Label).IsEqualTo("GitHub");
-            await Assert.That(options.FooterLinks[0].Url).IsEqualTo(new Uri("https://github.com/octocat"));
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that a configuration file setting the list to <c>null</c> leaves the default empty list in
-    ///     place, which every consumer relies on by reading the list without a null check.
-    /// </summary>
-    /// <remarks>
-    ///     Driven through the JSON provider, because how a <c>null</c> reaches the binder is that provider's
-    ///     decision, and an in-memory key would not show it.
-    /// </remarks>
-    [Test]
-    public async Task FooterLinks_Test_NullValue_LeavesTheListEmpty()
-    {
-        // Arrange
-        using var json = new MemoryStream(Encoding.UTF8.GetBytes("""{ "FooterLinks": null }"""));
-
-        IConfigurationRoot configuration = new ConfigurationBuilder()
-            .AddJsonStream(json)
-            .Build();
-
-        var options = new SiteOptions();
-
-        // Act
-        configuration.Bind(options);
-
-        // Assert
-        await Assert.That(options.FooterLinks).IsNotNull().And.IsEmpty();
-    }
-
-    #endregion // Footer Link Tests
-
-    #region Theme Tests
-
-    /// <summary>
-    ///     Verifies that a configuration file setting the theme to <c>null</c>, which the schema documents as
-    ///     the default, applies none, instead of naming an empty theme the validator would reject.
-    /// </summary>
-    /// <remarks>
-    ///     Driven through the JSON provider, because how a <c>null</c> reaches the binder is that provider's
-    ///     decision, and an in-memory key would not show it.
-    /// </remarks>
-    [Test]
-    public async Task Theme_Test_NullValue_AppliesNone()
-    {
-        // Arrange
-        using var json = new MemoryStream(Encoding.UTF8.GetBytes("""{ "Theme": null }"""));
-
-        IConfigurationRoot configuration = new ConfigurationBuilder()
-            .AddJsonStream(json)
-            .Build();
-
-        var options = new SiteOptions();
-
-        // Act
-        configuration.Bind(options);
-
-        // Assert
-        await Assert.That(options.Theme).IsNull();
-    }
-
-    #endregion // Theme Tests
 
     #region Configuration File Tests
 

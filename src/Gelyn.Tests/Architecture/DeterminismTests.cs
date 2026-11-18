@@ -36,11 +36,12 @@ public class DeterminismTests : ArchBase
     ///     Verifies that no type taking part in rendering reads the current time.
     /// </summary>
     /// <remarks>
-    ///     A page's bytes depend on its own sources and the tool version alone, which
+    ///     A page's bytes depend on its sources, the configuration and the tool version alone, which
     ///     <c>SiteBuilderTests.BuildAsync_Test_SameTree_ProducesIdenticalBytes</c> asserts by building one tree
     ///     several times. Those builds fall on the same day, so a date read off the clock passes that test, and
     ///     this rule is what catches it. Only direct calls are seen, which leaves <c>Gelyn.Extensions</c> as the
-    ///     one route around it; the services are no route, because the components may not depend on them.
+    ///     one route around it; the services are no route, because neither the components nor the core may
+    ///     depend on them.
     /// </remarks>
     [Test]
     [Arguments(ComponentsNamespace)]

@@ -26,6 +26,11 @@
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- PreserveNewest never deletes, so a theme file removed from the source would linger in the copy. -->
+  <Target Name="RemoveStaleThemeCopies" BeforeTargets="PrepareForBuild">
+    <RemoveDir Directories="$(OutDir)themes" />
+  </Target>
+
   <ItemGroup>
     <ProjectReference Include="../Gelyn/Gelyn.csproj" />
     <ProjectReference Include="../Gelyn.Schema/Gelyn.Schema.csproj" ReferenceOutputAssembly="false" />

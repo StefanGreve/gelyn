@@ -178,8 +178,9 @@ public class SitemapTests
     ///     Verifies that an ampersand in a location is escaped, and reads back as the URL that went in.
     /// </summary>
     /// <remarks>
-    ///     It is the one character on the protocol's escape table that survives URL encoding, being legal in
-    ///     a path, so it reaches the writer as itself and would otherwise open an entity reference.
+    ///     It is one of the two characters on the protocol's escape table that survive URL encoding, being legal
+    ///     in a path, and unlike the apostrophe, it would open an entity reference if it reached the document
+    ///     as itself.
     /// </remarks>
     [Test]
     public async Task Render_Test_AmpersandInALocation_IsEscaped()

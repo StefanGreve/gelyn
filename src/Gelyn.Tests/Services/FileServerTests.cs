@@ -14,6 +14,8 @@ using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging.Testing;
 
+using TUnit.Assertions.Enums;
+
 namespace Gelyn.Tests.Services;
 
 /// <summary>
@@ -121,7 +123,7 @@ public class FileServerTests
         using (Assert.Multiple())
         {
             await Assert.That(response.Content.Headers.ContentType?.ToString()).IsEqualTo("image/png");
-            await Assert.That(body).IsEquivalentTo(expected);
+            await Assert.That(body).IsEquivalentTo(expected, CollectionOrdering.Matching);
             await Assert.That(response.Content.Headers.ContentLength).IsEqualTo(expected.Length);
         }
     }

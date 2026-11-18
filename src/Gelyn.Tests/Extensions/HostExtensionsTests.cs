@@ -34,9 +34,12 @@ public class HostExtensionsTests
         // Arrange
         using var fixture = DiskFixture.Create();
         string original = Directory.GetCurrentDirectory();
+        string? contentRoot = Environment.GetEnvironmentVariable(ContentRootVariable);
 
         try
         {
+            // A content root inherited from the shell would win over the working directory.
+            Environment.SetEnvironmentVariable(ContentRootVariable, null);
             Directory.SetCurrentDirectory(fixture.Root);
 
             // Read back rather than taken from the fixture, because the file system may report the directory
@@ -57,6 +60,7 @@ public class HostExtensionsTests
         finally
         {
             Directory.SetCurrentDirectory(original);
+            Environment.SetEnvironmentVariable(ContentRootVariable, contentRoot);
         }
     }
 

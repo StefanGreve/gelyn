@@ -19,7 +19,7 @@ public class NamingTests : ArchBase
     ///     The suffix is what makes a namespace self-describing, and the rule catches a type filed under
     ///     the wrong one. Only the namespaces named after what they hold are listed; the model, the core
     ///     and the options carry no such convention. For <c>Gelyn.Core.Context</c> the suffix is mandatory
-    ///     by convention rather than merely habitual, which is what this rule turns into a build failure.
+    ///     by convention rather than merely habitual, which is what this rule turns into a test failure.
     /// </remarks>
     [Test]
     [Arguments(AbstractionsNamespace, "Contract")]

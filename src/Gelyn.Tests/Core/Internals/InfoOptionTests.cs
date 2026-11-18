@@ -29,7 +29,10 @@ public class InfoOptionTests
 {
     private const string Undefined = "(undefined)";
 
-    private static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    private const string HomeAtRoot = "The home directory is the root, which the option never shortens.";
+
+    // Trimmed as the option trims it, so that a trailing separator changes neither side.
+    private static readonly string Home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
     private static readonly char Separator = Path.DirectorySeparatorChar;
 
     #region Report Tests
@@ -207,6 +210,8 @@ public class InfoOptionTests
     public async Task Configuration_Test_FileThatWasRead_IsReportedByItsPath(string name, bool optional)
     {
         // Arrange
+        Skip.When(Home.Length == 0, HomeAtRoot);
+
         ConfigurationFileStatus file = Status(Path.Combine(Home, "site", name), optional, exists: true);
 
         // Act
@@ -224,6 +229,8 @@ public class InfoOptionTests
     public async Task Configuration_Test_RequestedFileThatIsMissing_IsReportedAsNotFound()
     {
         // Arrange
+        Skip.When(Home.Length == 0, HomeAtRoot);
+
         string path = Path.Combine(Home, "site", "prod.json");
         ConfigurationFileStatus file = Status(path, optional: false, exists: false, new FileNotFoundException("not found", path));
 
@@ -242,6 +249,8 @@ public class InfoOptionTests
     public async Task Configuration_Test_FileThatDoesNotParse_IsReportedAsNotReadable()
     {
         // Arrange
+        Skip.When(Home.Length == 0, HomeAtRoot);
+
         string path = Path.Combine(Home, "site", ConfigurationFile.DefaultFileName);
         var cause = new FormatException($"'{path}' is not valid JSON. LineNumber: 0 | BytePositionInLine: 11.");
         ConfigurationFileStatus file = Status(path, optional: true, exists: true, new InvalidDataException("Failed to load configuration.", cause));
@@ -277,7 +286,7 @@ public class InfoOptionTests
 
         // Assert
         string reported = Value(output, "AppSettings");
-        string named = path.StartsWith(Home, StringComparison.OrdinalIgnoreCase) ? $"~{path[Home.Length..]}" : path;
+        string named = Home.Length > 0 && path.StartsWith(Home, StringComparison.OrdinalIgnoreCase) ? $"~{path[Home.Length..]}" : path;
 
         using (Assert.Multiple())
         {
@@ -292,6 +301,9 @@ public class InfoOptionTests
     [Test]
     public async Task Configuration_Test_ContentRootBelowTheHomeDirectory_IsShortened()
     {
+        // Arrange
+        Skip.When(Home.Length == 0, HomeAtRoot);
+
         // Act
         string atHome = Report(Create(contentRoot: Home));
         string belowHome = Report(Create(contentRoot: Path.Combine(Home, "site")));
