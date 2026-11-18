@@ -55,9 +55,14 @@ otherwise ignore in silence.
 | `ShikiVersion`     | `4.6.0`   | Pins the Shiki release a page loads when its front matter enables syntax highlighting.                  |
 | `Giscus`           | unset     | Names the GitHub Discussions backend of the comment threads. See [Comments](#comments).                 |
 | `ContentDirectory` | `content` | Points at the directory Gelyn builds from, Markdown and copies alike.                                   |
-| `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to, overwriting the files already there.                  |
+| `OutputDirectory`  | `_site`   | Points at the directory Gelyn writes the site to. A build deletes every other file there.               |
 | `ExcludePatterns`  | `[]`      | Lists the names Gelyn skips while walking your content tree. See [Exclude patterns](#exclude-patterns). |
 | `Port`             | `9624`    | Sets the loopback port `gelyn serve` listens on, from 1 to 65535. See [Port](#port).                    |
+
+> [!WARNING]
+> A build deletes every file in `OutputDirectory` that it didn't write, so point it at a directory that holds
+> nothing else. Only an entry whose name starts with a dot and a symbolic link are left alone. See
+> [Rebuilds](usage.md#rebuilds).
 
 Gelyn resolves both directories against the content root, which is the directory you run `gelyn` from unless
 the `DOTNET_CONTENTROOT` environment variable points somewhere else. A relative `DOTNET_CONTENTROOT` resolves

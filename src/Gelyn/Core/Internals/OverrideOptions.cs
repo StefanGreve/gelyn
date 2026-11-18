@@ -117,7 +117,7 @@ internal static class OverrideOptions
             Arity = ArgumentArity.ExactlyOne,
         },
         CreateContentOption(),
-        CreateOutputOption(),
+        CreateOutputOption("The directory the generated site is written to. A build deletes every file in it that it did not write, except dot-prefixed entries and links."),
         new Option<string>($"--{Exclude}")
         {
             Description = $"Further name patterns to skip, separated by '{ExcludeSeparator}'.",
@@ -135,7 +135,7 @@ internal static class OverrideOptions
     internal static IReadOnlyList<Option> DirectoryDefinitions =>
     [
         CreateContentOption(),
-        CreateOutputOption(),
+        CreateOutputOption("The directory to remove."),
     ];
 
     private static Option<string> CreateContentOption() => new($"--{Content}")
@@ -144,9 +144,9 @@ internal static class OverrideOptions
         HelpName = "directory",
     };
 
-    private static Option<string> CreateOutputOption() => new($"--{Output}")
+    private static Option<string> CreateOutputOption(string description) => new($"--{Output}")
     {
-        Description = "The directory the generated site is written to.",
+        Description = description,
         HelpName = "directory",
     };
 }
