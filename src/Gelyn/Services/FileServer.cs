@@ -183,7 +183,7 @@ internal sealed class FileServer : FileServerContract
             {
                 break;
             }
-            catch (ObjectDisposedException) when (cancellationToken.IsCancellationRequested)
+            catch (InvalidOperationException) when (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
