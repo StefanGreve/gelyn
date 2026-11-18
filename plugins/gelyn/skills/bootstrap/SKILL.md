@@ -64,7 +64,8 @@ keeping that name whatever the answer, so a theme can be swapped later without t
 from here; step 3 writes it.
 
 Navigation follows depth, so `index.md` and `blog/index.md` are linked in the banner and `blog/hello.md` is
-not. Keep further posts beside `hello.md` to inherit that.
+not. The `[TOD]` marker in `blog/index.md` lists the posts instead, each one that declares a `date`. Keep
+further posts beside `hello.md` to inherit that.
 
 ## 5. Ask about JavaScript, and write none
 
