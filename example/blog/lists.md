@@ -13,10 +13,12 @@ A task list renders a disabled checkbox per item:
 - [x] Dated
 - [ ] Linked from anywhere by hand
 
-Numbering takes a style from the marker it opens with, so `a.` and `i.` carry across to the published list:
+Numbering takes a style from the marker it opens with, so a list opening with `a.` is lettered:
 
 a. Lettered
 a. And lower case
+
+A list opening with `i.` counts in roman numerals:
 
 i. Numbered
 i. In roman
