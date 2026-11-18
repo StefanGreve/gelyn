@@ -1921,6 +1921,122 @@ public partial class SiteBuilderTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that renaming sources in case alone renames their output, files and directories alike, and
+    ///     reports the old spellings as removed. Driven against the real disk, because <c>MockFileSystem</c> gives a
+    ///     copy that replaces a file the new spelling, which NTFS and APFS do not, and would hide the bug there.
+    /// </summary>
+    [Test]
+    [Category(Categories.Integration)]
+    [Category(Categories.Regression)]
+    public async Task BuildAsync_Test_CaseOnlyRename_RenamesTheOutput()
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .Write("About.md", "# About")
+            .Write("Blog/index.md", "# Blog")
+            .Write("Blog/post.md", "# Post")
+            .Write("Style.css", "body { margin: 0; }");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        RenameInCase(fixture.ContentRoot, "About.md", "about.md");
+        RenameInCase(fixture.ContentRoot, "Blog", "blog");
+        RenameInCase(fixture.ContentRoot, "Style.css", "style.css");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] output = [.. Directory
+            .EnumerateFiles(fixture.OutputRoot, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(fixture.OutputRoot, path).Replace('\\', '/'))
+            .Order(StringComparer.Ordinal)];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(output).IsEquivalentTo(["about.html", "blog/index.html", "blog/post.html", "index.html", "style.css"], CollectionOrdering.Matching);
+            await Assert.That(report.Removed).Contains("About.html");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a directory renamed in case alone takes its new spelling even while an entry starting with
+    ///     a dot keeps it, such as the <c>.DS_Store</c> Finder leaves behind, so that its pages are written under the
+    ///     published spelling and the next build removes nothing. A disk that respects case keeps the two spellings
+    ///     apart, as the dot rule demands, so the test runs where they resolve to one directory alone.
+    /// </summary>
+    [Test]
+    [Category(Categories.Integration)]
+    [Category(Categories.Regression)]
+    public async Task BuildAsync_Test_CaseOnlyRenameOfADirectoryWithADotEntry_RenamesTheDirectory()
+    {
+        // Arrange
+        Skip.Unless(DiskFixture.IgnoresCase, "Only a disk that ignores case resolves both spellings to one directory.");
+
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .Write("Blog/index.md", "# Blog");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.WriteOutside(Path.Combine(fixture.Options.OutputDirectory, "Blog", ".DS_Store"), string.Empty);
+        RenameInCase(fixture.ContentRoot, "Blog", "blog");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport next = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] directories = [.. new DirectoryInfo(fixture.OutputRoot).EnumerateDirectories().Select(static directory => directory.Name)];
+        string[] kept = [.. new DirectoryInfo(Path.Combine(fixture.OutputRoot, "blog")).EnumerateFiles().Select(static file => file.Name).Order(StringComparer.Ordinal)];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(directories).IsEquivalentTo(["blog"]);
+            await Assert.That(kept).IsEquivalentTo([".DS_Store", "index.html"], CollectionOrdering.Matching);
+            await Assert.That(next.Removed).IsEmpty();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that on a disk that respects case, a directory an entry starting with a dot keeps stays apart
+    ///     from the new spelling, as the dot rule demands, and that neither is renamed into the other.
+    /// </summary>
+    [Test]
+    [Category(Categories.Integration)]
+    [Category(Categories.Regression)]
+    public async Task BuildAsync_Test_CaseOnlyRenameOfADirectoryWithADotEntry_KeepsBothSpellingsApart()
+    {
+        // Arrange
+        Skip.When(DiskFixture.IgnoresCase, "A disk that ignores case resolves both spellings to one directory.");
+
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .Write("Blog/index.md", "# Blog");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.WriteOutside(Path.Combine(fixture.Options.OutputDirectory, "Blog", ".DS_Store"), string.Empty);
+        RenameInCase(fixture.ContentRoot, "Blog", "blog");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport next = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string[] directories = [.. new DirectoryInfo(fixture.OutputRoot).EnumerateDirectories().Select(static directory => directory.Name).Order(StringComparer.Ordinal)];
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(directories).IsEquivalentTo(["Blog", "blog"], CollectionOrdering.Matching);
+            await Assert.That(File.Exists(Path.Combine(fixture.OutputRoot, "Blog", ".DS_Store"))).IsTrue();
+            await Assert.That(File.Exists(Path.Combine(fixture.OutputRoot, "blog", "index.html"))).IsTrue();
+            await Assert.That(next.Removed).IsEmpty();
+        }
+    }
+
     #endregion // PruneOutput Tests
 
     #region Counter Tests
@@ -1976,9 +2092,9 @@ public partial class SiteBuilderTests
         [
             EventIds.SCAN_COMPLETED,
             EventIds.RENDER_COMPLETED,
+            EventIds.REMOVE_COMPLETED,
             EventIds.COMPOSE_COMPLETED,
             EventIds.WRITE_COMPLETED,
-            EventIds.REMOVE_COMPLETED,
             EventIds.GARBAGE_COLLECTED,
             EventIds.BUILD_COMPLETED,
         ];
@@ -2469,6 +2585,25 @@ public partial class SiteBuilderTests
     #endregion // Document Shell Tests
 
     #region Helpers
+
+    // Through an intermediate name, because a file system that ignores case may take the direct move for a no-op.
+    private static void RenameInCase(string directory, string from, string to)
+    {
+        string source = Path.Combine(directory, from);
+        string transit = Path.Combine(directory, $"{from}.tmp");
+        string target = Path.Combine(directory, to);
+
+        if (Directory.Exists(source))
+        {
+            Directory.Move(source, transit);
+            Directory.Move(transit, target);
+        }
+        else
+        {
+            File.Move(source, transit);
+            File.Move(transit, target);
+        }
+    }
 
     private static GiscusOptions Commented() => new()
     {

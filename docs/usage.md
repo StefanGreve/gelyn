@@ -785,10 +785,12 @@ whatever is current, so there is no fixed file to hash.
 
 ## Rebuilds
 
-A build reconciles your output directory against your sources: it writes the pages, copies everything beside
-them, then deletes what is left over. Rename or delete a source and its output goes with it on the next build,
-reported as `removed`, and a directory left empty by those deletions is removed as well. Excluding a source
-through `ExcludePatterns` has the same effect, because the build removes whatever it no longer publishes.
+A build reconciles your output directory against your sources: it deletes what it no longer publishes, then
+writes the pages and copies everything beside them. Rename or delete a source and its output goes with it on the
+next build, reported as `removed`, and a directory left empty by those deletions is removed as well. A rename in
+case alone, such as `About.md` to `about.md` or `Blog/` to `blog/`, renames the output too, also on Windows and
+macOS, whose file systems ignore case by default. Excluding a source through `ExcludePatterns` has the same
+effect, because the build removes whatever it no longer publishes.
 
 An entry whose name starts with a dot is left alone, at every level, along with everything below it. That is
 what keeps a `_site` deployed as a git worktree from losing its `.git`, and a GitHub Pages site from losing its

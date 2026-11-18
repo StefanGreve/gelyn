@@ -7,8 +7,9 @@ namespace Gelyn.Core.Context;
 /// </summary>
 /// <remarks>
 ///     <see cref="Removed"/> is an accumulator rather than an input: every level appends to the one list, so
-///     the caller reads the whole walk's deletions off the instance it passed in. <see cref="Published"/> is
-///     read-only in practice, and only <see cref="Prefix"/> changes from one level to the next.
+///     the caller reads the whole walk's deletions off the instance it passed in. <see cref="Published"/> and
+///     <see cref="PublishedDirectories"/> are read-only in practice, and only <see cref="Prefix"/> changes from one
+///     level to the next.
 /// </remarks>
 internal sealed record PruneContext
 {
@@ -21,6 +22,13 @@ internal sealed record PruneContext
     ///     The output-relative path of every file the site consists of.
     /// </summary>
     public required HashSet<string> Published { get; init; }
+
+    /// <summary>
+    ///     The output-relative path of every directory a published file lands in, keyed without regard to case and
+    ///     mapped to the spelling it is published under, or to <see langword="null"/> when the published files spell
+    ///     it in more than one way.
+    /// </summary>
+    public required Dictionary<string, string?> PublishedDirectories { get; init; }
 
     /// <summary>
     ///     Receives the output-relative path of each file that was deleted.

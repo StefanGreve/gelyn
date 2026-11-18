@@ -27,7 +27,7 @@ internal sealed record BuildReport
     public required IReadOnlyList<string> Removed { get; init; }
 
     /// <summary>
-    ///     How long the build took, from discovery to the removal of stale output, but not the startup that
+    ///     How long the build took, from discovery to the last file it copied, but not the startup that
     ///     precedes it, which for a small site is the larger share of the time the caller waits.
     /// </summary>
     public required TimeSpan Elapsed { get; init; }

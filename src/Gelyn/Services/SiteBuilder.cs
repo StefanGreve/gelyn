@@ -25,6 +25,18 @@ namespace Gelyn.Services;
 ///     <list type="number">
 ///         <item>
 ///             <description>
+///                 <see cref="ComposeGenerated"/> composes the feed, the sitemap and the files of the theme,
+///                 each of which the configuration has to ask for.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
+///                 <see cref="PruneOutput"/> deletes the output the build no longer publishes, before anything
+///                 is written.
+///             </description>
+///         </item>
+///         <item>
+///             <description>
 ///                 <see cref="CreateOutputDirectories"/> creates every directory the located files land in.
 ///             </description>
 ///         </item>
@@ -35,18 +47,12 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="WriteGenerated"/> writes the feed, the sitemap and the files of the theme, each
-///                 of which the configuration has to ask for.
+///                 <see cref="WriteGenerated"/> writes the composed documents.
 ///             </description>
 ///         </item>
 ///         <item>
 ///             <description>
 ///                 <see cref="CopyAssets"/> copies every located file that is not a page.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="PruneOutput"/> deletes the output that no located file accounts for.
 ///             </description>
 ///         </item>
 ///     </list>
@@ -103,7 +109,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
         Task.Run(() => this.Build(cancellationToken), CancellationToken.None);
 
     /// <summary>
-    ///     Writes one counter per phase, followed by the heap figures and the build total.
+    ///     Writes one counter per phase, in the order the phases run, followed by the heap figures and the build
+    ///     total.
     /// </summary>
     /// <remarks>
     ///     The seam a test drives with durations of its own choosing. A build cannot supply them, because its
@@ -119,9 +126,9 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         this._logger.LogScanCompleted(counters.ItemCount, counters.ScanTicks.TotalMilliseconds);
         this._logger.LogRenderCompleted(counters.PageCount, counters.RenderTicks.TotalMilliseconds);
+        this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
         this._logger.LogComposeCompleted(counters.PageCount, counters.ComposeTicks.TotalMilliseconds);
         this._logger.LogWriteCompleted(counters.FileCount, counters.WriteTicks.TotalMilliseconds);
-        this._logger.LogRemoveCompleted(counters.RemovedCount, counters.RemoveTicks.TotalMilliseconds);
 
         GarbageCollectionContext heap = counters.GarbageCollection;
 
@@ -166,18 +173,22 @@ internal sealed class SiteBuilder : SiteBuilderContract
             throw new IOException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
 
         long outputStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        List<GeneratedDocument> composed = this.ComposeGenerated(items, pages, options);
+
+        // Ahead of every write, because a file system that ignores case keeps the spelling of a file a write
+        // replaces, which the ordinal comparison would then take for a leftover and delete.
+        long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        Collection<string> removed = this.PruneOutput(items, composed, outputDirectory, cancellationToken);
+        long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
+
         this.CreateOutputDirectories(items, outputDirectory);
 
         PageWriteContext write = this.WritePages(pages, options, outputDirectory, isMeasuring, cancellationToken);
-        List<string> generated = this.WriteGenerated(items, pages, options, outputDirectory);
+        string[] generated = this.WriteGenerated(composed, outputDirectory);
         string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
 
-        // Everything that reached the output directory counts as writing, except the share spent composing.
-        long writeTicks = isMeasuring ? Stopwatch.GetTimestamp() - outputStarted - write.ComposeTicks : 0;
-
-        long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-        Collection<string> removed = this.PruneOutput(items, generated, outputDirectory, cancellationToken);
-        long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
+        // The whole output pass counts as writing, except the shares spent pruning and composing pages.
+        long writeTicks = isMeasuring ? Stopwatch.GetTimestamp() - outputStarted - removeTicks - write.ComposeTicks : 0;
 
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
         TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
@@ -188,7 +199,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
             {
                 ItemCount = items.Count,
                 PageCount = pages.Count,
-                FileCount = write.Written.Count + generated.Count + copied.Length,
+                FileCount = write.Written.Count + generated.Length + copied.Length,
                 RemovedCount = removed.Count,
                 ScanTicks = scanTicks,
                 RenderTicks = renderTicks,
@@ -330,7 +341,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
         wholeTicks == 0 ? 0 : (long)((double)wallTicks * partTicks / wholeTicks);
 
     /// <summary>
-    ///     Writes the documents that no source file of their own stands behind: the feed, the sitemap and the
+    ///     Composes the documents that no source file of their own stands behind: the feed, the sitemap and the
     ///     files of the theme.
     /// </summary>
     /// <param name="items">
@@ -343,36 +354,29 @@ internal sealed class SiteBuilder : SiteBuilderContract
     ///     The site configuration, which switches each document on, supplies the origin the feed and the
     ///     sitemap need, and names the theme.
     /// </param>
-    /// <param name="outputDirectory">
-    ///     The absolute path of the directory the documents are written to, which already exists.
-    /// </param>
     /// <returns>
-    ///     The output-relative paths of the documents that were written, which is what exempts them from
-    ///     <see cref="PruneOutput"/>.
+    ///     The documents to write, whose paths are what exempts them from <see cref="PruneOutput"/>.
     /// </returns>
-    private List<string> WriteGenerated(
+    private List<GeneratedDocument> ComposeGenerated(
         IReadOnlyList<ContentItem> items,
         IReadOnlyList<ContentPage> pages,
-        SiteOptions options,
-        string outputDirectory)
+        SiteOptions options)
     {
-        List<string> generated = [];
+        List<GeneratedDocument> composed = [];
 
-        string? feed = this.WriteFeed(pages, options, outputDirectory);
+        if (this.ComposeFeed(pages, options) is byte[] feed)
+            composed.Add(new GeneratedDocument { Path = AtomFeed.FileName, Contents = feed });
 
-        if (feed is not null) generated.Add(feed);
+        if (this.ComposeSitemap(pages, options) is byte[] sitemap)
+            composed.Add(new GeneratedDocument { Path = Sitemap.FileName, Contents = sitemap });
 
-        string? sitemap = this.WriteSitemap(pages, options, outputDirectory);
+        composed.AddRange(this.CollectThemeFiles(items, options));
 
-        if (sitemap is not null) generated.Add(sitemap);
-
-        generated.AddRange(this.WriteTheme(items, options, outputDirectory));
-
-        return generated;
+        return composed;
     }
 
     /// <summary>
-    ///     Writes the syndication feed, or nothing at all when the configuration has not asked for one or
+    ///     Composes the syndication feed, or nothing at all when the configuration has not asked for one or
     ///     when the feed would carry no entry.
     /// </summary>
     /// <param name="pages">
@@ -381,13 +385,10 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// <param name="options">
     ///     The site configuration, which both switches the feed on and supplies the origin its links need.
     /// </param>
-    /// <param name="outputDirectory">
-    ///     The absolute path of the directory the feed is written to, which already exists.
-    /// </param>
     /// <returns>
-    ///     The output-relative path of the feed, or <see langword="null"/> when none was written.
+    ///     The document, or <see langword="null"/> when there is none to write.
     /// </returns>
-    private string? WriteFeed(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
+    private byte[]? ComposeFeed(IReadOnlyList<ContentPage> pages, SiteOptions options)
     {
         if (!options.EnableFeed) return null;
 
@@ -412,13 +413,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
             return null;
         }
 
-        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, AtomFeed.FileName), document);
-
-        return AtomFeed.FileName;
+        return document;
     }
 
     /// <summary>
-    ///     Writes the sitemap, or nothing at all when the configuration has not asked for one or declares no
+    ///     Composes the sitemap, or nothing at all when the configuration has not asked for one or declares no
     ///     base URL to resolve its locations against.
     /// </summary>
     /// <param name="pages">
@@ -428,13 +427,10 @@ internal sealed class SiteBuilder : SiteBuilderContract
     ///     The site configuration, which both switches the sitemap on and supplies the origin its locations
     ///     need.
     /// </param>
-    /// <param name="outputDirectory">
-    ///     The absolute path of the directory the sitemap is written to, which already exists.
-    /// </param>
     /// <returns>
-    ///     The output-relative path of the sitemap, or <see langword="null"/> when none was written.
+    ///     The document, or <see langword="null"/> when there is none to write.
     /// </returns>
-    private string? WriteSitemap(IReadOnlyList<ContentPage> pages, SiteOptions options, string outputDirectory)
+    private byte[]? ComposeSitemap(IReadOnlyList<ContentPage> pages, SiteOptions options)
     {
         if (!options.EnableSitemap) return null;
 
@@ -453,25 +449,20 @@ internal sealed class SiteBuilder : SiteBuilderContract
         if (Sitemap.ExceedsLimits(locations, document.Length))
             this._logger.LogSitemapLimitExceeded(locations, document.Length);
 
-        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, Sitemap.FileName), document);
-
-        return Sitemap.FileName;
+        return document;
     }
 
     // A file at the root of the content directory replaces the theme's file of the same name, which is how an edit
     // to a theme is previewed: gelyn serve rebuilds on a change to the content, never on one to the tool.
-    private List<string> WriteTheme(IReadOnlyList<ContentItem> items, SiteOptions options, string outputDirectory)
+    private List<GeneratedDocument> CollectThemeFiles(IReadOnlyList<ContentItem> items, SiteOptions options)
     {
-        List<string> written = [];
+        List<GeneratedDocument> collected = [];
 
-        if (options.Theme is not string theme) return written;
-
-        IPath path = this._fileSystem.Path;
+        if (options.Theme is not string theme) return collected;
 
         foreach (ThemeFile file in ThemeCatalog.Files(theme))
         {
-            ContentItem? replacement = items
-                .FirstOrDefault(item => item.OutputPath.Equals(file.FileName, StringComparison.Ordinal));
+            ContentItem? replacement = items.FirstOrDefault(item => item.OutputPath.Equals(file.FileName, StringComparison.Ordinal));
 
             if (replacement is not null)
             {
@@ -479,11 +470,22 @@ internal sealed class SiteBuilder : SiteBuilderContract
                 continue;
             }
 
-            this._fileSystem.File.WriteAllBytes(path.Combine(outputDirectory, file.FileName), ThemeCatalog.Read(file));
-            written.Add(file.FileName);
+            collected.Add(new GeneratedDocument
+            {
+                Path = file.FileName,
+                Contents = ThemeCatalog.Read(file)
+            });
         }
 
-        return written;
+        return collected;
+    }
+
+    private string[] WriteGenerated(List<GeneratedDocument> composed, string outputDirectory)
+    {
+        foreach (GeneratedDocument document in composed)
+            this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, document.Path), document.Contents.Span);
+
+        return [.. composed.Select(static document => document.Path)];
     }
 
     private string[] CopyAssets(
@@ -504,33 +506,63 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
     private Collection<string> PruneOutput(
         IReadOnlyList<ContentItem> items,
-        List<string> generated,
+        List<GeneratedDocument> composed,
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        var published = new HashSet<string>(items.Count + generated.Count, StringComparer.Ordinal);
+        IDirectoryInfo root = this._fileSystem.DirectoryInfo.New(outputDirectory);
+
+        // Created after the prune, so the first build finds nothing to prune.
+        if (!root.Exists) return [];
+
+        var published = new HashSet<string>(items.Count + composed.Count, StringComparer.Ordinal);
 
         foreach (ContentItem item in items)
             published.Add(item.OutputPath);
 
-        foreach (string path in generated)
-            published.Add(path);
+        foreach (GeneratedDocument document in composed)
+            published.Add(document.Path);
 
         var context = new PruneContext
         {
             Prefix = [],
             Published = published,
+            PublishedDirectories = this.CollectPublishedDirectories(published),
             Removed = [],
         };
 
-        this.PruneDirectory(this._fileSystem.DirectoryInfo.New(outputDirectory), context, cancellationToken);
+        this.PruneDirectory(root, context, cancellationToken);
 
         return context.Removed;
     }
 
+    // Keyed without regard to case, so that a directory kept under another spelling finds the one it is published under.
+    private Dictionary<string, string?> CollectPublishedDirectories(HashSet<string> published)
+    {
+        IPath path = this._fileSystem.Path;
+        var directories = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (string file in published)
+        {
+            for (string? directory = path.GetDirectoryName(file); !string.IsNullOrEmpty(directory); directory = path.GetDirectoryName(directory))
+            {
+                if (directories.TryAdd(directory, directory)) continue;
+
+                // Present under this spelling already, and so are its ancestors.
+                if (directories[directory] is string spelling && spelling.Equals(directory, StringComparison.Ordinal)) break;
+
+                // Spelled more than one way, which only a file system that respects case can hold apart.
+                directories[directory] = null;
+            }
+        }
+
+        return directories;
+    }
+
     /// <summary>
-    ///     Deletes every file in one directory, and in the directories below it, that the scan does not
-    ///     account for, together with the directories those deletions leave empty.
+    ///     Deletes every file in one directory, and in the directories below it, that the build does not
+    ///     publish, together with the directories those deletions leave empty, and gives a directory that survives
+    ///     under another spelling the one it is published under.
     /// </summary>
     /// <remarks>
     ///     Recursive like the scan, because a flat enumeration would descend into a skipped directory and
@@ -578,6 +610,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
             {
                 if (this.PruneDirectory(child, context with { Prefix = segments }, cancellationToken))
                 {
+                    this.AdoptPublishedSpelling(directory, child, segments, entries, context.PublishedDirectories);
                     occupied = true;
                     continue;
                 }
@@ -599,6 +632,38 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }
 
         return occupied;
+    }
+
+    // A dot entry keeps a directory from being pruned, so after a rename in case alone, such as Blog to blog, it keeps
+    // its old name, and a file system that ignores case writes the new pages into it. Renaming it fixes the spelling.
+    private void AdoptPublishedSpelling(
+        IDirectoryInfo parent,
+        IDirectoryInfo child,
+        string[] segments,
+        IFileSystemInfo[] siblings,
+        Dictionary<string, string?> publishedDirectories)
+    {
+        IPath path = this._fileSystem.Path;
+        string relativePath = path.Combine(segments);
+
+        if (!publishedDirectories.TryGetValue(relativePath, out string? published) || published is null) return;
+
+        // Every directory a build keeps for its pages is published under its own spelling, so only a leftover goes on.
+        if (published.Equals(relativePath, StringComparison.Ordinal)) return;
+
+        string name = path.GetFileName(published);
+        string target = path.Combine(parent.FullName, name);
+
+        // A file system that respects case lists the published spelling as an entry of its own or cannot resolve it,
+        // while one that ignores case resolves it to this very directory.
+        if (siblings.Any(sibling => sibling.Name.Equals(name, StringComparison.Ordinal)) || !this._fileSystem.Directory.Exists(target)) return;
+
+        // Through an unused name, because Directory.Move refuses a destination that already exists, and the new
+        // spelling still resolves to this directory.
+        string transit = path.Combine(parent.FullName, path.GetRandomFileName());
+
+        this._fileSystem.Directory.Move(child.FullName, transit);
+        this._fileSystem.Directory.Move(transit, target);
     }
 
     #endregion

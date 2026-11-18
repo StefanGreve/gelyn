@@ -87,6 +87,16 @@ internal sealed class DiskFixture : IDisposable
         !OperatingSystem.IsWindows() || Environment.IsPrivilegedProcess;
 
     /// <summary>
+    ///     Indicates whether the disk the fixtures are created on resolves a name without regard to case, as NTFS
+    ///     and APFS do by default.
+    /// </summary>
+    /// <remarks>
+    ///     Probed with a file in the temporary directory, because case sensitivity belongs to the volume, and on
+    ///     Windows and Linux even to the directory, so the operating system alone does not settle it.
+    /// </remarks>
+    public static bool IgnoresCase { get; } = ProbeCase();
+
+    /// <summary>
     ///     Creates a fixture holding an empty content directory and an empty output directory.
     /// </summary>
     /// <returns>
@@ -243,6 +253,23 @@ internal sealed class DiskFixture : IDisposable
     }
 
     #region Helpers
+
+    private static bool ProbeCase()
+    {
+        string name = $"gelyn-{Guid.NewGuid():N}";
+        string path = Path.Combine(Path.GetTempPath(), name);
+
+        File.WriteAllText(path, string.Empty);
+
+        try
+        {
+            return File.Exists(Path.Combine(Path.GetTempPath(), name.ToUpperInvariant()));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
 
     private static string Locate(string root, string relativePath) =>
         Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
