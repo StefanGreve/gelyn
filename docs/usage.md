@@ -509,9 +509,9 @@ rather than all of them.
 
 ## Not found page
 
-A host answers an address that has no page of its own with the `404.html` at the root of your site. GitHub
-Pages, Cloudflare Pages, and `gelyn serve` all look for it there and nowhere else. Write `404.md` at the root
-of your content tree, and Gelyn renders that page:
+A host answers an address that has no page of its own with a `404.html`. [GitHub Pages][github-pages-404] and
+`gelyn serve` use the one at the root of your site and look nowhere else. Write `404.md` at the root of your
+content tree, and Gelyn renders that page:
 
 ```text
 content/
@@ -532,7 +532,14 @@ from every other page:
 That base applies to every relative link on the page, including one to a heading on the same page and a
 footnote, which then lead to the root instead. Keep the page to plain links.
 
-A `404.md` anywhere else, such as `blog/404.md`, is an ordinary page, because no host looks for one there.
+A `404.md` anywhere else, such as `blog/404.md`, is an ordinary page, because neither GitHub Pages nor
+`gelyn serve` looks for one there.
+
+> [!WARNING]
+> [Cloudflare Pages][cloudflare-404] serves the nearest `404.html` instead: it looks in the directory of the
+> address that missed, then in each directory above it. A `blog/404.md` then answers every miss under `/blog/`,
+> without the `<base>` element and the `noindex` tag of the root page, so its relative links break at deeper
+> addresses. Without a `404.html` at the root, Cloudflare Pages answers every miss with your landing page.
 
 Style the page with a stylesheet [declared in its front matter](#declared-by-a-page), so that no other page
 loads it. The documentation you are reading does that: its `404.md` declares `stylesheets: [assets/modern404.css]`.
@@ -853,3 +860,5 @@ warning: ContentDirectory changed. Restart gelyn serve to pick that up.
 [shiki]: https://shiki.style
 [giscus]: https://giscus.app
 [aria-current]: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-current
+[github-pages-404]: https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-custom-404-page-for-your-github-pages-site
+[cloudflare-404]: https://developers.cloudflare.com/pages/configuration/serving-pages/
