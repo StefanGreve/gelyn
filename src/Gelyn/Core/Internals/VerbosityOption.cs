@@ -13,8 +13,8 @@ namespace Gelyn.Core.Internals;
 internal static class VerbosityOption
 {
     /// <summary>
-    ///     The level applied when the option is absent or cannot be parsed, chosen so that a normal build
-    ///     reports nothing, because every record the build writes is <see cref="LogLevel.Debug"/>.
+    ///     The level applied when the option is absent or cannot be parsed, which hides the timings the build
+    ///     writes at <see cref="LogLevel.Debug"/> and keeps the warnings about what it skipped or ignored.
     /// </summary>
     internal const LogLevel DefaultLevel = LogLevel.Warning;
 
