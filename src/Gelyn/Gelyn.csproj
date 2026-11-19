@@ -31,7 +31,7 @@
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     <OptimizationPreference>Speed</OptimizationPreference>
-    <UseSizeOptimizedLinq>false</UseSizeOptimizedLinq>
+    <UseSizeOptimizedLinq>true</UseSizeOptimizedLinq>
   </PropertyGroup>
 
   <PropertyGroup Label="Tool packaging">
