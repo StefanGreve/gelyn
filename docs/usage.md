@@ -54,6 +54,9 @@ ignores it. Two entries that claim one path, such as `about.md` beside `about.ht
 error: '/site/content/about.html' and '/site/content/about.md' both publish 'about.html'.
 ```
 
+The same holds for a root file named like a document Gelyn generates: `feed.xml` while `EnableFeed` is on, or
+`sitemap.xml` while `EnableSitemap` is on. Turn the setting off to publish a file of your own under that name.
+
 > [!IMPORTANT]
 > `content/index.md` is required, its name in any letter case, so `Index.md` counts too. Without it, Gelyn stops
 > before writing anything, reporting `error: No landing page found at '...'` and exiting with code 2. An `index.md`

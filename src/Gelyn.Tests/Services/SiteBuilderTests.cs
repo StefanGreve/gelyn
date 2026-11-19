@@ -1307,6 +1307,48 @@ public partial class SiteBuilderTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a root file named like the feed, in any case, stops the build while the feed is on, since
+    ///     both would publish one path and a disk that ignores case would let the copy overwrite the feed.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_RootFileNamedLikeTheFeed_StopsTheBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithFeed()
+            .WriteFile("Feed.xml", "<feed/>");
+
+        // Act and Assert
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("and the generated feed both publish 'feed.xml'");
+    }
+
+    /// <summary>
+    ///     Verifies that a root file named like the feed is copied while the feed is off, which is how a site
+    ///     publishes a feed of its own.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_RootFileNamedLikeTheFeed_IsCopiedWhileTheFeedIsOff()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WriteFile("feed.xml", "<feed/>");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Copies).IsEquivalentTo(["feed.xml"]);
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, "feed.xml"))).IsEqualTo("<feed/>");
+        }
+    }
+
     #endregion // Feed Tests
 
     #region Sitemap Tests
@@ -1523,6 +1565,25 @@ public partial class SiteBuilderTests
             await Assert.That(report.Removed).IsEquivalentTo(["sitemap.xml"]);
             await Assert.That(fixture.OutputHolds("sitemap.xml")).IsFalse();
         }
+    }
+
+    /// <summary>
+    ///     Verifies that a root file named like the sitemap stops the build while the sitemap is on, since both
+    ///     would publish one path.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_RootFileNamedLikeTheSitemap_StopsTheBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap()
+            .WriteFile("sitemap.xml", "<urlset/>");
+
+        // Act and Assert
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("and the generated sitemap both publish 'sitemap.xml'");
     }
 
     #endregion // Sitemap Tests

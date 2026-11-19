@@ -205,6 +205,14 @@ internal sealed class SiteBuilder : SiteBuilderContract
         };
     }
 
+    private static string DescribeGenerated(string path) =>
+        path switch
+        {
+            AtomFeed.FileName => "the generated feed",
+            Sitemap.FileName => "the generated sitemap",
+            _ => "a file of the theme",
+        };
+
     // The root first, because the generated documents land there whether any item does, and every directory ahead of
     // those below it, so that creating the deepest missing ones creates the rest.
     private PublishedTree CollectPublishedTree(IReadOnlyList<ContentItem> items, List<GeneratedDocument> composed)
@@ -233,7 +241,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }
 
         foreach (GeneratedDocument document in composed)
+        {
+            if (items.FirstOrDefault(item => item.OutputPath.Equals(document.Path, StringComparison.OrdinalIgnoreCase)) is ContentItem item)
+                throw new IOException($"'{item.SourcePath}' and {DescribeGenerated(document.Path)} both publish '{document.Path}'.");
+
             files.Add(document.Path);
+        }
 
         return new PublishedTree
         {

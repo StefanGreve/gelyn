@@ -131,6 +131,9 @@ root of your output directory, and points every page at it so a reader finds it:
 <link rel="alternate" type="application/atom+xml" href="https://example.com/feed.xml" title="Gelyn">
 ```
 
+A file named `feed.xml` at the root of your content directory, in any letter case, stops the build while the
+setting is on, because both would publish the same path. Turn the setting off to publish a feed of your own.
+
 Two switches have to be on, and a page is in the feed only if it says so:
 
 | Requirement        | Why                                                                                  |
@@ -182,6 +185,9 @@ Two switches have to be on, and no page has to opt in:
 | `BaseUrl`             | Every location is an absolute URL, and only `BaseUrl` supplies the origin. |
 
 Neither fails a build. Gelyn writes no sitemap and warns once if `BaseUrl` is unset.
+
+A file named `sitemap.xml` at the root of your content directory, in any letter case, stops the build while the
+setting is on, because both would publish the same path. Turn the setting off to publish a sitemap of your own.
 
 The protocol allows one sitemap at most 50,000 locations and 50 MB uncompressed. Gelyn writes a single
 `sitemap.xml` regardless, and warns when it goes past either limit, since a crawler may then reject it. Gelyn

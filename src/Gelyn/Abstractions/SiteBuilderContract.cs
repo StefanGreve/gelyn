@@ -37,7 +37,7 @@ internal abstract class SiteBuilderContract
     ///     locate.
     /// </exception>
     /// <exception cref="IOException">
-    ///     The output directory is a link, two entries publish one path, or a file cannot be written or removed.
+    ///     The output directory is a link, one path is published twice, or a file cannot be written or removed.
     /// </exception>
     public abstract Task<BuildReport> BuildAsync(CancellationToken cancellationToken);
 }
