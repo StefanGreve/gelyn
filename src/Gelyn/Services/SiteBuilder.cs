@@ -503,22 +503,17 @@ internal sealed class SiteBuilder : SiteBuilderContract
     }
 
     // Keyed without regard to case, so that a directory kept under another spelling finds the one it is published under.
-    private Dictionary<string, string?> CollectPublishedDirectories(HashSet<string> published)
+    private Dictionary<string, string> CollectPublishedDirectories(HashSet<string> published)
     {
         IPath path = this._fileSystem.Path;
-        var directories = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var directories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (string file in published)
         {
             for (string? directory = path.GetDirectoryName(file); !string.IsNullOrEmpty(directory); directory = path.GetDirectoryName(directory))
             {
-                if (directories.TryAdd(directory, directory)) continue;
-
-                // Present under this spelling already, and so are its ancestors.
-                if (directories[directory] is string spelling && spelling.Equals(directory, StringComparison.Ordinal)) break;
-
-                // Spelled more than one way, which only a file system that respects case can hold apart.
-                directories[directory] = null;
+                // Present already, and so are its ancestors. The scan admits one spelling per directory.
+                if (!directories.TryAdd(directory, directory)) break;
             }
         }
 
@@ -607,12 +602,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
         IDirectoryInfo child,
         string[] segments,
         IFileSystemInfo[] siblings,
-        Dictionary<string, string?> publishedDirectories)
+        Dictionary<string, string> publishedDirectories)
     {
         IPath path = this._fileSystem.Path;
         string relativePath = path.Combine(segments);
 
-        if (!publishedDirectories.TryGetValue(relativePath, out string? published) || published is null) return;
+        if (!publishedDirectories.TryGetValue(relativePath, out string? published)) return;
 
         // Every directory a build keeps for its pages is published under its own spelling, so only a leftover goes on.
         if (published.Equals(relativePath, StringComparison.Ordinal)) return;

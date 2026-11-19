@@ -23,6 +23,9 @@ internal abstract class ContentPipelineContract
     /// <exception cref="FileNotFoundException">
     ///     The scan publishes no <c>index.md</c> at the root of the content directory.
     /// </exception>
+    /// <exception cref="IOException">
+    ///     Two entries publish one path.
+    /// </exception>
     public abstract IReadOnlyList<ContentItem> Scan(SiteOptions options);
 
     /// <summary>

@@ -25,10 +25,9 @@ internal sealed record PruneContext
 
     /// <summary>
     ///     The output-relative path of every directory a published file lands in, keyed without regard to case and
-    ///     mapped to the spelling it is published under, or to <see langword="null"/> when the published files spell
-    ///     it in more than one way.
+    ///     mapped to the spelling it is published under.
     /// </summary>
-    public required Dictionary<string, string?> PublishedDirectories { get; init; }
+    public required Dictionary<string, string> PublishedDirectories { get; init; }
 
     /// <summary>
     ///     Receives the output-relative path of each file that was deleted.

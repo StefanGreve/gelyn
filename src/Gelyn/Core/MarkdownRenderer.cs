@@ -83,6 +83,7 @@ internal sealed class MarkdownRenderer
 
         options.SourceExtensions.Clear();
         options.SourceExtensions.Add(FileExtensions.Markdown);
+        options.TargetExtension = FileExtensions.Html;
 
         return options;
     }

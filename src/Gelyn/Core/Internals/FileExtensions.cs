@@ -11,6 +11,11 @@ internal static class FileExtensions
     internal const string Markdown = ".md";
 
     /// <summary>
+    ///     The extension of a published page.
+    /// </summary>
+    internal const string Html = ".html";
+
+    /// <summary>
     ///     The extension of a stylesheet.
     /// </summary>
     internal const string Stylesheet = ".css";

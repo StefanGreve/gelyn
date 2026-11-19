@@ -192,6 +192,28 @@ public class ContentPipelineTests
     }
 
     /// <summary>
+    ///     Verifies that two directories whose names differ in case alone end the scan, because a file system that
+    ///     ignores case would merge them. Driven against the real disk, where only one that respects case holds both.
+    /// </summary>
+    [Test]
+    [Category(Categories.Integration)]
+    public async Task Scan_Test_DirectoriesDifferingInCaseAlone_Throw()
+    {
+        // Arrange
+        Skip.When(DiskFixture.IgnoresCase, "Only a disk that respects case holds both spellings.");
+
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .Write("Blog/index.md", "# Blog")
+            .Write("blog/post.md", "# Post");
+
+        // Act and Assert
+        await Assert.That(() => fixture.Pipeline.Scan(fixture.Options))
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("both publish 'blog'");
+    }
+
+    /// <summary>
     ///     Verifies that a content directory without a landing page is rejected.
     /// </summary>
     [Test]
@@ -268,6 +290,60 @@ public class ContentPipelineTests
 
         // Assert
         await Assert.That(items[0].Href).IsEqualTo("/index.html");
+    }
+
+    /// <summary>
+    ///     Verifies that a copied file and a page that publish one path end the scan, whatever the case of the copy,
+    ///     because a file system that ignores case would merge the two, and that the message names the path.
+    /// </summary>
+    [Test]
+    [Arguments("about.html")]
+    [Arguments("ABOUT.HTML")]
+    public async Task Scan_Test_CopyAndPagePublishingOnePath_Throws(string copy)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WriteFile(copy, "<p>About</p>");
+
+        // Act and Assert
+        await Assert.That(() => Scan(fixture))
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("both publish 'about.html'");
+    }
+
+    /// <summary>
+    ///     Verifies that a page and a directory that publish one path end the scan once the directory publishes
+    ///     anything, since the page and the directory cannot both be written under that path.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_PageAndDirectoryPublishingOnePath_Throws()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create()
+            .Write("a.md", "A")
+            .WriteFile("a.html/note.txt", "note");
+
+        // Act and Assert
+        await Assert.That(() => Scan(fixture))
+            .ThrowsExactly<IOException>()
+            .WithMessageContaining("both publish 'a.html'");
+    }
+
+    /// <summary>
+    ///     Verifies that an empty directory named like a page is no conflict, because a directory that publishes
+    ///     nothing is never written.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_EmptyDirectoryNamedLikeAPage_IsNoConflict()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().Write("a.md", "A");
+        fixture.FileSystem.AddDirectory(fixture.FileSystem.Path.Combine(fixture.ContentRoot, "a.html"));
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(items.Select(item => item.Href)).Contains("/a.html");
     }
 
     /// <summary>

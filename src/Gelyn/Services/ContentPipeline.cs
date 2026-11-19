@@ -33,7 +33,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
 {
     private const string IndexFileName = "index.md";
     private const string IndexSlug = "index";
-    private const string LandingPageOutputPath = $"{IndexSlug}.html";
+    private const string LandingPageOutputPath = $"{IndexSlug}{FileExtensions.Html}";
     private const string NotFoundSlug = "404";
 
     private readonly IHostEnvironment _environment;
@@ -165,19 +165,27 @@ internal sealed class ContentPipeline : ContentPipelineContract
         // The nearest declaration wins, because a document carries one icon and not a chain of them.
         string? favicon = CollectHrefs(files, context, ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
 
+        // Every name this directory publishes, keyed without regard to case, so that a pair a file system ignoring
+        // case would merge into one path is caught on every platform.
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (SourceFile file in files)
         {
             bool isPage = file.Kind is ContentKind.Page;
             bool isNotFound = isPage && context.Prefix.Count == 0 && file.Slug.Equals(NotFoundSlug, StringComparison.Ordinal);
 
             // A copy keeps its own name, so only a rendered page is renamed to the extension it is served as.
-            string name = isPage ? $"{file.Slug}.html" : file.Info.Name;
+            string name = isPage ? $"{file.Slug}{FileExtensions.Html}" : file.Info.Name;
             string[] segments = [.. context.Prefix, name];
+            string outputPath = this._fileSystem.Path.Combine(segments);
+
+            if (!names.TryAdd(name, file.Info.FullName))
+                throw new IOException(DescribeCollision(names[name], file.Info.FullName, outputPath));
 
             items.Add(new ContentItem
             {
                 SourcePath = file.Info.FullName,
-                OutputPath = this._fileSystem.Path.Combine(segments),
+                OutputPath = outputPath,
                 Href = CombineHref(context.HrefPrefix, name),
                 Kind = file.Kind,
                 FallbackTitle = file.IsIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : file.Stem,
@@ -191,6 +199,8 @@ internal sealed class ContentPipeline : ContentPipelineContract
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
         {
+            int count = items.Count;
+
             this.CollectItems(items, child, context with
             {
                 Prefix = [.. context.Prefix, child.Name],
@@ -199,6 +209,13 @@ internal sealed class ContentPipeline : ContentPipelineContract
                 Scripts = scripts,
                 Favicon = favicon,
             });
+
+            // A directory that publishes nothing is never written, so its name is free.
+            if (items.Count > count && !names.TryAdd(child.Name, child.FullName))
+            {
+                string outputPath = this._fileSystem.Path.Combine([.. context.Prefix, child.Name]);
+                throw new IOException(DescribeCollision(names[child.Name], child.FullName, outputPath));
+            }
         }
     }
 
@@ -263,6 +280,9 @@ internal sealed class ContentPipeline : ContentPipelineContract
     // A name may hold '#', '?' or '%', which would end the path or start an escape if it were copied as is.
     private static string CombineHref(string prefix, string name) =>
         $"{prefix}/{Uri.EscapeDataString(name)}";
+
+    private static string DescribeCollision(string first, string second, string outputPath) =>
+        $"'{first}' and '{second}' both publish '{outputPath}'.";
 
     private static bool IsInNavigation(SourceFile file, int depth) =>
         depth switch

@@ -42,7 +42,6 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
 {
     private const string IndexFileName = "index.html";
     private const string NotFoundFileName = "404.html";
-    private const string HtmlExtension = ".html";
 
     // Appended to the media types that register a charset parameter. The generator writes UTF-8 throughout,
     // so declaring it spares the browser the sniffing that a missing charset leaves it to.
@@ -142,7 +141,7 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
         if (this.TryUse(candidate, out path)) return true;
 
         return paths.GetExtension(candidate).Length == 0
-            && this.TryUse(candidate + HtmlExtension, out path);
+            && this.TryUse(candidate + FileExtensions.Html, out path);
     }
 
     private bool TryUse(string candidate, [NotNullWhen(true)] out string? path)
@@ -179,7 +178,7 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
     private static string ClassifyExtension(string extension) =>
         extension switch
         {
-            var value when value.Equals(HtmlExtension, StringComparison.OrdinalIgnoreCase) => HtmlContentType,
+            var value when value.Equals(FileExtensions.Html, StringComparison.OrdinalIgnoreCase) => HtmlContentType,
             var value when value.Equals(".css", StringComparison.OrdinalIgnoreCase) => CssContentType,
             var value when value.Equals(".js", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,
             var value when value.Equals(".mjs", StringComparison.OrdinalIgnoreCase) => JavaScriptContentType,

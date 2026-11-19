@@ -46,6 +46,14 @@ role: `index.md` makes it the index of its directory, and `404.md` at the root m
 Position is the only thing that decides where a file lands. No front matter key overrides the output path, and
 nothing flattens or re-nests a directory.
 
+Every published path has to be unique without regard to case, because a host may serve from a file system that
+ignores it. Two entries that claim one path, such as `about.md` beside `about.html` or the directories `Blog` and
+`blog`, stop the build with exit code 1:
+
+```text
+error: '/site/content/about.html' and '/site/content/about.md' both publish 'about.html'.
+```
+
 > [!IMPORTANT]
 > `content/index.md` is required, its name in any letter case, so `Index.md` counts too. Without it, Gelyn stops
 > before writing anything, reporting `error: No landing page found at '...'` and exiting with code 2. An `index.md`

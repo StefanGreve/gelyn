@@ -336,9 +336,9 @@ publish in `ExcludePatterns`. Nothing is excluded by default. This is the set to
 ```
 
 > [!IMPORTANT]
-> `*.html` is the entry that matters most. HTML isn't an authoring format here, and the copy runs after the
-> render, so without this pattern an `about.html` beside `about.md` is published over the page generated from
-> the Markdown. Keep it unless you know your content tree holds no HTML.
+> `*.html` is the entry that matters most. HTML isn't an authoring format here, and an `about.html` beside
+> `about.md` claims the path of the page generated from the Markdown, so the build stops and names both files.
+> Keep the pattern unless you know your content tree holds no HTML.
 
 Name your configuration file too if it sits inside the content directory. Gelyn reads `gelyn.json` before the
 scan and has no further knowledge of it, so a config file among your Markdown is copied like any other file.
