@@ -21,7 +21,7 @@ internal abstract class SiteBuilderContract
     ///     What the build produced, and how long it took.
     /// </returns>
     /// <exception cref="FileNotFoundException">
-    ///     The file given to <c>--config</c> does not exist, or the content directory declares no <c>index.md</c>.
+    ///     The file given to <c>--config</c> or the landing page does not exist.
     /// </exception>
     /// <exception cref="InvalidDataException">
     ///     The configuration file is not valid JSON.

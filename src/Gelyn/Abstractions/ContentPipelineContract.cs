@@ -21,7 +21,7 @@ internal abstract class ContentPipelineContract
     ///     Every file, landing page first, with the files the build has no use for left out.
     /// </returns>
     /// <exception cref="FileNotFoundException">
-    ///     The content directory declares no <c>index.md</c>.
+    ///     The scan publishes no <c>index.md</c> at the root of the content directory.
     /// </exception>
     public abstract IReadOnlyList<ContentItem> Scan(SiteOptions options);
 

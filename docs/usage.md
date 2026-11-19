@@ -47,8 +47,9 @@ Position is the only thing that decides where a file lands. No front matter key 
 nothing flattens or re-nests a directory.
 
 > [!IMPORTANT]
-> `content/index.md` is required. Without it, Gelyn stops before writing anything, reporting
-> `error: No landing page found at '...'` and exiting with code 2. Every other file is optional.
+> `content/index.md` is required, its name in any letter case, so `Index.md` counts too. Without it, Gelyn stops
+> before writing anything, reporting `error: No landing page found at '...'` and exiting with code 2. An `index.md`
+> that an exclude pattern matches or that is a symbolic link does not count. Every other file is optional.
 
 ## Front matter
 

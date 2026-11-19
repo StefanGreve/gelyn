@@ -205,6 +205,72 @@ public class ContentPipelineTests
     }
 
     /// <summary>
+    ///     Verifies that an <c>index.md</c> that is a symbolic link is no landing page, because the walk leaves every
+    ///     link out, so the build fails instead of completing without an <c>index.html</c>.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_LandingPageAsSymbolicLink_Throws()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("about.md", "About")
+            .WriteOutside("home.md", "# Home")
+            .LinkFile("index.md", "home.md");
+
+        // Act and Assert
+        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+    }
+
+    /// <summary>
+    ///     Verifies that an <c>index.md</c> an exclude pattern matches is no landing page, so the build fails instead
+    ///     of completing without an <c>index.html</c>.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_ExcludedLandingPage_Throws()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().WithExcludePatterns("index.md");
+
+        // Act and Assert
+        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+    }
+
+    /// <summary>
+    ///     Verifies that a missing content directory fails like a tree without a landing page.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_MissingContentDirectory_Throws()
+    {
+        // Arrange
+        var fixture = ContentFixture.CreateEmpty();
+        fixture.Options.ContentDirectory = "missing";
+
+        // Act and Assert
+        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+    }
+
+    /// <summary>
+    ///     Verifies that the landing page is found whatever the case of its name, on a file system that respects
+    ///     case as well, because the walk publishes it as <c>index.html</c>.
+    /// </summary>
+    [Test]
+    [Arguments("Index.md")]
+    [Arguments("INDEX.MD")]
+    public async Task Scan_Test_LandingPageInAnyCase_IsTheFirstResult(string name)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("about.md", "About")
+            .Write(name, "Home");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        await Assert.That(items[0].Href).IsEqualTo("/index.html");
+    }
+
+    /// <summary>
     ///     Verifies that files which are not Markdown are located for copying and never rendered, keeping
     ///     the name they were authored under instead of being renamed to an HTML extension.
     /// </summary>

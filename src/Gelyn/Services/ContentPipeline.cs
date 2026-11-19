@@ -33,6 +33,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
 {
     private const string IndexFileName = "index.md";
     private const string IndexSlug = "index";
+    private const string LandingPageOutputPath = $"{IndexSlug}.html";
     private const string NotFoundSlug = "404";
 
     private readonly IHostEnvironment _environment;
@@ -60,25 +61,32 @@ internal sealed class ContentPipeline : ContentPipelineContract
 
         IPath path = this._fileSystem.Path;
         string root = path.Combine(this._environment.ContentRootPath, options.ContentDirectory);
-        string home = path.Combine(root, IndexFileName);
-
-        if (!this._fileSystem.File.Exists(home))
-            throw new FileNotFoundException($"No landing page found at '{home}'.", home);
+        IDirectoryInfo directory = this._fileSystem.DirectoryInfo.New(root);
 
         string hrefPrefix = UrlUtils.ResolveBasePath(options.BaseUrl);
         IReadOnlyList<ThemeFile> theme = options.Theme is string name ? ThemeCatalog.Files(name) : [];
 
         List<ContentItem> items = [];
 
-        this.CollectItems(items, this._fileSystem.DirectoryInfo.New(root), new ScanContext
+        if (directory.Exists)
         {
-            Prefix = [],
-            Stylesheets = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Stylesheet),
-            Scripts = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Script),
-            Favicon = null,
-            HrefPrefix = hrefPrefix,
-            Excluded = options.ExcludePatterns,
-        });
+            this.CollectItems(items, directory, new ScanContext
+            {
+                Prefix = [],
+                Stylesheets = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Stylesheet),
+                Scripts = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Script),
+                Favicon = null,
+                HrefPrefix = hrefPrefix,
+                Excluded = options.ExcludePatterns,
+            });
+        }
+
+        // Decided after the walk, because only a landing page the walk publishes counts, never a link or an excluded name.
+        if (items is not [{ Kind: ContentKind.Page, OutputPath: LandingPageOutputPath }, ..])
+        {
+            string home = path.Combine(root, IndexFileName);
+            throw new FileNotFoundException($"No landing page found at '{home}'.", home);
+        }
 
         return items;
     }
