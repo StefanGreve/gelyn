@@ -561,11 +561,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
     {
         IPath path = this._fileSystem.Path;
 
-        // Materialized ahead of the first delete. POSIX leaves it unspecified whether a directory stream
-        // still returns an entry removed after the stream was opened, and not every file system keeps the
-        // rest of the iteration stable: https://pubs.opengroup.org/onlinepubs/9799919799/functions/readdir.html
-        // Sorted like the scan, so that the removed lines read the same on every file system.
-        IFileSystemInfo[] entries = [.. directory.EnumerateFileSystemInfos().OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
+        IFileSystemInfo[] entries = directory.ListEntries();
         bool occupied = false;
 
         foreach (IFileSystemInfo entry in entries)

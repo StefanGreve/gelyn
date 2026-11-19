@@ -145,10 +145,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
     /// </param>
     private void CollectItems(List<ContentItem> items, IDirectoryInfo directory, ScanContext context)
     {
-        IFileSystemInfo[] entries = [.. directory
-            .EnumerateFileSystemInfos()
-            .Where(entry => !IsDenied(entry, context.Excluded))
-            .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
+        IFileSystemInfo[] entries = [.. directory.ListEntries().Where(entry => !IsDenied(entry, context.Excluded))];
 
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
