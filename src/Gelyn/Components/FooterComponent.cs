@@ -66,10 +66,10 @@ internal static class FooterComponent
             string prefix = UrlUtils.ResolveBasePath(baseUrl);
 
             if (options.EnableFeed && context.Documents.HasFeedEntries)
-                links.Add(("Feed", StringUtils.JoinSegments(prefix, [], AtomFeed.FileName, '/')));
+                links.Add(("Feed", $"{prefix}/{AtomFeed.FileName}"));
 
             if (options.EnableSitemap)
-                links.Add(("Sitemap", StringUtils.JoinSegments(prefix, [], Sitemap.FileName, '/')));
+                links.Add(("Sitemap", $"{prefix}/{Sitemap.FileName}"));
         }
 
         if (links.Count == 0) return;
