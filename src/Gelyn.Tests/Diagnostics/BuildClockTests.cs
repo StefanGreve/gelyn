@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 
 using Gelyn.Core.Context;
-using Gelyn.Services;
+using Gelyn.Diagnostics;
 
-namespace Gelyn.Tests.Services;
+namespace Gelyn.Tests.Diagnostics;
 
 /// <summary>
 ///     Unit tests for the <see cref="BuildClock"/> class.

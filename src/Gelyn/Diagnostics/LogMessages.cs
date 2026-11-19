@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Diagnostics;
 
 /// <summary>
 ///     Every record the tool writes, as methods generated at compile time by

@@ -6,7 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
 using Gelyn.Tests.Stubs;

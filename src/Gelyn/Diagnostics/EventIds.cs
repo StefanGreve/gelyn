@@ -1,4 +1,4 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Diagnostics;
 
 /// <summary>
 ///     Identifiers for the log records the generator emits.

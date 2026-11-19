@@ -7,6 +7,7 @@ using Gelyn.Components;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;

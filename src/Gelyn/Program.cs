@@ -4,6 +4,7 @@ using System.IO.Abstractions;
 
 using Gelyn.Commands;
 using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Extensions;
 using Gelyn.Model;
 

@@ -5,6 +5,7 @@ using System.Net.Mime;
 using Gelyn.Abstractions;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Model;
 
 using Microsoft.Extensions.DependencyInjection;

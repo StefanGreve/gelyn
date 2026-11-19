@@ -1,4 +1,4 @@
-namespace Gelyn.Services;
+namespace Gelyn.Diagnostics;
 
 /// <summary>
 ///     The phases of a build that a debug counter reports a duration for, in the order they are reported.

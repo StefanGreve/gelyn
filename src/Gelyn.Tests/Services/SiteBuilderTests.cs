@@ -11,7 +11,7 @@ using System.Xml.Linq;
 
 using Gelyn.Core;
 using Gelyn.Core.Context;
-using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;

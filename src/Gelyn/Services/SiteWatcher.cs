@@ -4,6 +4,7 @@ using System.Threading.Channels;
 
 using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
+using Gelyn.Diagnostics;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;

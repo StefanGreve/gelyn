@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 using Gelyn.Core.Context;
 
-namespace Gelyn.Services;
+namespace Gelyn.Diagnostics;
 
 /// <summary>
 ///     Divides the duration of a build among the phases its counters report.
