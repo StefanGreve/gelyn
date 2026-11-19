@@ -1922,9 +1922,10 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that renaming sources in case alone renames their output, files and directories alike, and
-    ///     reports the old spellings as removed. Driven against the real disk, because NTFS and APFS keep the old
-    ///     spelling when a copy replaces a file in another case, and the volume, not the operating system, decides that.
+    ///     Verifies that renaming sources in case alone renames their output, copied files and directories alike,
+    ///     and reports the old spellings as removed, while a page keeps the lowercase name it is published under.
+    ///     Driven against the real disk, because NTFS and APFS keep the old spelling when a copy replaces a file in
+    ///     another case, and the volume, not the operating system, decides that.
     /// </summary>
     [Test]
     [Category(Categories.Integration)]
@@ -1957,7 +1958,7 @@ public partial class SiteBuilderTests
         using (Assert.Multiple())
         {
             await Assert.That(output).IsEquivalentTo(["about.html", "blog/index.html", "blog/post.html", "index.html", "style.css"], CollectionOrdering.Matching);
-            await Assert.That(report.Removed).Contains("About.html");
+            await Assert.That(report.Removed).Contains("Style.css");
         }
     }
 

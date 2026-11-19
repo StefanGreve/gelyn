@@ -32,12 +32,8 @@ namespace Gelyn.Services;
 internal sealed class ContentPipeline : ContentPipelineContract
 {
     private const string IndexFileName = "index.md";
-    private const string IndexOutputFileName = "index.html";
-    private const string NotFoundFileName = "404.md";
-    private const string MarkdownExtension = ".md";
-    private const string StylesheetExtension = ".css";
-    private const string ScriptExtension = ".js";
-    private const string FaviconExtension = ".ico";
+    private const string IndexSlug = "index";
+    private const string NotFoundSlug = "404";
 
     private readonly IHostEnvironment _environment;
     private readonly IFileSystem _fileSystem;
@@ -72,7 +68,9 @@ internal sealed class ContentPipeline : ContentPipelineContract
         string hrefPrefix = UrlUtils.ResolveBasePath(options.BaseUrl);
         IReadOnlyList<ThemeFile> theme = options.Theme is string name ? ThemeCatalog.Files(name) : [];
 
-        return this.CollectItems(this._fileSystem.DirectoryInfo.New(root), new ScanContext
+        List<ContentItem> items = [];
+
+        this.CollectItems(items, this._fileSystem.DirectoryInfo.New(root), new ScanContext
         {
             Prefix = [],
             Stylesheets = CollectThemeHrefs(theme, hrefPrefix, ContentKind.Stylesheet),
@@ -81,6 +79,8 @@ internal sealed class ContentPipeline : ContentPipelineContract
             HrefPrefix = hrefPrefix,
             Excluded = options.ExcludePatterns,
         });
+
+        return items;
     }
 
     /// <inheritdoc/>
@@ -125,62 +125,55 @@ internal sealed class ContentPipeline : ContentPipelineContract
     ///     Locates every file in one directory and in the directories below it, classifies each one and
     ///     resolves the path and URL it is published under.
     /// </summary>
+    /// <param name="items">
+    ///     The list every file at and below <paramref name="directory"/> is appended to, each directory's
+    ///     index ahead of its other files, with the files the build has no use for left out.
+    /// </param>
     /// <param name="directory">
     ///     The directory to walk.
     /// </param>
     /// <param name="context">
     ///     What this level inherits from the level above it.
     /// </param>
-    /// <returns>
-    ///     Every file at and below <paramref name="directory"/>, landing page first, with the files the build
-    ///     has no use for left out.
-    /// </returns>
-    private List<ContentItem> CollectItems(IDirectoryInfo directory, ScanContext context)
+    private void CollectItems(List<ContentItem> items, IDirectoryInfo directory, ScanContext context)
     {
         IFileSystemInfo[] entries = [.. directory
             .EnumerateFileSystemInfos()
             .Where(entry => !IsDenied(entry, context.Excluded))
             .OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
 
-        // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
-        // it, and shared by reference with every page at this level instead of copied per page.
-        string[] stylesheets = AppendHrefs(context.Stylesheets, CollectHrefs(entries, context, ContentKind.Stylesheet));
-        string[] scripts = AppendHrefs(context.Scripts, CollectHrefs(entries, context, ContentKind.Script));
-
-        // The nearest declaration wins, because a document carries one icon and not a chain of them.
-        string? favicon = CollectHrefs(entries, context, ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
-
         // Files before subdirectories, index first among files, which is what makes the root index the
         // first result without the walk having to seed it ahead of itself.
-        IEnumerable<IFileInfo> files = entries
+        SourceFile[] files = [.. entries
             .OfType<IFileInfo>()
-            .OrderByDescending(static file => file.Name.Equals(IndexFileName, StringComparison.Ordinal));
+            .Select(this.ClassifyFile)
+            .OrderByDescending(static file => file.IsIndex)];
 
-        List<ContentItem> items = [];
+        // Resolved ahead of the items, because a page links what sits beside it as well as what sits above
+        // it, and shared by reference with every page at this level instead of copied per page.
+        string[] stylesheets = AppendHrefs(context.Stylesheets, CollectHrefs(files, context, ContentKind.Stylesheet));
+        string[] scripts = AppendHrefs(context.Scripts, CollectHrefs(files, context, ContentKind.Script));
 
-        foreach (IFileInfo file in files)
+        // The nearest declaration wins, because a document carries one icon and not a chain of them.
+        string? favicon = CollectHrefs(files, context, ContentKind.Favicon).FirstOrDefault() ?? context.Favicon;
+
+        foreach (SourceFile file in files)
         {
-            ContentKind kind = Classify(file);
-            bool isPage = kind is ContentKind.Page;
-            bool isIndex = file.Name.Equals(IndexFileName, StringComparison.Ordinal);
-            bool isNotFound = context.Prefix.Count == 0 && file.Name.Equals(NotFoundFileName, StringComparison.Ordinal);
-            string slug = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
+            bool isPage = file.Kind is ContentKind.Page;
+            bool isNotFound = isPage && context.Prefix.Count == 0 && file.Slug.Equals(NotFoundSlug, StringComparison.Ordinal);
 
             // A copy keeps its own name, so only a rendered page is renamed to the extension it is served as.
-            string name = isPage
-                ? isIndex ? IndexOutputFileName : $"{slug}.html"
-                : file.Name;
-
+            string name = isPage ? $"{file.Slug}.html" : file.Info.Name;
             string[] segments = [.. context.Prefix, name];
 
             items.Add(new ContentItem
             {
-                SourcePath = file.FullName,
+                SourcePath = file.Info.FullName,
                 OutputPath = this._fileSystem.Path.Combine(segments),
                 Href = CombineHref(context.HrefPrefix, name),
-                Kind = kind,
-                FallbackTitle = isIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : slug,
-                InNavigation = isPage && !isNotFound && IsInNavigation(segments),
+                Kind = file.Kind,
+                FallbackTitle = file.IsIndex && context.Prefix.Count > 0 ? context.Prefix[^1] : file.Stem,
+                InNavigation = isPage && !isNotFound && IsInNavigation(file, context.Prefix.Count),
                 IsNotFoundPage = isNotFound,
                 Stylesheets = isPage ? stylesheets : [],
                 Scripts = isPage ? scripts : [],
@@ -190,17 +183,24 @@ internal sealed class ContentPipeline : ContentPipelineContract
 
         foreach (IDirectoryInfo child in entries.OfType<IDirectoryInfo>())
         {
-            items.AddRange(this.CollectItems(child, context with
+            this.CollectItems(items, child, context with
             {
                 Prefix = [.. context.Prefix, child.Name],
                 HrefPrefix = CombineHref(context.HrefPrefix, child.Name),
                 Stylesheets = stylesheets,
                 Scripts = scripts,
                 Favicon = favicon,
-            }));
+            });
         }
+    }
 
-        return items;
+    private SourceFile ClassifyFile(IFileInfo file)
+    {
+        string stem = this._fileSystem.Path.GetFileNameWithoutExtension(file.Name);
+
+        // A URL path is case-sensitive, so the slug is lowercase and a page's URL never varies with the case of its
+        // file name: https://www.rfc-editor.org/rfc/rfc3986#section-6.2.2.1
+        return new SourceFile(file, ContentKind.FromFileName(file.Name), stem, stem.ToLowerInvariant());
     }
 
     private IReadOnlyList<string> ResolveAssets(
@@ -238,24 +238,11 @@ internal sealed class ContentPipeline : ContentPipelineContract
     // The symlink rule is not configurable: a link lets the walk leave the content directory, one resolving
     // to an ancestor makes the walk unbounded, and File.Copy would publish the target's bytes, not the link.
     private static bool IsDenied(IFileSystemInfo entry, IReadOnlyList<string> excluded) =>
-        entry.IsLink
-        || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
-
-    private static ContentKind Classify(IFileInfo file) =>
-        file.Extension switch
-        {
-            var extension when extension.Equals(MarkdownExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
-            var extension when extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
-            var extension when extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
-            var extension when extension.Equals(FaviconExtension, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
-            _ => ContentKind.MiscFile,
-        };
+        entry.IsLink || excluded.Any(pattern => FileSystemName.MatchesSimpleExpression(pattern, entry.Name));
 
     // The files of one kind directly in this directory, never below it, as the hrefs they are served at.
-    private static IEnumerable<string> CollectHrefs(IFileSystemInfo[] entries, ScanContext context, ContentKind kind) =>
-        entries.OfType<IFileInfo>()
-               .Where(file => Classify(file) == kind)
-               .Select(file => CombineHref(context.HrefPrefix, file.Name));
+    private static IEnumerable<string> CollectHrefs(SourceFile[] files, ScanContext context, ContentKind kind) =>
+        files.Where(file => file.Kind == kind).Select(file => CombineHref(context.HrefPrefix, file.Info.Name));
 
     // An href the level already inherits is left out. Only a root file replacing a file of the theme can be one,
     // so the replacement is linked once and in the theme's place.
@@ -269,13 +256,19 @@ internal sealed class ContentPipeline : ContentPipelineContract
     private static string CombineHref(string prefix, string name) =>
         $"{prefix}/{Uri.EscapeDataString(name)}";
 
-    private static bool IsInNavigation(string[] segments) =>
-        segments.Length switch
+    private static bool IsInNavigation(SourceFile file, int depth) =>
+        depth switch
         {
-            1 => true,
-            2 => segments[^1].Equals(IndexOutputFileName, StringComparison.Ordinal),
+            0 => true,
+            1 => file.IsIndex,
             _ => false,
         };
 
     #endregion
+
+    // A file of the walk, classified once, so that its kind and every role it plays agree.
+    private sealed record SourceFile(IFileInfo Info, ContentKind Kind, string Stem, string Slug)
+    {
+        public bool IsIndex => this.Kind is ContentKind.Page && this.Slug.Equals(IndexSlug, StringComparison.Ordinal);
+    }
 }

@@ -1,3 +1,4 @@
+using Gelyn.Extensions;
 using Gelyn.Model;
 
 namespace Gelyn.Core;
@@ -14,8 +15,6 @@ namespace Gelyn.Core;
 internal static class ThemeCatalog
 {
     private const string ResourcePrefix = "themes/";
-    private const string StylesheetExtension = ".css";
-    private const string ScriptExtension = ".js";
 
     private static readonly Dictionary<string, ThemeFile[]> Themes = CollectThemes();
 
@@ -75,7 +74,7 @@ internal static class ThemeCatalog
             .Select(static name => new ThemeFile
             {
                 FileName = name[ResourcePrefix.Length..],
-                Kind = Classify(name),
+                Kind = Classify(name.AsSpan(ResourcePrefix.Length)),
                 ResourceName = name,
             })
             .GroupBy(static file => Path.GetFileNameWithoutExtension(file.FileName), StringComparer.Ordinal)
@@ -84,12 +83,11 @@ internal static class ThemeCatalog
                 static theme => theme.OrderBy(static file => file.FileName, StringComparer.Ordinal).ToArray(),
                 StringComparer.Ordinal);
 
-    private static ContentKind Classify(string name)
+    private static ContentKind Classify(ReadOnlySpan<char> fileName)
     {
-        string extension = Path.GetExtension(name);
+        var kind = ContentKind.FromFileName(fileName);
 
-        if (extension.Equals(StylesheetExtension, StringComparison.OrdinalIgnoreCase)) return ContentKind.Stylesheet;
-        if (extension.Equals(ScriptExtension, StringComparison.OrdinalIgnoreCase)) return ContentKind.Script;
+        if (kind is ContentKind.Stylesheet or ContentKind.Script) return kind;
 
         throw new InvalidOperationException("A bundled theme file is always a stylesheet or a script.");
     }

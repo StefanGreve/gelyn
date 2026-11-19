@@ -33,9 +33,15 @@ content/
         diagram.png  -> blog/diagram.png
 ```
 
-Gelyn renders your Markdown and publishes it under the same name with an `.html` extension. Everything else it
-copies byte for byte under the name it already has, which is what lets a `robots.txt`, a `CNAME`, or an image
-beside the post that uses it work without a setting. Either way, Gelyn mirrors your directories.
+Gelyn renders your Markdown and publishes it under its name in lowercase, with an `.html` extension. Everything
+else it copies byte for byte under the name it already has, which is what lets a `robots.txt`, a `CNAME`, or an
+image beside the post that uses it work without a setting. Either way, Gelyn mirrors your directories.
+
+Gelyn recognizes Markdown by the extension `.md`, which it matches without regard to case, and copies a `.markdown`
+file like any other. It writes the name of a page in lowercase because the path of a URL is case-sensitive, so
+`About.md` is published as `about.html`. A title taken from the file name keeps its case. Two names give a page a
+role: `index.md` makes it the index of its directory, and `404.md` at the root makes it the
+[not found page](#not-found-page). Both names match in any case, so `blog/Index.md` is the index of `blog/` as well.
 
 Position is the only thing that decides where a file lands. No front matter key overrides the output path, and
 nothing flattens or re-nests a directory.
@@ -268,6 +274,10 @@ A link to another Markdown file names the page Gelyn renders from it, so link yo
 each other. A relative link needs no base path, because the browser resolves it against the page it is on. A
 root-relative link such as `[About](/about.md)` gets no path of `BaseUrl`: with `https://example.com/blog` it
 leads to `/about.html` and not to `/blog/about.html`, so write the relative form instead.
+
+Give your pages lowercase names. Gelyn publishes `About.md` as `about.html`, but a link to `About.md` keeps its case
+and leads to `About.html`, which a host that respects case, such as GitHub Pages, does not find. Windows and macOS
+ignore case, so the link works there, `gelyn serve` included.
 
 `[TOC]` alone on a line becomes a table of contents for the page it stands in: a `<nav class="toc"
 role="doc-toc">` holding an `<ol>` of every heading from `##` down, nested by level, each entry linking to the

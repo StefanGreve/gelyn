@@ -87,6 +87,82 @@ public class ContentPipelineTests
     }
 
     /// <summary>
+    ///     Verifies that a section index is recognized whatever the case of its name, so that it is published as
+    ///     <c>index.html</c>, leads its directory and is titled after its folder.
+    /// </summary>
+    [Test]
+    [Arguments("blog/index.MD")]
+    [Arguments("blog/Index.md")]
+    [Arguments("blog/INDEX.MD")]
+    public async Task Scan_Test_IndexInAnyCase_LeadsItsSection(string path)
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write("blog/about.md", "About")
+            .Write(path);
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem index = items.Single(item => item.Href == "/blog/index.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(string.Join(',', items.Select(item => item.Href))).IsEqualTo("/index.html,/blog/index.html,/blog/about.html");
+            await Assert.That(index.FallbackTitle).IsEqualTo("blog");
+            await Assert.That(index.InNavigation).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that <c>404.MD</c> at the root is the not-found page, the case of the extension being
+    ///     disregarded for the role as it is for the kind.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_RootNotFoundPageWithUppercaseExtension_IsTheNotFoundPage()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.Create().Write("404.MD", "Page not found");
+
+        // Act
+        ContentItem page = Scan(fixture).Single(item => item.Href == "/404.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(page.IsNotFoundPage).IsTrue();
+            await Assert.That(page.InNavigation).IsFalse();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page is published under its name in lowercase while its fallback title keeps the case,
+    ///     and that a directory and a copied file keep their names.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_PageName_IsPublishedInLowercase()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write("Docs/Getting-Started.MD")
+            .WriteFile("Docs/Diagram.PNG");
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem page = items.Single(item => item.Href == "/Docs/getting-started.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(page.OutputPath).IsEqualTo(Path.Combine("Docs", "getting-started.html"));
+            await Assert.That(page.FallbackTitle).IsEqualTo("Getting-Started");
+            await Assert.That(items.Select(item => item.Href)).Contains("/Docs/Diagram.PNG");
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a directory symbolic link is not descended into. A link resolving to an ancestor
     ///     makes the walk unbounded, and any link at all lets it leave the content directory.
     /// </summary>
@@ -470,7 +546,7 @@ public class ContentPipelineTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(items.Single(item => item.Href == "/About.html").Kind)
+            await Assert.That(items.Single(item => item.Href == "/about.html").Kind)
                 .IsEqualTo(ContentKind.Page);
 
             await Assert.That(items.Single(item => item.Href == "/Styles.CSS").Kind)

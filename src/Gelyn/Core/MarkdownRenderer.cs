@@ -1,9 +1,11 @@
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 
 using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using Markdig.Extensions.AutoLinks;
 using Markdig.Extensions.EmphasisExtras;
+using Markdig.Extensions.RelativeFileLinks;
 using Markdig.Extensions.TableOfContents;
 using Markdig.Extensions.Tables;
 using Markdig.Extensions.Yaml;
@@ -34,7 +36,7 @@ internal sealed class MarkdownRenderer
         .UseTaskLists()
         .UseDiagrams()
         .UseAutoLinks(new AutoLinkOptions { UseHttpsForWWWLinks = true })
-        .UseRelativeFileLinks()
+        .UseRelativeFileLinks(CreateRelativeFileLinkOptions())
         .UseYamlFrontMatter()
         .Build();
 
@@ -71,4 +73,19 @@ internal sealed class MarkdownRenderer
             Html = Markdown.ToHtml(document, Pipeline),
         };
     }
+
+    #region Helpers
+
+    // Only .md is rendered, so a link to any other file, a .markdown one included, has to keep reaching its copy.
+    private static RelativeFileLinkOptions CreateRelativeFileLinkOptions()
+    {
+        var options = new RelativeFileLinkOptions();
+
+        options.SourceExtensions.Clear();
+        options.SourceExtensions.Add(FileExtensions.Markdown);
+
+        return options;
+    }
+
+    #endregion
 }

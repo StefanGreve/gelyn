@@ -48,6 +48,20 @@ public class MarkdownRendererTests
         await Assert.That(rendered.Html).Contains(expected);
     }
 
+    /// <summary>
+    ///     Verifies that a link to a <c>.markdown</c> file is left as written, because the build copies such a
+    ///     file instead of rendering it.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_LinkToMarkdownExtension_IsLeftAsWritten()
+    {
+        // Act
+        RenderedMarkdown rendered = MarkdownRenderer.Render("[Notes](notes.markdown)");
+
+        // Assert
+        await Assert.That(rendered.Html).Contains("""<a href="notes.markdown">""");
+    }
+
     #endregion // Extension Tests
 
     #region Front Matter Tests

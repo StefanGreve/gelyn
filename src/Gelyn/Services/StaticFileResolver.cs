@@ -175,7 +175,7 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
             : ClassifyExtension(this._fileSystem.Path.GetExtension(path));
 
     // A switch over string literals compares ordinally, so matching an extension that may carry any spelling
-    // needs the when clauses that ContentPipeline.Classify uses for the same reason.
+    // needs the when clauses that ContentKind.FromFileName uses for the same reason.
     private static string ClassifyExtension(string extension) =>
         extension switch
         {

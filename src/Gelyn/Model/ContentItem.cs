@@ -42,8 +42,8 @@ internal sealed record ContentItem
     public required bool InNavigation { get; init; }
 
     /// <summary>
-    ///     Indicates whether the file is <c>404.md</c> at the root of the content directory, whose
-    ///     <c>404.html</c> the host serves in place of any address that has no page of its own.
+    ///     Indicates whether the file is <c>404.md</c> at the root of the content directory, the extension in any
+    ///     case. The host serves its <c>404.html</c> in place of any address that has no page of its own.
     /// </summary>
     public required bool IsNotFoundPage { get; init; }
 
