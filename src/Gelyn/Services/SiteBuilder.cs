@@ -230,7 +230,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
-        IFile file = this._fileSystem.File;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         var documents = new DocumentCatalog(pages);
         RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, navigation, documents))];
@@ -251,7 +250,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
             string html = ComposeDocument(context, banners, footers);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
-            file.WriteAllText(path.Combine(outputDirectory, context.Page.OutputPath), html);
+            FileUtils.WriteUtf8(this._fileSystem, path.Combine(outputDirectory, context.Page.OutputPath), html);
 
             if (isMeasuring)
             {
