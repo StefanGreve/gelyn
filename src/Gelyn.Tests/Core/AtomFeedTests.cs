@@ -24,23 +24,6 @@ public class AtomFeedTests
     #region Gate Tests
 
     /// <summary>
-    ///     Verifies that no document is produced while the configuration declares no base URL, every link in
-    ///     a feed being absolute and only the base URL supplying an origin to resolve one against.
-    /// </summary>
-    [Test]
-    public async Task Render_Test_AbsentBaseUrl_WritesNothing()
-    {
-        // Arrange
-        var options = new SiteOptions();
-
-        // Act
-        byte[] feed = AtomFeed.Render(options, [Page("post.html", "Post", "2026-01-01", inFeed: true)]);
-
-        // Assert
-        await Assert.That(feed).IsEmpty();
-    }
-
-    /// <summary>
     ///     Verifies that no document is produced when no page qualifies, a feed with no entry having nothing
     ///     to put in the date it is required to carry.
     /// </summary>
@@ -48,10 +31,10 @@ public class AtomFeedTests
     public async Task Render_Test_NoQualifyingPage_WritesNothing()
     {
         // Act
-        byte[] feed = AtomFeed.Render(Options(), [Page("post.html", "Post", "2026-01-01")]);
+        byte[]? feed = Feed(Options(), [Page("post.html", "Post", "2026-01-01")]);
 
         // Assert
-        await Assert.That(feed).IsEmpty();
+        await Assert.That(feed).IsNull();
     }
 
     /// <summary>
@@ -65,12 +48,12 @@ public class AtomFeedTests
         ContentPage notFound = Page("404.html", "Not Found", "2026-01-01", inFeed: true) with { IsNotFoundPage = true };
 
         // Act
-        byte[] feed = AtomFeed.Render(Options(), [notFound]);
+        byte[]? feed = Feed(Options(), [notFound]);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(feed).IsEmpty();
+            await Assert.That(feed).IsNull();
             await Assert.That(AtomFeed.HasEntries([notFound])).IsFalse();
         }
     }
@@ -437,8 +420,8 @@ public class AtomFeedTests
 
         // Act and Assert
         // Compared as base64, which is sensitive to the order of the bytes where IsEquivalentTo is not.
-        string first = Convert.ToBase64String(AtomFeed.Render(Options(), pages));
-        string second = Convert.ToBase64String(AtomFeed.Render(Options(), pages));
+        string first = Convert.ToBase64String(Document(Options(), pages));
+        string second = Convert.ToBase64String(Document(Options(), pages));
 
         await Assert.That(first).IsEqualTo(second);
     }
@@ -491,8 +474,15 @@ public class AtomFeedTests
     private static DateOnly? Parse(string? date) =>
         date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture);
 
+    private static byte[]? Feed(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
+        AtomFeed.Render(options, options.BaseUrl ?? throw new ArgumentException("Every case declares a base URL.", nameof(options)), pages);
+
+    // A case that inspects the document always has a page that qualifies, so a missing document fails it here.
+    private static byte[] Document(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
+        Feed(options, pages) ?? throw new InvalidOperationException("No page qualifies for the feed.");
+
     private static string Xml(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
-        Encoding.UTF8.GetString(AtomFeed.Render(options, pages));
+        Encoding.UTF8.GetString(Document(options, pages));
 
     private static XElement Render(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
         XElement.Parse(Xml(options, pages));

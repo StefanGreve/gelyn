@@ -46,28 +46,29 @@ internal static class AtomFeed
     ///     Renders the feed.
     /// </summary>
     /// <param name="options">
-    ///     The site configuration, whose base URL every link is resolved against.
+    ///     The site configuration, which supplies the title, the description and the author of the feed.
+    /// </param>
+    /// <param name="baseUrl">
+    ///     The base URL of the site, which every link is resolved against.
     /// </param>
     /// <param name="pages">
     ///     Every page the site is built from, in any order.
     /// </param>
     /// <returns>
-    ///     The UTF-8 bytes of the document, or an empty array when no feed can be written, which is the case
-    ///     both when the configuration declares no base URL and when no page qualifies as an entry.
+    ///     The UTF-8 bytes of the document, or <see langword="null"/> when no page qualifies as an entry.
     /// </returns>
-    public static byte[] Render(SiteOptions options, IReadOnlyList<ContentPage> pages)
+    public static byte[]? Render(SiteOptions options, Uri baseUrl, IReadOnlyList<ContentPage> pages)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(baseUrl);
         ArgumentNullException.ThrowIfNull(pages);
-
-        if (options.BaseUrl is not Uri baseUrl) return [];
 
         ContentPage[] entries = [.. pages
             .Where(IsEntry)
             .OrderByDescending(static page => page.Date)
             .ThenBy(static page => page.Title, StringComparer.Ordinal)];
 
-        if (entries.Length == 0) return [];
+        if (entries.Length == 0) return null;
 
         Uri root = UrlUtils.AsDirectory(baseUrl);
 

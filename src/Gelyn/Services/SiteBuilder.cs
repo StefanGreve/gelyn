@@ -364,9 +364,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
     {
         if (!options.EnableFeed) return null;
 
-        // Reported ahead of the render, which answers with nothing for either reason and so cannot tell the
-        // two apart on its own.
-        if (options.BaseUrl is null)
+        if (options.BaseUrl is not Uri baseUrl)
         {
             this._logger.LogFeedSkippedWithoutBaseUrl();
             return null;
@@ -377,9 +375,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
         foreach (ContentPage page in pages.Where(static page => page.InFeed && page.Date is null))
             this._logger.LogFeedEntrySkipped(page.SourcePath);
 
-        byte[] document = AtomFeed.Render(options, pages);
-
-        if (document.Length == 0)
+        if (AtomFeed.Render(options, baseUrl, pages) is not byte[] document)
         {
             this._logger.LogFeedSkippedWithoutEntries();
             return null;
@@ -406,16 +402,14 @@ internal sealed class SiteBuilder : SiteBuilderContract
     {
         if (!options.EnableSitemap) return null;
 
-        // Checked here too, the render answering with nothing for this reason and holding no logger to say so.
-        if (options.BaseUrl is null)
+        if (options.BaseUrl is not Uri baseUrl)
         {
             this._logger.LogSitemapSkippedWithoutBaseUrl();
             return null;
         }
 
         // Always a document from here on. The landing page is always listed, and the scan fails a tree without one.
-        byte[] document = Sitemap.Render(options, pages);
-        int locations = Sitemap.CountLocations(pages);
+        (byte[] document, int locations) = Sitemap.Render(baseUrl, pages);
 
         // Splitting the sitemap into an index is not supported yet, so a site past a limit learns of it here.
         if (Sitemap.ExceedsLimits(locations, document.Length))

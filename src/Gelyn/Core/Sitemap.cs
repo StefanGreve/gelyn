@@ -3,7 +3,6 @@ using System.Xml;
 
 using Gelyn.Core.Internals;
 using Gelyn.Model;
-using Gelyn.Model.Options;
 
 namespace Gelyn.Core;
 
@@ -44,8 +43,8 @@ internal static class Sitemap
     /// <summary>
     ///     Renders the sitemap.
     /// </summary>
-    /// <param name="options">
-    ///     The site configuration, whose base URL every location is resolved against.
+    /// <param name="baseUrl">
+    ///     The base URL of the site, which every location is resolved against.
     /// </param>
     /// <param name="pages">
     ///     Every page the site publishes, listed in the order it is given them except for the not-found page,
@@ -53,17 +52,15 @@ internal static class Sitemap
     ///     so none is imposed here.
     /// </param>
     /// <returns>
-    ///     The UTF-8 bytes of the document, or an empty array when the configuration declares no base URL,
-    ///     which is the only origin a location can be resolved against.
+    ///     The UTF-8 bytes of the document, and the number of locations it lists.
     /// </returns>
-    public static byte[] Render(SiteOptions options, IReadOnlyList<ContentPage> pages)
+    public static (byte[] Document, int Locations) Render(Uri baseUrl, IReadOnlyList<ContentPage> pages)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(baseUrl);
         ArgumentNullException.ThrowIfNull(pages);
 
-        if (options.BaseUrl is not Uri baseUrl) return [];
-
         Uri root = UrlUtils.AsDirectory(baseUrl);
+        int locations = 0;
 
         var settings = new XmlWriterSettings
         {
@@ -79,27 +76,20 @@ internal static class Sitemap
             writer.WriteStartDocument();
             writer.WriteStartElement("urlset", Namespace);
 
-            foreach (ContentPage page in SelectListedPages(pages))
+            foreach (ContentPage page in pages)
+            {
+                if (page.IsNotFoundPage) continue;
+
                 writer.WriteLocation(root, page);
+                locations++;
+            }
 
             writer.WriteEndElement();
             writer.WriteEndDocument();
         }
 
-        return buffer.ToArray();
+        return (buffer.ToArray(), locations);
     }
-
-    /// <summary>
-    ///     Counts the locations a sitemap of the given pages lists.
-    /// </summary>
-    /// <param name="pages">
-    ///     Every page the site publishes.
-    /// </param>
-    /// <returns>
-    ///     The number of pages other than the not-found page.
-    /// </returns>
-    internal static int CountLocations(IReadOnlyList<ContentPage> pages) =>
-        SelectListedPages(pages).Count();
 
     /// <summary>
     ///     Indicates whether a sitemap goes past either limit of the protocol.
@@ -118,10 +108,6 @@ internal static class Sitemap
         locations > MaxLocations || bytes > MaxBytes;
 
     #region Helpers
-
-    // Shared by the render and the count, so that the warning counts exactly what the document lists.
-    private static IEnumerable<ContentPage> SelectListedPages(IReadOnlyList<ContentPage> pages) =>
-        pages.Where(static page => !page.IsNotFoundPage);
 
     /// <summary>
     ///     Writes the entry for one page.

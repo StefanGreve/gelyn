@@ -9,7 +9,6 @@ using System.Xml.Linq;
 
 using Gelyn.Core;
 using Gelyn.Model;
-using Gelyn.Model.Options;
 
 namespace Gelyn.Tests.Core;
 
@@ -20,27 +19,6 @@ namespace Gelyn.Tests.Core;
 public class SitemapTests
 {
     private static readonly XNamespace Sitemaps = "http://www.sitemaps.org/schemas/sitemap/0.9";
-
-    #region Gate Tests
-
-    /// <summary>
-    ///     Verifies that no document is produced while the configuration declares no base URL, every location
-    ///     in a sitemap being absolute and only the base URL supplying an origin to resolve one against.
-    /// </summary>
-    [Test]
-    public async Task Render_Test_AbsentBaseUrl_WritesNothing()
-    {
-        // Arrange
-        var options = new SiteOptions();
-
-        // Act
-        byte[] sitemap = Sitemap.Render(options, [Page("index.html", "2026-01-01")]);
-
-        // Assert
-        await Assert.That(sitemap).IsEmpty();
-    }
-
-    #endregion // Gate Tests
 
     #region Membership Tests
 
@@ -64,7 +42,7 @@ public class SitemapTests
         ];
 
         // Act
-        string locations = Locations(Render(Options(), pages));
+        string locations = Locations(Render(BaseUrl(), pages));
 
         // Assert
         await Assert.That(locations).IsEqualTo(
@@ -86,7 +64,7 @@ public class SitemapTests
         ];
 
         // Act
-        string locations = Locations(Render(Options(), pages));
+        string locations = Locations(Render(BaseUrl(), pages));
 
         // Assert
         await Assert.That(locations).IsEqualTo("https://example.com/index.html");
@@ -100,7 +78,7 @@ public class SitemapTests
     public async Task Render_Test_DatelessPage_CarriesNoLastmod()
     {
         // Act
-        XElement url = Urls(Render(Options(), [Page("draft.html", date: null)])).Single();
+        XElement url = Urls(Render(BaseUrl(), [Page("draft.html", date: null)])).Single();
 
         // Assert
         using (Assert.Multiple())
@@ -138,7 +116,7 @@ public class SitemapTests
         ContentPage[] pages = [Page("index.html", "2026-01-01"), Page("about.html", date: null)];
 
         // Act
-        string xml = Xml(Options(), pages);
+        string xml = Xml(BaseUrl(), pages);
 
         // Assert
         await Assert.That(xml).IsEqualTo(expected);
@@ -152,7 +130,7 @@ public class SitemapTests
     public async Task Render_Test_RootElement_DeclaresTheProtocolNamespace()
     {
         // Act
-        XElement urlset = Render(Options(), [Page("index.html", "2026-01-01")]);
+        XElement urlset = Render(BaseUrl(), [Page("index.html", "2026-01-01")]);
 
         // Assert
         await Assert.That(urlset.Name).IsEqualTo(Sitemaps + "urlset");
@@ -169,7 +147,7 @@ public class SitemapTests
     public async Task Render_Test_Declaration_StatesUtf8()
     {
         // Act
-        string xml = Xml(Options(), [Page("index.html", "2026-01-01")]);
+        string xml = Xml(BaseUrl(), [Page("index.html", "2026-01-01")]);
 
         // Assert
         await Assert.That(xml).StartsWith("""<?xml version="1.0" encoding="utf-8"?>""");
@@ -187,7 +165,7 @@ public class SitemapTests
     public async Task Render_Test_AmpersandInALocation_IsEscaped()
     {
         // Act
-        string xml = Xml(Options(), [Page("tom&jerry.html", "2026-01-01")]);
+        string xml = Xml(BaseUrl(), [Page("tom&jerry.html", "2026-01-01")]);
         XElement url = Urls(XElement.Parse(xml)).Single();
 
         // Assert
@@ -208,7 +186,7 @@ public class SitemapTests
     public async Task Render_Test_DomainRootBaseUrl_AddressesTheRoot(string baseUrl)
     {
         // Act
-        XElement url = Urls(Render(Options(baseUrl), [Page("index.html", "2026-01-01")])).Single();
+        XElement url = Urls(Render(BaseUrl(baseUrl), [Page("index.html", "2026-01-01")])).Single();
 
         // Assert
         await Assert.That(Value(url, "loc")).IsEqualTo("https://example.com/index.html");
@@ -229,7 +207,7 @@ public class SitemapTests
         ContentPage page = Page("index.html", "2026-01-01") with { Href = "/gelyn/index.html" };
 
         // Act
-        XElement url = Urls(Render(Options("https://example.com/gelyn"), [page])).Single();
+        XElement url = Urls(Render(BaseUrl("https://example.com/gelyn"), [page])).Single();
 
         // Assert
         await Assert.That(Value(url, "loc")).IsEqualTo("https://example.com/gelyn/index.html");
@@ -246,7 +224,7 @@ public class SitemapTests
         ContentPage page = Page("post.html", "2026-01-01", revised: "2026-03-04");
 
         // Act
-        XElement url = Urls(Render(Options(), [page])).Single();
+        XElement url = Urls(Render(BaseUrl(), [page])).Single();
 
         // Assert
         await Assert.That(Value(url, "lastmod")).IsEqualTo("2026-03-04");
@@ -263,7 +241,7 @@ public class SitemapTests
         ContentPage page = Page("index.html", "2026-01-01") with { Href = "/c%23%20tips/a%20b%2520.html" };
 
         // Act
-        XElement url = Urls(Render(Options(), [page])).Single();
+        XElement url = Urls(Render(BaseUrl(), [page])).Single();
 
         // Assert
         await Assert.That(Value(url, "loc")).IsEqualTo("https://example.com/c%23%20tips/a%20b%2520.html");
@@ -285,8 +263,8 @@ public class SitemapTests
 
         // Act and Assert
         // Compared as base64, which is sensitive to the order of the bytes where IsEquivalentTo is not.
-        string first = Convert.ToBase64String(Sitemap.Render(Options(), pages));
-        string second = Convert.ToBase64String(Sitemap.Render(Options(), pages));
+        string first = Convert.ToBase64String(Sitemap.Render(BaseUrl(), pages).Document);
+        string second = Convert.ToBase64String(Sitemap.Render(BaseUrl(), pages).Document);
 
         await Assert.That(first).IsEqualTo(second);
     }
@@ -317,7 +295,7 @@ public class SitemapTests
     ///     lists.
     /// </summary>
     [Test]
-    public async Task CountLocations_Test_NotFoundPage_IsNotCounted()
+    public async Task Render_Test_NotFoundPage_IsNotCounted()
     {
         // Arrange
         ContentPage[] pages =
@@ -328,22 +306,22 @@ public class SitemapTests
         ];
 
         // Act
-        int locations = Sitemap.CountLocations(pages);
+        (byte[] document, int locations) = Sitemap.Render(BaseUrl(), pages);
 
         // Assert
-        await Assert.That(locations).IsEqualTo(2);
+        using (Assert.Multiple())
+        {
+            await Assert.That(locations).IsEqualTo(2);
+            await Assert.That(Urls(XElement.Parse(Encoding.UTF8.GetString(document))).Count()).IsEqualTo(locations);
+        }
     }
 
     #endregion // Limit Tests
 
     #region Helpers
 
-    // Only the base URL is read, every other setting reaching the document by way of no element at all.
-    private static SiteOptions Options(string baseUrl = "https://example.com") =>
-        new()
-        {
-            BaseUrl = new Uri(baseUrl, UriKind.Absolute),
-        };
+    private static Uri BaseUrl(string baseUrl = "https://example.com") =>
+        new(baseUrl, UriKind.Absolute);
 
     private static ContentPage Page(string outputPath, string? date, string? revised = null) =>
         new()
@@ -375,11 +353,11 @@ public class SitemapTests
     private static DateOnly? Parse(string? date) =>
         date is null ? null : DateOnly.Parse(date, CultureInfo.InvariantCulture);
 
-    private static string Xml(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
-        Encoding.UTF8.GetString(Sitemap.Render(options, pages));
+    private static string Xml(Uri baseUrl, IReadOnlyList<ContentPage> pages) =>
+        Encoding.UTF8.GetString(Sitemap.Render(baseUrl, pages).Document);
 
-    private static XElement Render(SiteOptions options, IReadOnlyList<ContentPage> pages) =>
-        XElement.Parse(Xml(options, pages));
+    private static XElement Render(Uri baseUrl, IReadOnlyList<ContentPage> pages) =>
+        XElement.Parse(Xml(baseUrl, pages));
 
     private static IEnumerable<XElement> Urls(XElement urlset) =>
         urlset.Elements(Sitemaps + "url");
