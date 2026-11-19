@@ -161,9 +161,8 @@ internal sealed class BuildCommand : Command
         foreach (string removal in report.Removed)
             console.MarkupLineInterpolated($"[yellow]removed[/] {removal}");
 
-        // Formatted with Tool.Culture, because interpolating the value would use the current one.
         string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-        console.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+        console.MarkupLineInterpolated(Tool.Culture, $"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
     }
 
     #endregion
