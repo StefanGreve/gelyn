@@ -163,6 +163,31 @@ public class ContentPipelineTests
     }
 
     /// <summary>
+    ///     Verifies that every item carries the last write time of its source, as the directory entry reports it.
+    /// </summary>
+    [Test]
+    public async Task Scan_Test_Item_CarriesTheLastWriteTimeOfItsSource()
+    {
+        // Arrange
+        var written = new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc);
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("logo.png");
+        fixture.FileSystem.File.SetLastWriteTimeUtc(Path.Combine(fixture.ContentRoot, "index.md"), written);
+        fixture.FileSystem.File.SetLastWriteTimeUtc(Path.Combine(fixture.ContentRoot, "logo.png"), written.AddDays(1));
+
+        // Act
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(items.Single(item => item.Kind is ContentKind.Page).SourceLastWriteTimeUtc).IsEqualTo(written);
+            await Assert.That(items.Single(item => item.Kind is ContentKind.MiscFile).SourceLastWriteTimeUtc).IsEqualTo(written.AddDays(1));
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a directory symbolic link is not descended into. A link resolving to an ancestor
     ///     makes the walk unbounded, and any link at all lets it leave the content directory.
     /// </summary>

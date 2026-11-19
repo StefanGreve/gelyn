@@ -23,19 +23,20 @@ public class FileUtilsTests
     #region CopyContent Tests
 
     /// <summary>
-    ///     Verifies that the copy holds the bytes and the modification time of the source.
+    ///     Verifies that the copy holds the bytes of the source and the modification time given, not the one the
+    ///     source carries at the time of the copy.
     /// </summary>
     [Test]
-    public async Task CopyContent_Test_Copy_CarriesTheBytesAndTheModificationTime()
+    public async Task CopyContent_Test_Copy_CarriesTheBytesAndTheGivenTime()
     {
         // Arrange
         byte[] expected = [0x89, 0x50, 0x4E, 0x47, 0x00, 0xFF];
         var written = new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc);
         MockFileSystem fileSystem = Create(expected);
-        fileSystem.File.SetLastWriteTimeUtc(Source, written);
+        fileSystem.File.SetLastWriteTimeUtc(Source, written.AddDays(1));
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination);
+        FileUtils.CopyContent(fileSystem, Source, Destination, written);
 
         // Assert
         using (Assert.Multiple())
@@ -58,7 +59,7 @@ public class FileUtilsTests
         fileSystem.File.WriteAllBytes(Destination, [0x0A, 0x0B, 0x0C, 0x0D]);
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination);
+        FileUtils.CopyContent(fileSystem, Source, Destination, DateTime.UnixEpoch);
 
         // Assert
         await Assert.That(fileSystem.File.ReadAllBytes(Destination)).IsEquivalentTo(expected);
@@ -75,7 +76,7 @@ public class FileUtilsTests
         fileSystem.File.SetAttributes(Source, FileAttributes.ReadOnly);
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination);
+        FileUtils.CopyContent(fileSystem, Source, Destination, DateTime.UnixEpoch);
 
         // Assert
         using (Assert.Multiple())

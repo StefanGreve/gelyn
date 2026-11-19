@@ -464,7 +464,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         return OrderedParallel.Select(assets, asset =>
         {
-            FileUtils.CopyContent(this._fileSystem, asset.SourcePath, path.Combine(outputDirectory, asset.OutputPath));
+            FileUtils.CopyContent(this._fileSystem, asset.SourcePath, path.Combine(outputDirectory, asset.OutputPath), asset.SourceLastWriteTimeUtc);
 
             return asset.OutputPath;
         }, cancellationToken);

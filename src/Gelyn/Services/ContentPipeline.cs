@@ -194,6 +194,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
                 Stylesheets = isPage ? stylesheets : [],
                 Scripts = isPage ? scripts : [],
                 Favicon = isPage ? favicon : null,
+                SourceLastWriteTimeUtc = file.Info.LastWriteTimeUtc,
             });
         }
 

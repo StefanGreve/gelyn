@@ -13,14 +13,14 @@ internal static class FileUtils
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
     /// <summary>
-    ///     Copies the contents and the modification time of one file to another, creating or overwriting the
-    ///     destination.
+    ///     Copies the contents of one file to another, creating or overwriting the destination, and stamps the
+    ///     copy with the given modification time.
     /// </summary>
     /// <remarks>
     ///     Unlike <see cref="IFile.Copy(string, string, bool)"/>, this leaves the attributes and permissions of
     ///     the source behind, so a read-only source does not produce a read-only copy that the next build cannot
-    ///     overwrite. The modification time is carried over, so a deploy tool that compares it still skips an
-    ///     unchanged file.
+    ///     overwrite. The caller supplies the modification time, so the source is not queried for it, and a deploy
+    ///     tool that compares times still skips an unchanged file.
     /// </remarks>
     /// <param name="fileSystem">
     ///     The file system both files belong to.
@@ -31,10 +31,13 @@ internal static class FileUtils
     /// <param name="destinationPath">
     ///     The path of the copy, whose directory must exist.
     /// </param>
+    /// <param name="lastWriteTimeUtc">
+    ///     The modification time of the copy, in UTC, normally the one the source was enumerated with.
+    /// </param>
     /// <exception cref="UnauthorizedAccessException">
     ///     <paramref name="destinationPath"/> names an existing file that is read-only.
     /// </exception>
-    internal static void CopyContent(IFileSystem fileSystem, string sourcePath, string destinationPath)
+    internal static void CopyContent(IFileSystem fileSystem, string sourcePath, string destinationPath, DateTime lastWriteTimeUtc)
     {
         IFile file = fileSystem.File;
 
@@ -59,7 +62,7 @@ internal static class FileUtils
         }
 
         // Set once the destination is closed, since closing it would otherwise stamp the time of the write.
-        file.SetLastWriteTimeUtc(destinationPath, file.GetLastWriteTimeUtc(sourcePath));
+        file.SetLastWriteTimeUtc(destinationPath, lastWriteTimeUtc);
     }
 
     /// <summary>

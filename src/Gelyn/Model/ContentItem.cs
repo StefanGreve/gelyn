@@ -67,4 +67,10 @@ internal sealed record ContentItem
     ///     anything but a <see cref="ContentKind.Page"/>.
     /// </summary>
     public required string? Favicon { get; init; }
+
+    /// <summary>
+    ///     The last write time, in UTC, that the scan enumerated for the file at <see cref="SourcePath"/>. The
+    ///     copy of anything but a <see cref="ContentKind.Page"/> is stamped with it.
+    /// </summary>
+    public required DateTime SourceLastWriteTimeUtc { get; init; }
 }

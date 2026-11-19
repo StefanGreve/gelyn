@@ -88,6 +88,25 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
+    ///     Verifies that a copy carries the last write time of its source, so that a deploy tool which compares
+    ///     times still skips an unchanged file.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_Copy_CarriesTheLastWriteTimeOfItsSource()
+    {
+        // Arrange
+        var written = new DateTime(2026, 3, 4, 5, 6, 7, DateTimeKind.Utc);
+        ContentFixture fixture = ContentFixture.Create().WriteFile("robots.txt", "User-agent: *");
+        fixture.FileSystem.File.SetLastWriteTimeUtc(Path.Combine(fixture.ContentRoot, "robots.txt"), written);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        await Assert.That(fixture.FileSystem.File.GetLastWriteTimeUtc(Path.Combine(fixture.OutputRoot, "robots.txt"))).IsEqualTo(written);
+    }
+
+    /// <summary>
     ///     Verifies that a read-only source yields a writable copy, so that a second build can overwrite it,
     ///     while the source keeps the attribute its owner set.
     /// </summary>

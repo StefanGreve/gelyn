@@ -19,7 +19,8 @@ internal static class FileSystemInfoExtensions
         ///     Indicates whether the entry is a symbolic link or a junction.
         /// </summary>
         /// <remarks>
-        ///     The attribute comes with the enumeration and so costs nothing, whereas reading
+        ///     The attribute comes with the enumeration on Windows and costs one <c>lstat</c> on Linux and macOS,
+        ///     which the other metadata reads of the entry then share, whereas reading
         ///     <see cref="IFileSystemInfo.LinkTarget"/> opens the entry on Windows and reads its link on Unix.
         ///     The target still decides, because a reparse point of any other kind has none.
         /// </remarks>
