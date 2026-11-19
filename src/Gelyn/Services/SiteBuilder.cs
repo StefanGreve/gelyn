@@ -147,18 +147,15 @@ internal sealed class SiteBuilder : SiteBuilderContract
     private BuildReport Build(CancellationToken cancellationToken)
     {
         SiteOptions options = this._options.CurrentValue;
-        long started = Stopwatch.GetTimestamp();
-        var heapStarted = GarbageCollectionContext.Capture();
 
-        // The total is reported either way, so only the per-page detail is worth guarding.
-        bool isMeasuring = this._logger.IsEnabled(LogLevel.Debug);
+        // The total is reported either way, so only the per-page detail and the heap snapshots are guarded.
+        var clock = BuildClock.Start(this._logger.IsEnabled(LogLevel.Debug));
 
         IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
-        long scanTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
+        clock.Charge(BuildPhase.Scan);
 
         IReadOnlyList<ContentPage> pages = this._pipeline.Render(items, cancellationToken);
-
-        long renderTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - scanTicks : 0;
+        clock.Charge(BuildPhase.Render);
 
         foreach (ContentPage page in pages)
             foreach (UnknownKey key in page.UnknownKeys)
@@ -172,48 +169,31 @@ internal sealed class SiteBuilder : SiteBuilderContract
         if (this._fileSystem.DirectoryInfo.New(outputDirectory).IsLink)
             throw new IOException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
 
-        long outputStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        clock.Skip();
         List<GeneratedDocument> composed = this.ComposeGenerated(items, pages, options);
+        clock.Charge(BuildPhase.Write);
 
         // Ahead of every write, because a file system that ignores case keeps the spelling of a file a write
         // replaces, which the ordinal comparison would then take for a leftover and delete.
-        long removeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         Collection<string> removed = this.PruneOutput(items, composed, outputDirectory, cancellationToken);
-        long removeTicks = isMeasuring ? Stopwatch.GetTimestamp() - removeStarted : 0;
+        clock.Charge(BuildPhase.Remove);
 
         this.CreateOutputDirectories(items, outputDirectory);
 
-        PageWriteContext write = this.WritePages(pages, options, outputDirectory, isMeasuring, cancellationToken);
+        string[] written = this.WritePages(pages, options, outputDirectory, clock, cancellationToken);
         string[] generated = this.WriteGenerated(composed, outputDirectory);
         string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
-
-        // The whole output pass counts as writing, except the shares spent pruning and composing pages.
-        long writeTicks = isMeasuring ? Stopwatch.GetTimestamp() - outputStarted - removeTicks - write.ComposeTicks : 0;
+        clock.Charge(BuildPhase.Write);
 
         // Taken before the reports below, whose console writes would otherwise be counted in the build total.
-        TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
+        TimeSpan elapsed = clock.Stop();
 
-        if (isMeasuring)
-        {
-            this.ReportCounters(new BuildCounterContext
-            {
-                ItemCount = items.Count,
-                PageCount = pages.Count,
-                FileCount = write.Written.Count + generated.Length + copied.Length,
-                RemovedCount = removed.Count,
-                ScanTicks = scanTicks,
-                RenderTicks = renderTicks,
-                ComposeTicks = write.ComposeTicks,
-                WriteTicks = writeTicks,
-                RemoveTicks = removeTicks,
-                Elapsed = elapsed,
-                GarbageCollection = GarbageCollectionContext.Capture().Since(heapStarted),
-            });
-        }
+        if (clock.IsMeasuring)
+            this.ReportCounters(clock.CollectCounters(items.Count, pages.Count, written.Length + generated.Length + copied.Length, removed.Count));
 
         return new BuildReport
         {
-            Pages = write.Written,
+            Pages = written,
             Generated = generated,
             Copies = copied,
             Removed = removed,
@@ -241,11 +221,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }
     }
 
-    private PageWriteContext WritePages(
+    private string[] WritePages(
         IReadOnlyList<ContentPage> pages,
         SiteOptions options,
         string outputDirectory,
-        bool isMeasuring,
+        BuildClock clock,
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
@@ -253,13 +233,14 @@ internal sealed class SiteBuilder : SiteBuilderContract
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         var documents = new DocumentCatalog(pages);
         RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, navigation, documents))];
+        clock.Charge(BuildPhase.Write);
 
         // Rendered up front, so that the parallel pass only reads the two dictionaries.
-        long started = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         Dictionary<string, string> banners = RenderBanners(contexts, navigation.Count + 1);
         Dictionary<string, string> footers = RenderFooters(contexts);
-        long sharedTicks = isMeasuring ? Stopwatch.GetTimestamp() - started : 0;
+        clock.Charge(BuildPhase.Compose);
 
+        bool isMeasuring = clock.IsMeasuring;
         long composeTicks = 0;
         long writeTicks = 0;
 
@@ -280,13 +261,9 @@ internal sealed class SiteBuilder : SiteBuilderContract
             return context.Page.OutputPath;
         }, cancellationToken);
 
-        long passTicks = isMeasuring ? Stopwatch.GetTimestamp() - started - sharedTicks : 0;
+        clock.Split(composeTicks, writeTicks);
 
-        return new PageWriteContext
-        {
-            Written = written,
-            ComposeTicks = sharedTicks + ProrateTicks(passTicks, composeTicks, composeTicks + writeTicks),
-        };
+        return written;
     }
 
     // The banner differs only in which navigation entry carries aria-current, so it needs one render per
@@ -334,11 +311,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
         Dictionary<string, string> banners,
         Dictionary<string, string> footers) =>
         StringUtils.NormalizeLineEndings(PageLayout.Render(context, banners[BannerKey(context.Page)], footers[FooterKey(context.Page)]));
-
-    // Compose and write overlap across threads, so neither has a wall time of its own. The pass's wall time is
-    // split in the ratio of the thread time each took, which keeps the phases adding up to the build total.
-    private static long ProrateTicks(long wallTicks, long partTicks, long wholeTicks) =>
-        wholeTicks == 0 ? 0 : (long)((double)wallTicks * partTicks / wholeTicks);
 
     /// <summary>
     ///     Composes the documents that no source file of their own stands behind: the feed, the sitemap and the

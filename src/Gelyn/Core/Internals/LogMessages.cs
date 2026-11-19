@@ -72,8 +72,8 @@ internal static partial class LogMessages
     internal static partial void LogComposeCompleted(this ILogger logger, int pageCount, double elapsedMilliseconds);
 
     /// <summary>
-    ///     Reports how long it took to write the generated documents and copy everything else located, both
-    ///     of which land in the output directory.
+    ///     Reports how long it took to write the pages and the generated documents and to copy everything else
+    ///     located, all of which land in the output directory.
     /// </summary>
     /// <param name="logger">
     ///     The logger the record is written to.
@@ -83,8 +83,8 @@ internal static partial class LogMessages
     ///     by the generated documents.
     /// </param>
     /// <param name="elapsedMilliseconds">
-    ///     The wall time from creating the output directories to the last copy, minus the share attributed to
-    ///     composing.
+    ///     The wall time from composing the generated documents to the last copy, minus the shares attributed to
+    ///     removing and composing.
     /// </param>
     [LoggerMessage(
         EventId = EventIds.WRITE_COMPLETED,
