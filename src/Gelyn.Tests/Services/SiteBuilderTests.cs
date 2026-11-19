@@ -2057,6 +2057,59 @@ public partial class SiteBuilderTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a directory the prune deletes, because every page in it was renamed, is created again for
+    ///     the new pages, since only the directories the prune did not find are created.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_DirectoryEmptiedByARename_IsCreatedAgain()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write("blog/first.md", "First");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        fixture.Delete("blog/first.md").Write("blog/second.md", "Second");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEquivalentTo([Path.Combine("blog", "first.html")]);
+            await Assert.That(fixture.OutputHolds("blog/second.html")).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page below a directory starting with a dot is written on a warm build, although the prune
+    ///     leaves such a directory alone and so never finds it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_PageBelowADotNamedDirectory_IsWrittenOnAWarmBuild()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .Write(".well-known/notice.md", "Notice");
+
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+        fixture.Write(".well-known/notice.md", "Revised");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(report.Removed).IsEmpty();
+            await Assert.That(fixture.ReadOutput(Path.Combine(fixture.OutputRoot, ".well-known", "notice.html"))).Contains("Revised");
+        }
+    }
+
     #endregion // PruneOutput Tests
 
     #region Counter Tests

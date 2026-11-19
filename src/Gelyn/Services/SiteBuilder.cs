@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO.Abstractions;
 
@@ -38,7 +37,7 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="CreateOutputDirectories"/> creates every directory the located files land in.
+///                 <see cref="CreateMissingDirectories"/> creates the directories the prune did not find.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -166,8 +165,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
             this._environment.ContentRootPath,
             options.OutputDirectory);
 
+        // One entry for the link check and the prune's existence check, which share its cached attributes.
+        IDirectoryInfo root = this._fileSystem.DirectoryInfo.New(outputDirectory);
+
         // Writing through a link is dangerous, since the prune deletes any data at its target the build did not write.
-        if (this._fileSystem.DirectoryInfo.New(outputDirectory).IsLink)
+        if (root.IsLink)
             throw new IOException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
 
         clock.Skip();
@@ -176,10 +178,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         // Ahead of every write, because a file system that ignores case keeps the spelling of a file a write
         // replaces, which the ordinal comparison would then take for a leftover and delete.
-        Collection<string> removed = this.PruneOutput(items, composed, outputDirectory, cancellationToken);
+        PublishedTree tree = this.CollectPublishedTree(items, composed);
+        PruneContext pruned = this.PruneOutput(root, tree, cancellationToken);
         clock.Charge(BuildPhase.Remove);
 
-        this.CreateOutputDirectories(items, outputDirectory);
+        this.CreateMissingDirectories(tree, pruned.Missing, outputDirectory);
 
         string[] written = this.WritePages(pages, options, outputDirectory, clock, cancellationToken);
         string[] generated = this.WriteGenerated(composed, outputDirectory);
@@ -190,36 +193,70 @@ internal sealed class SiteBuilder : SiteBuilderContract
         TimeSpan elapsed = clock.Stop();
 
         if (clock.IsMeasuring)
-            this.ReportCounters(clock.CollectCounters(items.Count, pages.Count, written.Length + generated.Length + copied.Length, removed.Count));
+            this.ReportCounters(clock.CollectCounters(items.Count, pages.Count, written.Length + generated.Length + copied.Length, pruned.Removed.Count));
 
         return new BuildReport
         {
             Pages = written,
             Generated = generated,
             Copies = copied,
-            Removed = removed,
+            Removed = pruned.Removed,
             Elapsed = elapsed,
         };
     }
 
-    // CreateDirectory probes the file system even for a directory that exists, so every directory is created
-    // once. Creating all of them ahead of the parallel writes also leaves the writes nothing to coordinate.
-    private void CreateOutputDirectories(IReadOnlyList<ContentItem> items, string outputDirectory)
+    // The root first, because the generated documents land there whether any item does, and every directory ahead of
+    // those below it, so that creating the deepest missing ones creates the rest.
+    private PublishedTree CollectPublishedTree(IReadOnlyList<ContentItem> items, List<GeneratedDocument> composed)
     {
         IPath path = this._fileSystem.Path;
-        IDirectory directory = this._fileSystem.Directory;
-
-        // The root is created first, because the generated documents land there whether any item does.
-        var created = new HashSet<string>(StringComparer.Ordinal) { outputDirectory };
-        directory.CreateDirectory(outputDirectory);
+        var files = new HashSet<string>(items.Count + composed.Count, StringComparer.Ordinal);
+        var known = new HashSet<string>(StringComparer.Ordinal) { string.Empty };
+        List<string> directories = [string.Empty];
 
         foreach (ContentItem item in items)
         {
-            string target = path.GetDirectoryName(path.Combine(outputDirectory, item.OutputPath)) ?? outputDirectory;
+            files.Add(item.OutputPath);
 
-            if (created.Add(target))
-                directory.CreateDirectory(target);
+            int first = directories.Count;
+
+            for (string? directory = path.GetDirectoryName(item.OutputPath); !string.IsNullOrEmpty(directory); directory = path.GetDirectoryName(directory))
+            {
+                // Present already, and so are its ancestors.
+                if (!known.Add(directory)) break;
+
+                directories.Add(directory);
+            }
+
+            // Walked up from the file, so the new ones are turned round into the order a creation needs.
+            directories.Reverse(first, directories.Count - first);
         }
+
+        foreach (GeneratedDocument document in composed)
+            files.Add(document.Path);
+
+        return new PublishedTree
+        {
+            Files = files,
+            Directories = directories
+        };
+    }
+
+    // CreateDirectory probes the file system even for a directory that exists, so only the directories the prune did
+    // not find are created, and of those the deepest alone, since a call creates the ancestors its path needs.
+    // Creating them ahead of the parallel writes also leaves the writes nothing to coordinate.
+    private void CreateMissingDirectories(PublishedTree tree, HashSet<string> missing, string outputDirectory)
+    {
+        IPath path = this._fileSystem.Path;
+        var parents = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (string relativePath in missing)
+            if (path.GetDirectoryName(relativePath) is string parent)
+                parents.Add(parent);
+
+        foreach (string relativePath in tree.Directories)
+            if (missing.Contains(relativePath) && !parents.Contains(relativePath))
+                this._fileSystem.Directory.CreateDirectory(path.Combine(outputDirectory, relativePath));
     }
 
     private string[] WritePages(
@@ -470,60 +507,31 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }, cancellationToken);
     }
 
-    private Collection<string> PruneOutput(
-        IReadOnlyList<ContentItem> items,
-        List<GeneratedDocument> composed,
-        string outputDirectory,
-        CancellationToken cancellationToken)
+    private PruneContext PruneOutput(IDirectoryInfo root, PublishedTree tree, CancellationToken cancellationToken)
     {
-        IDirectoryInfo root = this._fileSystem.DirectoryInfo.New(outputDirectory);
-
-        // Created after the prune, so the first build finds nothing to prune.
-        if (!root.Exists) return [];
-
-        var published = new HashSet<string>(items.Count + composed.Count, StringComparer.Ordinal);
-
-        foreach (ContentItem item in items)
-            published.Add(item.OutputPath);
-
-        foreach (GeneratedDocument document in composed)
-            published.Add(document.Path);
-
         var context = new PruneContext
         {
-            Prefix = [],
-            Published = published,
-            PublishedDirectories = this.CollectPublishedDirectories(published),
+            Published = tree.Files,
+            PublishedDirectories = new HashSet<string>(tree.Directories, StringComparer.OrdinalIgnoreCase),
+            Missing = new HashSet<string>(tree.Directories, StringComparer.Ordinal),
             Removed = [],
         };
 
-        this.PruneDirectory(root, context, cancellationToken);
+        // Created after the prune, so the first build finds nothing to prune and every directory missing.
+        if (!root.Exists) return context;
 
-        return context.Removed;
-    }
+        // The walk never deletes the root, so it is the one directory that is present without being confirmed.
+        context.Missing.Remove(string.Empty);
+        this.PruneDirectory(root, string.Empty, context, cancellationToken);
 
-    // Keyed without regard to case, so that a directory kept under another spelling finds the one it is published under.
-    private Dictionary<string, string> CollectPublishedDirectories(HashSet<string> published)
-    {
-        IPath path = this._fileSystem.Path;
-        var directories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (string file in published)
-        {
-            for (string? directory = path.GetDirectoryName(file); !string.IsNullOrEmpty(directory); directory = path.GetDirectoryName(directory))
-            {
-                // Present already, and so are its ancestors. The scan admits one spelling per directory.
-                if (!directories.TryAdd(directory, directory)) break;
-            }
-        }
-
-        return directories;
+        return context;
     }
 
     /// <summary>
     ///     Deletes every file in one directory, and in the directories below it, that the build does not
-    ///     publish, together with the directories those deletions leave empty, and gives a directory that survives
-    ///     under another spelling the one it is published under.
+    ///     publish, together with the directories those deletions leave empty, gives a directory that survives
+    ///     under another spelling the one it is published under, and strikes every directory found under its
+    ///     published spelling off the missing ones.
     /// </summary>
     /// <remarks>
     ///     Recursive like the scan, because a flat enumeration would descend into a skipped directory and
@@ -532,8 +540,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// <param name="directory">
     ///     The directory to walk.
     /// </param>
+    /// <param name="relativePath">
+    ///     The output-relative path of <paramref name="directory"/>, empty at the output root.
+    /// </param>
     /// <param name="context">
-    ///     What this level of the walk carries, deletions included.
+    ///     What the walk carries, deletions and missing directories included.
     /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
@@ -544,9 +555,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// </returns>
     private bool PruneDirectory(
         IDirectoryInfo directory,
+        string relativePath,
         PruneContext context,
         CancellationToken cancellationToken)
     {
+        IPath path = this._fileSystem.Path;
+
         // Materialized ahead of the first delete. POSIX leaves it unspecified whether a directory stream
         // still returns an entry removed after the stream was opened, and not every file system keeps the
         // rest of the iteration stable: https://pubs.opengroup.org/onlinepubs/9799919799/functions/readdir.html
@@ -565,13 +579,17 @@ internal sealed class SiteBuilder : SiteBuilderContract
                 continue;
             }
 
-            string[] segments = [.. context.Prefix, entry.Name];
+            string entryPath = path.Combine(relativePath, entry.Name);
 
             if (entry is IDirectoryInfo child)
             {
-                if (this.PruneDirectory(child, context with { Prefix = segments }, cancellationToken))
+                if (this.PruneDirectory(child, entryPath, context, cancellationToken))
                 {
-                    this.AdoptPublishedSpelling(directory, child, segments, entries, context.PublishedDirectories);
+                    // Found under its published spelling, as every directory a build keeps for its pages is, or else
+                    // under the spelling the rename leaves it with.
+                    if (!context.Missing.Remove(entryPath))
+                        context.Missing.Remove(this.AdoptPublishedSpelling(directory, child, entryPath, entries, context.PublishedDirectories));
+
                     occupied = true;
                     continue;
                 }
@@ -580,16 +598,14 @@ internal sealed class SiteBuilder : SiteBuilderContract
                 continue;
             }
 
-            string relativePath = this._fileSystem.Path.Combine(segments);
-
-            if (context.Published.Contains(relativePath))
+            if (context.Published.Contains(entryPath))
             {
                 occupied = true;
                 continue;
             }
 
             entry.Delete();
-            context.Removed.Add(relativePath);
+            context.Removed.Add(entryPath);
         }
 
         return occupied;
@@ -597,27 +613,25 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
     // A dot entry keeps a directory from being pruned, so after a rename in case alone, such as Blog to blog, it keeps
     // its old name, and a file system that ignores case writes the new pages into it. Renaming it fixes the spelling.
-    private void AdoptPublishedSpelling(
+    // Returns the spelling the directory has afterwards.
+    private string AdoptPublishedSpelling(
         IDirectoryInfo parent,
         IDirectoryInfo child,
-        string[] segments,
+        string relativePath,
         IFileSystemInfo[] siblings,
-        Dictionary<string, string> publishedDirectories)
+        HashSet<string> publishedDirectories)
     {
         IPath path = this._fileSystem.Path;
-        string relativePath = path.Combine(segments);
-
-        if (!publishedDirectories.TryGetValue(relativePath, out string? published)) return;
 
         // Every directory a build keeps for its pages is published under its own spelling, so only a leftover goes on.
-        if (published.Equals(relativePath, StringComparison.Ordinal)) return;
+        if (!publishedDirectories.TryGetValue(relativePath, out string? published) || published.Equals(relativePath, StringComparison.Ordinal)) return relativePath;
 
         string name = path.GetFileName(published);
         string target = path.Combine(parent.FullName, name);
 
         // A file system that respects case lists the published spelling as an entry of its own or cannot resolve it,
         // while one that ignores case resolves it to this very directory.
-        if (siblings.Any(sibling => sibling.Name.Equals(name, StringComparison.Ordinal)) || !this._fileSystem.Directory.Exists(target)) return;
+        if (siblings.Any(sibling => sibling.Name.Equals(name, StringComparison.Ordinal)) || !this._fileSystem.Directory.Exists(target)) return relativePath;
 
         // Through an unused name, because Directory.Move refuses a destination that already exists, and the new
         // spelling still resolves to this directory.
@@ -625,6 +639,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         this._fileSystem.Directory.Move(child.FullName, transit);
         this._fileSystem.Directory.Move(transit, target);
+
+        return published;
     }
 
     #endregion
