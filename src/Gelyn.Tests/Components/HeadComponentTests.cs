@@ -484,7 +484,6 @@ public class HeadComponentTests
         return HeadComponent.Render(new RenderContext
         {
             Options = options,
-            Navigation = [],
             Documents = new DocumentCatalog(documents),
             Page = page,
         });

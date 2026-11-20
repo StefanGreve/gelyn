@@ -404,7 +404,6 @@ public partial class TableOfDocumentsComponentTests
         return TableOfDocumentsComponent.Render(new RenderContext
         {
             Options = new SiteOptions(),
-            Navigation = [],
             Documents = new DocumentCatalog(pages),
             Page = pages.Single(page => string.Equals(page.OutputPath, current, StringComparison.Ordinal)),
         });

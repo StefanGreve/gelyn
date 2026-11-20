@@ -282,12 +282,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
         IPath path = this._fileSystem.Path;
         IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
         var documents = new DocumentCatalog(pages);
-        RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, navigation, documents))];
+        RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, documents))];
         clock.Charge(BuildPhase.Write);
 
-        // Rendered up front, so that the parallel pass only reads the two dictionaries.
-        Dictionary<string, string> banners = RenderBanners(contexts, navigation.Count + 1);
-        Dictionary<string, string> footers = RenderFooters(contexts);
+        // Rendered once, up front, so that the parallel pass only reads them.
+        Banner banner = HeaderComponent.Render(options, navigation);
+        Footer footer = FooterComponent.Render(options, documents);
         clock.Charge(BuildPhase.Compose);
 
         bool isMeasuring = clock.IsMeasuring;
@@ -297,7 +297,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
         string[] written = OrderedParallel.Select(contexts, context =>
         {
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = ComposeDocument(context, banners, footers);
+            string html = ComposeDocument(context, banner, footer);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
             FileUtils.WriteUtf8(this._fileSystem, path.Combine(outputDirectory, context.Page.OutputPath), html);
@@ -316,51 +316,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
         return written;
     }
 
-    // The banner differs only in which navigation entry carries aria-current, so it needs one render per
-    // linked page plus one shared by every page the navigation leaves out, however many pages there are.
-    private static Dictionary<string, string> RenderBanners(RenderContext[] contexts, int capacity)
-    {
-        var banners = new Dictionary<string, string>(capacity, StringComparer.Ordinal);
-
-        foreach (RenderContext context in contexts)
-        {
-            string key = BannerKey(context.Page);
-
-            if (!banners.ContainsKey(key))
-                banners[key] = HeaderComponent.Render(context);
-        }
-
-        return banners;
-    }
-
-    // The footer differs only in the page's revision date, so it needs one render per distinct date plus
-    // one shared by every undated page.
-    private static Dictionary<string, string> RenderFooters(RenderContext[] contexts)
-    {
-        var footers = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (RenderContext context in contexts)
-        {
-            string key = FooterKey(context.Page);
-
-            if (!footers.ContainsKey(key))
-                footers[key] = FooterComponent.Render(context);
-        }
-
-        return footers;
-    }
-
-    private static string BannerKey(ContentPage page) =>
-        page.InNavigation ? page.Href : string.Empty;
-
-    private static string FooterKey(ContentPage page) =>
-        page.Revised?.ToString(DateFormat.Machine, Tool.Culture) ?? string.Empty;
-
-    private static string ComposeDocument(
-        RenderContext context,
-        Dictionary<string, string> banners,
-        Dictionary<string, string> footers) =>
-        StringUtils.NormalizeLineEndings(PageLayout.Render(context, banners[BannerKey(context.Page)], footers[FooterKey(context.Page)]));
+    private static string ComposeDocument(RenderContext context, Banner banner, Footer footer) =>
+        StringUtils.NormalizeLineEndings(PageLayout.Render(context, banner, footer));
 
     /// <summary>
     ///     Composes the documents that no source file of their own stands behind: the feed, the sitemap and the

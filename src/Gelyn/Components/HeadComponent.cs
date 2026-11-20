@@ -33,41 +33,41 @@ internal static class HeadComponent
         var head = new StringBuilder();
         SiteOptions options = context.Options;
 
-        head.AppendLine("""<meta charset="utf-8">""");
-        head.AppendLine("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
+        head.Append("""<meta charset="utf-8">""");
+        head.Append("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
 
         // Served at whichever address missed, so relative links must resolve against the root instead.
         if (context.Page.IsNotFoundPage)
         {
             string root = $"{UrlUtils.ResolveBasePath(options.BaseUrl)}/";
-            head.AppendLine($"""<base href="{WebUtility.HtmlEncode(root)}">""");
+            head.Append($"""<base href="{WebUtility.HtmlEncode(root)}">""");
         }
 
-        head.AppendLine($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
+        head.Append($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
 
         if (!string.IsNullOrWhiteSpace(options.Author))
-            head.AppendLine($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
+            head.Append($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
 
         string? description = context.Page.Description ?? options.Description;
 
         if (!string.IsNullOrWhiteSpace(description))
-            head.AppendLine($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
+            head.Append($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
 
         if (context.Page.Revised is DateOnly revised)
         {
             string date = revised.ToString(DateFormat.Machine, Tool.Culture);
-            head.AppendLine($"""<meta name="revised" content="{date}">""");
+            head.Append($"""<meta name="revised" content="{date}">""");
         }
 
         if (context.Page.IsNotFoundPage)
-            head.AppendLine("""<meta name="robots" content="noindex">""");
+            head.Append("""<meta name="robots" content="noindex">""");
 
         if (options.BaseUrl is Uri baseUrl)
         {
             if (!context.Page.IsNotFoundPage)
             {
                 string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
-                head.AppendLine($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+                head.Append($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
             }
 
             // Announced only for a feed the build will write, which takes a page that qualifies as an entry.
@@ -78,15 +78,15 @@ internal static class HeadComponent
                 string feed = WebUtility.HtmlEncode(new Uri(root, AtomFeed.FileName).AbsoluteUri);
                 string title = WebUtility.HtmlEncode(options.Title);
 
-                head.AppendLine($"""<link rel="alternate" type="{AtomFeed.ContentType}" href="{feed}" title="{title}">""");
+                head.Append($"""<link rel="alternate" type="{AtomFeed.ContentType}" href="{feed}" title="{title}">""");
             }
         }
 
         string documentTitle = context.Page.OutputPath.Equals(LandingPage, StringComparison.Ordinal) ? options.Title : $"{context.Page.Title} - {options.Title}";
-        head.AppendLine($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
+        head.Append($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
 
         if (context.Page.Favicon is string favicon)
-            head.AppendLine($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
+            head.Append($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
 
         if (context.Page.EnableMathRendering)
             head.AppendMathRenderer(options.KaTeXVersion);
@@ -99,10 +99,10 @@ internal static class HeadComponent
 
         // Outermost first, so the deepest stylesheet wins the cascade.
         foreach (string stylesheet in context.Page.Stylesheets)
-            head.AppendLine($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
+            head.Append($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
 
         foreach (string script in context.Page.Scripts)
-            head.AppendLine($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
+            head.Append($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
 
         return head.ToString();
     }
@@ -115,7 +115,7 @@ internal static class HeadComponent
 
         // The loading of KaTeX is deferred to speed up page rendering.
         // To automatically render math in text elements, include the auto-render extension.
-        head.AppendLine($$"""
+        head.Append($$"""
             <link rel="stylesheet" href="{{katex}}/katex.min.css">
             <script defer src="{{katex}}/katex.min.js"></script>
             <script defer src="{{katex}}/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
@@ -128,7 +128,7 @@ internal static class HeadComponent
 
         // A module script defers by itself. The global lets a theme's script configure Mermaid before it draws
         // on the load event.
-        head.AppendLine($$"""
+        head.Append($$"""
             <script type="module">
             import mermaid from "{{mermaid}}/mermaid.esm.min.mjs";
             window.mermaid = mermaid;
@@ -144,7 +144,7 @@ internal static class HeadComponent
 
         // The JavaScript engine needs no WebAssembly download. A language Shiki lacks is left as Markdig wrote
         // it. With no default color, the theme's stylesheet picks between the two palettes.
-        head.AppendLine($$"""
+        head.Append($$"""
             <script type="module">
             import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "{{shiki}}";
             const blocks = new Map();

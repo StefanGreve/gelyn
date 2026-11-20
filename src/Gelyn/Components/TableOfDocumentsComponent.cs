@@ -66,31 +66,31 @@ internal static class TableOfDocumentsComponent
 
         var table = new StringBuilder();
 
-        table.AppendLine($"""<nav aria-label="{NavigationLabel}">""");
-        table.AppendLine("<table>");
-        table.AppendLine("<thead>");
-        table.AppendLine("<tr>");
+        table.Append($"""<nav aria-label="{NavigationLabel}">""");
+        table.Append("<table>");
+        table.Append("<thead>");
+        table.Append("<tr>");
 
         foreach ((string header, _) in Columns)
-            table.AppendLine($"<th>{header}</th>");
+            table.Append($"<th>{header}</th>");
 
-        table.AppendLine("</tr>");
-        table.AppendLine("</thead>");
-        table.AppendLine("<tbody>");
+        table.Append("</tr>");
+        table.Append("</thead>");
+        table.Append("<tbody>");
 
         foreach ((ContentPage page, string type) in rows)
         {
-            table.AppendLine($"""<tr data-type="{type}">""");
+            table.Append($"""<tr data-type="{type}">""");
 
             foreach ((_, Func<ContentPage, string> cell) in Columns)
-                table.AppendLine($"<td>{cell(page)}</td>");
+                table.Append($"<td>{cell(page)}</td>");
 
-            table.AppendLine("</tr>");
+            table.Append("</tr>");
         }
 
-        table.AppendLine("</tbody>");
-        table.AppendLine("</table>");
-        table.AppendLine("</nav>");
+        table.Append("</tbody>");
+        table.Append("</table>");
+        table.Append("</nav>");
 
         return table.ToString();
     }

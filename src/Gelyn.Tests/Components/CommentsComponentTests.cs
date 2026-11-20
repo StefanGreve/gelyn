@@ -144,7 +144,6 @@ public class CommentsComponentTests
         return CommentsComponent.Render(new RenderContext
         {
             Options = new SiteOptions { Giscus = giscus },
-            Navigation = [],
             Documents = new DocumentCatalog([page]),
             Page = page,
         });

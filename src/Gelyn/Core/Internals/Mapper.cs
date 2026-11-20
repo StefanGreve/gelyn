@@ -55,24 +55,16 @@ internal static class Mapper
     /// <param name="options">
     ///     The site configuration.
     /// </param>
-    /// <param name="navigation">
-    ///     The pages the site navigation links, landing page first.
-    /// </param>
     /// <param name="documents">
     ///     What the build knows about every page at once, built once and shared by every context.
     /// </param>
     /// <returns>
     ///     The new context.
     /// </returns>
-    internal static RenderContext ToRenderContext(
-        this ContentPage page,
-        SiteOptions options,
-        IReadOnlyList<ContentPage> navigation,
-        DocumentCatalog documents) =>
+    internal static RenderContext ToRenderContext(this ContentPage page, SiteOptions options, DocumentCatalog documents) =>
         new()
         {
             Options = options,
-            Navigation = navigation,
             Documents = documents,
             Page = page,
         };

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core;
-using Gelyn.Core.Context;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -239,6 +238,36 @@ public class FooterComponentTests
 
     #endregion // Generated Entry Tests
 
+    #region Revision Tests
+
+    /// <summary>
+    ///     Verifies that a revised page dates the colophon, in both forms of the date, right before its closing tag.
+    /// </summary>
+    [Test]
+    public async Task CutFor_Test_RevisedPage_DatesTheColophon()
+    {
+        // Act
+        string footer = Render(new SiteOptions(), revised: "2026-10-25");
+
+        // Assert
+        await Assert.That(footer).Contains(""" - last revised <time datetime="2026-10-25">Oct 25, 2026</time></span>""");
+    }
+
+    /// <summary>
+    ///     Verifies that a page declaring no revision leaves the colophon undated.
+    /// </summary>
+    [Test]
+    public async Task CutFor_Test_UnrevisedPage_LeavesTheColophonUndated()
+    {
+        // Act
+        string footer = Render(new SiteOptions());
+
+        // Assert
+        await Assert.That(footer).DoesNotContain("last revised");
+    }
+
+    #endregion // Revision Tests
+
     #region Helpers
 
     private static FooterLink Link(string label, string url) =>
@@ -274,13 +303,10 @@ public class FooterComponentTests
             ? [page, page with { Href = "/post.html", InFeed = true, Date = new DateOnly(2026, 1, 1) }]
             : [page];
 
-        return FooterComponent.Render(new RenderContext
-        {
-            Options = options,
-            Navigation = [],
-            Documents = new DocumentCatalog(documents),
-            Page = page,
-        });
+        // Joined the way PageLayout writes the footer, around the page's own revision fragment.
+        Slot slot = FooterComponent.Render(options, new DocumentCatalog(documents)).CutFor(page);
+
+        return string.Concat(slot.Before, slot.Fragment, slot.After);
     }
 
     #endregion

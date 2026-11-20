@@ -14,11 +14,6 @@ internal sealed record RenderContext
     public required SiteOptions Options { get; init; }
 
     /// <summary>
-    ///     The pages the site navigation links, landing page first.
-    /// </summary>
-    public required IReadOnlyList<ContentPage> Navigation { get; init; }
-
-    /// <summary>
     ///     What the build knows about every page at once, shared by every page it renders.
     /// </summary>
     public required DocumentCatalog Documents { get; init; }

@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 
 using Gelyn.Core;
-using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
@@ -14,42 +13,42 @@ namespace Gelyn.Components;
 internal static class FooterComponent
 {
     /// <summary>
-    ///     Renders the block.
+    ///     Renders the block once for the build, cut where a page's revision fragment goes.
     /// </summary>
-    /// <param name="context">
-    ///     The context the page is rendered against.
+    /// <param name="options">
+    ///     The configuration snapshot the build is rendered against, which declares the links.
+    /// </param>
+    /// <param name="documents">
+    ///     What the build knows about every page at once, which decides whether the feed is linked.
     /// </param>
     /// <returns>
-    ///     The HTML of the fragment.
+    ///     The footer.
     /// </returns>
-    public static string Render(RenderContext context)
+    public static Footer Render(SiteOptions options, DocumentCatalog documents)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(documents);
 
-        var footer = new StringBuilder();
+        var html = new StringBuilder("<footer>");
 
-        string version = WebUtility.HtmlEncode(Tool.Version);
-        string revised = string.Empty;
+        html.AppendLinks(options, documents);
+        html.Append($"<span>Built with {Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}");
 
-        if (context.Page.Revised is DateOnly date)
+        int offset = html.Length;
+
+        html.Append("</span></footer>");
+
+        return new Footer
         {
-            string machine = date.ToString(DateFormat.Machine, Tool.Culture);
-            revised = $""" - last revised <time datetime="{machine}">{date.ToString(DateFormat.Display, Tool.Culture)}</time>""";
-        }
-
-        footer.AppendLine("<footer>");
-        footer.AppendLinks(context);
-        footer.AppendLine($"<span>Built with {Tool.Name} v{version}{revised}</span>");
-        footer.AppendLine("</footer>");
-
-        return footer.ToString();
+            Html = html.ToString(),
+            Offset = offset
+        };
     }
 
     #region Helpers
 
-    private static void AppendLinks(this StringBuilder footer, RenderContext context)
+    private static void AppendLinks(this StringBuilder footer, SiteOptions options, DocumentCatalog documents)
     {
-        SiteOptions options = context.Options;
         var links = new List<(string Label, string Href)>(options.FooterLinks.Count + 2);
 
         foreach (FooterLink link in options.FooterLinks)
@@ -65,7 +64,7 @@ internal static class FooterComponent
         {
             string prefix = UrlUtils.ResolveBasePath(baseUrl);
 
-            if (options.EnableFeed && context.Documents.HasFeedEntries)
+            if (options.EnableFeed && documents.HasFeedEntries)
                 links.Add(("Feed", $"{prefix}/{AtomFeed.FileName}"));
 
             if (options.EnableSitemap)
@@ -74,12 +73,12 @@ internal static class FooterComponent
 
         if (links.Count == 0) return;
 
-        footer.AppendLine("<ul>");
+        footer.Append("<ul>");
 
         foreach ((string label, string href) in links)
-            footer.AppendLine($"""<li><a href="{WebUtility.HtmlEncode(href)}">{WebUtility.HtmlEncode(label)}</a></li>""");
+            footer.Append($"""<li><a href="{WebUtility.HtmlEncode(href)}">{WebUtility.HtmlEncode(label)}</a></li>""");
 
-        footer.AppendLine("</ul>");
+        footer.Append("</ul>");
     }
 
     #endregion

@@ -1,6 +1,9 @@
 using System.Net;
+using System.Text;
 
-using Gelyn.Core.Context;
+using Gelyn.Core;
+using Gelyn.Model;
+using Gelyn.Model.Options;
 
 namespace Gelyn.Components;
 
@@ -10,39 +13,37 @@ namespace Gelyn.Components;
 internal static class HeaderComponent
 {
     /// <summary>
-    ///     Renders the banner.
+    ///     Renders the banner once for the build, with no entry marked, and notes where each entry takes its mark.
     /// </summary>
-    /// <param name="context">
-    ///     The context the page is rendered against.
+    /// <param name="options">
+    ///     The configuration snapshot the build is rendered against, which names the site.
+    /// </param>
+    /// <param name="navigation">
+    ///     The pages the site navigation links, landing page first.
     /// </param>
     /// <returns>
-    ///     The HTML of the fragment.
+    ///     The banner.
     /// </returns>
-    public static string Render(RenderContext context)
+    public static Banner Render(SiteOptions options, IReadOnlyList<ContentPage> navigation)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(navigation);
 
-        var navItems = context.Navigation.Select((page, index) =>
+        var html = new StringBuilder("<header><nav><ul>");
+        var offsets = new Dictionary<string, int>(navigation.Count, StringComparer.Ordinal);
+
+        for (int index = 0; index < navigation.Count; index++)
         {
-            bool isCurrent = string.Equals(context.Page.Href, page.Href, StringComparison.Ordinal);
-            string current = isCurrent ? " aria-current=\"page\"" : string.Empty;
-            string title = index == 0 ? context.Options.Title : page.Title;
+            ContentPage page = navigation[index];
+            string title = index == 0 ? options.Title : page.Title;
 
-            return $"""
-                <li>
-                    <a{current} href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(title)}</a>
-                </li>
-            """;
-        });
+            html.Append("<li><a");
+            offsets.Add(page.Href, html.Length);
+            html.Append($""" href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(title)}</a></li>""");
+        }
 
-        return $"""
-            <header>
-                <nav>
-                    <ul>
-                        {string.Join(Environment.NewLine, navItems)}
-                    </ul>
-                </nav>
-            </header>
-        """;
+        html.Append("</ul></nav></header>");
+
+        return new Banner { Html = html.ToString(), Offsets = offsets };
     }
 }
