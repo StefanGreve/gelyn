@@ -17,9 +17,9 @@ namespace Gelyn.Components;
 internal static class TableOfDocumentsComponent
 {
     /// <summary>
-    ///     The rendered form of a <c>[TOD]</c> marker, which is a paragraph holding the literal and nothing else.
+    ///     The rendered form of a <c>[TOD]</c> marker, as UTF-8: a paragraph holding the literal and nothing else.
     /// </summary>
-    internal const string Marker = "<p>[TOD]</p>";
+    internal static ReadOnlySpan<byte> Marker => "<p>[TOD]</p>"u8;
 
     private const string FileType = "file";
     private const string FolderType = "folder";

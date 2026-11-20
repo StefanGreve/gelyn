@@ -340,7 +340,7 @@ public class SitemapTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = false,
-            Html = string.Empty,
+            Body = ReadOnlyMemory<byte>.Empty,
             InNavigation = true,
             IsNotFoundPage = false,
             InFeed = false,

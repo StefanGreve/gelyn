@@ -78,9 +78,9 @@ internal sealed record ContentPage
     public required bool EnableComments { get; init; }
 
     /// <summary>
-    ///     The rendered HTML body, excluding the document shell.
+    ///     The rendered HTML body as UTF-8, excluding the document shell.
     /// </summary>
-    public required string Html { get; init; }
+    public required ReadOnlyMemory<byte> Body { get; init; }
 
     /// <summary>
     ///     Indicates whether the site navigation links the page. The landing page, root-level pages and the

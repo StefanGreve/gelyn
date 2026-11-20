@@ -61,20 +61,20 @@ internal static class PageLayout
 
     private static void AppendBody(this PageBuffer buffer, LayoutContext context, ContentPage page)
     {
-        ReadOnlySpan<char> html = page.Html;
+        ReadOnlySpan<byte> body = page.Body.Span;
 
         while (true)
         {
-            int marker = html.IndexOf(TableOfDocumentsComponent.Marker, StringComparison.Ordinal);
+            int marker = body.IndexOf(TableOfDocumentsComponent.Marker);
 
             if (marker < 0) break;
 
-            buffer.Append(html[..marker]);
+            buffer.Append(body[..marker]);
             TableOfDocumentsComponent.Render(context, page, buffer);
-            html = html[(marker + TableOfDocumentsComponent.Marker.Length)..];
+            body = body[(marker + TableOfDocumentsComponent.Marker.Length)..];
         }
 
-        buffer.Append(html);
+        buffer.Append(body);
     }
 
     #endregion

@@ -461,7 +461,7 @@ public class AtomFeedTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = false,
-            Html = string.Empty,
+            Body = ReadOnlyMemory<byte>.Empty,
             InNavigation = false,
             IsNotFoundPage = false,
             InFeed = inFeed,

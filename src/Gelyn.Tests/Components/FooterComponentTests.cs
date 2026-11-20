@@ -290,7 +290,7 @@ public class FooterComponentTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = false,
-            Html = "<p>Home</p>",
+            Body = "<p>Home</p>"u8.ToArray(),
             InNavigation = true,
             IsNotFoundPage = false,
             InFeed = false,

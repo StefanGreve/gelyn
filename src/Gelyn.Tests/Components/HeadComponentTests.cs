@@ -467,7 +467,7 @@ public class HeadComponentTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = false,
-            Html = "<p>Home</p>",
+            Body = "<p>Home</p>"u8.ToArray(),
             InNavigation = true,
             IsNotFoundPage = isNotFound,
             InFeed = false,

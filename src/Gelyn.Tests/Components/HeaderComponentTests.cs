@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -182,7 +183,7 @@ public partial class HeaderComponentTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = false,
-            Html = string.Empty,
+            Body = ReadOnlyMemory<byte>.Empty,
             InNavigation = true,
             IsNotFoundPage = false,
             InFeed = false,

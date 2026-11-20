@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -132,7 +133,7 @@ public class CommentsComponentTests
             EnableDiagramRendering = false,
             EnableSyntaxHighlighting = false,
             EnableComments = enableComments,
-            Html = "<p>Home</p>",
+            Body = "<p>Home</p>"u8.ToArray(),
             InNavigation = true,
             IsNotFoundPage = isNotFound,
             InFeed = false,
