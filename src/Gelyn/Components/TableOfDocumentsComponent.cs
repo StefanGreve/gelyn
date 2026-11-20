@@ -40,26 +40,30 @@ internal static class TableOfDocumentsComponent
     ///     Renders the table.
     /// </summary>
     /// <param name="context">
-    ///     The context the page is rendered against.
+    ///     What the layout shares between the pages of the build, the catalog included.
+    /// </param>
+    /// <param name="page">
+    ///     The page being rendered.
     /// </param>
     /// <returns>
     ///     The HTML of the navigation landmark holding the table, or an empty string when no page is listed.
     /// </returns>
-    public static string Render(RenderContext context)
+    public static string Render(LayoutContext context, ContentPage page)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(page);
 
-        string current = context.Page.OutputPath;
+        string current = page.OutputPath;
         int scopeLength = ResolveScopeLength(current);
         IReadOnlyList<ContentPage> listed = context.Documents.ListedIn(current.AsSpan(0, scopeLength));
 
         List<(ContentPage Page, string Type)> rows = new(listed.Count);
 
         // The listing comes ordered, and dropping the marker page from it leaves the rest in that order.
-        foreach (ContentPage page in listed)
+        foreach (ContentPage document in listed)
         {
-            if (!string.Equals(page.OutputPath, current, StringComparison.Ordinal))
-                rows.Add((page, ResolveType(page, scopeLength)));
+            if (!string.Equals(document.OutputPath, current, StringComparison.Ordinal))
+                rows.Add((document, ResolveType(document, scopeLength)));
         }
 
         if (rows.Count == 0) return string.Empty;
@@ -78,12 +82,12 @@ internal static class TableOfDocumentsComponent
         table.Append("</thead>");
         table.Append("<tbody>");
 
-        foreach ((ContentPage page, string type) in rows)
+        foreach ((ContentPage document, string type) in rows)
         {
             table.Append($"""<tr data-type="{type}">""");
 
             foreach ((_, Func<ContentPage, string> cell) in Columns)
-                table.Append($"<td>{cell(page)}</td>");
+                table.Append($"<td>{cell(document)}</td>");
 
             table.Append("</tr>");
         }

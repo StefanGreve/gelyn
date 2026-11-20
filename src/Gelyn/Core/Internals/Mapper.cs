@@ -1,6 +1,4 @@
-using Gelyn.Core.Context;
 using Gelyn.Model;
-using Gelyn.Model.Options;
 
 namespace Gelyn.Core.Internals;
 
@@ -44,28 +42,5 @@ internal static class Mapper
             Scripts = item.Scripts,
             Favicon = item.Favicon,
             UnknownKeys = document.UnknownKeys,
-        };
-
-    /// <summary>
-    ///     Builds the context a single page is rendered against.
-    /// </summary>
-    /// <param name="page">
-    ///     The page to render.
-    /// </param>
-    /// <param name="options">
-    ///     The site configuration.
-    /// </param>
-    /// <param name="documents">
-    ///     What the build knows about every page at once, built once and shared by every context.
-    /// </param>
-    /// <returns>
-    ///     The new context.
-    /// </returns>
-    internal static RenderContext ToRenderContext(this ContentPage page, SiteOptions options, DocumentCatalog documents) =>
-        new()
-        {
-            Options = options,
-            Documents = documents,
-            Page = page,
         };
 }

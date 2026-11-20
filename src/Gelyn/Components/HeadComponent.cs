@@ -4,6 +4,7 @@ using System.Text;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Model;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Components;
@@ -18,17 +19,21 @@ internal static class HeadComponent
     private const string LandingPage = "index.html";
 
     /// <summary>
-    ///     Renders the metadata.
+    ///     Renders the metadata of a page.
     /// </summary>
     /// <param name="context">
-    ///     The context the page is rendered against.
+    ///     What the layout shares between the pages of the build.
+    /// </param>
+    /// <param name="page">
+    ///     The page being rendered.
     /// </param>
     /// <returns>
     ///     The HTML of the fragment, without the enclosing <c>head</c> element.
     /// </returns>
-    public static string Render(RenderContext context)
+    public static string Render(LayoutContext context, ContentPage page)
     {
         ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(page);
 
         var head = new StringBuilder();
         SiteOptions options = context.Options;
@@ -37,7 +42,7 @@ internal static class HeadComponent
         head.Append("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
 
         // Served at whichever address missed, so relative links must resolve against the root instead.
-        if (context.Page.IsNotFoundPage)
+        if (page.IsNotFoundPage)
         {
             string root = $"{UrlUtils.ResolveBasePath(options.BaseUrl)}/";
             head.Append($"""<base href="{WebUtility.HtmlEncode(root)}">""");
@@ -48,63 +53,80 @@ internal static class HeadComponent
         if (!string.IsNullOrWhiteSpace(options.Author))
             head.Append($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
 
-        string? description = context.Page.Description ?? options.Description;
+        string? description = page.Description ?? options.Description;
 
         if (!string.IsNullOrWhiteSpace(description))
             head.Append($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
 
-        if (context.Page.Revised is DateOnly revised)
+        if (page.Revised is DateOnly revised)
         {
             string date = revised.ToString(DateFormat.Machine, Tool.Culture);
             head.Append($"""<meta name="revised" content="{date}">""");
         }
 
-        if (context.Page.IsNotFoundPage)
+        if (page.IsNotFoundPage)
             head.Append("""<meta name="robots" content="noindex">""");
 
-        if (options.BaseUrl is Uri baseUrl)
+        if (options.BaseUrl is Uri baseUrl && !page.IsNotFoundPage)
         {
-            if (!context.Page.IsNotFoundPage)
-            {
-                string canonical = new Uri(baseUrl, context.Page.Href).AbsoluteUri;
-                head.Append($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
-            }
-
-            // Announced only for a feed the build will write, which takes a page that qualifies as an entry.
-            if (options.EnableFeed && context.Documents.HasFeedEntries)
-            {
-                Uri root = UrlUtils.AsDirectory(baseUrl);
-
-                string feed = WebUtility.HtmlEncode(new Uri(root, AtomFeed.FileName).AbsoluteUri);
-                string title = WebUtility.HtmlEncode(options.Title);
-
-                head.Append($"""<link rel="alternate" type="{AtomFeed.ContentType}" href="{feed}" title="{title}">""");
-            }
+            string canonical = new Uri(baseUrl, page.Href).AbsoluteUri;
+            head.Append($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
         }
 
-        string documentTitle = context.Page.OutputPath.Equals(LandingPage, StringComparison.Ordinal) ? options.Title : $"{context.Page.Title} - {options.Title}";
+        head.Append(context.FeedLink);
+
+        string documentTitle = page.OutputPath.Equals(LandingPage, StringComparison.Ordinal) ? options.Title : $"{page.Title} - {options.Title}";
         head.Append($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
 
-        if (context.Page.Favicon is string favicon)
+        if (page.Favicon is string favicon)
             head.Append($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
 
-        if (context.Page.EnableMathRendering)
+        if (page.EnableMathRendering)
             head.AppendMathRenderer(options.KaTeXVersion);
 
-        if (context.Page.EnableDiagramRendering)
+        if (page.EnableDiagramRendering)
             head.AppendDiagramRenderer(options.MermaidVersion);
 
-        if (context.Page.EnableSyntaxHighlighting)
+        if (page.EnableSyntaxHighlighting)
             head.AppendSyntaxHighlighter(options.ShikiVersion);
 
         // Outermost first, so the deepest stylesheet wins the cascade.
-        foreach (string stylesheet in context.Page.Stylesheets)
+        foreach (string stylesheet in page.Stylesheets)
             head.Append($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
 
-        foreach (string script in context.Page.Scripts)
+        foreach (string script in page.Scripts)
             head.Append($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
 
         return head.ToString();
+    }
+
+    /// <summary>
+    ///     Renders the link that announces the feed, once for the build.
+    /// </summary>
+    /// <param name="options">
+    ///     The configuration snapshot the build is rendered against, which names the site and its base URL.
+    /// </param>
+    /// <param name="documents">
+    ///     What the build knows about every page at once, which decides whether the feed is written.
+    /// </param>
+    /// <returns>
+    ///     The HTML of the link, or an empty string unless the build writes the feed, which takes a base URL,
+    ///     the feed switched on and a page that qualifies as an entry.
+    /// </returns>
+    public static string RenderFeedLink(SiteOptions options, DocumentCatalog documents)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(documents);
+
+        if (options.BaseUrl is not Uri baseUrl || !options.EnableFeed || !documents.HasFeedEntries)
+            return string.Empty;
+
+        Uri root = UrlUtils.AsDirectory(baseUrl);
+
+        string feed = WebUtility.HtmlEncode(new Uri(root, AtomFeed.FileName).AbsoluteUri);
+        string title = WebUtility.HtmlEncode(options.Title);
+
+        return $"""<link rel="alternate" type="{AtomFeed.ContentType}" href="{feed}" title="{title}">""";
     }
 
     #region Helpers

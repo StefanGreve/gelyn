@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 
 using Gelyn.Abstractions;
-using Gelyn.Components;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
@@ -280,27 +279,23 @@ internal sealed class SiteBuilder : SiteBuilderContract
         CancellationToken cancellationToken)
     {
         IPath path = this._fileSystem.Path;
-        IReadOnlyList<ContentPage> navigation = [.. pages.Where(static page => page.InNavigation)];
-        var documents = new DocumentCatalog(pages);
-        RenderContext[] contexts = [.. pages.Select(page => page.ToRenderContext(options, documents))];
         clock.Charge(BuildPhase.Write);
 
-        // Rendered once, up front, so that the parallel pass only reads them.
-        Banner banner = HeaderComponent.Render(options, navigation);
-        Footer footer = FooterComponent.Render(options, documents);
+        // Rendered once, up front, so that the parallel pass only reads it.
+        var layout = new LayoutContext(options, pages);
         clock.Charge(BuildPhase.Compose);
 
         bool isMeasuring = clock.IsMeasuring;
         long composeTicks = 0;
         long writeTicks = 0;
 
-        string[] written = OrderedParallel.Select(contexts, context =>
+        string[] written = OrderedParallel.Select(pages, page =>
         {
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = ComposeDocument(context, banner, footer);
+            string html = ComposeDocument(layout, page);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
-            FileUtils.WriteUtf8(this._fileSystem, path.Combine(outputDirectory, context.Page.OutputPath), html);
+            FileUtils.WriteUtf8(this._fileSystem, path.Combine(outputDirectory, page.OutputPath), html);
 
             if (isMeasuring)
             {
@@ -308,7 +303,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
                 Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - writeStarted);
             }
 
-            return context.Page.OutputPath;
+            return page.OutputPath;
         }, cancellationToken);
 
         clock.Split(composeTicks, writeTicks);
@@ -316,8 +311,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
         return written;
     }
 
-    private static string ComposeDocument(RenderContext context, Banner banner, Footer footer) =>
-        StringUtils.NormalizeLineEndings(PageLayout.Render(context, banner, footer));
+    private static string ComposeDocument(LayoutContext context, ContentPage page) =>
+        StringUtils.NormalizeLineEndings(PageLayout.Render(context, page));
 
     /// <summary>
     ///     Composes the documents that no source file of their own stands behind: the feed, the sitemap and the

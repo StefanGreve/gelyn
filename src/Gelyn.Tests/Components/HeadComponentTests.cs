@@ -5,7 +5,6 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
-using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -481,12 +480,7 @@ public class HeadComponentTests
             ? [page, page with { Href = "/post.html", InFeed = true, Date = new DateOnly(2026, 1, 1) }]
             : [page];
 
-        return HeadComponent.Render(new RenderContext
-        {
-            Options = options,
-            Documents = new DocumentCatalog(documents),
-            Page = page,
-        });
+        return HeadComponent.Render(new LayoutContext(options, documents), page);
     }
 
     #endregion

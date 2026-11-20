@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 
 using Gelyn.Components;
-using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -141,12 +140,7 @@ public class CommentsComponentTests
             UnknownKeys = [],
         };
 
-        return CommentsComponent.Render(new RenderContext
-        {
-            Options = new SiteOptions { Giscus = giscus },
-            Documents = new DocumentCatalog([page]),
-            Page = page,
-        });
+        return CommentsComponent.Render(new LayoutContext(new SiteOptions { Giscus = giscus }, [page]), page);
     }
 
     #endregion

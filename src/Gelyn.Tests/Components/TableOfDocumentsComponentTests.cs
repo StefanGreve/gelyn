@@ -6,7 +6,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
-using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -401,12 +400,7 @@ public partial class TableOfDocumentsComponentTests
     {
         string current = Native(currentPath);
 
-        return TableOfDocumentsComponent.Render(new RenderContext
-        {
-            Options = new SiteOptions(),
-            Documents = new DocumentCatalog(pages),
-            Page = pages.Single(page => string.Equals(page.OutputPath, current, StringComparison.Ordinal)),
-        });
+        return TableOfDocumentsComponent.Render(new LayoutContext(new SiteOptions(), pages), pages.Single(page => string.Equals(page.OutputPath, current, StringComparison.Ordinal)));
     }
 
     private static ContentPage Page(string outputPath, string title, string? date = null) =>

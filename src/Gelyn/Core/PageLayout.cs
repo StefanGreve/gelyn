@@ -1,7 +1,6 @@
-using System.Net;
-
 using Gelyn.Components;
 using Gelyn.Core.Context;
+using Gelyn.Model;
 
 namespace Gelyn.Core;
 
@@ -15,44 +14,39 @@ internal static class PageLayout
     /// </summary>
     /// <remarks>
     ///     The head is rendered here and never passed in, because its contents depend on the page: its own
-    ///     description replaces the site's, and only a revised page carries a revision date. The comment thread is
-    ///     rendered here for the same reason. The body is expanded on the way through, every <c>[TOD]</c>
-    ///     marker it carries giving way to a table of documents.
+    ///     description replaces the site's, and only a revised page carries a revision date. The comment thread,
+    ///     rendered once for the build, is written for a page that asks for one. The body is expanded on the way
+    ///     through, every <c>[TOD]</c> marker it carries giving way to a table of documents.
     /// </remarks>
     /// <param name="context">
-    ///     The context the page is rendered against.
+    ///     What the layout shares between the pages of the build.
     /// </param>
-    /// <param name="banner">
-    ///     The banner, rendered once for the build.
-    /// </param>
-    /// <param name="footer">
-    ///     The footer, rendered once for the build.
+    /// <param name="page">
+    ///     The page being rendered.
     /// </param>
     /// <returns>
     ///     The complete HTML document.
     /// </returns>
-    public static string Render(RenderContext context, Banner banner, Footer footer)
+    public static string Render(LayoutContext context, ContentPage page)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(banner);
-        ArgumentNullException.ThrowIfNull(footer);
+        ArgumentNullException.ThrowIfNull(page);
 
-        string language = WebUtility.HtmlEncode(context.Options.Language);
-        string head = HeadComponent.Render(context);
-        string comments = CommentsComponent.Render(context);
+        string head = HeadComponent.Render(context, page);
+        string comments = CommentsComponent.Render(context, page);
 
-        string body = context.Page.Html.Contains(TableOfDocumentsComponent.Marker, StringComparison.Ordinal)
-            ? context.Page.Html.Replace(TableOfDocumentsComponent.Marker, TableOfDocumentsComponent.Render(context), StringComparison.Ordinal)
-            : context.Page.Html;
+        string body = page.Html.Contains(TableOfDocumentsComponent.Marker, StringComparison.Ordinal)
+            ? page.Html.Replace(TableOfDocumentsComponent.Marker, TableOfDocumentsComponent.Render(context, page), StringComparison.Ordinal)
+            : page.Html;
 
         // Each page is assembled from slices of the shared banner and footer through the holes below, which keeps
         // every page from making a private copy of either.
-        Slot headerSlot = banner.CutFor(context.Page);
-        Slot footerSlot = footer.CutFor(context.Page);
+        Slot headerSlot = context.Banner.CutFor(page);
+        Slot footerSlot = context.Footer.CutFor(page);
 
         return $"""
             <!DOCTYPE html>
-            <html lang="{language}">
+            <html lang="{context.Language}">
             <head>
                 {head}
             </head>
