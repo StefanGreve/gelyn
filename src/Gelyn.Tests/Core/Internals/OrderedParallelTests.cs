@@ -128,4 +128,40 @@ public class OrderedParallelTests
     }
 
     #endregion // Select Tests
+
+    #region For Tests
+
+    /// <summary>
+    ///     Verifies that every result lands at the index it was projected from, and that every index is projected
+    ///     once.
+    /// </summary>
+    [Test]
+    public async Task For_Test_Results_LandAtTheirIndex()
+    {
+        // Arrange
+        int[] calls = new int[1000];
+
+        // Act
+        int[] results = OrderedParallel.For(calls.Length, index => index * 2 + Interlocked.Increment(ref calls[index]) - 1, CancellationToken.None);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(string.Join(',', results)).IsEqualTo(string.Join(',', Enumerable.Range(0, 1000).Select(static index => index * 2)));
+            await Assert.That(calls.All(static count => count == 1)).IsTrue();
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a negative count is refused before any projection runs.
+    /// </summary>
+    [Test]
+    public async Task For_Test_NegativeCount_IsRefused()
+    {
+        // Act and Assert
+        await Assert.That(() => OrderedParallel.For(-1, static index => index, CancellationToken.None))
+            .Throws<ArgumentOutOfRangeException>();
+    }
+
+    #endregion // For Tests
 }

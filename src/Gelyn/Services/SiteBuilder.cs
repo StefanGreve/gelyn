@@ -41,12 +41,8 @@ namespace Gelyn.Services;
 ///         </item>
 ///         <item>
 ///             <description>
-///                 <see cref="WritePages"/> composes and writes the rendered pages.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="WriteGenerated"/> writes the composed documents.
+///                 <see cref="WriteDocuments"/> composes and writes the rendered pages, and writes the composed
+///                 documents after them in the same pass.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -183,8 +179,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         this.CreateMissingDirectories(tree, pruned.Missing, outputDirectory);
 
-        string[] written = this.WritePages(pages, options, outputDirectory, clock, cancellationToken);
-        string[] generated = this.WriteGenerated(composed, outputDirectory);
+        string[] written = this.WriteDocuments(pages, composed, options, outputDirectory, clock, cancellationToken);
         string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
         clock.Charge(BuildPhase.Write);
 
@@ -192,12 +187,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
         TimeSpan elapsed = clock.Stop();
 
         if (clock.IsMeasuring)
-            this.ReportCounters(clock.CollectCounters(items.Count, pages.Count, written.Length + generated.Length + copied.Length, pruned.Removed.Count));
+            this.ReportCounters(clock.CollectCounters(items.Count, pages.Count, written.Length + copied.Length, pruned.Removed.Count));
 
         return new BuildReport
         {
-            Pages = written,
-            Generated = generated,
+            Pages = new ArraySegment<string>(written, 0, pages.Count),
+            Generated = new ArraySegment<string>(written, pages.Count, composed.Count),
             Copies = copied,
             Removed = pruned.Removed,
             Elapsed = elapsed,
@@ -271,14 +266,14 @@ internal sealed class SiteBuilder : SiteBuilderContract
                 this._fileSystem.Directory.CreateDirectory(path.Combine(outputDirectory, relativePath));
     }
 
-    private string[] WritePages(
+    private string[] WriteDocuments(
         IReadOnlyList<ContentPage> pages,
+        List<GeneratedDocument> composed,
         SiteOptions options,
         string outputDirectory,
         BuildClock clock,
         CancellationToken cancellationToken)
     {
-        IPath path = this._fileSystem.Path;
         clock.Charge(BuildPhase.Write);
 
         // Rendered once, up front, so that the parallel pass only reads it.
@@ -289,27 +284,43 @@ internal sealed class SiteBuilder : SiteBuilderContract
         long composeTicks = 0;
         long writeTicks = 0;
 
-        string[] written = OrderedParallel.Select(pages, page =>
-        {
-            long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            using var document = new PageBuffer();
-            PageLayout.Render(layout, page, document);
-            long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-
-            this._fileSystem.File.WriteAllBytes(path.Combine(outputDirectory, page.OutputPath), document.WrittenSpan);
-
-            if (isMeasuring)
-            {
-                Interlocked.Add(ref composeTicks, writeStarted - composeStarted);
-                Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - writeStarted);
-            }
-
-            return page.OutputPath;
-        }, cancellationToken);
+        string[] written = OrderedParallel.For(pages.Count + composed.Count, index =>
+            index < pages.Count
+                ? this.WritePage(layout, pages[index], outputDirectory, isMeasuring, ref composeTicks, ref writeTicks)
+                : this.WriteGenerated(composed[index - pages.Count], outputDirectory, isMeasuring, ref writeTicks), cancellationToken);
 
         clock.Split(composeTicks, writeTicks);
 
         return written;
+    }
+
+    private string WritePage(LayoutContext layout, ContentPage page, string outputDirectory, bool isMeasuring, ref long composeTicks, ref long writeTicks)
+    {
+        long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+        using var document = new PageBuffer();
+        PageLayout.Render(layout, page, document);
+        long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+
+        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, page.OutputPath), document.WrittenSpan);
+
+        if (isMeasuring)
+        {
+            Interlocked.Add(ref composeTicks, writeStarted - composeStarted);
+            Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - writeStarted);
+        }
+
+        return page.OutputPath;
+    }
+
+    private string WriteGenerated(GeneratedDocument document, string outputDirectory, bool isMeasuring, ref long writeTicks)
+    {
+        long started = isMeasuring ? Stopwatch.GetTimestamp() : 0;
+
+        this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, document.Path), document.Contents.Span);
+
+        if (isMeasuring) Interlocked.Add(ref writeTicks, Stopwatch.GetTimestamp() - started);
+
+        return document.Path;
     }
 
     /// <summary>
@@ -444,14 +455,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
         }
 
         return collected;
-    }
-
-    private string[] WriteGenerated(List<GeneratedDocument> composed, string outputDirectory)
-    {
-        foreach (GeneratedDocument document in composed)
-            this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, document.Path), document.Contents.Span);
-
-        return [.. composed.Select(static document => document.Path)];
     }
 
     private string[] CopyAssets(

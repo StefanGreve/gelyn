@@ -1617,6 +1617,30 @@ public partial class SiteBuilderTests
             .WithMessageContaining("and the generated sitemap both publish 'sitemap.xml'");
     }
 
+    /// <summary>
+    ///     Verifies that a page that cannot be written surfaces ahead of a generated document that cannot be
+    ///     written, as a sequential pass over the pages and then the documents would report it.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_FailingPage_WinsOverAFailingDocument()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreatePublished()
+            .WithBaseUrl("https://example.com")
+            .WithSitemap();
+
+        foreach (string name in new[] { "index.html", Sitemap.FileName })
+        {
+            fixture.WriteOutput(name, "stale");
+            fixture.FileSystem.File.SetAttributes(Path.Combine(fixture.OutputRoot, name), FileAttributes.ReadOnly);
+        }
+
+        // Act and Assert
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+            .ThrowsExactly<UnauthorizedAccessException>()
+            .WithMessageContaining("index.html");
+    }
+
     #endregion // Sitemap Tests
 
     #region Theme Tests
