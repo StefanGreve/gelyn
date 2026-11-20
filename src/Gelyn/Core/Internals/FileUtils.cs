@@ -1,6 +1,4 @@
-using System.Buffers;
 using System.IO.Abstractions;
-using System.Text;
 
 namespace Gelyn.Core.Internals;
 
@@ -9,9 +7,6 @@ namespace Gelyn.Core.Internals;
 /// </summary>
 internal static class FileUtils
 {
-    // The encoding File.WriteAllText writes with, so that the bytes on disk stay the same.
-    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
-
     /// <summary>
     ///     Copies the contents of one file to another, creating or overwriting the destination, and stamps the
     ///     copy with the given modification time.
@@ -65,38 +60,4 @@ internal static class FileUtils
         file.SetLastWriteTimeUtc(destinationPath, lastWriteTimeUtc);
     }
 
-    /// <summary>
-    ///     Writes text to a file as UTF-8 without a byte order mark, creating or overwriting the file.
-    /// </summary>
-    /// <remarks>
-    ///     The text is encoded into one pooled buffer and written in a single call, where
-    ///     <see cref="IFile.WriteAllText(string, string)"/> writes 8,192 characters per call and preallocates a
-    ///     file it expects to grow past that.
-    /// </remarks>
-    /// <param name="fileSystem">
-    ///     The file system the file belongs to.
-    /// </param>
-    /// <param name="path">
-    ///     The path of the file, whose directory must exist.
-    /// </param>
-    /// <param name="text">
-    ///     The text to write.
-    /// </param>
-    /// <exception cref="EncoderFallbackException">
-    ///     <paramref name="text"/> holds an unpaired surrogate, in which case the file is left as it was.
-    /// </exception>
-    internal static void WriteUtf8(IFileSystem fileSystem, string path, string text)
-    {
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(Utf8.GetByteCount(text));
-
-        try
-        {
-            int length = Utf8.GetBytes(text, buffer);
-            fileSystem.File.WriteAllBytes(path, buffer.AsSpan(0, length));
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-    }
 }

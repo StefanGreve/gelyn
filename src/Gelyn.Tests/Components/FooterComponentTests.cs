@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -303,10 +305,11 @@ public class FooterComponentTests
             ? [page, page with { Href = "/post.html", InFeed = true, Date = new DateOnly(2026, 1, 1) }]
             : [page];
 
-        // Joined the way PageLayout writes the footer, around the page's own revision fragment.
-        Slot slot = FooterComponent.Render(options, new DocumentCatalog(documents)).CutFor(page);
+        // Written the way PageLayout writes the footer, around the page's own revision fragment.
+        using var buffer = new PageBuffer();
+        FooterComponent.Render(options, new DocumentCatalog(documents)).CutFor(page).WriteTo(buffer);
 
-        return string.Concat(slot.Before, slot.Fragment, slot.After);
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     #endregion

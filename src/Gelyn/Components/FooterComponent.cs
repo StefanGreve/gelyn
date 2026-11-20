@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
@@ -29,25 +28,26 @@ internal static class FooterComponent
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(documents);
 
-        var html = new StringBuilder("<footer>");
+        using var html = new PageBuffer();
 
+        html.Append("<footer>"u8);
         html.AppendLinks(options, documents);
         html.Append($"<span>Built with {Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}");
 
         int offset = html.Length;
 
-        html.Append("</span></footer>");
+        html.Append("</span></footer>"u8);
 
         return new Footer
         {
-            Html = html.ToString(),
+            Bytes = html.WrittenSpan.ToArray(),
             Offset = offset
         };
     }
 
     #region Helpers
 
-    private static void AppendLinks(this StringBuilder footer, SiteOptions options, DocumentCatalog documents)
+    private static void AppendLinks(this PageBuffer footer, SiteOptions options, DocumentCatalog documents)
     {
         var links = new List<(string Label, string Href)>(options.FooterLinks.Count + 2);
 
@@ -73,12 +73,12 @@ internal static class FooterComponent
 
         if (links.Count == 0) return;
 
-        footer.Append("<ul>");
+        footer.Append("<ul>"u8);
 
         foreach ((string label, string href) in links)
             footer.Append($"""<li><a href="{WebUtility.HtmlEncode(href)}">{WebUtility.HtmlEncode(label)}</a></li>""");
 
-        footer.Append("</ul>");
+        footer.Append("</ul>"u8);
     }
 
     #endregion

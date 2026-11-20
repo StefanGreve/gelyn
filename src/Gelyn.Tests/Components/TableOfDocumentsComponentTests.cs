@@ -2,11 +2,13 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core.Context;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -400,7 +402,10 @@ public partial class TableOfDocumentsComponentTests
     {
         string current = Native(currentPath);
 
-        return TableOfDocumentsComponent.Render(new LayoutContext(new SiteOptions(), pages), pages.Single(page => string.Equals(page.OutputPath, current, StringComparison.Ordinal)));
+        using var buffer = new PageBuffer();
+        TableOfDocumentsComponent.Render(new LayoutContext(new SiteOptions(), pages), pages.Single(page => string.Equals(page.OutputPath, current, StringComparison.Ordinal)), buffer);
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     private static ContentPage Page(string outputPath, string title, string? date = null) =>

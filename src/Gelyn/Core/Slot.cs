@@ -1,26 +1,43 @@
+using Gelyn.Core.Internals;
+
 namespace Gelyn.Core;
 
 /// <summary>
-///     HTML rendered once per build, cut at the one position where a page writes a fragment of its own.
+///     HTML rendered once per build, as UTF-8, cut at the one position where a page writes a fragment of its own.
 /// </summary>
-/// <param name="Html">
-///     The HTML of the block, without the fragment.
+/// <param name="Bytes">
+///     The UTF-8 bytes of the block, without the fragment.
 /// </param>
 /// <param name="Offset">
-///     The position in <paramref name="Html"/> at which the fragment goes.
+///     The position in <paramref name="Bytes"/> at which the fragment goes.
 /// </param>
 /// <param name="Fragment">
 ///     The fragment of the page, or an empty string.
 /// </param>
-internal readonly record struct Slot(string Html, int Offset, string Fragment)
+internal readonly record struct Slot(ReadOnlyMemory<byte> Bytes, int Offset, string Fragment)
 {
     /// <summary>
-    ///     The HTML before the fragment.
+    ///     The bytes before the fragment.
     /// </summary>
-    public ReadOnlySpan<char> Before => this.Html.AsSpan(0, this.Offset);
+    public ReadOnlySpan<byte> Before => this.Bytes.Span[..this.Offset];
 
     /// <summary>
-    ///     The HTML after the fragment.
+    ///     The bytes after the fragment.
     /// </summary>
-    public ReadOnlySpan<char> After => this.Html.AsSpan(this.Offset);
+    public ReadOnlySpan<byte> After => this.Bytes.Span[this.Offset..];
+
+    /// <summary>
+    ///     Writes the block with the fragment in its cut.
+    /// </summary>
+    /// <param name="buffer">
+    ///     The buffer the page is composed into.
+    /// </param>
+    public void WriteTo(PageBuffer buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+
+        buffer.Append(this.Before);
+        buffer.Append(this.Fragment);
+        buffer.Append(this.After);
+    }
 }

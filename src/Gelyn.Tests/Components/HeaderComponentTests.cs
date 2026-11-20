@@ -1,10 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -32,7 +34,7 @@ public partial class HeaderComponentTests
         Banner banner = HeaderComponent.Render(Options, [Page("/index.html", "Home"), Page("/about.html", "About"), Page("/blog/index.html", "Blog")]);
 
         // Assert
-        await Assert.That(Hrefs(banner.Html)).IsEquivalentTo(["/index.html", "/about.html", "/blog/index.html"], CollectionOrdering.Matching);
+        await Assert.That(Hrefs(Html(banner))).IsEquivalentTo(["/index.html", "/about.html", "/blog/index.html"], CollectionOrdering.Matching);
     }
 
     /// <summary>
@@ -48,9 +50,9 @@ public partial class HeaderComponentTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(banner.Html).Contains(">Site</a>");
-            await Assert.That(banner.Html).Contains(">About</a>");
-            await Assert.That(banner.Html).DoesNotContain(">Home</a>");
+            await Assert.That(Html(banner)).Contains(">Site</a>");
+            await Assert.That(Html(banner)).Contains(">About</a>");
+            await Assert.That(Html(banner)).DoesNotContain(">Home</a>");
         }
     }
 
@@ -67,7 +69,7 @@ public partial class HeaderComponentTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(banner.Html).Contains("""<a href="/a&amp;b.html">Ampersand</a>""");
+            await Assert.That(Html(banner)).Contains("""<a href="/a&amp;b.html">Ampersand</a>""");
             await Assert.That(Marked(banner, "/a&b.html")).Contains("""<a aria-current="page" href="/a&amp;b.html">""");
         }
     }
@@ -101,6 +103,27 @@ public partial class HeaderComponentTests
     }
 
     /// <summary>
+    ///     Verifies that a title with characters of more than one byte ahead of the current entry leaves the mark
+    ///     on the right entry, the offsets being counted in bytes.
+    /// </summary>
+    [Test]
+    public async Task CutFor_Test_MultiByteTitleAhead_MarksTheRightEntry()
+    {
+        // Arrange
+        Banner banner = HeaderComponent.Render(Options, [Page("/index.html", "Home"), Page("/notes.html", "\U000065E5\U0000672C \U0001F600"), Page("/blog/index.html", "Blog")]);
+
+        // Act
+        string marked = Marked(banner, "/blog/index.html");
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(marked).Contains("""<a aria-current="page" href="/blog/index.html">""");
+            await Assert.That(Mark().Count(marked)).IsEqualTo(1);
+        }
+    }
+
+    /// <summary>
     ///     Verifies that a page the navigation does not link writes the banner as it is, with no mark anywhere.
     /// </summary>
     [Test]
@@ -115,7 +138,7 @@ public partial class HeaderComponentTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(marked).IsEqualTo(banner.Html);
+            await Assert.That(marked).IsEqualTo(Html(banner));
             await Assert.That(Mark().Count(marked)).IsEqualTo(0);
         }
     }
@@ -133,12 +156,16 @@ public partial class HeaderComponentTests
     private static IReadOnlyList<string> Hrefs(string html) =>
         [.. Href().Matches(html).Select(static match => match.Groups[1].Value)];
 
-    // Joined the way PageLayout writes the banner for a page.
+    private static string Html(Banner banner) =>
+        Encoding.UTF8.GetString(banner.Bytes.Span);
+
+    // Written the way PageLayout writes the banner for a page.
     private static string Marked(Banner banner, string href)
     {
-        Slot slot = banner.CutFor(Page(href, "Current"));
+        using var buffer = new PageBuffer();
+        banner.CutFor(Page(href, "Current")).WriteTo(buffer);
 
-        return string.Concat(slot.Before, slot.Fragment, slot.After);
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     private static ContentPage Page(string href, string title) =>

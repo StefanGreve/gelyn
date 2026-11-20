@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core.Context;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -480,7 +482,10 @@ public class HeadComponentTests
             ? [page, page with { Href = "/post.html", InFeed = true, Date = new DateOnly(2026, 1, 1) }]
             : [page];
 
-        return HeadComponent.Render(new LayoutContext(options, documents), page);
+        using var buffer = new PageBuffer();
+        HeadComponent.Render(new LayoutContext(options, documents), page, buffer);
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     #endregion

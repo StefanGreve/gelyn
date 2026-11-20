@@ -1,7 +1,9 @@
+using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Components;
 using Gelyn.Core.Context;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -140,7 +142,10 @@ public class CommentsComponentTests
             UnknownKeys = [],
         };
 
-        return CommentsComponent.Render(new LayoutContext(new SiteOptions { Giscus = giscus }, [page]), page);
+        using var buffer = new PageBuffer();
+        CommentsComponent.Render(new LayoutContext(new SiteOptions { Giscus = giscus }, [page]), page, buffer);
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
     }
 
     #endregion

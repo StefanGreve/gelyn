@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 
 using Gelyn.Core;
 using Gelyn.Core.Context;
@@ -19,7 +18,7 @@ internal static class HeadComponent
     private const string LandingPage = "index.html";
 
     /// <summary>
-    ///     Renders the metadata of a page.
+    ///     Writes the metadata of a page, without the enclosing <c>head</c> element.
     /// </summary>
     /// <param name="context">
     ///     What the layout shares between the pages of the build.
@@ -27,77 +26,75 @@ internal static class HeadComponent
     /// <param name="page">
     ///     The page being rendered.
     /// </param>
-    /// <returns>
-    ///     The HTML of the fragment, without the enclosing <c>head</c> element.
-    /// </returns>
-    public static string Render(LayoutContext context, ContentPage page)
+    /// <param name="buffer">
+    ///     The buffer the page is composed into.
+    /// </param>
+    public static void Render(LayoutContext context, ContentPage page, PageBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(buffer);
 
-        var head = new StringBuilder();
         SiteOptions options = context.Options;
 
-        head.Append("""<meta charset="utf-8">""");
-        head.Append("""<meta name="viewport" content="width=device-width, initial-scale=1">""");
+        buffer.Append("""<meta charset="utf-8">"""u8);
+        buffer.Append("""<meta name="viewport" content="width=device-width, initial-scale=1">"""u8);
 
         // Served at whichever address missed, so relative links must resolve against the root instead.
         if (page.IsNotFoundPage)
         {
             string root = $"{UrlUtils.ResolveBasePath(options.BaseUrl)}/";
-            head.Append($"""<base href="{WebUtility.HtmlEncode(root)}">""");
+            buffer.Append($"""<base href="{WebUtility.HtmlEncode(root)}">""");
         }
 
-        head.Append($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
+        buffer.Append($"""<meta name="generator" content="{Tool.Name} v{WebUtility.HtmlEncode(Tool.Version)}">""");
 
         if (!string.IsNullOrWhiteSpace(options.Author))
-            head.Append($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
+            buffer.Append($"""<meta name="author" content="{WebUtility.HtmlEncode(options.Author)}">""");
 
         string? description = page.Description ?? options.Description;
 
         if (!string.IsNullOrWhiteSpace(description))
-            head.Append($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
+            buffer.Append($"""<meta name="description" content="{WebUtility.HtmlEncode(description)}">""");
 
         if (page.Revised is DateOnly revised)
         {
             string date = revised.ToString(DateFormat.Machine, Tool.Culture);
-            head.Append($"""<meta name="revised" content="{date}">""");
+            buffer.Append($"""<meta name="revised" content="{date}">""");
         }
 
         if (page.IsNotFoundPage)
-            head.Append("""<meta name="robots" content="noindex">""");
+            buffer.Append("""<meta name="robots" content="noindex">"""u8);
 
         if (options.BaseUrl is Uri baseUrl && !page.IsNotFoundPage)
         {
             string canonical = new Uri(baseUrl, page.Href).AbsoluteUri;
-            head.Append($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
+            buffer.Append($"""<link rel="canonical" href="{WebUtility.HtmlEncode(canonical)}">""");
         }
 
-        head.Append(context.FeedLink);
+        buffer.Append(context.FeedLink.Span);
 
         string documentTitle = page.OutputPath.Equals(LandingPage, StringComparison.Ordinal) ? options.Title : $"{page.Title} - {options.Title}";
-        head.Append($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
+        buffer.Append($"<title>{WebUtility.HtmlEncode(documentTitle)}</title>");
 
         if (page.Favicon is string favicon)
-            head.Append($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
+            buffer.Append($"""<link rel="icon" href="{WebUtility.HtmlEncode(favicon)}">""");
 
         if (page.EnableMathRendering)
-            head.AppendMathRenderer(options.KaTeXVersion);
+            buffer.AppendMathRenderer(options.KaTeXVersion);
 
         if (page.EnableDiagramRendering)
-            head.AppendDiagramRenderer(options.MermaidVersion);
+            buffer.AppendDiagramRenderer(options.MermaidVersion);
 
         if (page.EnableSyntaxHighlighting)
-            head.AppendSyntaxHighlighter(options.ShikiVersion);
+            buffer.AppendSyntaxHighlighter(options.ShikiVersion);
 
         // Outermost first, so the deepest stylesheet wins the cascade.
         foreach (string stylesheet in page.Stylesheets)
-            head.Append($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
+            buffer.Append($"""<link rel="stylesheet" href="{WebUtility.HtmlEncode(stylesheet)}">""");
 
         foreach (string script in page.Scripts)
-            head.Append($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
-
-        return head.ToString();
+            buffer.Append($"""<script defer src="{WebUtility.HtmlEncode(script)}"></script>""");
     }
 
     /// <summary>
@@ -131,7 +128,7 @@ internal static class HeadComponent
 
     #region Helpers
 
-    private static void AppendMathRenderer(this StringBuilder head, string version)
+    private static void AppendMathRenderer(this PageBuffer head, string version)
     {
         string katex = $"https://cdn.jsdelivr.net/npm/katex@{WebUtility.HtmlEncode(version)}/dist";
 
@@ -144,7 +141,7 @@ internal static class HeadComponent
         """);
     }
 
-    private static void AppendDiagramRenderer(this StringBuilder head, string version)
+    private static void AppendDiagramRenderer(this PageBuffer head, string version)
     {
         string mermaid = $"https://cdn.jsdelivr.net/npm/mermaid@{WebUtility.HtmlEncode(version)}/dist";
 
@@ -159,7 +156,7 @@ internal static class HeadComponent
         """);
     }
 
-    private static void AppendSyntaxHighlighter(this StringBuilder head, string version)
+    private static void AppendSyntaxHighlighter(this PageBuffer head, string version)
     {
         // The dist entry imports bare specifiers, so this is jsDelivr's bundled build.
         string shiki = $"https://cdn.jsdelivr.net/npm/shiki@{WebUtility.HtmlEncode(version)}/+esm";

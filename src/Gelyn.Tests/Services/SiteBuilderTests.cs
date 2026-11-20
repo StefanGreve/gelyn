@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -928,6 +929,36 @@ public partial class SiteBuilderTests
                 .IsEqualTo("/blog/2026/index.html,/blog/hello.html");
 
             await Assert.That(ReadPage(fixture, section)).DoesNotContain("[TOD]");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page carrying two markers gets the same table at both, with nothing of either marker
+    ///     left behind.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_TwoMarkers_GetTheSameTableTwice()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .WriteDated("index.md", "Home", "2026-01-01", "[TOD]\n\nBetween\n\n[TOD]")
+            .WriteDated("post.md", "Post", "2026-02-01");
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = ReadPage(fixture, "index.html");
+        const string opening = """<nav aria-label="documents">""";
+        int first = page.IndexOf(opening, StringComparison.Ordinal);
+        int second = page.IndexOf(opening, first + 1, StringComparison.Ordinal);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(second).IsGreaterThan(first);
+            await Assert.That(TableAt(page, second)).IsEqualTo(TableAt(page, first));
+            await Assert.That(TableAt(page, first)).Contains("/post.html");
+            await Assert.That(page).DoesNotContain("[TOD]");
         }
     }
 
@@ -2573,6 +2604,96 @@ public partial class SiteBuilderTests
 
     #endregion // Determinism Tests
 
+    #region Composition Tests
+
+    /// <summary>
+    ///     Verifies that a carriage return in the configuration is folded like one in the content, so that the
+    ///     title and a footer label cannot break the line ending of a page.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_CarriageReturnInTheConfiguration_IsFolded()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WithFooterLinks(new FooterLink { Label = "Git\r\nHub", Url = new Uri("https://github.com/octocat") });
+
+        fixture.Options.Title = "My\rNotebook";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = ReadPage(fixture, "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(page).DoesNotContain("\r");
+            await Assert.That(page).Contains("<title>My\nNotebook</title>");
+            await Assert.That(page).Contains(">Git\nHub</a>");
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that text of more than one byte per character in a title, a body and a footer label reaches
+    ///     the disk as UTF-8 without a byte order mark.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_MultiByteText_IsWrittenAsUtf8()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteDated("about.md", "\U000065E5\U0000672C", "2026-01-01", "Gr\U000000FC\U000000DFe \U000020AC \U0001F600")
+            .WithFooterLinks(new FooterLink { Label = "\U00000394", Url = new Uri("https://example.com/delta") });
+
+        fixture.Options.Title = "Notes \U000020AC";
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = ReadPage(fixture, "about.html");
+        byte[] bytes = fixture.FileSystem.File.ReadAllBytes(Path.Combine(fixture.OutputRoot, "about.html"));
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(page).Contains("<title>\U000065E5\U0000672C - Notes \U000020AC</title>");
+            await Assert.That(page).Contains("<p>Gr\U000000FC\U000000DFe \U000020AC \U0001F600</p>");
+            await Assert.That(page).Contains(">\U00000394</a>");
+            await Assert.That(bytes[0]).IsEqualTo((byte)'<');
+            await Assert.That(bytes.AsSpan().IndexOf(Encoding.UTF8.GetBytes("<title>\U000065E5\U0000672C"))).IsGreaterThanOrEqualTo(0);
+        }
+    }
+
+    /// <summary>
+    ///     Verifies that a page longer than the first array of the page buffer is written whole, from its first
+    ///     paragraph to its closing tag.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_PageLongerThanTheFirstBuffer_IsWrittenWhole()
+    {
+        // Arrange
+        string body = string.Join("\n\n", Enumerable.Range(1, 2_000).Select(static index => $"Paragraph {index} of a long page."));
+        ContentFixture fixture = ContentFixture.CreateEmpty().WriteDated("index.md", "Home", "2026-01-01", body);
+
+        // Act
+        await fixture.Builder.BuildAsync(CancellationToken.None);
+
+        // Assert
+        string page = ReadPage(fixture, "index.html");
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(page.Length).IsGreaterThan(64 * 1024);
+            await Assert.That(page).Contains("<p>Paragraph 1 of a long page.</p>");
+            await Assert.That(page).Contains("<p>Paragraph 2000 of a long page.</p>");
+            await Assert.That(page.TrimEnd()).EndsWith("</html>");
+        }
+    }
+
+    #endregion // Composition Tests
+
     #region Unknown Key Tests
 
     /// <summary>
@@ -2815,6 +2936,9 @@ public partial class SiteBuilderTests
 
     private static string ReadPage(ContentFixture fixture, string outputPath) =>
         fixture.ReadOutput(fixture.FileSystem.Path.Combine(fixture.OutputRoot, outputPath));
+
+    private static string TableAt(string page, int start) =>
+        page[start..(page.IndexOf("</nav>", start, StringComparison.Ordinal) + "</nav>".Length)];
 
     // Encoded as base64, which is sensitive to the order of the bytes where IsEquivalentTo is not.
     private static string ReadBase64(ContentFixture fixture, string outputPath) =>

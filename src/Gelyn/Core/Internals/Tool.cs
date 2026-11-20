@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using System.Text;
 
 namespace Gelyn.Core.Internals;
 
@@ -63,9 +64,15 @@ internal static class Tool
     internal static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
     /// <summary>
+    ///     The encoding every generated page is written in: UTF-8 without a byte order mark, which refuses an
+    ///     unpaired surrogate instead of writing a replacement character for it.
+    /// </summary>
+    internal static readonly UTF8Encoding Encoding = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
+    /// <summary>
     ///     The line ending every generated document ends its lines on, independent of the host and the sources.
     /// </summary>
-    /// <seealso cref="StringUtils.NormalizeLineEndings"/>
+    /// <seealso cref="PageBuffer.FoldLineEndings"/>
     internal const string LineEnding = "\n";
 
     #region Helpers

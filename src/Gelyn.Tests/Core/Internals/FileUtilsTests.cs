@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
@@ -87,68 +85,6 @@ public class FileUtilsTests
     }
 
     #endregion // CopyContent Tests
-
-    #region WriteUtf8 Tests
-
-    /// <summary>
-    ///     Verifies that a text longer than the 8,192 characters <c>File.WriteAllText</c> writes per call, holding
-    ///     two-, three- and four-byte characters, reaches the file as its UTF-8 encoding without a byte order mark.
-    /// </summary>
-    [Test]
-    public async Task WriteUtf8_Test_LongMultiByteText_IsWrittenAsUtf8()
-    {
-        // Arrange
-        string text = string.Concat(Enumerable.Repeat("Gr\U000000FC\U000000DFe, \U000020AC und \U0001F600. ", 1_000));
-        MockFileSystem fileSystem = Create([]);
-
-        // Act
-        FileUtils.WriteUtf8(fileSystem, Destination, text);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(text.Length).IsGreaterThan(8_192);
-            await Assert.That(fileSystem.File.ReadAllBytes(Destination)).IsEquivalentTo(Encoding.UTF8.GetBytes(text));
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that an existing file is replaced whole, so that a longer earlier page leaves no bytes behind
-    ///     the new contents.
-    /// </summary>
-    [Test]
-    public async Task WriteUtf8_Test_LongerFile_IsReplacedWhole()
-    {
-        // Arrange
-        MockFileSystem fileSystem = Create([]);
-        fileSystem.File.WriteAllBytes(Destination, [0x0A, 0x0B, 0x0C, 0x0D]);
-
-        // Act
-        FileUtils.WriteUtf8(fileSystem, Destination, "ab");
-
-        // Assert
-        await Assert.That(fileSystem.File.ReadAllBytes(Destination)).IsEquivalentTo(new byte[] { 0x61, 0x62 });
-    }
-
-    /// <summary>
-    ///     Verifies that a text holding an unpaired surrogate fails before the file is opened, so that the file
-    ///     keeps what it held.
-    /// </summary>
-    [Test]
-    public async Task WriteUtf8_Test_UnpairedSurrogate_LeavesTheFileAsItWas()
-    {
-        // Arrange
-        byte[] expected = [0x0A, 0x0B];
-        MockFileSystem fileSystem = Create([]);
-        fileSystem.File.WriteAllBytes(Destination, expected);
-        string text = "a" + (char)0xD800;
-
-        // Act and Assert
-        await Assert.That(() => FileUtils.WriteUtf8(fileSystem, Destination, text)).Throws<EncoderFallbackException>();
-        await Assert.That(fileSystem.File.ReadAllBytes(Destination)).IsEquivalentTo(expected);
-    }
-
-    #endregion // WriteUtf8 Tests
 
     #region Helpers
 

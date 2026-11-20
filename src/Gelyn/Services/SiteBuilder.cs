@@ -292,10 +292,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
         string[] written = OrderedParallel.Select(pages, page =>
         {
             long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
-            string html = ComposeDocument(layout, page);
+            using var document = new PageBuffer();
+            PageLayout.Render(layout, page, document);
             long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
-            FileUtils.WriteUtf8(this._fileSystem, path.Combine(outputDirectory, page.OutputPath), html);
+            this._fileSystem.File.WriteAllBytes(path.Combine(outputDirectory, page.OutputPath), document.WrittenSpan);
 
             if (isMeasuring)
             {
@@ -310,9 +311,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         return written;
     }
-
-    private static string ComposeDocument(LayoutContext context, ContentPage page) =>
-        StringUtils.NormalizeLineEndings(PageLayout.Render(context, page));
 
     /// <summary>
     ///     Composes the documents that no source file of their own stands behind: the feed, the sitemap and the

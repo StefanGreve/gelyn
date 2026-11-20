@@ -1,6 +1,7 @@
 using System.Net;
 
 using Gelyn.Core.Context;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -53,25 +54,25 @@ internal static class CommentsComponent
     }
 
     /// <summary>
-    ///     Renders the thread of a page.
+    ///     Writes the thread for a page that carries one.
     /// </summary>
     /// <param name="context">
     ///     What the layout shares between the pages of the build, the thread included.
     /// </param>
     /// <param name="page">
-    ///     The page being rendered.
+    ///     The page being rendered, which carries the thread when the site configures a backend and the page,
+    ///     which is not the not-found page, enables comments.
     /// </param>
-    /// <returns>
-    ///     The thread, or an empty string unless the site configures a backend and the page, which is not the
-    ///     not-found page, enables comments.
-    /// </returns>
-    public static string Render(LayoutContext context, ContentPage page)
+    /// <param name="buffer">
+    ///     The buffer the page is composed into.
+    /// </param>
+    public static void Render(LayoutContext context, ContentPage page, PageBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(buffer);
 
-        return page is { EnableComments: false } or { IsNotFoundPage: true }
-            ? string.Empty
-            : context.Comments;
+        if (page is { EnableComments: true, IsNotFoundPage: false })
+            buffer.Append(context.Comments.Span);
     }
 }

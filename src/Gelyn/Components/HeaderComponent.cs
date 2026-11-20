@@ -1,7 +1,7 @@
 using System.Net;
-using System.Text;
 
 using Gelyn.Core;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -29,21 +29,23 @@ internal static class HeaderComponent
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(navigation);
 
-        var html = new StringBuilder("<header><nav><ul>");
+        using var html = new PageBuffer();
         var offsets = new Dictionary<string, int>(navigation.Count, StringComparer.Ordinal);
+
+        html.Append("<header><nav><ul>"u8);
 
         for (int index = 0; index < navigation.Count; index++)
         {
             ContentPage page = navigation[index];
             string title = index == 0 ? options.Title : page.Title;
 
-            html.Append("<li><a");
+            html.Append("<li><a"u8);
             offsets.Add(page.Href, html.Length);
             html.Append($""" href="{WebUtility.HtmlEncode(page.Href)}">{WebUtility.HtmlEncode(title)}</a></li>""");
         }
 
-        html.Append("</ul></nav></header>");
+        html.Append("</ul></nav></header>"u8);
 
-        return new Banner { Html = html.ToString(), Offsets = offsets };
+        return new Banner { Bytes = html.WrittenSpan.ToArray(), Offsets = offsets };
     }
 }

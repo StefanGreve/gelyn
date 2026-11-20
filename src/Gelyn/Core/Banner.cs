@@ -11,12 +11,12 @@ internal sealed record Banner
     private const string CurrentMark = " aria-current=\"page\"";
 
     /// <summary>
-    ///     The HTML of the banner, with no entry marked.
+    ///     The UTF-8 bytes of the banner, with no entry marked.
     /// </summary>
-    public required string Html { get; init; }
+    public required ReadOnlyMemory<byte> Bytes { get; init; }
 
     /// <summary>
-    ///     The offset into <see cref="Html"/> right after the opening tag of each entry, keyed by the href the
+    ///     The offset into <see cref="Bytes"/> right after the opening tag of each entry, keyed by the href the
     ///     entry links.
     /// </summary>
     public required IReadOnlyDictionary<string, int> Offsets { get; init; }
@@ -35,6 +35,6 @@ internal sealed record Banner
     {
         ArgumentNullException.ThrowIfNull(page);
 
-        return this.Offsets.TryGetValue(page.Href, out int offset) ? new(this.Html, offset, CurrentMark) : new(this.Html, this.Html.Length, string.Empty);
+        return this.Offsets.TryGetValue(page.Href, out int offset) ? new(this.Bytes, offset, CurrentMark) : new(this.Bytes, this.Bytes.Length, string.Empty);
     }
 }

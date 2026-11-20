@@ -9,12 +9,12 @@ namespace Gelyn.Core;
 internal sealed record Footer
 {
     /// <summary>
-    ///     The HTML of the footer, with no revision fragment.
+    ///     The UTF-8 bytes of the footer, with no revision fragment.
     /// </summary>
-    public required string Html { get; init; }
+    public required ReadOnlyMemory<byte> Bytes { get; init; }
 
     /// <summary>
-    ///     The offset into <see cref="Html"/> at the end of the colophon, where the revision fragment goes.
+    ///     The offset into <see cref="Bytes"/> at the end of the colophon, where the revision fragment goes.
     /// </summary>
     public required int Offset { get; init; }
 
@@ -32,7 +32,7 @@ internal sealed record Footer
     {
         ArgumentNullException.ThrowIfNull(page);
 
-        return new(this.Html, this.Offset, page.Revised is DateOnly revised ? RenderRevision(revised) : string.Empty);
+        return new(this.Bytes, this.Offset, page.Revised is DateOnly revised ? RenderRevision(revised) : string.Empty);
     }
 
     #region Helpers

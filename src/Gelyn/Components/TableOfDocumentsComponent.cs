@@ -1,5 +1,4 @@
 using System.Net;
-using System.Text;
 
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
@@ -37,7 +36,7 @@ internal static class TableOfDocumentsComponent
     ];
 
     /// <summary>
-    ///     Renders the table.
+    ///     Writes the navigation landmark holding the table, or nothing when no page is listed.
     /// </summary>
     /// <param name="context">
     ///     What the layout shares between the pages of the build, the catalog included.
@@ -45,13 +44,14 @@ internal static class TableOfDocumentsComponent
     /// <param name="page">
     ///     The page being rendered.
     /// </param>
-    /// <returns>
-    ///     The HTML of the navigation landmark holding the table, or an empty string when no page is listed.
-    /// </returns>
-    public static string Render(LayoutContext context, ContentPage page)
+    /// <param name="buffer">
+    ///     The buffer the page is composed into.
+    /// </param>
+    public static void Render(LayoutContext context, ContentPage page, PageBuffer buffer)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(page);
+        ArgumentNullException.ThrowIfNull(buffer);
 
         string current = page.OutputPath;
         int scopeLength = ResolveScopeLength(current);
@@ -66,37 +66,27 @@ internal static class TableOfDocumentsComponent
                 rows.Add((document, ResolveType(document, scopeLength)));
         }
 
-        if (rows.Count == 0) return string.Empty;
+        if (rows.Count == 0) return;
 
-        var table = new StringBuilder();
-
-        table.Append($"""<nav aria-label="{NavigationLabel}">""");
-        table.Append("<table>");
-        table.Append("<thead>");
-        table.Append("<tr>");
+        buffer.Append($"""<nav aria-label="{NavigationLabel}">""");
+        buffer.Append("<table><thead><tr>"u8);
 
         foreach ((string header, _) in Columns)
-            table.Append($"<th>{header}</th>");
+            buffer.Append($"<th>{header}</th>");
 
-        table.Append("</tr>");
-        table.Append("</thead>");
-        table.Append("<tbody>");
+        buffer.Append("</tr></thead><tbody>"u8);
 
         foreach ((ContentPage document, string type) in rows)
         {
-            table.Append($"""<tr data-type="{type}">""");
+            buffer.Append($"""<tr data-type="{type}">""");
 
             foreach ((_, Func<ContentPage, string> cell) in Columns)
-                table.Append($"<td>{cell(document)}</td>");
+                buffer.Append($"<td>{cell(document)}</td>");
 
-            table.Append("</tr>");
+            buffer.Append("</tr>"u8);
         }
 
-        table.Append("</tbody>");
-        table.Append("</table>");
-        table.Append("</nav>");
-
-        return table.ToString();
+        buffer.Append("</tbody></table></nav>"u8);
     }
 
     #region Helpers

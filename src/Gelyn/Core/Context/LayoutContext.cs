@@ -1,13 +1,14 @@
 using System.Net;
 
 using Gelyn.Components;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Core.Context;
 
 /// <summary>
-///     Everything the layout shares between the pages of one build, rendered once.
+///     Everything the layout shares between the pages of one build, rendered once and encoded once.
 /// </summary>
 internal sealed class LayoutContext
 {
@@ -29,9 +30,9 @@ internal sealed class LayoutContext
         this.Documents = new DocumentCatalog(pages);
         this.Banner = HeaderComponent.Render(options, [.. pages.Where(static page => page.InNavigation)]);
         this.Footer = FooterComponent.Render(options, this.Documents);
-        this.Language = WebUtility.HtmlEncode(options.Language);
-        this.FeedLink = HeadComponent.RenderFeedLink(options, this.Documents);
-        this.Comments = CommentsComponent.RenderThread(options);
+        this.Language = Tool.Encoding.GetBytes(WebUtility.HtmlEncode(options.Language));
+        this.FeedLink = Tool.Encoding.GetBytes(HeadComponent.RenderFeedLink(options, this.Documents));
+        this.Comments = Tool.Encoding.GetBytes(CommentsComponent.RenderThread(options));
     }
 
     /// <summary>
@@ -55,17 +56,17 @@ internal sealed class LayoutContext
     public Footer Footer { get; }
 
     /// <summary>
-    ///     The language of the site, encoded for the attribute of the root element.
+    ///     The language of the site, encoded for the attribute of the root element, as UTF-8.
     /// </summary>
-    public string Language { get; }
+    public ReadOnlyMemory<byte> Language { get; }
 
     /// <summary>
-    ///     The link that announces the feed, or an empty string while the build writes none.
+    ///     The link that announces the feed, as UTF-8, or empty while the build writes none.
     /// </summary>
-    public string FeedLink { get; }
+    public ReadOnlyMemory<byte> FeedLink { get; }
 
     /// <summary>
-    ///     The comment thread of a site that configures a backend, or an empty string.
+    ///     The comment thread of a site that configures a backend, as UTF-8, or empty.
     /// </summary>
-    public string Comments { get; }
+    public ReadOnlyMemory<byte> Comments { get; }
 }
