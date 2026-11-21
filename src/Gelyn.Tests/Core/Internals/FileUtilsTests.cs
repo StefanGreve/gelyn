@@ -1,9 +1,11 @@
 using System;
 using System.IO;
-using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Tasks;
 
 using Gelyn.Core.Internals;
+using Gelyn.Tests.Fixtures;
+
+using Testably.Abstractions.Testing;
 
 namespace Gelyn.Tests.Core.Internals;
 
@@ -90,8 +92,8 @@ public class FileUtilsTests
     {
         var fileSystem = new MockFileSystem();
 
-        fileSystem.AddFile(Source, new MockFileData(contents));
-        fileSystem.AddDirectory(Path.GetDirectoryName(Destination) ?? string.Empty);
+        fileSystem.AddFile(Source, contents);
+        fileSystem.Directory.CreateDirectory(Path.GetDirectoryName(Destination) ?? string.Empty);
 
         return fileSystem;
     }

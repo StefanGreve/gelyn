@@ -9,6 +9,8 @@ using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging.Testing;
 
+using Testably.Abstractions;
+
 namespace Gelyn.Tests.Fixtures;
 
 /// <summary>
@@ -31,7 +33,7 @@ internal sealed class DiskFixture : IDisposable
         this.ContentRoot = Path.Combine(root, options.ContentDirectory);
         this.OutputRoot = Path.Combine(root, options.OutputDirectory);
 
-        IFileSystem fileSystem = new FileSystem();
+        IFileSystem fileSystem = new RealFileSystem();
         var environment = new HostEnvironmentStub { ContentRootPath = root };
 
         this.Pipeline = new ContentPipeline(environment, fileSystem);

@@ -2,7 +2,6 @@ using System;
 using System.CommandLine;
 using System.IO;
 using System.IO.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -17,6 +16,8 @@ using Gelyn.Tests.Stubs;
 using Microsoft.Extensions.Configuration;
 
 using Spectre.Console;
+
+using Testably.Abstractions.Testing;
 
 using TUnit.Assertions.Enums;
 
@@ -165,7 +166,7 @@ public class InfoOptionTests
 
         var fileSystem = new MockFileSystem();
 
-        if (path is not null && contents is not null) fileSystem.AddFile(path, new MockFileData(contents));
+        if (path is not null && contents is not null) fileSystem.AddFile(path, contents);
 
         // Act
         string output = Report(Create(fileSystem: fileSystem));

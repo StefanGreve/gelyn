@@ -1,7 +1,7 @@
-using System.IO.Abstractions.TestingHelpers;
-
 using Gelyn.Model;
 using Gelyn.Services;
+
+using Testably.Abstractions.Testing;
 
 namespace Gelyn.Tests.Fixtures;
 
@@ -23,7 +23,7 @@ internal sealed class OutputFixture
         this.Root = fileSystem.Path.Combine(parent, RootDirectoryName);
         this.Resolver = new StaticFileResolver(fileSystem);
 
-        fileSystem.AddDirectory(this.Root);
+        fileSystem.Directory.CreateDirectory(this.Root);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ internal sealed class OutputFixture
     /// </returns>
     public OutputFixture Write(string relativePath, string? contents = null)
     {
-        this.FileSystem.AddFile(this.Locate(relativePath), new MockFileData(contents ?? relativePath));
+        this.FileSystem.AddFile(this.Locate(relativePath), contents ?? relativePath);
 
         return this;
     }
@@ -101,7 +101,7 @@ internal sealed class OutputFixture
     /// </returns>
     public OutputFixture WriteBeside(string relativePath)
     {
-        this.FileSystem.AddFile(this.Resolve(this.Parent, relativePath), new MockFileData(relativePath));
+        this.FileSystem.AddFile(this.Resolve(this.Parent, relativePath), relativePath);
 
         return this;
     }

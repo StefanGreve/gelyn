@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -112,7 +111,7 @@ public class FileServerTests
         byte[] expected = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0xFF];
 
         var fixture = OutputFixture.Create("index.html");
-        fixture.FileSystem.AddFile(fixture.Locate("logo.png"), new MockFileData(expected));
+        fixture.FileSystem.AddFile(fixture.Locate("logo.png"), expected);
 
         await using var harness = ServerHarness.Start(fixture);
 

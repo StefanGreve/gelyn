@@ -34,8 +34,7 @@ public class ThirdPartyNoticesTests
         ("Spectre.Console", "Spectre.Console"),
         ("Spectre.Console.Ansi", "Spectre.Console"),
         ("System.CommandLine", "System.CommandLine"),
-        ("TestableIO.System.IO.Abstractions.Wrappers", "System.IO.Abstractions"),
-        ("Testably.Abstractions.FileSystem.Interface", "Testably.Abstractions"),
+        ("Testably.Abstractions*", "Testably.Abstractions"),
     ];
 
     // The compiler packages carry the runtime, whose notices are packed from them as a file of their own.

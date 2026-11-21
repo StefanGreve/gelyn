@@ -2,7 +2,6 @@ using System;
 using System.CommandLine;
 using System.IO;
 using System.IO.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
@@ -16,6 +15,8 @@ using Gelyn.Tests.Stubs;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
+using MockFileSystem = Testably.Abstractions.Testing.MockFileSystem;
 
 namespace Gelyn.Tests.Core.Internals;
 

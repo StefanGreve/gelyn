@@ -1923,8 +1923,8 @@ public partial class SiteBuilderTests
 
     /// <summary>
     ///     Verifies that renaming sources in case alone renames their output, files and directories alike, and
-    ///     reports the old spellings as removed. Driven against the real disk, because <c>MockFileSystem</c> gives a
-    ///     copy that replaces a file the new spelling, which NTFS and APFS do not, and would hide the bug there.
+    ///     reports the old spellings as removed. Driven against the real disk, because NTFS and APFS keep the old
+    ///     spelling when a copy replaces a file in another case, and the volume, not the operating system, decides that.
     /// </summary>
     [Test]
     [Category(Categories.Integration)]

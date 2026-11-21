@@ -1,9 +1,12 @@
 using System.IO;
 using System.IO.Abstractions;
-using System.IO.Abstractions.TestingHelpers;
 using System.Threading.Tasks;
 
 using Gelyn.Extensions;
+using Gelyn.Tests.Fixtures;
+using Gelyn.Tests.Stubs;
+
+using Testably.Abstractions.Testing;
 
 namespace Gelyn.Tests.Extensions;
 
@@ -26,7 +29,7 @@ public class FileSystemInfoExtensionsTests
         string target = fileSystem.Path.GetFullPath("target.md");
         string link = fileSystem.Path.GetFullPath("link.md");
 
-        fileSystem.AddFile(target, new MockFileData("# Target"));
+        fileSystem.AddFile(target, "# Target");
         fileSystem.File.CreateSymbolicLink(link, target);
 
         // Act
@@ -46,7 +49,7 @@ public class FileSystemInfoExtensionsTests
         var fileSystem = new MockFileSystem();
         string path = fileSystem.Path.GetFullPath("page.md");
 
-        fileSystem.AddFile(path, new MockFileData("# Page"));
+        fileSystem.AddFile(path, "# Page");
 
         // Act
         IFileSystemInfo entry = fileSystem.FileInfo.New(path);
@@ -63,16 +66,14 @@ public class FileSystemInfoExtensionsTests
     public async Task IsLink_Test_ReparsePointWithoutTarget_IsNoLink()
     {
         // Arrange
-        var fileSystem = new MockFileSystem();
-        string path = fileSystem.Path.GetFullPath("page.md");
-
-        fileSystem.AddFile(path, new MockFileData("# Page") { Attributes = FileAttributes.ReparsePoint });
+        // Stubbed, because the mock reports the attribute for a link target alone, as the operating systems do.
+        var entry = new FileSystemInfoStub { Attributes = FileAttributes.ReparsePoint };
 
         // Act
-        IFileSystemInfo entry = fileSystem.FileInfo.New(path);
+        bool isLink = entry.IsLink;
 
         // Assert
-        await Assert.That(entry.IsLink).IsFalse();
+        await Assert.That(isLink).IsFalse();
     }
 
     #endregion

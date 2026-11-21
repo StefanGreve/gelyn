@@ -26,9 +26,7 @@ namespace Gelyn.Services;
 /// <remarks>
 ///     Two watchers report into one channel the rebuild loop reads, so a rebuild never runs on a callback
 ///     thread, where a <see cref="FileSystemEventHandler"/> returning <see langword="void"/> would leave a
-///     failure unobserved and block the watcher while its buffer fills. The tests drive that channel too,
-///     the watcher factory of <c>TestableIO.System.IO.Abstractions.TestingHelpers</c> throwing from every
-///     member.
+///     failure unobserved and block the watcher while its buffer fills. The tests drive that channel too.
 /// </remarks>
 internal sealed class SiteWatcher : SiteWatcherContract
 {

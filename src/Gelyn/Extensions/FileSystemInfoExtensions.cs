@@ -16,7 +16,7 @@ internal static class FileSystemInfoExtensions
     extension(IFileSystemInfo entry)
     {
         /// <summary>
-        ///     Whether the entry is a symbolic link or a junction.
+        ///     Indicates whether the entry is a symbolic link or a junction.
         /// </summary>
         /// <remarks>
         ///     The attribute comes with the enumeration and so costs nothing, whereas reading

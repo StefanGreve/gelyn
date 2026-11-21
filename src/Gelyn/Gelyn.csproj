@@ -110,7 +110,7 @@
     <PackageReference Include="SharpYaml" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="TestableIO.System.IO.Abstractions.Wrappers" />
+    <PackageReference Include="Testably.Abstractions" />
   </ItemGroup>
 
 </Project>

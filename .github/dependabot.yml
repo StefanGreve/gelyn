@@ -29,10 +29,10 @@ updates:
         exclude-patterns:
           - Microsoft.Extensions.Diagnostics.Testing
           - Microsoft.Extensions.TimeProvider.Testing
-      # TestingHelpers ships in lockstep with the library it fakes, so the two have to move in one pull request.
+      # The mock accepts one minor version of the interfaces the library implements, so the two have to move in one pull request.
       io-abstractions:
         patterns:
-          - TestableIO.System.IO.Abstractions*
+          - Testably.Abstractions*
 
   - package-ecosystem: github-actions
     directory: /

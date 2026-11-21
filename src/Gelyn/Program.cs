@@ -15,6 +15,8 @@ using Microsoft.Extensions.Logging;
 
 using Spectre.Console;
 
+using Testably.Abstractions;
+
 namespace Gelyn;
 
 /// <summary>
@@ -54,7 +56,7 @@ internal static class Program
             // Third-party registrations
             builder.Services.TryAddKeyedSingleton(ConsoleTarget.StdOut, stdOut);
             builder.Services.TryAddKeyedSingleton(ConsoleTarget.StdErr, stdErr);
-            builder.Services.TryAddSingleton<IFileSystem, FileSystem>();
+            builder.Services.TryAddSingleton<IFileSystem, RealFileSystem>();
             builder.Services.TryAddSingleton<IConfigurationRoot>(builder.Configuration);
 
             // First-party registrations

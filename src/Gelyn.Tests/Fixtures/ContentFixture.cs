@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Abstractions.TestingHelpers;
 
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -9,6 +8,8 @@ using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+
+using Testably.Abstractions.Testing;
 
 namespace Gelyn.Tests.Fixtures;
 
@@ -489,7 +490,7 @@ internal sealed class ContentFixture
 
         var fixture = new ContentFixture(fileSystem, root, options, verbosity);
 
-        fileSystem.AddDirectory(fixture.ContentRoot);
+        fileSystem.Directory.CreateDirectory(fixture.ContentRoot);
 
         return fixture;
     }
@@ -601,7 +602,7 @@ internal sealed class ContentFixture
     /// </returns>
     public ContentFixture WriteFile(string relativePath, string contents = "")
     {
-        this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(contents));
+        this.FileSystem.AddFile(this.Resolve(relativePath), contents);
 
         return this;
     }
@@ -620,7 +621,7 @@ internal sealed class ContentFixture
     /// </returns>
     public ContentFixture WriteBytes(string relativePath, byte[] contents)
     {
-        this.FileSystem.AddFile(this.Resolve(relativePath), new MockFileData(contents));
+        this.FileSystem.AddFile(this.Resolve(relativePath), contents);
 
         return this;
     }
@@ -639,7 +640,7 @@ internal sealed class ContentFixture
     /// </returns>
     public ContentFixture WriteOutside(string relativePath, string contents = "")
     {
-        this.FileSystem.AddFile(this.Resolve(this.Root, relativePath), new MockFileData(contents));
+        this.FileSystem.AddFile(this.Resolve(this.Root, relativePath), contents);
 
         return this;
     }
@@ -697,7 +698,7 @@ internal sealed class ContentFixture
     /// </returns>
     public ContentFixture WriteOutput(string relativePath, string contents = "")
     {
-        this.FileSystem.AddFile(this.Resolve(this.OutputRoot, relativePath), new MockFileData(contents));
+        this.FileSystem.AddFile(this.Resolve(this.OutputRoot, relativePath), contents);
 
         return this;
     }
