@@ -362,7 +362,7 @@ public class ContentPipelineTests
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create().Write("a.md", "A");
-        fixture.FileSystem.AddDirectory(fixture.FileSystem.Path.Combine(fixture.ContentRoot, "a.html"));
+        fixture.FileSystem.Directory.CreateDirectory(fixture.FileSystem.Path.Combine(fixture.ContentRoot, "a.html"));
 
         // Act
         IReadOnlyList<ContentItem> items = Scan(fixture);

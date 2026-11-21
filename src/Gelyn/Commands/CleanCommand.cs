@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.IO.Abstractions;
 
 using Gelyn.Cli;
 using Gelyn.Extensions;
