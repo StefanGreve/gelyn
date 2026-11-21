@@ -1,9 +1,9 @@
 using System.CommandLine;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Cli;
 
-namespace Gelyn.Tests.Core.Internals;
+namespace Gelyn.Tests.Cli;
 
 /// <summary>
 ///     Unit tests for the <see cref="OverrideOptions"/> class.

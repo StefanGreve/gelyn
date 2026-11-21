@@ -1,6 +1,7 @@
 using System.CommandLine;
 
 using Gelyn.Abstractions;
+using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
@@ -23,39 +24,33 @@ internal sealed class BuildCommand : Command
     /// <summary>
     ///     Initializes a new instance of the <see cref="BuildCommand"/> class.
     /// </summary>
-    /// <param name="siteBuilder">
-    ///     Performs the generation.
+    /// <param name="open">
+    ///     The factory that opens the session of a parsed command line.
     /// </param>
-    /// <param name="stdOut">
-    ///     The console the command writes its output to.
-    /// </param>
-    /// <param name="stdErr">
-    ///     The console the command writes its failures to.
-    /// </param>
-    public BuildCommand(
-        SiteBuilderContract siteBuilder,
-        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
-        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
+    public BuildCommand(Func<ParseResult, Session> open)
         : base("build", "Generate the site into the output directory.")
     {
         foreach (Option option in OverrideOptions.Definitions)
             this.Options.Add(option);
 
-        this.SetAction(async (_, cancellationToken) =>
+        this.SetAction(async (parseResult, cancellationToken) =>
         {
+            using Session session = open(parseResult);
+            var siteBuilder = session.Services.GetRequiredService<SiteBuilderContract>();
+
             try
             {
                 BuildReport report = await siteBuilder
                     .BuildAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                WriteReport(stdOut, report);
+                WriteReport(session.StdOut, report);
 
                 return ExitCodes.Success;
             }
             catch (IOException exception) when (exception is not FileNotFoundException)
             {
-                stdErr.WriteError(exception);
+                session.StdErr.WriteError(exception);
                 return ExitCodes.Error;
             }
         });

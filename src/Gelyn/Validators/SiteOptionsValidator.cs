@@ -6,7 +6,6 @@ using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Validators;
@@ -20,21 +19,21 @@ namespace Gelyn.Validators;
 /// </remarks>
 internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOptions>
 {
-    private readonly IHostEnvironment _environment;
+    private readonly string _contentRoot;
     private readonly ConfigurationFileStatus _file;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteOptionsValidator"/> class.
     /// </summary>
-    /// <param name="environment">
-    ///     The host environment the directory settings are resolved against.
+    /// <param name="contentRoot">
+    ///     The directory the directory settings are resolved against.
     /// </param>
     /// <param name="file">
     ///     The configuration file the run reads, which the output directory must not hold.
     /// </param>
-    public SiteOptionsValidator(IHostEnvironment environment, ConfigurationFileStatus file)
+    public SiteOptionsValidator(string contentRoot, ConfigurationFileStatus file)
     {
-        this._environment = environment;
+        this._contentRoot = contentRoot;
         this._file = file;
     }
 
@@ -100,7 +99,7 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
 
         if (string.IsNullOrWhiteSpace(content) || string.IsNullOrWhiteSpace(output)) yield break;
 
-        string root = PathBoundary.Resolve(this._environment.ContentRootPath);
+        string root = PathBoundary.Resolve(this._contentRoot);
         string resolved = PathBoundary.Resolve(root, output);
 
         if (ViolatesBoundary(root, content, output))

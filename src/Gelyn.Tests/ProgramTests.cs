@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Cli;
 using Gelyn.Tests.Fixtures;
 
 namespace Gelyn.Tests;
@@ -112,6 +112,60 @@ public class ProgramTests
     }
 
     #endregion // Exit Code Tests
+
+    #region Configuration File Tests
+
+    /// <summary>
+    ///     Verifies that a configuration file that does not parse is a configuration error for a command, and
+    ///     stops none of the options that run without the site.
+    /// </summary>
+    [Test]
+    [Arguments("build", ExitCodes.ConfigurationError)]
+    [Arguments("--help", ExitCodes.Success)]
+    [Arguments("--version", ExitCodes.Success)]
+    [Arguments("--info", ExitCodes.Success)]
+    public async Task Main_Test_FileThatDoesNotParse_StopsOnlyACommand(string argument, int expected)
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": """);
+
+        // Act
+        int exitCode = await RunAsync(fixture, argument);
+
+        // Assert
+        await Assert.That(exitCode).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    ///     Verifies that a configuration file another handle holds open fails a command as an error, since no
+    ///     setting was rejected, and stops none of the options that run without the site.
+    /// </summary>
+    [Test]
+    [Arguments("build", ExitCodes.Error)]
+    [Arguments("--help", ExitCodes.Success)]
+    [Arguments("--version", ExitCodes.Success)]
+    [Arguments("--info", ExitCodes.Success)]
+    public async Task Main_Test_FileHeldOpen_StopsOnlyACommand(string argument, int expected)
+    {
+        // Arrange
+        Skip.Unless(OperatingSystem.IsWindows(), "Only Windows refuses to open a file another handle holds without sharing.");
+
+        using DiskFixture fixture = DiskFixture.Create()
+            .Write("index.md", "# Home")
+            .WriteOutside(ConfigurationFile.DefaultFileName, """{ "Title": "Held" }""");
+
+        using var handle = new FileStream(Path.Combine(fixture.Root, ConfigurationFile.DefaultFileName), FileMode.Open, FileAccess.Read, FileShare.None);
+
+        // Act
+        int exitCode = await RunAsync(fixture, argument);
+
+        // Assert
+        await Assert.That(exitCode).IsEqualTo(expected);
+    }
+
+    #endregion // Configuration File Tests
 
     #region Clean Tests
 

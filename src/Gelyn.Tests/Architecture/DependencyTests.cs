@@ -21,26 +21,35 @@ public class DependencyTests : ArchBase
     ///     down and never up: a command drives a service, a service composes components, and a component
     ///     reads the model. The model carries data alone, so it depends on none of the three, and the
     ///     abstractions sit beside it, each implemented by one service. The diagnostics sit beside the services,
-    ///     which time and report through them, out of reach of the rendering layers. Each pair below names a
-    ///     layer and one of the layers it has to stay independent of.
+    ///     which time and report through them, out of reach of the rendering layers. The command line layer
+    ///     parses the arguments and composes the services for the commands that open it, so it reaches down
+    ///     to every other layer and stays independent of the commands. Each pair below names a layer and one
+    ///     of the layers it has to stay independent of.
     /// </remarks>
     [Test]
+    [Arguments(AbstractionsNamespace, CliNamespace)]
     [Arguments(AbstractionsNamespace, CommandsNamespace)]
     [Arguments(AbstractionsNamespace, ComponentsNamespace)]
     [Arguments(AbstractionsNamespace, ServicesNamespace)]
+    [Arguments(ModelNamespace, CliNamespace)]
     [Arguments(ModelNamespace, CommandsNamespace)]
     [Arguments(ModelNamespace, ComponentsNamespace)]
     [Arguments(ModelNamespace, DiagnosticsNamespace)]
     [Arguments(ModelNamespace, ServicesNamespace)]
+    [Arguments(ComponentsNamespace, CliNamespace)]
     [Arguments(ComponentsNamespace, CommandsNamespace)]
     [Arguments(ComponentsNamespace, DiagnosticsNamespace)]
     [Arguments(ComponentsNamespace, ServicesNamespace)]
+    [Arguments(ServicesNamespace, CliNamespace)]
     [Arguments(ServicesNamespace, CommandsNamespace)]
+    [Arguments(CoreNamespace, CliNamespace)]
     [Arguments(CoreNamespace, CommandsNamespace)]
     [Arguments(CoreNamespace, DiagnosticsNamespace)]
     [Arguments(CoreNamespace, ServicesNamespace)]
+    [Arguments(DiagnosticsNamespace, CliNamespace)]
     [Arguments(DiagnosticsNamespace, CommandsNamespace)]
     [Arguments(DiagnosticsNamespace, ServicesNamespace)]
+    [Arguments(CliNamespace, CommandsNamespace)]
     public void Dependency_Test_TheLowerNamespaceDoesNotDependOnTheHigherOne(string lower, string higher)
     {
         // Arrange

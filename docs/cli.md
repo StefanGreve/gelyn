@@ -136,8 +136,8 @@ build waits on.
 because no `BaseUrl` is set or a front matter key Gelyn doesn't know.
 
 `gelyn --info` prints build, platform and configuration information to paste into a bug report. It runs even
-when the configuration file is missing or doesn't parse. Paths below your home directory start with `~`, so the
-report doesn't put your user name into a public issue.
+when the configuration file is missing, doesn't parse or can't be opened. Paths below your home directory start
+with `~`, so the report doesn't put your user name into a public issue.
 
 The `AppSettings` line names the configuration file the run reads: the `--config` path when you give one, and
 the `gelyn.json` of the [content root](configuration.md#settings) otherwise. When that file can't be read, the
@@ -164,8 +164,8 @@ Code `1` also covers a command line that Gelyn can't parse, because that's what 
 for one, so you can't tell an unrecognized option from a failed build. Code `2` means a setting is unusable,
 such as a `BaseUrl` that isn't an absolute `http` or `https` URL, a `--config` path that doesn't exist, or a
 content directory without an `index.md`. Every command also returns `2` for a configuration file that doesn't
-parse. `--help`, `--version` and `--info` return `0` even when the configuration file is missing or doesn't
-parse.
+parse, and `1` for one it can't open. `--help`, `--version` and `--info` return `0` even when the configuration
+file is missing, doesn't parse or can't be opened.
 
 `serve` returns `0` when you interrupt it, `2` when it rejects the configuration as `build` would, and `1`
 when the port is already taken, when the platform carries no usable `HttpListener`, or when the first build

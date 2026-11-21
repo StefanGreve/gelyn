@@ -3,18 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Cli;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace Gelyn.Tests.Core.Internals;
+namespace Gelyn.Tests.Cli;
 
 /// <summary>
 ///     Unit tests for the <see cref="ExitCodes"/> class.
@@ -69,18 +67,13 @@ public class ExitCodesTests
 
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddSingleton<IHostEnvironment>(new HostEnvironmentStub
-        {
-            ContentRootPath = Path.GetFullPath("/site")
-        });
-        services.AddConfigurationFile(new ConfigurationFileStatus
+        services.AddSiteOptions(Path.GetFullPath("/site"), new ConfigurationFileStatus
         {
             Path = Path.GetFullPath("/site/gelyn.json"),
             Optional = true,
             Exists = false,
             Failure = null
         });
-        services.AddSiteOptions();
 
         await using ServiceProvider provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptionsMonitor<SiteOptions>>();

@@ -1,8 +1,6 @@
 using System.CommandLine;
 
-using Gelyn.Core.Internals;
-
-using Microsoft.Extensions.Logging;
+using Gelyn.Cli;
 
 namespace Gelyn.Commands;
 
@@ -11,35 +9,29 @@ namespace Gelyn.Commands;
 /// </summary>
 internal sealed class GelynCommand : RootCommand
 {
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="GelynCommand"/> class.
-    /// </summary>
-    /// <param name="buildCommand">
-    ///     The <c>build</c> subcommand.
-    /// </param>
-    /// <param name="cleanCommand">
-    ///     The <c>clean</c> subcommand.
-    /// </param>
-    /// <param name="serveCommand">
-    ///     The <c>serve</c> subcommand.
-    /// </param>
-    /// <param name="infoOption">
-    ///     The <c>--info</c> option.
-    /// </param>
-    public GelynCommand(BuildCommand buildCommand, CleanCommand cleanCommand, ServeCommand serveCommand, InfoOption infoOption)
+    private GelynCommand(Func<ParseResult, Session> open)
         : base("A static site generator.")
     {
-        // Read by ConfigurationFile.ReadPath before the host exists, because it selects a configuration source.
-        Option<string> configuration = ConfigurationFile.CreateOption();
+        this.Options.Add(ConfigurationFile.CreateOption());
+        this.Options.Add(VerbosityOption.CreateOption());
+        this.Options.Add(new InfoOption(open));
+        this.Subcommands.Add(new BuildCommand(open));
+        this.Subcommands.Add(new CleanCommand(open));
+        this.Subcommands.Add(new ServeCommand(open));
+    }
 
-        // Read by Program before the host exists, because it selects the minimum level of the log providers.
-        Option<LogLevel> verbosity = VerbosityOption.CreateOption();
-
-        this.Options.Add(configuration);
-        this.Options.Add(verbosity);
-        this.Options.Add(infoOption);
-        this.Subcommands.Add(buildCommand);
-        this.Subcommands.Add(cleanCommand);
-        this.Subcommands.Add(serveCommand);
+    /// <summary>
+    ///     Creates the root command with every option and subcommand the tool declares.
+    /// </summary>
+    /// <param name="open">
+    ///     The factory that opens the session of a parsed command line.
+    /// </param>
+    /// <returns>
+    ///     The root command, with every subcommand and option the tool declares.
+    /// </returns>
+    public static GelynCommand Create(Func<ParseResult, Session> open)
+    {
+        ArgumentNullException.ThrowIfNull(open);
+        return new GelynCommand(open);
     }
 }

@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Cli;
 
 /// <summary>
 ///     Process exit codes returned by the tool's commands.
@@ -29,11 +29,12 @@ internal static class ExitCodes
     internal const int ConfigurationError = 2;
 
     /// <summary>
-    ///     The exit code that reports a failure no command handled itself.
+    ///     Maps an exception that escaped a command to its exit code.
     /// </summary>
     /// <remarks>
-    ///     The binder wraps a value it cannot convert in an <see cref="InvalidOperationException"/>, so the
-    ///     <see cref="FormatException"/> inside is what tells it from one a bug raised.
+    ///     The configuration binder wraps a value it cannot convert in an
+    ///     <see cref="InvalidOperationException"/>. Only an inner <see cref="FormatException"/> marks that
+    ///     exception as a configuration error instead of a bug.
     /// </remarks>
     /// <param name="exception">
     ///     The exception the command failed with.

@@ -10,8 +10,6 @@ using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -59,7 +57,8 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
     private readonly SiteBuilderContract _builder;
     private readonly IConfigurationRoot _configuration;
-    private readonly IHostEnvironment _environment;
+    private readonly ConfigurationFileStatus _file;
+    private readonly string _contentRoot;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
     private readonly IAnsiConsole _stdOut;
@@ -76,8 +75,11 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <param name="configuration">
     ///     The configuration the site options are bound from, read again when the file behind it changes.
     /// </param>
-    /// <param name="environment">
-    ///     The host environment relative paths are resolved against.
+    /// <param name="file">
+    ///     The configuration file the run reads, which the loop watches for changes.
+    /// </param>
+    /// <param name="contentRoot">
+    ///     The directory relative paths are resolved against.
     /// </param>
     /// <param name="options">
     ///     Supplies the site configuration naming the directories to watch.
@@ -100,17 +102,19 @@ internal sealed class SiteWatcher : SiteWatcherContract
     public SiteWatcher(
         SiteBuilderContract builder,
         IConfigurationRoot configuration,
-        IHostEnvironment environment,
+        ConfigurationFileStatus file,
+        string contentRoot,
         IOptionsMonitor<SiteOptions> options,
-        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
-        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr,
+        IAnsiConsole stdOut,
+        IAnsiConsole stdErr,
         TimeProvider timeProvider,
         IFileSystem fileSystem,
         ILogger<SiteWatcher> logger)
     {
         this._builder = builder;
         this._configuration = configuration;
-        this._environment = environment;
+        this._file = file;
+        this._contentRoot = contentRoot;
         this._options = options;
         this._stdOut = stdOut;
         this._stdErr = stdErr;
@@ -129,12 +133,12 @@ internal sealed class SiteWatcher : SiteWatcherContract
     public override async Task WatchAsync(CancellationToken cancellationToken)
     {
         SiteOptions options = this._options.CurrentValue;
-        string root = this._environment.ContentRootPath;
+        string root = this._contentRoot;
 
         string contentDirectory = PathBoundary.Resolve(root, options.ContentDirectory);
         string outputDirectory = PathBoundary.Resolve(root, options.OutputDirectory);
         string basePath = UrlUtils.ResolveBasePath(options.BaseUrl);
-        string configurationFile = ConfigurationFile.Resolve(this._configuration, root);
+        string configurationFile = this._file.Path;
 
         using FileSystemWatcher sources = Observe(
             directory: contentDirectory,
@@ -430,7 +434,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// </returns>
     private string? Moved(string contentDirectory, string outputDirectory, string basePath, SiteOptions options)
     {
-        string root = this._environment.ContentRootPath;
+        string root = this._contentRoot;
         List<string> moved = [];
 
         if (!PathBoundary.Resolve(root, options.ContentDirectory).Equals(contentDirectory, StringComparison.Ordinal))
@@ -469,7 +473,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
         string elapsed = elapsedMilliseconds.ToString("F2", Tool.Culture);
 
         string cause = changeCount == 1
-            ? $"{Path.GetRelativePath(this._environment.ContentRootPath, trigger)} changed"
+            ? $"{Path.GetRelativePath(this._contentRoot, trigger)} changed"
             : string.Create(Tool.Culture, $"{changeCount} entries changed");
 
         this._stdOut.MarkupLineInterpolated($"[green]rebuilt[/] {fileCount} file(s) in {elapsed} ms after {cause}.");

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Gelyn.Core;
 using Gelyn.Model;
 using Gelyn.Model.Options;
-using Gelyn.Tests.Stubs;
 using Gelyn.Validators;
 
 using Microsoft.Extensions.Options;
@@ -747,14 +746,12 @@ public class SiteOptionsValidatorTests
     /// </summary>
     public static IEnumerable<string> BundledThemes() => ThemeCatalog.Names;
 
-    // An explicit content root is required: the stub defaults it to string.Empty, which would leave
-    // GetFullPath resolving the relative settings against the working directory.
+    // An absolute content root, so that the relative settings do not resolve against the working directory.
     private static ValidateOptionsResult Validate(SiteOptions options, string configuration = "/site/gelyn.json")
     {
-        var environment = new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") };
         var file = new ConfigurationFileStatus { Path = Path.GetFullPath(configuration), Optional = true, Exists = true, Failure = null };
 
-        return new SiteOptionsValidator(environment, file).Validate(name: null, options);
+        return new SiteOptionsValidator(Path.GetFullPath("/site"), file).Validate(name: null, options);
     }
 
     // Assigned by name, because the alternative is one test per setting; every setting under test is a

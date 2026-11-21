@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
+using Gelyn.Model;
 using Gelyn.Services;
 using Gelyn.Tests.Stubs;
 
@@ -74,7 +76,8 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.Watcher = new SiteWatcher(
             content.Builder,
             this.Configuration,
-            content.HostEnvironment,
+            new ConfigurationFileStatus { Path = this.ConfigurationPath, Optional = true, Exists = false, Failure = null },
+            content.Root,
             new OptionsMonitorStub(content.Options),
             stdOut,
             stdErr,

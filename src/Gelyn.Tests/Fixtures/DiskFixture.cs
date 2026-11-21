@@ -34,13 +34,12 @@ internal sealed class DiskFixture : IDisposable
         this.OutputRoot = Path.Combine(root, options.OutputDirectory);
 
         IFileSystem fileSystem = new RealFileSystem();
-        var environment = new HostEnvironmentStub { ContentRootPath = root };
 
-        this.Pipeline = new ContentPipeline(environment, fileSystem);
+        this.Pipeline = new ContentPipeline(root, fileSystem);
 
         this.Builder = new SiteBuilder(
             this.Pipeline,
-            environment,
+            root,
             new OptionsMonitorStub(options),
             fileSystem,
             new FakeLogger<SiteBuilder>());

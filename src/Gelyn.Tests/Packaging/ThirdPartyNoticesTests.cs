@@ -29,7 +29,6 @@ public class ThirdPartyNoticesTests
     [
         ("Markdig", "Markdig"),
         ("Microsoft.Extensions.*", ".NET Runtime and the Microsoft.Extensions libraries"),
-        ("System.Diagnostics.EventLog", ".NET Runtime and the Microsoft.Extensions libraries"),
         ("SharpYaml", "SharpYaml"),
         ("Spectre.Console", "Spectre.Console"),
         ("Spectre.Console.Ansi", "Spectre.Console"),

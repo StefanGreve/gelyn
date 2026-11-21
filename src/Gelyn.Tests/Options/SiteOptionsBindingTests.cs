@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Tests.Options;
@@ -144,9 +142,7 @@ public class SiteOptionsBindingTests
     {
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddSingleton<IHostEnvironment>(new HostEnvironmentStub { ContentRootPath = Path.GetFullPath("/site") });
-        services.AddConfigurationFile(new ConfigurationFileStatus { Path = Path.GetFullPath("/site/gelyn.json"), Optional = true, Exists = false, Failure = null });
-        services.AddSiteOptions();
+        services.AddSiteOptions(Path.GetFullPath("/site"), new ConfigurationFileStatus { Path = Path.GetFullPath("/site/gelyn.json"), Optional = true, Exists = false, Failure = null });
 
         await using ServiceProvider provider = services.BuildServiceProvider();
 

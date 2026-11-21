@@ -1,19 +1,21 @@
 using System;
 using System.CommandLine;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
+using Gelyn.Cli;
+using Gelyn.Commands;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
-using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Tests.Fixtures;
 using Gelyn.Tests.Stubs;
 
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 using Spectre.Console;
 
@@ -21,7 +23,7 @@ using Testably.Abstractions.Testing;
 
 using TUnit.Assertions.Enums;
 
-namespace Gelyn.Tests.Core.Internals;
+namespace Gelyn.Tests.Cli;
 
 /// <summary>
 ///     Unit tests for the <see cref="InfoOption"/> class.
@@ -203,7 +205,7 @@ public class InfoOptionTests
     }
 
     /// <summary>
-    ///     Verifies that a file the loader read is reported by its path, whether it is the default file or one the
+    ///     Verifies that a file the session read is reported by its path, whether it is the default file or one the
     ///     command line requested.
     /// </summary>
     [Test]
@@ -224,7 +226,7 @@ public class InfoOptionTests
     }
 
     /// <summary>
-    ///     Verifies that a requested file the loader did not find is reported as missing, which is the run that
+    ///     Verifies that a requested file the session did not find is reported as missing, which is the run that
     ///     stops with a configuration error.
     /// </summary>
     [Test]
@@ -267,25 +269,25 @@ public class InfoOptionTests
     }
 
     /// <summary>
-    ///     Verifies that the report names what the loader made of the command line, so that it cannot disagree with
-    ///     the run, including for a path behind <c>--info</c> and for a file that does not parse.
+    ///     Verifies that the report names what the session made of the command line, so that it cannot disagree
+    ///     with the run, including for a path behind <c>--info</c> and for a file that does not parse.
     /// </summary>
     [Test]
     [Category(Categories.Integration)]
     [Arguments("""{ "Title": "Read" }""", false)]
     [Arguments("""{ "Title": """, true)]
-    public async Task Configuration_Test_ThroughTheLoader_MatchesTheRun(string contents, bool fails)
+    public async Task Configuration_Test_ThroughTheSession_MatchesTheRun(string contents, bool fails)
     {
         // Arrange
         using DiskFixture fixture = DiskFixture.Create()
             .WriteOutside("site.json", contents);
 
         string path = Path.Combine(fixture.Root, "site.json");
-        string[] args = [InfoOption.OptionName, ConfigurationFile.OptionName, path];
-        ConfigurationFileStatus file = new ConfigurationManager().AddSiteConfiguration(ConfigurationFile.ReadPath(args));
+        IAnsiConsole console = CapturedConsole.Create(TextWriter.Null);
+        var command = GelynCommand.Create(parsed => Session.Open(parsed, fixture.Root, console, console, Stopwatch.GetTimestamp()));
 
         // Act
-        (_, string output, _) = Invoke(Create(file), args);
+        (int exitCode, string output, _) = Invoke(command, InfoOption.OptionName, ConfigurationFile.OptionName, path);
 
         // Assert
         string reported = Value(output, "AppSettings");
@@ -293,6 +295,7 @@ public class InfoOptionTests
 
         using (Assert.Multiple())
         {
+            await Assert.That(exitCode).IsEqualTo(ExitCodes.Success);
             await Assert.That(reported).StartsWith(named);
             await Assert.That(reported.Contains("(not readable: ", StringComparison.Ordinal)).IsEqualTo(fails);
         }
@@ -371,12 +374,15 @@ public class InfoOptionTests
 
     #region Helpers
 
+    // A session that is never composed, since the report reads nothing from the services.
     private static InfoOption Create(ConfigurationFileStatus? file = null, string? contentRoot = null, IFileSystem? fileSystem = null, IAnsiConsole? stdOut = null) =>
-        new(
+        new(_ => new Session(
+            contentRoot ?? Path.GetFullPath("/site"),
             file ?? Status(Path.GetFullPath("/site/gelyn.json"), optional: true, exists: false),
-            new HostEnvironmentStub { ContentRootPath = contentRoot ?? Path.GetFullPath("/site") },
             fileSystem ?? new MockFileSystem(),
-            stdOut ?? CapturedConsole.Create(TextWriter.Null));
+            stdOut ?? CapturedConsole.Create(TextWriter.Null),
+            CapturedConsole.Create(TextWriter.Null),
+            static () => new ServiceCollection().BuildServiceProvider()));
 
     private static ConfigurationFileStatus Status(string path, bool optional, bool exists, Exception? failure = null) =>
         new() { Path = path, Optional = optional, Exists = exists, Failure = failure };
@@ -393,9 +399,14 @@ public class InfoOptionTests
     private static (int ExitCode, string Output, string Error) Invoke(InfoOption option, params string[] args)
     {
         var command = new RootCommand();
-        command.Options.Add(new Option<string>(ConfigurationFile.OptionName) { Recursive = true });
+        command.Options.Add(ConfigurationFile.CreateOption());
         command.Options.Add(option);
 
+        return Invoke(command, args);
+    }
+
+    private static (int ExitCode, string Output, string Error) Invoke(Command command, params string[] args)
+    {
         using var output = new StringWriter();
         using var error = new StringWriter();
 

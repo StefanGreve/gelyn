@@ -1,12 +1,10 @@
-using Gelyn.Core.Internals;
-
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     The logging setup the composition root in <see cref="Program"/> applies.
+///     Provides extension methods for <see cref="ILoggingBuilder"/>.
 /// </summary>
 internal static class LoggingBuilderExtensions
 {
@@ -20,7 +18,7 @@ internal static class LoggingBuilderExtensions
     ///     The builder to configure.
     /// </param>
     /// <param name="level">
-    ///     The minimum level to write, as <see cref="VerbosityOption.ReadLevel"/> reads it.
+    ///     The minimum level to write, as <c>--verbosity</c> selects it.
     /// </param>
     /// <returns>
     ///     The same <see cref="ILoggingBuilder"/> instance, so that calls can be chained.

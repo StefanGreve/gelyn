@@ -12,6 +12,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 using Gelyn.Attributes;
+using Gelyn.Cli;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model.Options;

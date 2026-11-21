@@ -1,14 +1,15 @@
 using System.CommandLine;
 
-namespace Gelyn.Core.Internals;
+using Gelyn.Core;
+
+namespace Gelyn.Cli;
 
 /// <summary>
 ///     Options that override a configured setting for the duration of one run.
 /// </summary>
 /// <remarks>
-///     Shared so that the command declaring an option and the configuration layer promoting it cannot drift
-///     apart. The names carry no leading dashes, because that is the form the command line configuration
-///     provider reports them under.
+///     Shared so that the command declaring an option and the session promoting it cannot drift apart. The
+///     names carry no leading dashes, so that each can name both the option and the setting it stands for.
 /// </remarks>
 internal static class OverrideOptions
 {
@@ -81,8 +82,8 @@ internal static class OverrideOptions
     ///     overrides.
     /// </summary>
     /// <remarks>
-    ///     These options carry values into <c>SiteOptions</c> through <c>AddSiteConfiguration</c>, and no
-    ///     command reads them from the parse result. They are declared here instead of inside a command, which
+    ///     These options carry values into <c>SiteOptions</c> through <see cref="Session"/>, and no command
+    ///     reads them from the parse result. They are declared here instead of inside a command, which
     ///     keeps the names and the options together. Every read returns new instances, because an
     ///     <see cref="Option"/> belongs to one command tree.
     /// </remarks>

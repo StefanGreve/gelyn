@@ -1,15 +1,14 @@
 using System.CommandLine;
-using System.IO.Abstractions;
 using System.Net;
 
 using Gelyn.Abstractions;
+using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 using Spectre.Console;
@@ -28,39 +27,10 @@ internal sealed class ServeCommand : Command
     /// <summary>
     ///     Initializes a new instance of the <see cref="ServeCommand"/> class.
     /// </summary>
-    /// <param name="siteBuilder">
-    ///     Performs the generation that precedes the serving.
+    /// <param name="open">
+    ///     The factory that opens the session of a parsed command line.
     /// </param>
-    /// <param name="server">
-    ///     Answers the requests for what the generation produced.
-    /// </param>
-    /// <param name="watcher">
-    ///     Generates the site again whenever a source file or the configuration file changes.
-    /// </param>
-    /// <param name="environment">
-    ///     The host environment relative paths are resolved against.
-    /// </param>
-    /// <param name="options">
-    ///     Supplies the site configuration naming the directory to serve.
-    /// </param>
-    /// <param name="fileSystem">
-    ///     The file system to work against.
-    /// </param>
-    /// <param name="stdOut">
-    ///     The console the command writes its output to.
-    /// </param>
-    /// <param name="stdErr">
-    ///     The console the command writes its failures to.
-    /// </param>
-    public ServeCommand(
-        SiteBuilderContract siteBuilder,
-        FileServerContract server,
-        SiteWatcherContract watcher,
-        IHostEnvironment environment,
-        IOptionsMonitor<SiteOptions> options,
-        IFileSystem fileSystem,
-        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
-        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr)
+    public ServeCommand(Func<ParseResult, Session> open)
         : base("serve", "Serve the site over HTTP for local preview, rebuilding it as its sources change.")
     {
         // Carries its value into SiteOptions.Port like the shared overrides, so the range is checked there.
@@ -96,35 +66,40 @@ internal sealed class ServeCommand : Command
         foreach (Option option in OverrideOptions.Definitions)
             this.Options.Add(option);
 
-        this.SetAction(async (parsed, cancellationToken) =>
+        this.SetAction(async (parseResult, cancellationToken) =>
         {
+            using Session session = open(parseResult);
+            var siteBuilder = session.Services.GetRequiredService<SiteBuilderContract>();
+            var server = session.Services.GetRequiredService<FileServerContract>();
+            var watcher = session.Services.GetRequiredService<SiteWatcherContract>();
+
             try
             {
                 BuildReport report = await siteBuilder
                     .BuildAsync(cancellationToken)
                     .ConfigureAwait(false);
 
-                SiteOptions site = options.CurrentValue;
-                string outputDirectory = fileSystem.Path.Combine(environment.ContentRootPath, site.OutputDirectory);
+                SiteOptions site = session.Services.GetRequiredService<IOptionsMonitor<SiteOptions>>().CurrentValue;
+                string outputDirectory = session.FileSystem.Path.Combine(session.ContentRoot, site.OutputDirectory);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                stdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+                session.StdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
 
-                using var session = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
                 Task serving = server.ServeAsync(
                     outputDirectory,
                     UrlUtils.ResolveBasePath(site.BaseUrl),
                     site.Port,
-                    parsed.GetValue(launchBrowser),
-                    parsed.GetValue(refresh),
-                    session.Token);
+                    parseResult.GetValue(launchBrowser),
+                    parseResult.GetValue(refresh),
+                    lifetime.Token);
 
-                Task watching = watcher.WatchAsync(session.Token);
+                Task watching = watcher.WatchAsync(lifetime.Token);
 
-                // A faulted rebuild loop has to end the serving too, so the session is canceled as soon as either side finishes.
+                // A faulted rebuild loop has to end the serving too, so both are canceled as soon as either side finishes.
                 await Task.WhenAny(serving, watching).ConfigureAwait(false);
-                await session.CancelAsync().ConfigureAwait(false);
+                await lifetime.CancelAsync().ConfigureAwait(false);
                 await Task.WhenAll(serving, watching).ConfigureAwait(false);
 
                 return ExitCodes.Success;
@@ -136,7 +111,7 @@ internal sealed class ServeCommand : Command
             }
             catch (Exception exception) when (exception is not FileNotFoundException and (IOException or HttpListenerException or PlatformNotSupportedException))
             {
-                stdErr.WriteError(exception);
+                session.StdErr.WriteError(exception);
                 return ExitCodes.Error;
             }
         });

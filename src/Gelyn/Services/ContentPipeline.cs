@@ -9,8 +9,6 @@ using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Hosting;
-
 using SharpYaml;
 
 namespace Gelyn.Services;
@@ -36,21 +34,21 @@ internal sealed class ContentPipeline : ContentPipelineContract
     private const string LandingPageOutputPath = $"{IndexSlug}{FileExtensions.Html}";
     private const string NotFoundSlug = "404";
 
-    private readonly IHostEnvironment _environment;
+    private readonly string _contentRoot;
     private readonly IFileSystem _fileSystem;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="ContentPipeline"/> class.
     /// </summary>
-    /// <param name="environment">
-    ///     The host environment relative paths are resolved against.
+    /// <param name="contentRoot">
+    ///     The directory relative paths are resolved against.
     /// </param>
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
-    public ContentPipeline(IHostEnvironment environment, IFileSystem fileSystem)
+    public ContentPipeline(string contentRoot, IFileSystem fileSystem)
     {
-        this._environment = environment;
+        this._contentRoot = contentRoot;
         this._fileSystem = fileSystem;
     }
 
@@ -60,7 +58,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
         ArgumentNullException.ThrowIfNull(options);
 
         IPath path = this._fileSystem.Path;
-        string root = path.Combine(this._environment.ContentRootPath, options.ContentDirectory);
+        string root = path.Combine(this._contentRoot, options.ContentDirectory);
         IDirectoryInfo directory = this._fileSystem.DirectoryInfo.New(root);
 
         string hrefPrefix = UrlUtils.ResolveBasePath(options.BaseUrl);

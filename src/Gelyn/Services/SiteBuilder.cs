@@ -10,7 +10,6 @@ using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -58,7 +57,7 @@ namespace Gelyn.Services;
 internal sealed class SiteBuilder : SiteBuilderContract
 {
     private readonly ContentPipelineContract _pipeline;
-    private readonly IHostEnvironment _environment;
+    private readonly string _contentRoot;
     private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SiteBuilder> _logger;
@@ -69,8 +68,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// <param name="pipeline">
     ///     Discovers the files the site is built from, and renders the Markdown among them.
     /// </param>
-    /// <param name="environment">
-    ///     The host environment relative paths are resolved against.
+    /// <param name="contentRoot">
+    ///     The directory relative paths are resolved against.
     /// </param>
     /// <param name="options">
     ///     Supplies the site configuration the build is rendered against.
@@ -83,13 +82,13 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// </param>
     public SiteBuilder(
         ContentPipelineContract pipeline,
-        IHostEnvironment environment,
+        string contentRoot,
         IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
         ILogger<SiteBuilder> logger)
     {
         this._pipeline = pipeline;
-        this._environment = environment;
+        this._contentRoot = contentRoot;
         this._options = options;
         this._fileSystem = fileSystem;
         this._logger = logger;
@@ -156,9 +155,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
             foreach (UnknownKey key in page.UnknownKeys)
                 this._logger.LogFrontMatterKeyIgnored(key.Name, key.Line, page.SourcePath);
 
-        string outputDirectory = this._fileSystem.Path.Combine(
-            this._environment.ContentRootPath,
-            options.OutputDirectory);
+        string outputDirectory = this._fileSystem.Path.Combine(this._contentRoot, options.OutputDirectory);
 
         // One entry for the link check and the prune's existence check, which share its cached attributes.
         IDirectoryInfo root = this._fileSystem.DirectoryInfo.New(outputDirectory);

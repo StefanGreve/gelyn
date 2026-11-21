@@ -3,22 +3,22 @@ using System.CommandLine.Invocation;
 using System.IO.Abstractions;
 using System.Runtime.InteropServices;
 
+using Gelyn.Core;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
-using Gelyn.Model.Options;
-
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 using Spectre.Console;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Cli;
 
 /// <summary>
-///     The option that prints build, platform and configuration information for a bug report.
+///     Represents the <c>--info</c> option, which prints build, platform and configuration information for a bug
+///     report.
 /// </summary>
 /// <remarks>
-///     Its action replaces the command's, as the action of <c>--version</c> does, and reads no
-///     <see cref="SiteOptions"/>, so it runs while the configuration file is missing or does not parse.
+///     The action terminates the invocation, as the action of <c>--version</c> does. It reads the status of the
+///     configuration file and no service, so it succeeds when the file is missing, does not parse or cannot be
+///     opened.
 /// </remarks>
 internal sealed class InfoOption : Option<bool>
 {
@@ -39,54 +39,35 @@ internal sealed class InfoOption : Option<bool>
     // The os-release specification makes the second file the fallback for the first.
     private static readonly string[] OsReleasePaths = ["/etc/os-release", "/usr/lib/os-release"];
 
-    private readonly ConfigurationFileStatus _file;
-    private readonly IHostEnvironment _environment;
-    private readonly IFileSystem _fileSystem;
-    private readonly IAnsiConsole _stdOut;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="InfoOption"/> class.
     /// </summary>
-    /// <param name="file">
-    ///     What the first load of the configuration file found, which names the file the run applies.
+    /// <param name="open">
+    ///     The factory that opens the session of a parsed command line.
     /// </param>
-    /// <param name="environment">
-    ///     The host environment, whose content root the report names.
-    /// </param>
-    /// <param name="fileSystem">
-    ///     Reads the name and the version of a Linux distribution from its os-release file.
-    /// </param>
-    /// <param name="stdOut">
-    ///     The console on standard output, whose capabilities decide whether the report is colored.
-    /// </param>
-    public InfoOption(ConfigurationFileStatus file, IHostEnvironment environment, IFileSystem fileSystem, [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut)
+    public InfoOption(Func<ParseResult, Session> open)
         : base(OptionName)
     {
-        this._file = file;
-        this._environment = environment;
-        this._fileSystem = fileSystem;
-        this._stdOut = stdOut;
-
         this.Description = "Show build, platform and configuration information.";
         this.Arity = ArgumentArity.Zero;
-        this.Action = new InfoAction(this);
+        this.Action = new InfoAction(open);
     }
 
     // The default file systems of Windows and macOS ignore case, so the home directory may be spelled otherwise.
     private static StringComparison PathComparison =>
         OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
 
-    // Only a terminal gets color, so a redirected report stays plain text, and NO_COLOR clears the color system.
-    private bool UsesColor =>
-        this._stdOut.Profile is { Out.IsTerminal: true, Capabilities: { Ansi: true, ColorSystem: not ColorSystem.NoColors } };
-
     #region Helpers
 
-    private string Report(bool color)
+    // Only a terminal gets color, so a redirected report stays plain text, and NO_COLOR clears the color system.
+    private static bool UsesColor(IAnsiConsole stdOut) =>
+        stdOut.Profile is { Out.IsTerminal: true, Capabilities: { Ansi: true, ColorSystem: not ColorSystem.NoColors } };
+
+    private static string Report(Session session)
     {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        (string osName, string osVersion, string osPlatform) = this.HostOperatingSystem();
-        (string appSettings, Style appSettingsStyle) = this.AppSettings(home);
+        (string osName, string osVersion, string osPlatform) = HostOperatingSystem(session.FileSystem);
+        (string appSettings, Style appSettingsStyle) = AppSettings(session.File, home);
 
         Entry[] entries =
         [
@@ -101,7 +82,7 @@ internal sealed class InfoOption : Option<bool>
             new("Runtime Environment", "RID", RuntimeInformation.RuntimeIdentifier),
             new("Runtime Environment", "SDK", Tool.SdkVersion ?? Unknown),
             new("Configuration", "Bundled Themes", string.Join(", ", ThemeCatalog.Names)),
-            new("Configuration", "Content root", ShortenPath(this._environment.ContentRootPath, home)),
+            new("Configuration", "Content root", ShortenPath(session.ContentRoot, home)),
             new("Configuration", "AppSettings", appSettings, appSettingsStyle),
         ];
 
@@ -114,7 +95,7 @@ internal sealed class InfoOption : Option<bool>
             report,
             new AnsiCapabilities
             {
-                Ansi = color,
+                Ansi = UsesColor(session.StdOut),
                 ColorSystem = ColorSystem.Standard
             }
         );
@@ -136,7 +117,7 @@ internal sealed class InfoOption : Option<bool>
     }
 
     // Named as dotnet --info names them, except for macOS, which it still calls Mac OS X.
-    private (string Name, string Version, string Platform) HostOperatingSystem()
+    private static (string Name, string Version, string Platform) HostOperatingSystem(IFileSystem fileSystem)
     {
         Version version = Environment.OSVersion.Version;
         string release = version.ToString(version.Build >= 0 ? 3 : 2);
@@ -145,17 +126,17 @@ internal sealed class InfoOption : Option<bool>
         if (OperatingSystem.IsMacOS()) return ("macOS", release, "Darwin");
         if (!OperatingSystem.IsLinux()) return (Unknown, release, Unknown);
 
-        Dictionary<string, string> osRelease = this.ReadOsRelease();
+        Dictionary<string, string> osRelease = ReadOsRelease(fileSystem);
         return (osRelease.GetValueOrDefault("NAME", "Linux"), osRelease.GetValueOrDefault("VERSION_ID", Unknown), "Linux");
     }
 
-    private Dictionary<string, string> ReadOsRelease()
+    private static Dictionary<string, string> ReadOsRelease(IFileSystem fileSystem)
     {
         Dictionary<string, string> fields = new(StringComparer.Ordinal);
 
-        if (OsReleasePaths.FirstOrDefault(this._fileSystem.File.Exists) is not string path) return fields;
+        if (OsReleasePaths.FirstOrDefault(fileSystem.File.Exists) is not string path) return fields;
 
-        foreach (string line in this._fileSystem.File.ReadLines(path))
+        foreach (string line in fileSystem.File.ReadLines(path))
         {
             int separator = line.IndexOf('=', StringComparison.Ordinal);
 
@@ -165,12 +146,12 @@ internal sealed class InfoOption : Option<bool>
         return fields;
     }
 
-    // Read from the loader's record, so the line names the file the run applies and cannot disagree with it.
-    private (string Value, Style Style) AppSettings(string home)
+    // Read from what loading found, so the line names the file the run applies and cannot disagree with it.
+    private static (string Value, Style Style) AppSettings(ConfigurationFileStatus file, string home)
     {
-        string path = ShortenPath(this._file.Path, home);
+        string path = ShortenPath(file.Path, home);
 
-        return this._file switch
+        return file switch
         {
             { Failure: FileNotFoundException } => ($"{path} (not found)", FailureStyle),
             { Failure: Exception failure } => ($"{path} (not readable: {ShortenPaths(failure.GetBaseException().Message, home)})", FailureStyle),
@@ -196,7 +177,7 @@ internal sealed class InfoOption : Option<bool>
 
     private readonly record struct Entry(string Group, string Label, string Value, Style? Style = null);
 
-    private sealed class InfoAction(InfoOption option) : SynchronousCommandLineAction
+    private sealed class InfoAction(Func<ParseResult, Session> open) : SynchronousCommandLineAction
     {
         public override int Invoke(ParseResult parseResult)
         {
@@ -204,7 +185,9 @@ internal sealed class InfoOption : Option<bool>
             if (parseResult.Errors.Count > 0)
                 return new ParseErrorAction().Invoke(parseResult);
 
-            parseResult.InvocationConfiguration.Output.Write(option.Report(option.UsesColor));
+            using Session session = open(parseResult);
+
+            parseResult.InvocationConfiguration.Output.Write(Report(session));
 
             return ExitCodes.Success;
         }

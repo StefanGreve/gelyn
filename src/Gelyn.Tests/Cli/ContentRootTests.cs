@@ -2,35 +2,32 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-using Gelyn.Extensions;
+using Gelyn.Cli;
 using Gelyn.Tests.Fixtures;
 
-using Microsoft.Extensions.Hosting;
-
-namespace Gelyn.Tests.Extensions;
+namespace Gelyn.Tests.Cli;
 
 /// <summary>
-///     Unit tests for the <see cref="HostExtensions"/> class.
+///     Unit tests for the <see cref="ContentRoot"/> class.
 /// </summary>
 [Category(Categories.Integration)]
-public class HostExtensionsTests
+public class ContentRootTests
 {
     private const string ContentRootVariable = "DOTNET_CONTENTROOT";
 
-    #region Content Root Tests
+    #region Resolve Tests
 
     /// <summary>
     ///     Verifies that the content root is the directory the tool was invoked from, so that an installed
     ///     tool resolves <c>content/</c> and <c>gelyn.json</c> against the caller and not against itself.
     /// </summary>
     /// <remarks>
-    ///     An empty host builder resolves the content root to the binary's own directory, which this guards
-    ///     against by moving the working directory away from it for the duration of the test. The directory is
-    ///     process-wide, so the test runs alone.
+    ///     The working directory is moved away from the binary's own for the duration of the test, so that
+    ///     the two cannot coincide by chance. The directory is process-wide, so the test runs alone.
     /// </remarks>
     [Test]
     [NotInParallel]
-    public async Task CreateLeanApplicationBuilder_Test_NoContentRootGiven_ResolvesToTheWorkingDirectory()
+    public async Task Resolve_Test_NoContentRootGiven_ResolvesToTheWorkingDirectory()
     {
         // Arrange
         using var fixture = DiskFixture.Create();
@@ -48,8 +45,7 @@ public class HostExtensionsTests
             string expected = Directory.GetCurrentDirectory();
 
             // Act
-            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
-            string actual = Normalize(builder.Environment.ContentRootPath);
+            string actual = Normalize(ContentRoot.Resolve());
 
             // Assert
             using (Assert.Multiple())
@@ -73,7 +69,7 @@ public class HostExtensionsTests
     /// </remarks>
     [Test]
     [NotInParallel]
-    public async Task CreateLeanApplicationBuilder_Test_ContentRootGiven_IsHonored()
+    public async Task Resolve_Test_ContentRootGiven_IsHonored()
     {
         // Arrange
         using var fixture = DiskFixture.Create();
@@ -83,10 +79,10 @@ public class HostExtensionsTests
             Environment.SetEnvironmentVariable(ContentRootVariable, fixture.Root);
 
             // Act
-            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
+            string actual = Normalize(ContentRoot.Resolve());
 
             // Assert
-            await Assert.That(Normalize(builder.Environment.ContentRootPath)).IsEqualTo(Normalize(fixture.Root));
+            await Assert.That(actual).IsEqualTo(Normalize(fixture.Root));
         }
         finally
         {
@@ -103,14 +99,11 @@ public class HostExtensionsTests
     /// </remarks>
     [Test]
     [NotInParallel]
-    public async Task CreateLeanApplicationBuilder_Test_RelativeContentRoot_ResolvesAgainstTheWorkingDirectory()
+    public async Task Resolve_Test_RelativeContentRoot_ResolvesAgainstTheWorkingDirectory()
     {
         // Arrange
         using var fixture = DiskFixture.Create();
         string original = Directory.GetCurrentDirectory();
-
-        // The host requires the content root to exist.
-        Directory.CreateDirectory(Path.Combine(fixture.Root, "site"));
 
         try
         {
@@ -119,8 +112,7 @@ public class HostExtensionsTests
             string expected = Path.Combine(Directory.GetCurrentDirectory(), "site");
 
             // Act
-            HostApplicationBuilder builder = HostExtensions.CreateLeanApplicationBuilder();
-            string actual = Normalize(builder.Environment.ContentRootPath);
+            string actual = Normalize(ContentRoot.Resolve());
 
             // Assert
             await Assert.That(actual).IsEqualTo(Normalize(expected));
@@ -132,7 +124,7 @@ public class HostExtensionsTests
         }
     }
 
-    #endregion // Content Root Tests
+    #endregion // Resolve Tests
 
     #region Helpers
 

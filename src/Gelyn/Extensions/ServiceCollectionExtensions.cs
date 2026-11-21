@@ -1,53 +1,27 @@
-using System.Runtime.ExceptionServices;
+using System.IO.Abstractions;
 
 using Gelyn.Abstractions;
-using Gelyn.Commands;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Validators;
 
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using Spectre.Console;
 
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Registration groups the composition root in <see cref="Program"/> is assembled from.
+///     Provides extension methods for <see cref="IServiceCollection"/>.
 /// </summary>
 internal static class ServiceCollectionExtensions
 {
-    /// <summary>
-    ///     Registers what the first load of the configuration file found, and defers the failure it held back to
-    ///     the first read of <see cref="SiteOptions"/>.
-    /// </summary>
-    /// <remarks>
-    ///     Call it ahead of <see cref="AddSiteOptions"/>, so that the failure is raised before the bind runs.
-    /// </remarks>
-    /// <param name="services">
-    ///     The collection to add the registrations to.
-    /// </param>
-    /// <param name="file">
-    ///     What <see cref="ConfigurationManagerExtensions.AddSiteConfiguration"/> returned.
-    /// </param>
-    /// <returns>
-    ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
-    /// </returns>
-    public static IServiceCollection AddConfigurationFile(this IServiceCollection services, ConfigurationFileStatus file)
-    {
-        services.TryAddSingleton(file);
-
-        if (file.Failure is Exception failure)
-        {
-            services.AddOptions<SiteOptions>()
-                .Configure(_ => ExceptionDispatchInfo.Throw(failure));
-        }
-
-        return services;
-    }
-
     /// <summary>
     ///     Registers <see cref="SiteOptions"/> together with the validator that checks it.
     /// </summary>
@@ -59,12 +33,18 @@ internal static class ServiceCollectionExtensions
     /// <param name="services">
     ///     The collection to add the registrations to.
     /// </param>
+    /// <param name="contentRoot">
+    ///     The directory the validator resolves the directory settings against.
+    /// </param>
+    /// <param name="file">
+    ///     The configuration file of the run, whose location the validator checks against the output directory.
+    /// </param>
     /// <returns>
     ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
     /// </returns>
-    public static IServiceCollection AddSiteOptions(this IServiceCollection services)
+    public static IServiceCollection AddSiteOptions(this IServiceCollection services, string contentRoot, ConfigurationFileStatus file)
     {
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<SiteOptions>, SiteOptionsValidator>());
+        services.AddSingleton<IValidateOptions<SiteOptions>>(new SiteOptionsValidator(contentRoot, file));
 
         services.AddOptions<SiteOptions>()
             .BindConfiguration(string.Empty);
@@ -75,46 +55,44 @@ internal static class ServiceCollectionExtensions
     /// <summary>
     ///     Registers the services that discover content, generate the site and preview it.
     /// </summary>
-    /// <remarks>
-    ///     Each one is registered under its abstraction, which is the type its consumers ask for.
-    /// </remarks>
     /// <param name="services">
     ///     The collection to add the registrations to.
+    /// </param>
+    /// <param name="contentRoot">
+    ///     The directory every relative setting is resolved against.
     /// </param>
     /// <returns>
     ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
     /// </returns>
-    public static IServiceCollection AddServices(this IServiceCollection services)
+    public static IServiceCollection AddServices(this IServiceCollection services, string contentRoot)
     {
-        services.TryAddSingleton<ContentPipelineContract, ContentPipeline>();
-        services.TryAddSingleton<SiteBuilderContract, SiteBuilder>();
+        services.TryAddSingleton<ContentPipelineContract>(provider =>
+            new ContentPipeline(contentRoot, provider.GetRequiredService<IFileSystem>())
+        );
+
+        services.TryAddSingleton<SiteBuilderContract>(provider => new SiteBuilder(
+            provider.GetRequiredService<ContentPipelineContract>(),
+            contentRoot,
+            provider.GetRequiredService<IOptionsMonitor<SiteOptions>>(),
+            provider.GetRequiredService<IFileSystem>(),
+            provider.GetRequiredService<ILogger<SiteBuilder>>())
+        );
+
         services.TryAddSingleton<StaticFileResolverContract, StaticFileResolver>();
         services.TryAddSingleton<FileServerContract, FileServer>();
-        services.TryAddSingleton<SiteWatcherContract, SiteWatcher>();
 
-        return services;
-    }
-
-    /// <summary>
-    ///     Registers the root command, every subcommand it dispatches to, and the <c>--info</c> option.
-    /// </summary>
-    /// <remarks>
-    ///     <see cref="Program"/> resolves only the root command, and the others reach it through its constructor,
-    ///     so each one is registered here instead of constructed by hand.
-    /// </remarks>
-    /// <param name="services">
-    ///     The collection to add the registrations to.
-    /// </param>
-    /// <returns>
-    ///     The same <see cref="IServiceCollection"/> instance, so that calls can be chained.
-    /// </returns>
-    public static IServiceCollection AddCommands(this IServiceCollection services)
-    {
-        services.TryAddSingleton<BuildCommand>();
-        services.TryAddSingleton<CleanCommand>();
-        services.TryAddSingleton<ServeCommand>();
-        services.TryAddSingleton<InfoOption>();
-        services.TryAddSingleton<GelynCommand>();
+        services.TryAddSingleton<SiteWatcherContract>(provider => new SiteWatcher(
+            provider.GetRequiredService<SiteBuilderContract>(),
+            provider.GetRequiredService<IConfigurationRoot>(),
+            provider.GetRequiredService<ConfigurationFileStatus>(),
+            contentRoot,
+            provider.GetRequiredService<IOptionsMonitor<SiteOptions>>(),
+            provider.GetRequiredKeyedService<IAnsiConsole>(ConsoleTarget.StdOut),
+            provider.GetRequiredKeyedService<IAnsiConsole>(ConsoleTarget.StdErr),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<IFileSystem>(),
+            provider.GetRequiredService<ILogger<SiteWatcher>>())
+        );
 
         return services;
     }
