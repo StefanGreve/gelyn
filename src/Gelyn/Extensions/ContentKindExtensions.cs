@@ -27,9 +27,9 @@ internal static class ContentKindExtensions
             Path.GetExtension(name) switch
             {
                 var extension when extension.Equals(FileExtensions.Markdown, StringComparison.OrdinalIgnoreCase) => ContentKind.Page,
-                var extension when extension.Equals(FileExtensions.Stylesheet, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
-                var extension when extension.Equals(FileExtensions.Script, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
-                var extension when extension.Equals(FileExtensions.Favicon, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
+                var extension when extension.Equals(FileExtensions.Css, StringComparison.OrdinalIgnoreCase) => ContentKind.Stylesheet,
+                var extension when extension.Equals(FileExtensions.JavaScript, StringComparison.OrdinalIgnoreCase) => ContentKind.Script,
+                var extension when extension.Equals(FileExtensions.Icon, StringComparison.OrdinalIgnoreCase) => ContentKind.Favicon,
                 _ => ContentKind.MiscFile,
             };
     }
