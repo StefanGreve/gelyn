@@ -5,8 +5,7 @@ using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Model;
-
-using Microsoft.Extensions.DependencyInjection;
+using Gelyn.Model.Options;
 
 using Spectre.Console;
 
@@ -36,12 +35,13 @@ internal sealed class BuildCommand : Command
         this.SetAction(async (parseResult, cancellationToken) =>
         {
             using Session session = open(parseResult);
-            var siteBuilder = session.Services.GetRequiredService<SiteBuilderContract>();
+            SiteBuilderContract siteBuilder = session.Builder;
+            SiteOptions site = session.Options;
 
             try
             {
                 BuildReport report = await siteBuilder
-                    .BuildAsync(cancellationToken)
+                    .BuildAsync(site, cancellationToken)
                     .ConfigureAwait(false);
 
                 WriteReport(session.StdOut, report);

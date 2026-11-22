@@ -1,3 +1,5 @@
+using Gelyn.Core.Internals;
+
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Cli;
@@ -45,7 +47,7 @@ internal static class ExitCodes
     internal static int For(Exception exception) =>
         exception switch
         {
-            OptionsValidationException or FileNotFoundException or InvalidDataException => ConfigurationError,
+            ConfigurationException or OptionsValidationException or FileNotFoundException or InvalidDataException => ConfigurationError,
             InvalidOperationException { InnerException: FormatException } => ConfigurationError,
             _ => Error,
         };

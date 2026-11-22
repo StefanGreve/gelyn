@@ -8,7 +8,6 @@ using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
 using Gelyn.Model;
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Spectre.Console;
@@ -75,8 +74,8 @@ internal sealed class FileServer : FileServerContract
     public FileServer(
         StaticFileResolverContract resolver,
         IFileSystem fileSystem,
-        [FromKeyedServices(ConsoleTarget.StdOut)] IAnsiConsole stdOut,
-        [FromKeyedServices(ConsoleTarget.StdErr)] IAnsiConsole stdErr,
+        IAnsiConsole stdOut,
+        IAnsiConsole stdErr,
         TimeProvider timeProvider,
         ILogger<FileServer> logger)
     {

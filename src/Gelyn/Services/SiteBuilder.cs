@@ -11,7 +11,6 @@ using Gelyn.Model;
 using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Gelyn.Services;
 
@@ -58,7 +57,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
 {
     private readonly ContentPipelineContract _pipeline;
     private readonly string _contentRoot;
-    private readonly IOptionsMonitor<SiteOptions> _options;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SiteBuilder> _logger;
 
@@ -71,9 +69,6 @@ internal sealed class SiteBuilder : SiteBuilderContract
     /// <param name="contentRoot">
     ///     The directory relative paths are resolved against.
     /// </param>
-    /// <param name="options">
-    ///     Supplies the site configuration the build is rendered against.
-    /// </param>
     /// <param name="fileSystem">
     ///     The file system to work against.
     /// </param>
@@ -83,13 +78,11 @@ internal sealed class SiteBuilder : SiteBuilderContract
     public SiteBuilder(
         ContentPipelineContract pipeline,
         string contentRoot,
-        IOptionsMonitor<SiteOptions> options,
         IFileSystem fileSystem,
         ILogger<SiteBuilder> logger)
     {
         this._pipeline = pipeline;
         this._contentRoot = contentRoot;
-        this._options = options;
         this._fileSystem = fileSystem;
         this._logger = logger;
     }
@@ -99,8 +92,12 @@ internal sealed class SiteBuilder : SiteBuilderContract
     ///     The build runs on a thread pool thread, because its passes over the pages block until every page
     ///     is done.
     /// </remarks>
-    public override Task<BuildReport> BuildAsync(CancellationToken cancellationToken) =>
-        Task.Run(() => this.Build(cancellationToken), CancellationToken.None);
+    public override Task<BuildReport> BuildAsync(SiteOptions options, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        return Task.Run(() => this.Build(options, cancellationToken), CancellationToken.None);
+    }
 
     /// <summary>
     ///     Writes one counter per phase, in the order the phases run, followed by the heap figures and the build
@@ -138,10 +135,8 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
     #region Helpers
 
-    private BuildReport Build(CancellationToken cancellationToken)
+    private BuildReport Build(SiteOptions options, CancellationToken cancellationToken)
     {
-        SiteOptions options = this._options.CurrentValue;
-
         // The total is reported either way, so only the per-page detail and the heap snapshots are guarded.
         var clock = BuildClock.Start(this._logger.IsEnabled(LogLevel.Debug));
 

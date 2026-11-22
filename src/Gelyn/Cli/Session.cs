@@ -1,18 +1,13 @@
 using System.CommandLine;
-using System.CommandLine.Parsing;
 using System.IO.Abstractions;
-using System.Runtime.ExceptionServices;
 
+using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
 using Gelyn.Extensions;
-using Gelyn.Model;
 using Gelyn.Model.Options;
+using Gelyn.Services;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 
 using Spectre.Console;
@@ -22,23 +17,24 @@ using Testably.Abstractions;
 namespace Gelyn.Cli;
 
 /// <summary>
-///     Represents one run of the tool with its content root, its configuration file, its consoles and the services
-///     the command resolves.
+///     Represents one run of the tool with its content root, its settings, its consoles and the services the
+///     command resolves.
 /// </summary>
 /// <remarks>
 ///     A command action opens the session from its parse result, so <c>--help</c>, <c>--version</c>, a parse
-///     error and tab completion load no file and build no services. <see cref="Open"/> loads the file and stores
-///     a failure in <see cref="File"/> instead of throwing it, so that <c>--info</c> can report it and a command
-///     receives it on its first read of <see cref="Services"/>.
+///     error and tab completion read no file and construct no service. The settings are loaded on the first
+///     read of <see cref="Options"/>, inside the action, so that <c>--info</c> can probe the file without
+///     loading it and a command meets a rejected setting where its exit code is mapped.
 /// </remarks>
 internal sealed class Session : IDisposable
 {
-    // Prefixed, because names such as LANGUAGE, PORT and TITLE are set by desktops and hosts for their own use.
-    private const string SettingVariablePrefix = "GELYN_";
-
-    private readonly Func<ServiceProvider> _compose;
-    private readonly IDisposable? _configuration;
-    private ServiceProvider? _services;
+    private readonly LogLevel _verbosity;
+    private readonly long _started;
+    private ILoggerFactory? _loggers;
+    private SiteOptions? _options;
+    private SiteBuilderContract? _builder;
+    private FileServerContract? _server;
+    private SiteWatcherContract? _watcher;
     private bool _disposed;
 
     /// <summary>
@@ -47,11 +43,11 @@ internal sealed class Session : IDisposable
     /// <param name="contentRoot">
     ///     The directory every relative setting is resolved against.
     /// </param>
-    /// <param name="file">
-    ///     The configuration file the run reads, and what loading it found.
+    /// <param name="settings">
+    ///     The settings of the run, loaded on the first read of <see cref="Options"/>.
     /// </param>
     /// <param name="fileSystem">
-    ///     The file system the run works against.
+    ///     The file system the run reads and writes through.
     /// </param>
     /// <param name="stdOut">
     ///     The console the run writes its output to.
@@ -59,29 +55,28 @@ internal sealed class Session : IDisposable
     /// <param name="stdErr">
     ///     The console the run writes its warnings and failures to.
     /// </param>
-    /// <param name="compose">
-    ///     The factory that builds the services on the first read of <see cref="Services"/>.
+    /// <param name="verbosity">
+    ///     The minimum level the services log at.
     /// </param>
-    /// <param name="configuration">
-    ///     The configuration the services bind, disposed with the session, or <see langword="null"/> when the
-    ///     factory owns its own.
+    /// <param name="started">
+    ///     The timestamp the process started at, which the startup record is measured from.
     /// </param>
     internal Session(
         string contentRoot,
-        ConfigurationFileStatus file,
+        SiteSettings settings,
         IFileSystem fileSystem,
         IAnsiConsole stdOut,
         IAnsiConsole stdErr,
-        Func<ServiceProvider> compose,
-        IDisposable? configuration = null)
+        LogLevel verbosity,
+        long started)
     {
         this.ContentRoot = contentRoot;
-        this.File = file;
+        this.Settings = settings;
         this.FileSystem = fileSystem;
         this.StdOut = stdOut;
         this.StdErr = stdErr;
-        this._compose = compose;
-        this._configuration = configuration;
+        this._verbosity = verbosity;
+        this._started = started;
     }
 
     /// <summary>
@@ -90,9 +85,9 @@ internal sealed class Session : IDisposable
     public string ContentRoot { get; }
 
     /// <summary>
-    ///     The configuration file of the run and the outcome of loading it.
+    ///     The settings of the run and the file they are read from.
     /// </summary>
-    public ConfigurationFileStatus File { get; }
+    public SiteSettings Settings { get; }
 
     /// <summary>
     ///     The file system the run reads and writes through.
@@ -110,13 +105,11 @@ internal sealed class Session : IDisposable
     public IAnsiConsole StdErr { get; }
 
     /// <summary>
-    ///     The service provider of the run, built on the first read.
+    ///     The settings of the run, loaded and validated on the first read.
     /// </summary>
-    /// <exception cref="FileNotFoundException">
-    ///     The file given to <c>--config</c> does not exist.
-    /// </exception>
-    /// <exception cref="InvalidDataException">
-    ///     The configuration file does not parse.
+    /// <exception cref="ConfigurationException">
+    ///     A required file is missing, the file is not JSON, a value cannot be converted to the type of its
+    ///     setting, or a setting fails a validation rule.
     /// </exception>
     /// <exception cref="IOException">
     ///     The configuration file cannot be opened.
@@ -127,23 +120,66 @@ internal sealed class Session : IDisposable
     /// <exception cref="ObjectDisposedException">
     ///     The session has been disposed.
     /// </exception>
-    public IServiceProvider Services
+    public SiteOptions Options
     {
         get
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
 
-            // Raised here and not on opening, so that --info reports the failure a command stops with.
-            if (this.File.Failure is Exception failure) ExceptionDispatchInfo.Throw(failure);
-
-            return this._services ??= this._compose();
+            return this._options ??= this.Settings.Load();
         }
     }
 
     /// <summary>
-    ///     Creates the session of a parsed command line. The configuration file is loaded with the <c>GELYN_</c>
-    ///     environment variables and the promoted options layered over it, and the service composition is
-    ///     deferred to the first read of <see cref="Services"/>.
+    ///     The factory the services take their loggers from, created on the first read.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">
+    ///     The session has been disposed.
+    /// </exception>
+    public ILoggerFactory Loggers
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf(this._disposed, this);
+
+            return this._loggers ??= this.CreateLoggers();
+        }
+    }
+
+    /// <summary>
+    ///     The builder that writes the site, constructed on the first read.
+    /// </summary>
+    public SiteBuilderContract Builder =>
+        this._builder ??= new SiteBuilder(new ContentPipeline(this.ContentRoot, this.FileSystem), this.ContentRoot, this.FileSystem, this.Loggers.CreateLogger<SiteBuilder>());
+
+    /// <summary>
+    ///     The server that answers requests for the written site, constructed on the first read.
+    /// </summary>
+    public FileServerContract Server =>
+        this._server ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Loggers.CreateLogger<FileServer>());
+
+    /// <summary>
+    ///     The watcher that rebuilds the site on a change, constructed on the first read.
+    /// </summary>
+    /// <exception cref="ConfigurationException">
+    ///     The settings the watcher starts from are rejected, as <see cref="Options"/> raises it.
+    /// </exception>
+    public SiteWatcherContract Watcher =>
+        this._watcher ??= new SiteWatcher(
+            this.Builder,
+            this.Options,
+            this.Settings.Load,
+            this.ContentRoot,
+            this.Settings.Path,
+            this.StdOut,
+            this.StdErr,
+            TimeProvider.System,
+            this.FileSystem,
+            this.Loggers.CreateLogger<SiteWatcher>());
+
+    /// <summary>
+    ///     Creates the session of a parsed command line, with the configuration file resolved from
+    ///     <c>--config</c> and the log level from <c>--verbosity</c>.
     /// </summary>
     /// <param name="parseResult">
     ///     The result of parsing the full command tree, without errors.
@@ -170,38 +206,10 @@ internal sealed class Session : IDisposable
         string? requested = parseResult.GetValue<string>(ConfigurationFile.OptionName);
         LogLevel level = parseResult.GetValue<LogLevel>(VerbosityOption.OptionName);
 
-        var configuration = new ConfigurationManager();
-        ConfigurationFileStatus file = LoadFile(configuration, ConfigurationFile.Resolve(contentRoot, requested), optional: requested is null);
-
-        // The documented order, in which the variables outrank the file and the flags outrank both.
-        configuration.AddEnvironmentVariables(prefix: SettingVariablePrefix);
-        configuration.AddInMemoryCollection(ReadOverrides(parseResult));
-
         var fileSystem = new RealFileSystem();
+        var settings = new SiteSettings(contentRoot, ConfigurationFile.Resolve(contentRoot, requested), optional: requested is null, parseResult, fileSystem);
 
-        return new Session(contentRoot, file, fileSystem, stdOut, stdErr, Compose, configuration);
-
-        ServiceProvider Compose()
-        {
-            var services = new ServiceCollection();
-
-            services.AddLogging(logging => logging.ConfigureDiagnostics(level));
-            services.AddSingleton<IConfiguration>(configuration);
-            services.AddSingleton<IConfigurationRoot>(configuration);
-            services.AddKeyedSingleton(ConsoleTarget.StdOut, stdOut);
-            services.AddKeyedSingleton(ConsoleTarget.StdErr, stdErr);
-            services.AddSingleton<IFileSystem>(fileSystem);
-            services.AddSingleton(TimeProvider.System);
-            services.AddSingleton(file);
-            services.AddSiteOptions(contentRoot, file);
-            services.AddServices(contentRoot);
-
-            ServiceProvider provider = services.BuildServiceProvider();
-
-            provider.GetRequiredService<ILogger<Session>>().LogStartupCompleted(started.ElapsedMilliseconds);
-
-            return provider;
-        }
+        return new Session(contentRoot, settings, fileSystem, stdOut, stdErr, level, started);
     }
 
     /// <inheritdoc/>
@@ -219,87 +227,21 @@ internal sealed class Session : IDisposable
     {
         if (this._disposed) return;
 
-        if (disposing)
-        {
-            this._services?.Dispose();
-            this._configuration?.Dispose();
-        }
+        if (disposing) this._loggers?.Dispose();
 
         this._disposed = true;
     }
 
-    // Rooted, so that the source reads the file through a provider of its own directory. A provider of the
-    // content root would refuse a path that climbs out of it, such as ../shared.json. Not watched, because the
-    // watch costs most of the startup and serve runs its own watcher.
-    private static ConfigurationFileStatus LoadFile(ConfigurationManager configuration, string path, bool optional)
+    // The startup record is written here, where the first service asks for a logger, so a run that reads no
+    // service writes nothing.
+    private ILoggerFactory CreateLoggers()
     {
-        JsonConfigurationSource? source = null;
-        Exception? failure = null;
+        ILoggerFactory loggers = LoggerFactory.Create(logging => logging.ConfigureDiagnostics(this._verbosity));
 
-        try
-        {
-            configuration.AddJsonFile(json =>
-            {
-                json.Path = path;
-                json.Optional = optional;
-                json.ReloadOnChange = false;
-                json.ResolveFileProvider();
-                source = json;
-            });
-        }
-        catch (Exception exception) when (exception is IOException or InvalidDataException or UnauthorizedAccessException)
-        {
-            failure = exception;
-        }
+        loggers.CreateLogger<Session>().LogStartupCompleted(this._started.ElapsedMilliseconds);
 
-        return new ConfigurationFileStatus
-        {
-            Path = path,
-            Optional = optional,
-            Exists = source is { FileProvider: IFileProvider provider, Path: string name } && provider.GetFileInfo(name).Exists,
-            Failure = failure,
-        };
+        return loggers;
     }
-
-    // Read from the parse, because only the parse knows every syntax the tool accepts, such as --option=value,
-    // response files and options that take no value.
-    private static Dictionary<string, string?> ReadOverrides(ParseResult parseResult)
-    {
-        (string Option, string Key)[] promotions =
-        [
-            (OverrideOptions.Title, nameof(SiteOptions.Title)),
-            (OverrideOptions.BaseUrl, nameof(SiteOptions.BaseUrl)),
-            (OverrideOptions.Theme, nameof(SiteOptions.Theme)),
-            (OverrideOptions.Feed, nameof(SiteOptions.EnableFeed)),
-            (OverrideOptions.Sitemap, nameof(SiteOptions.EnableSitemap)),
-            (OverrideOptions.Content, nameof(SiteOptions.ContentDirectory)),
-            (OverrideOptions.Output, nameof(SiteOptions.OutputDirectory)),
-            (OverrideOptions.Port, nameof(SiteOptions.Port)),
-        ];
-
-        Dictionary<string, string?> overrides = [];
-
-        foreach ((string option, string key) in promotions)
-            if (ReadValue(parseResult, option) is string value)
-                overrides[key] = value;
-
-        if (ReadValue(parseResult, OverrideOptions.Exclude) is string patterns)
-        {
-            string[] split = patterns.Split(OverrideOptions.ExcludeSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            for (int index = 0; index < split.Length; index++)
-            {
-                string key = $"{nameof(SiteOptions.ExcludePatterns)}:{OverrideOptions.ExcludeOffset + index}";
-                overrides[key] = split[index];
-            }
-        }
-
-        return overrides;
-    }
-
-    // The token as given, so that the binder converts it as it converts the same value from the file.
-    private static string? ReadValue(ParseResult parseResult, string option) =>
-        parseResult.GetResult($"--{option}") is OptionResult { Implicit: false, Tokens: [.., Token token] } ? token.Value : null;
 
     #endregion
 }

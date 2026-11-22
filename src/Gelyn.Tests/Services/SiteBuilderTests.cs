@@ -47,7 +47,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -70,7 +70,7 @@ public partial class SiteBuilderTests
             .WriteFile("blog/notice.txt", "Archived.");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -101,7 +101,7 @@ public partial class SiteBuilderTests
         fixture.FileSystem.File.SetLastWriteTimeUtc(Path.Combine(fixture.ContentRoot, "robots.txt"), written);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(fixture.FileSystem.File.GetLastWriteTimeUtc(Path.Combine(fixture.OutputRoot, "robots.txt"))).IsEqualTo(written);
@@ -125,8 +125,8 @@ public partial class SiteBuilderTests
             .WriteReadOnly("logo.png", "png");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -148,7 +148,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.Create().WriteBytes("logo.png", expected);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         byte[] actual = await fixture.FileSystem.File
@@ -168,7 +168,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateStyled();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -191,7 +191,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateScripted();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -216,7 +216,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateScripted();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -244,7 +244,7 @@ public partial class SiteBuilderTests
         string katex = Package("katex", fixture.Options.KaTeXVersion);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = Path.Combine("blog", "index.html");
@@ -270,7 +270,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateMathematical();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -293,7 +293,7 @@ public partial class SiteBuilderTests
         fixture.Options.KaTeXVersion = "1.2.3";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(ReadMathAssets(fixture, Path.Combine("blog", "index.html")))
@@ -316,7 +316,7 @@ public partial class SiteBuilderTests
         string katex = Package("katex", fixture.Options.KaTeXVersion);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = Path.Combine("blog", "index.html");
@@ -339,7 +339,7 @@ public partial class SiteBuilderTests
         string mermaid = Package("mermaid", fixture.Options.MermaidVersion);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = Path.Combine("blog", "index.html");
@@ -366,7 +366,7 @@ public partial class SiteBuilderTests
             .WriteFile("app.js", "globalThis.app = 1");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
@@ -391,7 +391,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateDiagrammatic();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -414,7 +414,7 @@ public partial class SiteBuilderTests
         fixture.Options.MermaidVersion = "11.0.0";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(ReadDiagramImport(fixture, Path.Combine("blog", "index.html")))
@@ -432,7 +432,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateHighlighted();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = Path.Combine("blog", "index.html");
@@ -460,7 +460,7 @@ public partial class SiteBuilderTests
             .WriteFile("app.js", "globalThis.app = 1");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
@@ -486,7 +486,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateHighlighted();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -509,7 +509,7 @@ public partial class SiteBuilderTests
         fixture.Options.ShikiVersion = "1.2.3";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(ReadHighlighterImport(fixture, Path.Combine("blog", "index.html")))
@@ -530,9 +530,9 @@ public partial class SiteBuilderTests
         string page = Path.Combine("blog", "index.html");
 
         // Act
-        await mathematical.Builder.BuildAsync(CancellationToken.None);
-        await diagrammatic.Builder.BuildAsync(CancellationToken.None);
-        await highlighted.Builder.BuildAsync(CancellationToken.None);
+        await mathematical.Builder.BuildAsync(mathematical.Options, CancellationToken.None);
+        await diagrammatic.Builder.BuildAsync(diagrammatic.Options, CancellationToken.None);
+        await highlighted.Builder.BuildAsync(highlighted.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -557,7 +557,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateStyled();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -592,7 +592,7 @@ public partial class SiteBuilderTests
         string[] expected = ["/index.html", "/about.html", "/blog/index.html"];
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
@@ -622,7 +622,7 @@ public partial class SiteBuilderTests
         string[] expected = ["My Notebook", "About", "Blog"];
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(fixture.EnumerateOutput().Count()).IsEqualTo(6);
@@ -648,7 +648,7 @@ public partial class SiteBuilderTests
         fixture.Options.Giscus = Commented();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(ReadPage(fixture, Path.Combine("blog", "index.html")))
@@ -667,7 +667,7 @@ public partial class SiteBuilderTests
         fixture.Options.Giscus = Commented();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string markup = ReadPage(fixture, Path.Combine("blog", "index.html"));
@@ -692,7 +692,7 @@ public partial class SiteBuilderTests
         fixture.Options.Giscus = Commented();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string[] pages = ["index.html", Path.Combine("blog", "hello.html"), Path.Combine("blog", "2026", "index.html")];
@@ -714,7 +714,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateCommented();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -751,7 +751,7 @@ public partial class SiteBuilderTests
         string section = fixture.FileSystem.Path.Combine("blog", "index.html");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -774,7 +774,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateDated();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string undated = ReadFooter(fixture, Path.Combine("blog", "hello.html"));
@@ -807,7 +807,7 @@ public partial class SiteBuilderTests
             .WriteRevised("about.md", "About", "2026-02-01", "2026-08-20");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -832,7 +832,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateDated();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string home = ReadFooter(fixture, "index.html");
@@ -861,7 +861,7 @@ public partial class SiteBuilderTests
             .WithFooterLinks(new FooterLink { Label = "GitHub", Url = new Uri("https://github.com/octocat") });
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         const string anchor = """<li><a href="https://github.com/octocat">GitHub</a></li>""";
@@ -887,7 +887,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string html = ReadPage(fixture, "index.html");
@@ -920,7 +920,7 @@ public partial class SiteBuilderTests
         string section = Path.Combine("blog", "index.html");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -945,7 +945,7 @@ public partial class SiteBuilderTests
             .WriteDated("post.md", "Post", "2026-02-01");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = ReadPage(fixture, "index.html");
@@ -973,7 +973,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.CreateTabulated();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(TableTypes(fixture, Path.Combine("blog", "index.html")))
@@ -1007,8 +1007,8 @@ public partial class SiteBuilderTests
         ];
 
         // Act
-        await marked.Builder.BuildAsync(CancellationToken.None);
-        await plain.Builder.BuildAsync(CancellationToken.None);
+        await marked.Builder.BuildAsync(marked.Options, CancellationToken.None);
+        await plain.Builder.BuildAsync(plain.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1048,7 +1048,7 @@ public partial class SiteBuilderTests
             .WriteDated("about.md", "About", "2026-01-15");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string html = ReadPage(fixture, "index.html");
@@ -1077,7 +1077,7 @@ public partial class SiteBuilderTests
         string deep = fixture.FileSystem.Path.Combine("blog", "2026", "q3", "deep.html");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1104,7 +1104,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1133,7 +1133,7 @@ public partial class SiteBuilderTests
             .WithFeed();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1160,7 +1160,7 @@ public partial class SiteBuilderTests
             .WithFeed();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         int written = report.Pages.Count + report.Generated.Count;
 
         // Assert
@@ -1184,7 +1184,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.CreatePublished().WithBaseUrl("https://example.com");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1206,7 +1206,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.CreatePublished().WithFeed();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1236,7 +1236,7 @@ public partial class SiteBuilderTests
             .WithFeed();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1268,7 +1268,7 @@ public partial class SiteBuilderTests
         string source = Path.Combine(fixture.ContentRoot, "blog", "draft.md");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         FakeLogRecord warning = Reported(fixture, EventIds.FEED_ENTRY_SKIPPED);
@@ -1293,11 +1293,11 @@ public partial class SiteBuilderTests
             .WithBaseUrl("https://example.com")
             .WithFeed();
 
-        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport first = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         string before = ReadFeed(fixture);
 
         // Act
-        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport second = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1323,12 +1323,12 @@ public partial class SiteBuilderTests
             .WithBaseUrl("https://example.com")
             .WithFeed();
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Options.EnableFeed = false;
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1352,7 +1352,7 @@ public partial class SiteBuilderTests
             .WriteFile("Feed.xml", "<feed/>");
 
         // Act and Assert
-        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
             .ThrowsExactly<IOException>()
             .WithMessageContaining("and the generated feed both publish 'feed.xml'");
     }
@@ -1370,7 +1370,7 @@ public partial class SiteBuilderTests
             .WriteFile("feed.xml", "<feed/>");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1401,7 +1401,7 @@ public partial class SiteBuilderTests
             .WithSitemap();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1436,7 +1436,7 @@ public partial class SiteBuilderTests
             .WithSitemap();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(SitemapRevisions(fixture))
@@ -1460,7 +1460,7 @@ public partial class SiteBuilderTests
             .WithSitemap();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string[] canonical = [.. report.Pages.Select(page => ReadCanonical(fixture, page) ?? string.Empty)];
@@ -1481,7 +1481,7 @@ public partial class SiteBuilderTests
             .WithSitemap();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         int written = report.Pages.Count + report.Generated.Count;
 
         // Assert
@@ -1505,7 +1505,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.CreatePublished().WithBaseUrl("https://example.com");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1527,7 +1527,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.CreatePublished().WithSitemap();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1553,11 +1553,11 @@ public partial class SiteBuilderTests
             .WithBaseUrl("https://example.com")
             .WithSitemap();
 
-        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport first = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         string before = ReadSitemap(fixture);
 
         // Act
-        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport second = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1583,12 +1583,12 @@ public partial class SiteBuilderTests
             .WithBaseUrl("https://example.com")
             .WithSitemap();
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Options.EnableSitemap = false;
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1612,7 +1612,7 @@ public partial class SiteBuilderTests
             .WriteFile("sitemap.xml", "<urlset/>");
 
         // Act and Assert
-        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
             .ThrowsExactly<IOException>()
             .WithMessageContaining("and the generated sitemap both publish 'sitemap.xml'");
     }
@@ -1637,7 +1637,7 @@ public partial class SiteBuilderTests
         }
 
         // Act and Assert
-        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
             .ThrowsExactly<UnauthorizedAccessException>()
             .WithMessageContaining("index.html");
     }
@@ -1657,7 +1657,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1686,10 +1686,10 @@ public partial class SiteBuilderTests
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
 
-        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport first = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Act
-        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport second = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1711,12 +1711,12 @@ public partial class SiteBuilderTests
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Options.Theme = null;
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1737,12 +1737,12 @@ public partial class SiteBuilderTests
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WithTheme("modern");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Options.Theme = "classic";
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1768,7 +1768,7 @@ public partial class SiteBuilderTests
         string source = Path.Combine(fixture.ContentRoot, "modern.css");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         FakeLogRecord warning = Reported(fixture, EventIds.THEME_FILE_REPLACED);
@@ -1801,12 +1801,12 @@ public partial class SiteBuilderTests
     {
         // Arrange
         var fixture = ContentFixture.Create();
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Delete("about.md");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1826,12 +1826,12 @@ public partial class SiteBuilderTests
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WriteFile("robots.txt", "User-agent: *");
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Delete("robots.txt");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1858,7 +1858,7 @@ public partial class SiteBuilderTests
             .WriteOutput("B.txt");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(string.Join(',', report.Removed)).IsEqualTo("B.txt,a.txt,c.txt");
@@ -1873,12 +1873,12 @@ public partial class SiteBuilderTests
     {
         // Arrange
         var fixture = ContentFixture.Create();
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.WithExcludePatterns("about.md");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1905,7 +1905,7 @@ public partial class SiteBuilderTests
             .WriteOutput("blog/leftover.html", "<p>Nested, so the walk has to reach it.</p>");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string nested = fixture.FileSystem.Path.Combine("blog", "leftover.html");
@@ -1927,10 +1927,10 @@ public partial class SiteBuilderTests
     {
         // Arrange
         ContentFixture fixture = ContentFixture.Create().WriteFile("robots.txt", "User-agent: *");
-        BuildReport first = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport first = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Act
-        BuildReport second = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport second = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1951,12 +1951,12 @@ public partial class SiteBuilderTests
     {
         // Arrange
         var fixture = ContentFixture.Create();
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Delete("blog/2026/q3/deep.md");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -1983,7 +1983,7 @@ public partial class SiteBuilderTests
             .WriteOutput("blog/.keep");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2016,7 +2016,7 @@ public partial class SiteBuilderTests
             .LinkOutputOutside("shared", "outside");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2045,7 +2045,7 @@ public partial class SiteBuilderTests
             .LinkOutputToContent();
 
         // Act
-        await Assert.That(async () => { await fixture.Builder.BuildAsync(CancellationToken.None); })
+        await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
             .ThrowsExactly<IOException>()
             .WithMessageContaining("is a link");
 
@@ -2076,14 +2076,14 @@ public partial class SiteBuilderTests
             .Write("Blog/post.md", "# Post")
             .Write("Style.css", "body { margin: 0; }");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         RenameInCase(fixture.ContentRoot, "About.md", "about.md");
         RenameInCase(fixture.ContentRoot, "Blog", "blog");
         RenameInCase(fixture.ContentRoot, "Style.css", "style.css");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string[] output = [.. Directory
@@ -2116,14 +2116,14 @@ public partial class SiteBuilderTests
             .Write("index.md", "# Home")
             .Write("Blog/index.md", "# Blog");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.WriteOutside(Path.Combine(fixture.Options.OutputDirectory, "Blog", ".DS_Store"), string.Empty);
         RenameInCase(fixture.ContentRoot, "Blog", "blog");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
-        BuildReport next = await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
+        BuildReport next = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string[] directories = [.. new DirectoryInfo(fixture.OutputRoot).EnumerateDirectories().Select(static directory => directory.Name)];
@@ -2153,14 +2153,14 @@ public partial class SiteBuilderTests
             .Write("index.md", "# Home")
             .Write("Blog/index.md", "# Blog");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.WriteOutside(Path.Combine(fixture.Options.OutputDirectory, "Blog", ".DS_Store"), string.Empty);
         RenameInCase(fixture.ContentRoot, "Blog", "blog");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
-        BuildReport next = await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
+        BuildReport next = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string[] directories = [.. new DirectoryInfo(fixture.OutputRoot).EnumerateDirectories().Select(static directory => directory.Name).Order(StringComparer.Ordinal)];
@@ -2186,12 +2186,12 @@ public partial class SiteBuilderTests
             .Write("index.md", "Home")
             .Write("blog/first.md", "First");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Delete("blog/first.md").Write("blog/second.md", "Second");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2213,11 +2213,11 @@ public partial class SiteBuilderTests
             .Write("index.md", "Home")
             .Write(".well-known/notice.md", "Notice");
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         fixture.Write(".well-known/notice.md", "Revised");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2247,8 +2247,8 @@ public partial class SiteBuilderTests
         var unmeasured = ContentFixture.Create(LogLevel.Warning);
 
         // Act
-        BuildReport expected = await measured.Builder.BuildAsync(CancellationToken.None);
-        BuildReport actual = await unmeasured.Builder.BuildAsync(CancellationToken.None);
+        BuildReport expected = await measured.Builder.BuildAsync(measured.Options, CancellationToken.None);
+        BuildReport actual = await unmeasured.Builder.BuildAsync(unmeasured.Options, CancellationToken.None);
 
         IReadOnlyDictionary<string, byte[]> expectedOutput = Snapshot(measured);
         IReadOnlyDictionary<string, byte[]> actualOutput = Snapshot(unmeasured);
@@ -2290,7 +2290,7 @@ public partial class SiteBuilderTests
         ];
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string reported = string.Join(',', fixture.Records.Select(static record => record.Id.Id));
@@ -2317,7 +2317,7 @@ public partial class SiteBuilderTests
             .WriteFile("blog/notice.txt", "Archived.");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         int pages = report.Pages.Count;
         int total = pages + report.Copies.Count;
 
@@ -2345,14 +2345,14 @@ public partial class SiteBuilderTests
     {
         // Arrange
         var fixture = ContentFixture.Create();
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         fixture.Delete("about.md");
         fixture.Delete("blog/hello.md");
         fixture.Logger.Collector.Clear();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         int written = report.Pages.Count;
 
         // Assert
@@ -2381,7 +2381,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2409,7 +2409,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         double scan = Elapsed(fixture, EventIds.SCAN_COMPLETED);
@@ -2518,7 +2518,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         using (Assert.Multiple())
@@ -2541,7 +2541,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         FakeLogRecord record = Reported(fixture, EventIds.GARBAGE_COLLECTED);
@@ -2581,12 +2581,12 @@ public partial class SiteBuilderTests
         ContentFixture fixture = Exhaustive();
         ContentFixture other = Exhaustive();
 
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         IReadOnlyDictionary<string, byte[]> first = Snapshot(fixture);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
-        await other.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
+        await other.Builder.BuildAsync(other.Options, CancellationToken.None);
 
         // Assert
         IReadOnlyDictionary<string, byte[]> rebuilt = Snapshot(fixture);
@@ -2615,7 +2615,7 @@ public partial class SiteBuilderTests
             .WriteFile("index.md", "---\r\ntitle: Home\r\n---\r\n\r\nHello\r\n\r\n```sh\r\ngelyn build\r\n```\r\n");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = ReadPage(fixture, "index.html");
@@ -2646,7 +2646,7 @@ public partial class SiteBuilderTests
         fixture.Options.Title = "My\rNotebook";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = ReadPage(fixture, "index.html");
@@ -2675,7 +2675,7 @@ public partial class SiteBuilderTests
         fixture.Options.Title = "Notes \U000020AC";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = ReadPage(fixture, "about.html");
@@ -2703,7 +2703,7 @@ public partial class SiteBuilderTests
         ContentFixture fixture = ContentFixture.CreateEmpty().WriteDated("index.md", "Home", "2026-01-01", body);
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         string page = ReadPage(fixture, "index.html");
@@ -2737,7 +2737,7 @@ public partial class SiteBuilderTests
         string source = Path.Combine(fixture.ContentRoot, "about.md");
 
         // Act
-        BuildReport report = await fixture.Builder.BuildAsync(CancellationToken.None);
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         FakeLogRecord warning = Reported(fixture, EventIds.FRONT_MATTER_KEY_IGNORED);
@@ -2765,7 +2765,7 @@ public partial class SiteBuilderTests
             .WriteFile("about.md", string.Join(Environment.NewLine, "---", "tilte: About", "descripton: Me", "---"));
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         IEnumerable<string?> keys = Reports(fixture, EventIds.FRONT_MATTER_KEY_IGNORED)
@@ -2784,7 +2784,7 @@ public partial class SiteBuilderTests
         var fixture = ContentFixture.Create();
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(Reports(fixture, EventIds.FRONT_MATTER_KEY_IGNORED)).IsEmpty();
@@ -2805,7 +2805,7 @@ public partial class SiteBuilderTests
         fixture.Options.Language = "de-DE";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
 
         // Assert
         await Assert.That(ReadPage(fixture, "index.html")).Contains("""<html lang="de-DE">""");
@@ -2826,7 +2826,7 @@ public partial class SiteBuilderTests
         fixture.Options.Description = "Tips & \"tricks\" <here>";
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         string page = ReadPage(fixture, "index.html");
 
         // Assert
@@ -2852,7 +2852,7 @@ public partial class SiteBuilderTests
             .WriteFile("a&b'c.js");
 
         // Act
-        await fixture.Builder.BuildAsync(CancellationToken.None);
+        await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
         string page = ReadPage(fixture, "index.html");
 
         // Assert

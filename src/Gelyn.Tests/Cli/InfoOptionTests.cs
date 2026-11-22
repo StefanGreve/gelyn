@@ -2,7 +2,6 @@ using System;
 using System.CommandLine;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -11,11 +10,10 @@ using Gelyn.Cli;
 using Gelyn.Commands;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
-using Gelyn.Model;
 using Gelyn.Tests.Fixtures;
 using Gelyn.Tests.Stubs;
 
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 using Spectre.Console;
 
@@ -216,10 +214,12 @@ public class InfoOptionTests
         // Arrange
         Skip.When(Home.Length == 0, HomeAtRoot);
 
-        ConfigurationFileStatus file = Status(Path.Combine(Home, "site", name), optional, exists: true);
+        string path = Path.Combine(Home, "site", name);
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile(path, "{ }");
 
         // Act
-        string output = Report(Create(file));
+        string output = Report(Create(path, optional, fileSystem: fileSystem));
 
         // Assert
         await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}{name}");
@@ -236,10 +236,9 @@ public class InfoOptionTests
         Skip.When(Home.Length == 0, HomeAtRoot);
 
         string path = Path.Combine(Home, "site", "prod.json");
-        ConfigurationFileStatus file = Status(path, optional: false, exists: false, new FileNotFoundException("not found", path));
 
         // Act
-        string output = Report(Create(file));
+        string output = Report(Create(path, optional: false));
 
         // Assert
         await Assert.That(Value(output, "AppSettings")).IsEqualTo($"~{Separator}site{Separator}prod.json (not found)");
@@ -256,16 +255,21 @@ public class InfoOptionTests
         Skip.When(Home.Length == 0, HomeAtRoot);
 
         string path = Path.Combine(Home, "site", ConfigurationFile.DefaultFileName);
-        var cause = new FormatException($"'{path}' is not valid JSON. LineNumber: 0 | BytePositionInLine: 11.");
-        ConfigurationFileStatus file = Status(path, optional: true, exists: true, new InvalidDataException("Failed to load configuration.", cause));
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile(path, """{ "Title": """);
 
         // Act
-        string output = Report(Create(file));
+        string output = Report(Create(path, fileSystem: fileSystem));
 
         // Assert
         string shortened = $"~{Separator}site{Separator}{ConfigurationFile.DefaultFileName}";
+        string reported = Value(output, "AppSettings");
 
-        await Assert.That(Value(output, "AppSettings")).IsEqualTo($"{shortened} (not readable: '{shortened}' is not valid JSON. LineNumber: 0 | BytePositionInLine: 11.)");
+        using (Assert.Multiple())
+        {
+            await Assert.That(reported).StartsWith($"{shortened} (not readable: ");
+            await Assert.That(reported).Contains("LineNumber: 0").And.EndsWith(")");
+        }
     }
 
     /// <summary>
@@ -374,18 +378,25 @@ public class InfoOptionTests
 
     #region Helpers
 
-    // A session that is never composed, since the report reads nothing from the services.
-    private static InfoOption Create(ConfigurationFileStatus? file = null, string? contentRoot = null, IFileSystem? fileSystem = null, IAnsiConsole? stdOut = null) =>
-        new(_ => new Session(
-            contentRoot ?? Path.GetFullPath("/site"),
-            file ?? Status(Path.GetFullPath("/site/gelyn.json"), optional: true, exists: false),
-            fileSystem ?? new MockFileSystem(),
+    // A session whose settings are never loaded, since the report probes the file and reads no setting.
+    private static InfoOption Create(string? configurationFile = null, bool optional = true, string? contentRoot = null, MockFileSystem? fileSystem = null, IAnsiConsole? stdOut = null)
+    {
+        string root = contentRoot ?? Path.GetFullPath("/site");
+        MockFileSystem files = fileSystem ?? new MockFileSystem();
+        var settings = new SiteSettings(root, configurationFile ?? Path.Combine(root, ConfigurationFile.DefaultFileName), optional, Parse(), files);
+
+        return new(_ => new Session(
+            root,
+            settings,
+            files,
             stdOut ?? CapturedConsole.Create(TextWriter.Null),
             CapturedConsole.Create(TextWriter.Null),
-            static () => new ServiceCollection().BuildServiceProvider()));
+            LogLevel.Warning,
+            Stopwatch.GetTimestamp()));
+    }
 
-    private static ConfigurationFileStatus Status(string path, bool optional, bool exists, Exception? failure = null) =>
-        new() { Path = path, Optional = optional, Exists = exists, Failure = failure };
+    private static ParseResult Parse() =>
+        GelynCommand.Create(static _ => throw new InvalidOperationException("The tree is parsed here and never invoked.")).Parse([]);
 
     private static IAnsiConsole Terminal(bool isTerminal, ColorSystemSupport colors) =>
         AnsiConsole.Create(new AnsiConsoleSettings

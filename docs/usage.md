@@ -870,12 +870,14 @@ you stop typing, because the rebuild is never postponed for as long as the editi
 
 A rebuild that fails writes one `error:` line per problem and keeps serving what it last built, so the server
 stays up and your browser keeps showing whatever the previous rebuild produced. The next change is rebuilt either
-way. That covers front matter that isn't well-formed YAML, a value in `gelyn.json` the binder can't convert to
-the type of its setting, and a value the validator rejects once it can:
+way. That covers front matter that isn't well-formed YAML, a `gelyn.json` that doesn't parse, a value in it the
+binder can't convert to the type of its setting, and a value the validator rejects once it can. A rejected
+`gelyn.json` leaves the settings of the last successful load in force, so the next change to a page is built
+with those until you fix the file:
 
 ```text
 error: BaseUrl must be an absolute http or https URL, such as 'https://example.com/blog'.
-rebuilt 8 file(s) in 13.04 ms after content/gelyn.json changed.
+rebuilt 8 file(s) in 4.07 ms after content/about.md changed.
 ```
 
 A change to `gelyn.json` is reloaded before the rebuild that follows it, so a new `Title` reaches the next page

@@ -5,7 +5,6 @@ using System.IO.Abstractions;
 
 using Gelyn.Model.Options;
 using Gelyn.Services;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging.Testing;
 
@@ -40,7 +39,6 @@ internal sealed class DiskFixture : IDisposable
         this.Builder = new SiteBuilder(
             this.Pipeline,
             root,
-            new OptionsMonitorStub(options),
             fileSystem,
             new FakeLogger<SiteBuilder>());
     }

@@ -3,10 +3,7 @@ using System.Text.RegularExpressions;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
-using Gelyn.Model;
 using Gelyn.Model.Options;
-
-using Microsoft.Extensions.Options;
 
 namespace Gelyn.Validators;
 
@@ -17,10 +14,10 @@ namespace Gelyn.Validators;
 ///     Written by hand, because <c>ValidateDataAnnotations</c> is annotated <c>RequiresUnreferencedCode</c>
 ///     and cannot see members the trimmer may have removed.
 /// </remarks>
-internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOptions>
+internal sealed partial class SiteOptionsValidator
 {
     private readonly string _contentRoot;
-    private readonly ConfigurationFileStatus _file;
+    private readonly string _configurationFile;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="SiteOptionsValidator"/> class.
@@ -28,19 +25,28 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
     /// <param name="contentRoot">
     ///     The directory the directory settings are resolved against.
     /// </param>
-    /// <param name="file">
-    ///     The configuration file the run reads, which the output directory must not hold.
+    /// <param name="configurationFile">
+    ///     The absolute path of the configuration file, which the output directory must not hold.
     /// </param>
-    public SiteOptionsValidator(string contentRoot, ConfigurationFileStatus file)
+    public SiteOptionsValidator(string contentRoot, string configurationFile)
     {
         this._contentRoot = contentRoot;
-        this._file = file;
+        this._configurationFile = configurationFile;
     }
 
-    /// <inheritdoc/>
-    [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = Justifications.ByDesign)]
-    public ValidateOptionsResult Validate(string? name, SiteOptions options)
+    /// <summary>
+    ///     Checks every rule against the options.
+    /// </summary>
+    /// <param name="options">
+    ///     The options to check.
+    /// </param>
+    /// <returns>
+    ///     One sentence per failed rule, naming the setting at fault, or an empty list when every rule holds.
+    /// </returns>
+    public IReadOnlyList<string> Validate(SiteOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         List<string> failures = [];
 
         if (string.IsNullOrWhiteSpace(options.Title))
@@ -82,9 +88,7 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
         if (options.Port is <= IPEndPoint.MinPort or > IPEndPoint.MaxPort)
             failures.Add($"{nameof(SiteOptions.Port)} must be between {IPEndPoint.MinPort + 1} and {IPEndPoint.MaxPort}.");
 
-        return failures.Count > 0
-            ? ValidateOptionsResult.Fail(failures)
-            : ValidateOptionsResult.Success;
+        return failures;
     }
 
     #region Helpers
@@ -106,8 +110,8 @@ internal sealed partial class SiteOptionsValidator : IValidateOptions<SiteOption
             yield return $"{nameof(SiteOptions.OutputDirectory)} must not resolve to, inside, or above {nameof(SiteOptions.ContentDirectory)}.";
         else if (EnclosesPath(resolved, root))
             yield return $"{nameof(SiteOptions.OutputDirectory)} must not resolve to or above the content root.";
-        else if (EnclosesPath(resolved, this._file.Path))
-            yield return $"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{this._file.Path}'.";
+        else if (EnclosesPath(resolved, this._configurationFile))
+            yield return $"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{this._configurationFile}'.";
     }
 
     private static IEnumerable<string> ValidateGiscusOptions(GiscusOptions giscus)

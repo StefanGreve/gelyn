@@ -8,9 +8,6 @@ using Gelyn.Diagnostics;
 using Gelyn.Model.Options;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
-using Gelyn.Tests.Stubs;
-
-using Microsoft.Extensions.Options;
 
 namespace Gelyn.Tests.Services;
 
@@ -339,39 +336,22 @@ public class SiteWatcherTests
     }
 
     /// <summary>
-    ///     Verifies that a reload the configuration cannot complete is reported by what it said, leaves the
-    ///     loop running, and leaves the next change still rebuilt. Both failures a file under the cursor
-    ///     produces are covered: a value the binder cannot convert, and values the validator rejects once it
-    ///     can.
+    ///     Verifies that a reload the settings cannot complete is reported by what it said, leaves the loop
+    ///     running on the settings it last loaded, and leaves the next change still rebuilt. The cases are the
+    ///     failures a file under the cursor produces, which are a file that does not parse, a value the binder
+    ///     cannot convert, and a value the validator rejects.
     /// </summary>
-    /// <remarks>
-    ///     Either arrives from the reload itself, never from the read of the options that follows it, wrapped
-    ///     once per reload token in the chain, which is the shape this reproduces: the cancellation source
-    ///     behind a reload token collects what its callbacks throw, and the options monitor binds and
-    ///     validates eagerly in one of them. Found by running <c>gelyn serve</c> against a malformed
-    ///     <c>BaseUrl</c>, which ended the session in an aggregate that named no failure.
-    /// </remarks>
     [Test]
-    [Arguments(nameof(OptionsValidationException))]
-    [Arguments(nameof(InvalidOperationException))]
-    public async Task RebuildOnChangeAsync_Test_RejectedReload_LeavesTheLoopRunning(string failure)
+    [Arguments("""{ "Title": """, "Failed to load configuration from file")]
+    [Arguments("""{ "Port": "soon" }""", "Failed to convert configuration value")]
+    [Arguments("""{ "Title": "" }""", "Title must not be empty.")]
+    public async Task RebuildOnChangeAsync_Test_RejectedReload_LeavesTheLoopRunning(string contents, string message)
     {
         // Arrange
-        const string message = "BaseUrl must be an absolute http or https URL.";
-
-        // Options is qualified, because the test assembly declares a namespace of that name itself.
-        Exception rejected = failure.Equals(nameof(OptionsValidationException), StringComparison.Ordinal)
-            ? new OptionsValidationException(
-                Microsoft.Extensions.Options.Options.DefaultName,
-                typeof(SiteOptions),
-                [message])
-            : new InvalidOperationException(message);
-
-        var configuration = new ConfigurationRootStub(new AggregateException(new AggregateException(rejected)));
-        await using var harness = WatchHarness.Start(configuration: configuration);
+        await using var harness = WatchHarness.Start();
 
         // Act
-        harness.ChangeConfiguration();
+        harness.WriteConfiguration(contents).ChangeConfiguration();
         await harness.WaitForErrorsAsync(1);
 
         harness.Change("about.md");
@@ -382,7 +362,7 @@ public class SiteWatcherTests
         {
             await Assert.That(harness.Errors.Length).IsEqualTo(1);
             await Assert.That(harness.ErrorOutput).Contains(message).And.DoesNotContain("One or more errors");
-            await Assert.That(configuration.Reloads).IsEqualTo(1);
+            await Assert.That(harness.Reloads).IsEqualTo(0);
             await Assert.That(harness.Rebuilds).IsEqualTo(1);
             await Assert.That(harness.Stopped).IsFalse();
         }
@@ -403,12 +383,11 @@ public class SiteWatcherTests
         await using var harness = WatchHarness.Start(content);
 
         // Act
-        if (setting.Equals(nameof(SiteOptions.ContentDirectory), StringComparison.Ordinal))
-            content.Options.ContentDirectory = "pages";
-        else
-            content.Options.OutputDirectory = "public";
+        string moved = setting.Equals(nameof(SiteOptions.ContentDirectory), StringComparison.Ordinal)
+            ? """{ "ContentDirectory": "pages" }"""
+            : """{ "OutputDirectory": "public" }""";
 
-        harness.ChangeConfiguration();
+        harness.WriteConfiguration(moved).ChangeConfiguration();
 
         await harness.WaitForWarningsAsync(1);
         await harness.QuietAsync();
@@ -439,8 +418,7 @@ public class SiteWatcherTests
         await using var harness = WatchHarness.Start(content);
 
         // Act
-        content.Options.BaseUrl = new Uri(changed);
-        harness.ChangeConfiguration();
+        harness.WriteConfiguration($$"""{ "BaseUrl": "{{changed}}" }""").ChangeConfiguration();
 
         if (isMoved)
             await harness.WaitForWarningsAsync(1);

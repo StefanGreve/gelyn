@@ -4,12 +4,9 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Cli;
-using Gelyn.Extensions;
-using Gelyn.Model;
+using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Gelyn.Tests.Cli;
@@ -51,40 +48,6 @@ public class ExitCodesTests
         await Assert.That(code).IsEqualTo(ExitCodes.Error);
     }
 
-    /// <summary>
-    ///     Verifies that the binder the tool is built with throws the shape the mapping rests on.
-    /// </summary>
-    [Test]
-    public async Task For_Test_ValueTheBinderCannotConvert_ReportsTheConfigurationError()
-    {
-        // Arrange
-        var configuration = new ConfigurationManager();
-
-        configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            [nameof(SiteOptions.BaseUrl)] = "http://[",
-        });
-
-        var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(configuration);
-        services.AddSiteOptions(Path.GetFullPath("/site"), new ConfigurationFileStatus
-        {
-            Path = Path.GetFullPath("/site/gelyn.json"),
-            Optional = true,
-            Exists = false,
-            Failure = null
-        });
-
-        await using ServiceProvider provider = services.BuildServiceProvider();
-        var options = provider.GetRequiredService<IOptionsMonitor<SiteOptions>>();
-
-        // Act
-        InvalidOperationException exception = Assert.Throws<InvalidOperationException>(() => _ = options.CurrentValue);
-
-        // Assert
-        await Assert.That(ExitCodes.For(exception)).IsEqualTo(ExitCodes.ConfigurationError);
-    }
-
     #endregion // For Tests
 
     #region Helpers
@@ -94,6 +57,7 @@ public class ExitCodesTests
     /// </summary>
     public static IEnumerable<Func<Exception>> ConfigurationFailures()
     {
+        yield return () => new ConfigurationException(["Title must not be empty.", "BaseUrl must be an absolute http or https URL."]);
         yield return () => new OptionsValidationException(Microsoft.Extensions.Options.Options.DefaultName, typeof(SiteOptions), ["BaseUrl must be an absolute http or https URL."]);
         yield return () => new FileNotFoundException("The configuration file 'nope.json' was not found and is not optional.");
         yield return () => new FileNotFoundException("No landing page found at 'content/index.md'.");

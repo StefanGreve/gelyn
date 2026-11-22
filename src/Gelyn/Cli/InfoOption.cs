@@ -16,9 +16,8 @@ namespace Gelyn.Cli;
 ///     report.
 /// </summary>
 /// <remarks>
-///     The action terminates the invocation, as the action of <c>--version</c> does. It reads the status of the
-///     configuration file and no service, so it succeeds when the file is missing, does not parse or cannot be
-///     opened.
+///     The action terminates the invocation, as the action of <c>--version</c> does. It probes the configuration
+///     file and loads no setting, so it succeeds when the file is missing, does not parse or cannot be opened.
 /// </remarks>
 internal sealed class InfoOption : Option<bool>
 {
@@ -67,7 +66,7 @@ internal sealed class InfoOption : Option<bool>
     {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         (string osName, string osVersion, string osPlatform) = HostOperatingSystem(session.FileSystem);
-        (string appSettings, Style appSettingsStyle) = AppSettings(session.File, home);
+        (string appSettings, Style appSettingsStyle) = AppSettings(session.Settings.Probe(), home);
 
         Entry[] entries =
         [
@@ -146,14 +145,14 @@ internal sealed class InfoOption : Option<bool>
         return fields;
     }
 
-    // Read from what loading found, so the line names the file the run applies and cannot disagree with it.
+    // Read from a probe of the run's own settings, so the line names the file the run applies and cannot disagree with it.
     private static (string Value, Style Style) AppSettings(ConfigurationFileStatus file, string home)
     {
         string path = ShortenPath(file.Path, home);
 
         return file switch
         {
-            { Failure: FileNotFoundException } => ($"{path} (not found)", FailureStyle),
+            { Exists: false, Optional: false } => ($"{path} (not found)", FailureStyle),
             { Failure: Exception failure } => ($"{path} (not readable: {ShortenPaths(failure.GetBaseException().Message, home)})", FailureStyle),
             { Exists: true } => (path, ValueStyle),
             _ => (Undefined, UndefinedStyle),

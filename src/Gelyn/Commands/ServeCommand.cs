@@ -8,9 +8,6 @@ using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-
 using Spectre.Console;
 
 namespace Gelyn.Commands;
@@ -69,17 +66,15 @@ internal sealed class ServeCommand : Command
         this.SetAction(async (parseResult, cancellationToken) =>
         {
             using Session session = open(parseResult);
-            var siteBuilder = session.Services.GetRequiredService<SiteBuilderContract>();
-            var server = session.Services.GetRequiredService<FileServerContract>();
-            var watcher = session.Services.GetRequiredService<SiteWatcherContract>();
+            SiteBuilderContract siteBuilder = session.Builder;
+            SiteOptions site = session.Options;
 
             try
             {
                 BuildReport report = await siteBuilder
-                    .BuildAsync(cancellationToken)
+                    .BuildAsync(site, cancellationToken)
                     .ConfigureAwait(false);
 
-                SiteOptions site = session.Services.GetRequiredService<IOptionsMonitor<SiteOptions>>().CurrentValue;
                 string outputDirectory = session.FileSystem.Path.Combine(session.ContentRoot, site.OutputDirectory);
 
                 string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
@@ -87,7 +82,7 @@ internal sealed class ServeCommand : Command
 
                 using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-                Task serving = server.ServeAsync(
+                Task serving = session.Server.ServeAsync(
                     outputDirectory,
                     UrlUtils.ResolveBasePath(site.BaseUrl),
                     site.Port,
@@ -95,7 +90,7 @@ internal sealed class ServeCommand : Command
                     parseResult.GetValue(refresh),
                     lifetime.Token);
 
-                Task watching = watcher.WatchAsync(lifetime.Token);
+                Task watching = session.Watcher.WatchAsync(lifetime.Token);
 
                 // A faulted rebuild loop has to end the serving too, so both are canceled as soon as either side finishes.
                 await Task.WhenAny(serving, watching).ConfigureAwait(false);

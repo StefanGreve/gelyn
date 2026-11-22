@@ -366,11 +366,9 @@ Gelyn matches each pattern against the name of a single file or directory, not a
 platform. Gelyn doesn't descend into a directory that matches, so excluding `drafts` skips everything below it.
 
 > [!NOTE]
-> `--exclude` is the one flag that **adds** to the configured value instead of replacing it. Gelyn combines
-> lists by index, so a value at an index the file uses replaces that entry, and the flag writes its patterns
-> from index 1000 onward, past any list a file holds. Both the file's patterns and the flag's apply. It's also
-> the only flag that takes several values in one token, which is why you separate them with commas: the
-> command line layer promotes one flag to one string.
+> `--exclude` is the one flag that **adds** to the configured value instead of replacing it, so both the
+> file's patterns and the flag's apply. It's also the only flag that takes several values in one token,
+> which is why you separate them with commas.
 
 ## Port
 

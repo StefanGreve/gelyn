@@ -1,6 +1,9 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 
 using Gelyn.Core;
+using Gelyn.Core.Internals;
+using Gelyn.Model.Options;
 
 namespace Gelyn.Cli;
 
@@ -8,8 +11,9 @@ namespace Gelyn.Cli;
 ///     Options that override a configured setting for the duration of one run.
 /// </summary>
 /// <remarks>
-///     Shared so that the command declaring an option and the session promoting it cannot drift apart. The
-///     names carry no leading dashes, so that each can name both the option and the setting it stands for.
+///     Declared and applied in one place, so that the command declaring an option and the settings reading it
+///     cannot drift apart. The names carry no leading dashes, so that each can name both the option and the
+///     setting it stands for.
 /// </remarks>
 internal static class OverrideOptions
 {
@@ -60,16 +64,6 @@ internal static class OverrideOptions
     internal const char ExcludeSeparator = ',';
 
     /// <summary>
-    ///     The configuration index the first promoted exclude pattern is written at.
-    /// </summary>
-    /// <remarks>
-    ///     Configuration merges an array per index instead of replacing it, so writing at index zero would
-    ///     overwrite the first configured pattern and leave the rest of the configured list in place. Keys
-    ///     are ordered numerically, so an offset no configured list will reach appends instead.
-    /// </remarks>
-    internal const int ExcludeOffset = 1_000;
-
-    /// <summary>
     ///     Overrides the port <c>gelyn serve</c> listens on.
     /// </summary>
     /// <remarks>
@@ -82,9 +76,8 @@ internal static class OverrideOptions
     ///     overrides.
     /// </summary>
     /// <remarks>
-    ///     These options carry values into <c>SiteOptions</c> through <see cref="Session"/>, and no command
-    ///     reads them from the parse result. They are declared here instead of inside a command, which
-    ///     keeps the names and the options together. Every read returns new instances, because an
+    ///     These options carry values into <see cref="SiteOptions"/> through <see cref="Apply"/>, and no
+    ///     command reads them from the parse result. Every read returns new instances, because an
     ///     <see cref="Option"/> belongs to one command tree.
     /// </remarks>
     internal static IReadOnlyList<Option> Definitions =>
@@ -139,6 +132,62 @@ internal static class OverrideOptions
         CreateOutputOption("The directory to remove."),
     ];
 
+    /// <summary>
+    ///     Applies every override the command line carries to the bound options, as typed values.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="Exclude"/> adds its patterns to the configured list, where every other override replaces
+    ///     the configured value.
+    /// </remarks>
+    /// <param name="parseResult">
+    ///     The parse of the command line, without errors.
+    /// </param>
+    /// <param name="options">
+    ///     The options bound from the file and the variables, which the overrides are written into.
+    /// </param>
+    /// <exception cref="ConfigurationException">
+    ///     The value given to <see cref="BaseUrl"/> is not a URL.
+    /// </exception>
+    internal static void Apply(ParseResult parseResult, SiteOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(parseResult);
+        ArgumentNullException.ThrowIfNull(options);
+
+        if (ReadText(parseResult, Title) is string title) options.Title = title;
+        if (ReadText(parseResult, BaseUrl) is string baseUrl) options.BaseUrl = ConvertBaseUrl(baseUrl);
+        if (ReadText(parseResult, Theme) is string theme) options.Theme = theme;
+        if (IsGiven(parseResult, Feed)) options.EnableFeed = parseResult.GetValue<bool>($"--{Feed}");
+        if (IsGiven(parseResult, Sitemap)) options.EnableSitemap = parseResult.GetValue<bool>($"--{Sitemap}");
+        if (ReadText(parseResult, Content) is string content) options.ContentDirectory = content;
+        if (ReadText(parseResult, Output) is string output) options.OutputDirectory = output;
+        if (IsGiven(parseResult, Port)) options.Port = parseResult.GetValue<int>($"--{Port}");
+
+        if (ReadText(parseResult, Exclude) is string patterns)
+            options.ExcludePatterns = [.. options.ExcludePatterns, .. patterns.Split(ExcludeSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)];
+    }
+
+    #region Helpers
+
+    // Looked up by name, because a command declares only the subset it takes, and an absent symbol has no result.
+    private static bool IsGiven(ParseResult parseResult, string option) =>
+        parseResult.GetResult($"--{option}") is OptionResult { Implicit: false };
+
+    private static string? ReadText(ParseResult parseResult, string option) =>
+        IsGiven(parseResult, option) ? parseResult.GetValue<string>($"--{option}") : null;
+
+    // Converted as the binder converts the same value from the file, and rejected with the binder's message.
+    private static Uri ConvertBaseUrl(string value)
+    {
+        try
+        {
+            return new Uri(value, UriKind.RelativeOrAbsolute);
+        }
+        catch (UriFormatException exception)
+        {
+            throw new ConfigurationException([$"Failed to convert configuration value '{value}' at '{nameof(SiteOptions.BaseUrl)}' to type '{typeof(Uri)}'."], exception);
+        }
+    }
+
     private static Option<string> CreateContentOption() => new($"--{Content}")
     {
         Description = "The directory the site is built from.",
@@ -150,4 +199,6 @@ internal static class OverrideOptions
         Description = description,
         HelpName = "directory",
     };
+
+    #endregion
 }

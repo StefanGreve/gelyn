@@ -9,9 +9,7 @@ using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using SharpYaml;
 
@@ -56,10 +54,10 @@ internal sealed class SiteWatcher : SiteWatcherContract
         new(StringComparer.OrdinalIgnoreCase);
 
     private readonly SiteBuilderContract _builder;
-    private readonly IConfigurationRoot _configuration;
-    private readonly ConfigurationFileStatus _file;
+    private readonly Func<SiteOptions> _reload;
     private readonly string _contentRoot;
-    private readonly IOptionsMonitor<SiteOptions> _options;
+    private readonly string _configurationFile;
+    private SiteOptions _options;
     private readonly IFileSystem _fileSystem;
     private readonly IAnsiConsole _stdOut;
     private readonly IAnsiConsole _stdErr;
@@ -72,17 +70,17 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <param name="builder">
     ///     Performs the generation each change triggers.
     /// </param>
-    /// <param name="configuration">
-    ///     The configuration the site options are bound from, read again when the file behind it changes.
+    /// <param name="options">
+    ///     The settings the loop starts from, which name the directories to watch.
     /// </param>
-    /// <param name="file">
-    ///     The configuration file the run reads, which the loop watches for changes.
+    /// <param name="reload">
+    ///     Loads the settings again when the configuration file changes.
     /// </param>
     /// <param name="contentRoot">
     ///     The directory relative paths are resolved against.
     /// </param>
-    /// <param name="options">
-    ///     Supplies the site configuration naming the directories to watch.
+    /// <param name="configurationFile">
+    ///     The absolute path of the configuration file, which the loop watches for changes.
     /// </param>
     /// <param name="stdOut">
     ///     The console the command writes its output to.
@@ -101,10 +99,10 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// </param>
     public SiteWatcher(
         SiteBuilderContract builder,
-        IConfigurationRoot configuration,
-        ConfigurationFileStatus file,
+        SiteOptions options,
+        Func<SiteOptions> reload,
         string contentRoot,
-        IOptionsMonitor<SiteOptions> options,
+        string configurationFile,
         IAnsiConsole stdOut,
         IAnsiConsole stdErr,
         TimeProvider timeProvider,
@@ -112,10 +110,10 @@ internal sealed class SiteWatcher : SiteWatcherContract
         ILogger<SiteWatcher> logger)
     {
         this._builder = builder;
-        this._configuration = configuration;
-        this._file = file;
-        this._contentRoot = contentRoot;
         this._options = options;
+        this._reload = reload;
+        this._contentRoot = contentRoot;
+        this._configurationFile = configurationFile;
         this._stdOut = stdOut;
         this._stdErr = stdErr;
         this._timeProvider = timeProvider;
@@ -132,13 +130,13 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// <inheritdoc/>
     public override async Task WatchAsync(CancellationToken cancellationToken)
     {
-        SiteOptions options = this._options.CurrentValue;
+        SiteOptions options = this._options;
         string root = this._contentRoot;
 
         string contentDirectory = PathBoundary.Resolve(root, options.ContentDirectory);
         string outputDirectory = PathBoundary.Resolve(root, options.OutputDirectory);
         string basePath = UrlUtils.ResolveBasePath(options.BaseUrl);
-        string configurationFile = this._file.Path;
+        string configurationFile = this._configurationFile;
 
         using FileSystemWatcher sources = Observe(
             directory: contentDirectory,
@@ -162,7 +160,9 @@ internal sealed class SiteWatcher : SiteWatcherContract
     /// </summary>
     /// <remarks>
     ///     A rebuild that fails is reported and the loop keeps running: a half-saved file that does not parse
-    ///     is the normal case in an editor, and a preview server that exits on it is unusable.
+    ///     is the normal case in an editor, and a preview server that exits on it is unusable. A reload that
+    ///     fails is reported the same way, and the loop keeps the settings it last loaded, so a later change
+    ///     to a page still rebuilds.
     /// </remarks>
     /// <param name="contentDirectory">
     ///     The absolute path of the directory the watched sources sit in, as the loop was started against it.
@@ -232,23 +232,22 @@ internal sealed class SiteWatcher : SiteWatcherContract
             this._logger.LogChangeDetected(changed.Count, trigger);
 
             long started = Stopwatch.GetTimestamp();
-            SiteOptions options;
 
-            try
+            if (changed.Any(path => string.Equals(path, configurationFile, StringComparison.OrdinalIgnoreCase)))
             {
-                if (changed.Any(path => string.Equals(path, configurationFile, StringComparison.OrdinalIgnoreCase)))
+                try
                 {
-                    this._configuration.Reload();
+                    this._options = this._reload();
                     this._logger.LogConfigurationReloaded(configurationFile);
                 }
+                catch (Exception exception) when (exception is ConfigurationException or IOException or UnauthorizedAccessException)
+                {
+                    this.ReportFailure(exception);
+                    continue;
+                }
+            }
 
-                options = this._options.CurrentValue;
-            }
-            catch (Exception exception) when (IsConfigurationFailure(exception))
-            {
-                this.ReportFailure(exception);
-                continue;
-            }
+            SiteOptions options = this._options;
 
             if (this.Moved(contentDirectory, outputDirectory, basePath, options) is string moved)
             {
@@ -258,7 +257,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
             try
             {
-                BuildReport report = await this._builder.BuildAsync(cancellationToken).ConfigureAwait(false);
+                BuildReport report = await this._builder.BuildAsync(options, cancellationToken).ConfigureAwait(false);
                 double elapsed = started.ElapsedMilliseconds;
 
                 this._logger.LogRebuildCompleted(report.FileCount, elapsed);
@@ -353,37 +352,6 @@ internal sealed class SiteWatcher : SiteWatcherContract
 
         return watcher;
     }
-
-    /// <summary>
-    ///     The ways a configuration file that is being edited fails, each of which leaves the loop serving
-    ///     what it last built: a file that does not parse, a value the binder cannot convert to the type of
-    ///     the setting it belongs to, and values the validator rejects once it can.
-    /// </summary>
-    /// <remarks>
-    ///     An aggregate counts when every failure in it does, because that is the shape these arrive in:
-    ///     <see cref="IConfigurationRoot.Reload"/> raises the reload token through a
-    ///     <see cref="CancellationTokenSource"/>, whose <c>Cancel</c> "aggregates any exceptions thrown into
-    ///     an <see cref="AggregateException"/>", and the options monitor binds and validates eagerly in one
-    ///     of those callbacks. The rejection comes out of the reload, nested once per token in the chain.
-    /// </remarks>
-    /// <param name="exception">
-    ///     The exception the reload or the read of the options failed with.
-    /// </param>
-    /// <returns>
-    ///     <see langword="true"/> when the next change is worth rebuilding on, <see langword="false"/> when
-    ///     the exception is to fault the loop.
-    /// </returns>
-    /// <seealso href="https://learn.microsoft.com/dotnet/api/system.threading.cancellationtokensource.cancel">
-    ///     CancellationTokenSource.Cancel.
-    /// </seealso>
-    private static bool IsConfigurationFailure(Exception exception) =>
-        exception switch
-        {
-            AggregateException aggregate => aggregate.Flatten().InnerExceptions is { Count: > 0 } failures && failures.All(IsConfigurationFailure),
-            InvalidDataException or InvalidOperationException or OptionsValidationException => true,
-            IOException => true,
-            _ => false,
-        };
 
     /// <summary>
     ///     The ways a build over a tree that is being edited fails, each of which leaves the loop serving

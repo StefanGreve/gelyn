@@ -4,7 +4,6 @@ using System.IO;
 
 using Gelyn.Model.Options;
 using Gelyn.Services;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
@@ -40,7 +39,6 @@ internal sealed class ContentFixture
         this.Builder = new SiteBuilder(
             this.Pipeline,
             root,
-            new OptionsMonitorStub(options),
             fileSystem,
             this.Logger);
     }

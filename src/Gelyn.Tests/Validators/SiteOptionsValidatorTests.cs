@@ -4,11 +4,8 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
-using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Validators;
-
-using Microsoft.Extensions.Options;
 
 namespace Gelyn.Tests.Validators;
 
@@ -33,10 +30,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { BaseUrl = new Uri(baseUrl) };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -54,13 +51,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { BaseUrl = new Uri(baseUrl, UriKind.RelativeOrAbsolute) };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.BaseUrl));
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning(nameof(SiteOptions.BaseUrl)));
         }
     }
 
@@ -76,10 +73,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { FooterLinks = [new FooterLink { Label = "GitHub", Url = new Uri(url) }] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -99,13 +96,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { FooterLinks = [link] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Url");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning("FooterLinks[0].Url"));
         }
     }
 
@@ -120,13 +117,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { FooterLinks = [new FooterLink { Label = "GitHub" }] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Url");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning("FooterLinks[0].Url"));
         }
     }
 
@@ -145,13 +142,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { FooterLinks = [link] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains("FooterLinks[0].Label");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning("FooterLinks[0].Label"));
         }
     }
 
@@ -172,13 +169,13 @@ public class SiteOptionsValidatorTests
         };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.FailureMessage).Contains("FooterLinks[1].Url");
-            await Assert.That(result.FailureMessage).DoesNotContain("FooterLinks[0]");
+            await Assert.That(failures).Contains(Mentioning("FooterLinks[1].Url"));
+            await Assert.That(failures).DoesNotContain(Mentioning("FooterLinks[0]"));
         }
     }
 
@@ -213,13 +210,13 @@ public class SiteOptionsValidatorTests
         SiteOptions options = Blank(setting, value);
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(setting);
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning(setting));
         }
     }
 
@@ -234,13 +231,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions();
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(options.BaseUrl).IsNull();
-            await Assert.That(result.Succeeded).IsTrue();
+            await Assert.That(failures).IsEmpty();
         }
     }
 
@@ -258,10 +255,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -280,13 +277,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.OutputDirectory));
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning(nameof(SiteOptions.OutputDirectory)));
         }
     }
 
@@ -304,13 +301,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ContentDirectory = content, OutputDirectory = output };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(nameof(SiteOptions.OutputDirectory));
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning(nameof(SiteOptions.OutputDirectory)));
         }
     }
 
@@ -333,13 +330,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ContentDirectory = "../notes", OutputDirectory = output };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).IsEqualTo($"{nameof(SiteOptions.OutputDirectory)} must not resolve to or above the content root.");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).IsEquivalentTo([$"{nameof(SiteOptions.OutputDirectory)} must not resolve to or above the content root."]);
         }
     }
 
@@ -355,13 +352,13 @@ public class SiteOptionsValidatorTests
         string configuration = Path.GetFullPath("/shared/gelyn.json");
 
         // Act
-        ValidateOptionsResult result = Validate(options, configuration);
+        IReadOnlyList<string> failures = Validate(options, configuration);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).IsEqualTo($"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{configuration}'.");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).IsEquivalentTo([$"{nameof(SiteOptions.OutputDirectory)} must not contain the configuration file '{configuration}'."]);
         }
     }
 
@@ -376,10 +373,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ContentDirectory = "../notes", OutputDirectory = "../www" };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     #endregion // Validate Tests
@@ -396,13 +393,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions();
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(options.Giscus).IsNull();
-            await Assert.That(result.Succeeded).IsTrue();
+            await Assert.That(failures).IsEmpty();
         }
     }
 
@@ -416,10 +413,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Giscus = Giscus() };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -441,13 +438,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Giscus = Giscus(setting, value) };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains($"Giscus.{setting}");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning($"Giscus.{setting}"));
         }
     }
 
@@ -470,13 +467,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Giscus = Giscus(nameof(GiscusOptions.Repo), repo) };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains("Giscus.Repo");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning("Giscus.Repo"));
         }
     }
 
@@ -494,13 +491,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions();
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(options.Theme).IsNull();
-            await Assert.That(result.Succeeded).IsTrue();
+            await Assert.That(failures).IsEmpty();
         }
     }
 
@@ -515,10 +512,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Theme = theme };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -536,13 +533,13 @@ public class SiteOptionsValidatorTests
         string expected = $"{nameof(SiteOptions.Theme)} must name a bundled theme: {string.Join(", ", ThemeCatalog.Names)}.";
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains(expected);
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning(expected));
         }
     }
 
@@ -563,10 +560,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Port = port };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -583,13 +580,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Port = port };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.Port)} must be between 1 and 65535.");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning($"{nameof(SiteOptions.Port)} must be between 1 and 65535."));
         }
     }
 
@@ -612,10 +609,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Language = language };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -635,13 +632,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { Language = language };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.Language)} must be a BCP 47 language tag, such as 'en' or 'de-DE'.");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning($"{nameof(SiteOptions.Language)} must be a BCP 47 language tag, such as 'en' or 'de-DE'."));
         }
     }
 
@@ -662,10 +659,10 @@ public class SiteOptionsValidatorTests
         SiteOptions options = Blank(setting, version);
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     /// <summary>
@@ -687,13 +684,13 @@ public class SiteOptionsValidatorTests
         SiteOptions options = Blank(setting, version);
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains($"{setting} must be a version such as");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning($"{setting} must be a version such as"));
         }
     }
 
@@ -711,13 +708,13 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ExcludePatterns = ["*.tmp", "drafts", "*.tmp"] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(result.Failed).IsTrue();
-            await Assert.That(result.FailureMessage).Contains($"{nameof(SiteOptions.ExcludePatterns)} must not list a pattern twice.");
+            await Assert.That(failures).IsNotEmpty();
+            await Assert.That(failures).Contains(Mentioning($"{nameof(SiteOptions.ExcludePatterns)} must not list a pattern twice."));
         }
     }
 
@@ -731,10 +728,10 @@ public class SiteOptionsValidatorTests
         var options = new SiteOptions { ExcludePatterns = ["Drafts", "drafts"] };
 
         // Act
-        ValidateOptionsResult result = Validate(options);
+        IReadOnlyList<string> failures = Validate(options);
 
         // Assert
-        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(failures).IsEmpty();
     }
 
     #endregion // Exclude Pattern Tests
@@ -746,13 +743,13 @@ public class SiteOptionsValidatorTests
     /// </summary>
     public static IEnumerable<string> BundledThemes() => ThemeCatalog.Names;
 
-    // An absolute content root, so that the relative settings do not resolve against the working directory.
-    private static ValidateOptionsResult Validate(SiteOptions options, string configuration = "/site/gelyn.json")
-    {
-        var file = new ConfigurationFileStatus { Path = Path.GetFullPath(configuration), Optional = true, Exists = true, Failure = null };
+    // Matched as a fragment, because a message names more than the setting it is about.
+    private static Func<string, bool> Mentioning(string fragment) =>
+        failure => failure.Contains(fragment, StringComparison.Ordinal);
 
-        return new SiteOptionsValidator(Path.GetFullPath("/site"), file).Validate(name: null, options);
-    }
+    // An absolute content root, so that the relative settings do not resolve against the working directory.
+    private static IReadOnlyList<string> Validate(SiteOptions options, string configuration = "/site/gelyn.json") =>
+        new SiteOptionsValidator(Path.GetFullPath("/site"), Path.GetFullPath(configuration)).Validate(options);
 
     // Assigned by name, because the alternative is one test per setting; every setting under test is a
     // string, so no conversion is involved.

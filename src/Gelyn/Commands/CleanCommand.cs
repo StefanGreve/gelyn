@@ -4,9 +4,6 @@ using Gelyn.Cli;
 using Gelyn.Extensions;
 using Gelyn.Model.Options;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-
 using Spectre.Console;
 
 namespace Gelyn.Commands;
@@ -31,7 +28,7 @@ internal sealed class CleanCommand : Command
         this.SetAction(parseResult =>
         {
             using Session session = open(parseResult);
-            SiteOptions site = session.Services.GetRequiredService<IOptionsMonitor<SiteOptions>>().CurrentValue;
+            SiteOptions site = session.Options;
             string directory = session.FileSystem.Path.Combine(session.ContentRoot, site.OutputDirectory);
 
             try

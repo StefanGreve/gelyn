@@ -107,7 +107,7 @@ gelyn serve --verbosity debug                            # the request log, plus
 A build of the example site reports its phases like this:
 
 ```text
-02:10:11.991 dbug: Gelyn.Program[1006] Started in 11.06 ms
+02:10:11.991 dbug: Gelyn.Cli.Session[1006] Started in 11.06 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1000] Scanned 18 source file(s) in 0.71 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1001] Rendered 17 page(s) in 1.95 ms
 02:10:12.014 dbug: Gelyn.Services.SiteBuilder[1004] Removed 0 file(s) in 0.98 ms

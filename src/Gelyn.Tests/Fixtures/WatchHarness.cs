@@ -1,18 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 using Gelyn.Cli;
+using Gelyn.Commands;
 using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
-using Gelyn.Model;
 using Gelyn.Services;
-using Gelyn.Tests.Stubs;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 
@@ -27,8 +26,10 @@ namespace Gelyn.Tests.Fixtures;
 /// <remarks>
 ///     No <see cref="FileSystemWatcher"/> is involved: a test writes the paths one would have reported into
 ///     the channel itself, which is what makes the four debounce cases exact instead of a matter of real
-///     saves and real sleeps. Disposal cancels the loop the way Ctrl+C does and waits for it, so a loop that
-///     never stops fails the test that started it and does not leak into the next one.
+///     saves and real sleeps. The settings a reload reads come from a <c>gelyn.json</c> in the same in-memory
+///     tree, which a test writes before it reports the change. Disposal cancels the loop the way Ctrl+C does
+///     and waits for it, so a loop that never stops fails the test that started it and does not leak into the
+///     next one.
 /// </remarks>
 internal sealed class WatchHarness : IAsyncDisposable
 {
@@ -54,16 +55,16 @@ internal sealed class WatchHarness : IAsyncDisposable
     private readonly StringWriter _errorOutput = new();
     private readonly TextWriter _errorWriter;
 
-    private WatchHarness(ContentFixture content, IConfigurationRoot configuration)
+    private WatchHarness(ContentFixture content)
     {
         this.Content = content;
         this.Logger = new FakeLogger<SiteWatcher>();
         this.TimeProvider = new FakeTimeProvider();
-        this.Configuration = configuration;
 
         this.ContentDirectory = PathBoundary.Resolve(content.Root, content.Options.ContentDirectory);
         this.OutputDirectory = PathBoundary.Resolve(content.Root, content.Options.OutputDirectory);
         this.ConfigurationPath = PathBoundary.Resolve(content.Root, ConfigurationFile.DefaultFileName);
+        this.Settings = new SiteSettings(content.Root, this.ConfigurationPath, optional: true, Parse("serve"), content.FileSystem);
 
         // Synchronized because the loop appends while a test reads, which a bare StringWriter does not order.
         this._writer = TextWriter.Synchronized(this._output);
@@ -75,10 +76,10 @@ internal sealed class WatchHarness : IAsyncDisposable
 
         this.Watcher = new SiteWatcher(
             content.Builder,
-            this.Configuration,
-            new ConfigurationFileStatus { Path = this.ConfigurationPath, Optional = true, Exists = false, Failure = null },
+            content.Options,
+            this.Settings.Load,
             content.Root,
-            new OptionsMonitorStub(content.Options),
+            this.ConfigurationPath,
             stdOut,
             stdErr,
             this.TimeProvider,
@@ -104,9 +105,9 @@ internal sealed class WatchHarness : IAsyncDisposable
     public SiteWatcher Watcher { get; }
 
     /// <summary>
-    ///     The configuration the loop reloads when the configuration file is what changed.
+    ///     The settings the loop reloads when the configuration file is what changed.
     /// </summary>
-    public IConfigurationRoot Configuration { get; }
+    public SiteSettings Settings { get; }
 
     /// <summary>
     ///     The clock the debounce window is waited out on, which moves only when a test advances it.
@@ -172,7 +173,7 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.Count(EventIds.REBUILD_COMPLETED);
 
     /// <summary>
-    ///     The number of configuration reloads the loop has performed.
+    ///     The number of configuration reloads the loop has completed.
     /// </summary>
     public int Reloads =>
         this.Count(EventIds.CONFIGURATION_RELOADED);
@@ -199,8 +200,8 @@ internal sealed class WatchHarness : IAsyncDisposable
         CompleteLines(this.ErrorOutput);
 
     /// <summary>
-    ///     The lines reporting a rebuild that failed. Read off standard error, so a count also pins the
-    ///     stream the report reached.
+    ///     The lines reporting a rebuild or a reload that failed. Read off standard error, so a count also pins
+    ///     the stream the report reached.
     /// </summary>
     public string[] Errors =>
         [.. this.ErrorLines.Where(static line => line.StartsWith("error:", StringComparison.Ordinal))];
@@ -224,16 +225,11 @@ internal sealed class WatchHarness : IAsyncDisposable
     /// <param name="content">
     ///     The tree to rebuild, which defaults to the fixture's own.
     /// </param>
-    /// <param name="configuration">
-    ///     The configuration the loop reloads, which defaults to one that holds nothing and reloads without
-    ///     complaint. What a test observes of a reload is that the loop asked for it, and not what the
-    ///     reload read: the options a rebuild is driven by come from the monitor the fixture supplies.
-    /// </param>
     /// <returns>
     ///     The new harness.
     /// </returns>
-    public static WatchHarness Start(ContentFixture? content = null, IConfigurationRoot? configuration = null) =>
-        new(content ?? ContentFixture.Create(), configuration ?? new ConfigurationRootStub());
+    public static WatchHarness Start(ContentFixture? content = null) =>
+        new(content ?? ContentFixture.Create());
 
     /// <summary>
     ///     Reports one change under the content directory, as the content watcher would have.
@@ -268,6 +264,22 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.Watcher.Changes.TryWrite(Path.Combine(
             this.ContentDirectory,
             relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+        return this;
+    }
+
+    /// <summary>
+    ///     Writes the configuration file the loop reloads, without reporting the change.
+    /// </summary>
+    /// <param name="json">
+    ///     The contents of the file.
+    /// </param>
+    /// <returns>
+    ///     The same harness, so that calls can be chained.
+    /// </returns>
+    public WatchHarness WriteConfiguration(string json)
+    {
+        this.Content.FileSystem.File.WriteAllText(this.ConfigurationPath, json);
 
         return this;
     }
@@ -324,7 +336,7 @@ internal sealed class WatchHarness : IAsyncDisposable
         this.AdvanceUntilAsync(() => this.Lines.Length >= count, $"{count} line(s)");
 
     /// <summary>
-    ///     Advances the clock until the loop has reported a given number of failed rebuilds.
+    ///     Advances the clock until the loop has reported a given number of failures.
     /// </summary>
     /// <param name="count">
     ///     The number of failures to wait for.
@@ -336,7 +348,7 @@ internal sealed class WatchHarness : IAsyncDisposable
     ///     The failures did not arrive in the time an in-memory build needs many times over.
     /// </exception>
     public Task WaitForErrorsAsync(int count) =>
-        this.AdvanceUntilAsync(() => this.Errors.Length >= count, $"{count} failed rebuild(s)");
+        this.AdvanceUntilAsync(() => this.Errors.Length >= count, $"{count} failure(s)");
 
     /// <summary>
     ///     Advances the clock until the loop has reported a given number of changes it cannot follow.
@@ -427,6 +439,9 @@ internal sealed class WatchHarness : IAsyncDisposable
 
         this.Watcher.Changes.TryWrite(path);
     }
+
+    private static ParseResult Parse(params string[] args) =>
+        GelynCommand.Create(static _ => throw new InvalidOperationException("The tree is parsed here and never invoked.")).Parse(args);
 
     private int Count(int eventId) =>
         this.Records.Count(record => record.Id.Id == eventId);
