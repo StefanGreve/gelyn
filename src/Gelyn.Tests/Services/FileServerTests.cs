@@ -12,8 +12,6 @@ using Gelyn.Tests.Fixtures;
 
 using Microsoft.Extensions.Logging.Testing;
 
-using Testably.Abstractions.Testing.FileSystem;
-
 using TUnit.Assertions.Enums;
 
 namespace Gelyn.Tests.Services;
@@ -729,16 +727,7 @@ public class FileServerTests
     public async Task ServeAsync_Test_FailedAnswer_IsReportedAndTheNextOneIsAnswered()
     {
         // Arrange
-        var fixture = OutputFixture.Create("index.html");
-        bool denied = false;
-
-        // The first open of the page is denied, which the server does not name, and every later one granted.
-        fixture.FileSystem.WithAccessControlStrategy(new DefaultAccessControlStrategy((_, _, _) =>
-        {
-            if (denied) return true;
-            denied = true;
-            return false;
-        }));
+        var fixture = OutputFixture.Create("index.html").DenyNextOpen();
         await using var harness = ServerHarness.Start(fixture);
 
         // Act

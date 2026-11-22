@@ -1,7 +1,12 @@
+using System;
+using System.IO;
+
 using Gelyn.Model;
 using Gelyn.Services;
 
+using Testably.Abstractions.Helpers;
 using Testably.Abstractions.Testing;
+using Testably.Abstractions.Testing.FileSystem;
 
 namespace Gelyn.Tests.Fixtures;
 
@@ -131,10 +136,47 @@ internal sealed class OutputFixture
     public ServedFile Resolve(string requestPath) =>
         this.Resolver.Resolve(this.Root, requestPath);
 
+    /// <summary>
+    ///     Denies the next open of any file in the tree with an <see cref="UnauthorizedAccessException"/> and
+    ///     grants every later one.
+    /// </summary>
+    /// <remarks>
+    ///     The mock mirrors its host: it accepts an access control strategy on Windows only and a Unix file
+    ///     mode strategy everywhere else. Both are consulted at the same point of an open, so the server sees
+    ///     the same exception on every platform.
+    /// </remarks>
+    /// <returns>
+    ///     The same fixture, so that calls can be chained.
+    /// </returns>
+    public OutputFixture DenyNextOpen()
+    {
+        bool denied = false;
+
+        bool GrantAccess()
+        {
+            if (denied) return true;
+            denied = true;
+            return false;
+        }
+
+        if (OperatingSystem.IsWindows())
+            this.FileSystem.WithAccessControlStrategy(new DefaultAccessControlStrategy((_, _, _) => GrantAccess()));
+        else
+            this.FileSystem.WithUnixFileModeStrategy(new CallbackUnixFileModeStrategy(GrantAccess));
+
+        return this;
+    }
+
     #region Helpers
 
     private string Resolve(string root, string relativePath) =>
         this.FileSystem.Path.Combine(root, relativePath.Replace('/', this.FileSystem.Path.DirectorySeparatorChar));
+
+    private sealed class CallbackUnixFileModeStrategy(Func<bool> grant) : UnixFileModeStrategy
+    {
+        public override bool IsAccessGranted(string fullPath, IFileSystemExtensibility extensibility, UnixFileMode mode, AccessRequest request) =>
+            grant();
+    }
 
     #endregion
 }
