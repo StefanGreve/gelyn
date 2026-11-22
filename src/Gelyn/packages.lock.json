@@ -94,11 +94,11 @@
       },
       "Testably.Abstractions": {
         "type": "Direct",
-        "requested": "[11.0.0, )",
-        "resolved": "11.0.0",
-        "contentHash": "fCUWwHukFjt4QHigEKffRmnCPV5gWac/HKByZrl+fmOQ0seZuYYYVmKXJIm4BH5usd1WKwJxxmfaNy3xzQ3+Lg==",
+        "requested": "[11.1.0, )",
+        "resolved": "11.1.0",
+        "contentHash": "/cCmdwOHoqsh4aSn4G7K25TiYRQf+BSYdzOB7A2854JWrxQMdrgTI6P5Oru/uRpkKxtzJiQGMYe+CVsuPROnpg==",
         "dependencies": {
-          "Testably.Abstractions.Interface": "11.0.0"
+          "Testably.Abstractions.Interface": "11.1.0"
         }
       },
       "Microsoft.Extensions.Configuration": {
@@ -232,15 +232,15 @@
       },
       "Testably.Abstractions.FileSystem.Interface": {
         "type": "Transitive",
-        "resolved": "11.0.0",
-        "contentHash": "bHE3UgieMizRsrzHYsWOLGMVjDmy0yx1PTv4QMgoAi3GU+vw2tJZ/jR5woIZ6Et6H0Hvhwriv6XSgwoZV9bU0A=="
+        "resolved": "11.1.0",
+        "contentHash": "ijeocqwxQWPlcneMvPrPvKbVMTVtqwp3lAOZXuAtMGJFKmzFnFc7W02QsIi8bEZDkpK8ubTz7tLAoSaYVIo7Ng=="
       },
       "Testably.Abstractions.Interface": {
         "type": "Transitive",
-        "resolved": "11.0.0",
-        "contentHash": "mznN2Nnl9sEDjRlGIhYHxg8mKD6OMHcazzW6T0+xlKo5MfvTyIqhyII3MMFCPzeBQe1tx9KWUgmjgzLd1f4jdA==",
+        "resolved": "11.1.0",
+        "contentHash": "9RkXzVTsLye5est4Ixl0jj8Yby1PPMAOk81xuJYvSV2BBiJDxY3YGjOTE+Orqs5Lxr35kVPOP03FyDUyD7gmNg==",
         "dependencies": {
-          "Testably.Abstractions.FileSystem.Interface": "11.0.0"
+          "Testably.Abstractions.FileSystem.Interface": "11.1.0"
         }
       }
     },

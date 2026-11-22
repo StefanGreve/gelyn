@@ -27,6 +27,7 @@
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
+    <VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
     <StripSymbols>true</StripSymbols>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
