@@ -14,14 +14,12 @@ public class DeclarationTests : ArchBase
     #region Declaration Tests
 
     /// <summary>
-    ///     Verifies that every class the tool declares is sealed, the abstract contracts aside.
+    ///     Verifies that every class the tool declares is sealed.
     /// </summary>
     /// <remarks>
-    ///     A sealed class lets the AOT compiler dispatch calls directly, which is what
-    ///     <c>OptimizationPreference=Speed</c> benefits from. A static class satisfies the rule as declared,
-    ///     the compiler emitting it as abstract and sealed, so the rule bites on every class that is not
-    ///     static: the records, the options, the services, the commands and the validators. An abstract class cannot be sealed, and each contract has one sealed implementation,
-    ///     which <see cref="Declaration_Test_AbstractClassesAndAbstractionsCoincide"/> keeps in its place.
+    ///     A sealed class lets the AOT compiler dispatch calls directly, which
+    ///     <c>OptimizationPreference=Speed</c> benefits from. A static class is emitted as abstract and sealed,
+    ///     so it passes as declared, where an abstract class cannot.
     /// </remarks>
     [Test]
     public void Declaration_Test_EveryClassIsSealed()
@@ -32,43 +30,11 @@ public class DeclarationTests : ArchBase
             .ResideInNamespaceOrBelow(RootNamespace)
             .And()
             .AreNotNested()
-            .And()
-            .AreNotAbstract()
             .Should()
             .BeSealed();
 
         // Act and Assert
         rule.Check(Architecture);
-    }
-
-    /// <summary>
-    ///     Verifies that the abstract classes are the classes under <c>Gelyn.Abstractions</c>, and no others.
-    /// </summary>
-    /// <remarks>
-    ///     A static class is emitted as abstract and sealed, so the first rule leaves the sealed ones out.
-    /// </remarks>
-    [Test]
-    public void Declaration_Test_AbstractClassesAndAbstractionsCoincide()
-    {
-        // Arrange
-        IArchRule abstractions = Classes()
-            .That()
-            .AreAbstract()
-            .And()
-            .AreNotSealed()
-            .And()
-            .AreNotNested()
-            .Should()
-            .ResideInNamespace(AbstractionsNamespace);
-
-        IArchRule bases = Classes()
-            .That()
-            .ResideInNamespace(AbstractionsNamespace)
-            .Should()
-            .BeAbstract();
-
-        // Act and Assert
-        abstractions.And(bases).Check(Architecture);
     }
 
     #endregion // Declaration Tests

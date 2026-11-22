@@ -9,9 +9,10 @@ using System.Threading.Tasks;
 using Gelyn.Diagnostics;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging.Testing;
+
+using Testably.Abstractions.Testing.FileSystem;
 
 using TUnit.Assertions.Enums;
 
@@ -729,8 +730,16 @@ public class FileServerTests
     {
         // Arrange
         var fixture = OutputFixture.Create("index.html");
-        var failure = new InvalidOperationException("The resolver gave up.");
-        await using var harness = ServerHarness.Start(fixture, resolver: new FlakyResolverStub(fixture.Resolver, failure));
+        bool denied = false;
+
+        // The first open of the page is denied, which the server does not name, and every later one granted.
+        fixture.FileSystem.WithAccessControlStrategy(new DefaultAccessControlStrategy((_, _, _) =>
+        {
+            if (denied) return true;
+            denied = true;
+            return false;
+        }));
+        await using var harness = ServerHarness.Start(fixture);
 
         // Act
         using HttpResponseMessage failed = await harness.Client.GetAsync(harness.Url("/"), CancellationToken.None);
@@ -744,7 +753,7 @@ public class FileServerTests
         using (Assert.Multiple())
         {
             await Assert.That(records.Select(static record => record.Id.Id)).IsEquivalentTo([EventIds.SERVER_STARTED, EventIds.ANSWER_FAILED]);
-            await Assert.That(records[1].Exception).IsSameReferenceAs(failure);
+            await Assert.That(records[1].Exception).IsTypeOf<UnauthorizedAccessException>();
             await Assert.That(records[1].GetStructuredStateValue("Method")).IsEqualTo("GET");
             await Assert.That(records[1].GetStructuredStateValue("Path")).IsEqualTo("/");
             await Assert.That(harness.Lines[1]).IsEqualTo("""127.0.0.1 - - [17/Oct/2026:13:06:06 +0000] "GET / HTTP/1.1" 500 0""");

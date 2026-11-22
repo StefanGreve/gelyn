@@ -6,7 +6,6 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Abstractions;
 using Gelyn.Services;
 
 using Microsoft.Extensions.Logging.Testing;
@@ -40,7 +39,7 @@ internal sealed class ServerHarness : IAsyncDisposable
     private readonly StringWriter _errorOutput = new();
     private readonly TextWriter _errorWriter;
 
-    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, StaticFileResolverContract? resolver, string basePath)
+    private ServerHarness(OutputFixture fixture, DateTimeOffset now, int? refreshSeconds, string basePath)
     {
         this.Logger = new FakeLogger<FileServer>();
         this.TimeProvider = new FakeTimeProvider(now);
@@ -54,7 +53,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
         IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
 
-        var server = new FileServer(resolver ?? fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
+        var server = new FileServer(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
         // ServeAsync binds before its first await, so the returned task is already listening, and a taken port
         // faults it at once, before anything is written.
@@ -150,9 +149,6 @@ internal sealed class ServerHarness : IAsyncDisposable
     ///     The interval an HTML response asks the browser to reload itself after, or <see langword="null"/>
     ///     when no response carries the header.
     /// </param>
-    /// <param name="resolver">
-    ///     The resolver the server answers through, or <see langword="null"/> for the fixture's own.
-    /// </param>
     /// <param name="basePath">
     ///     The path the site is served under, which is empty for a site served from the root.
     /// </param>
@@ -163,9 +159,8 @@ internal sealed class ServerHarness : IAsyncDisposable
         OutputFixture fixture,
         DateTimeOffset? now = null,
         int? refreshSeconds = null,
-        StaticFileResolverContract? resolver = null,
         string basePath = "") =>
-        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds, resolver, basePath);
+        new(fixture, now ?? new DateTimeOffset(2026, 10, 17, 13, 6, 6, TimeSpan.Zero), refreshSeconds, basePath);
 
     /// <summary>
     ///     Composes the absolute URL one request path addresses.

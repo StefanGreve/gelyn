@@ -8,7 +8,6 @@ namespace Gelyn.Tests.Architecture;
 public abstract class ArchBase
 {
     private protected const string RootNamespace = "Gelyn";
-    private protected const string AbstractionsNamespace = "Gelyn.Abstractions";
     private protected const string AttributesNamespace = "Gelyn.Attributes";
     private protected const string CliNamespace = "Gelyn.Cli";
     private protected const string CommandsNamespace = "Gelyn.Commands";

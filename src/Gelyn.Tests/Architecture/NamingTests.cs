@@ -23,7 +23,6 @@ public class NamingTests : ArchBase
     ///     by convention rather than merely habitual, which is what this rule turns into a test failure.
     /// </remarks>
     [Test]
-    [Arguments(AbstractionsNamespace, "Contract")]
     [Arguments(AttributesNamespace, "Attribute")]
     [Arguments(CommandsNamespace, "Command")]
     [Arguments(ComponentsNamespace, "Component")]

@@ -1,10 +1,10 @@
 using System.CommandLine;
 
-using Gelyn.Abstractions;
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
+using Gelyn.Services;
 
 using Spectre.Console;
 
@@ -34,7 +34,7 @@ internal sealed class BuildCommand : Command
         this.SetAction(async (parseResult, cancellationToken) =>
         {
             using Session session = open(parseResult);
-            SiteBuilderContract siteBuilder = session.Builder;
+            SiteBuilder siteBuilder = session.Builder;
             SiteOptions site = session.Options;
 
             BuildReport report = await siteBuilder

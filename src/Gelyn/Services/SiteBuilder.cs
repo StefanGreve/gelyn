@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.IO.Abstractions;
 
-using Gelyn.Abstractions;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
@@ -13,10 +12,12 @@ using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Logging;
 
+using SharpYaml;
+
 namespace Gelyn.Services;
 
 /// <summary>
-///     <inheritdoc path="/summary/node()"/>
+///     Writes the finished site to the output directory.
 /// </summary>
 /// <remarks>
 ///     The build is processed in this order:
@@ -54,9 +55,9 @@ namespace Gelyn.Services;
 ///     still lists them in input order, and a failure surfaces as the one a sequential pass would have stopped
 ///     at.
 /// </remarks>
-internal sealed class SiteBuilder : SiteBuilderContract
+internal sealed class SiteBuilder
 {
-    private readonly ContentPipelineContract _pipeline;
+    private readonly ContentPipeline _pipeline;
     private readonly string _contentRoot;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<SiteBuilder> _logger;
@@ -77,7 +78,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
     ///     Receives the records the build writes.
     /// </param>
     public SiteBuilder(
-        ContentPipelineContract pipeline,
+        ContentPipeline pipeline,
         string contentRoot,
         IFileSystem fileSystem,
         ILogger<SiteBuilder> logger)
@@ -88,12 +89,36 @@ internal sealed class SiteBuilder : SiteBuilderContract
         this._logger = logger;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    ///     Generates the whole site.
+    /// </summary>
     /// <remarks>
     ///     The build runs on a thread pool thread, because its passes over the pages block until every page
     ///     is done.
     /// </remarks>
-    public override Task<BuildReport> BuildAsync(SiteOptions options, CancellationToken cancellationToken)
+    /// <param name="options">
+    ///     The settings the site is built against.
+    /// </param>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     What the build produced, and how long it took.
+    /// </returns>
+    /// <exception cref="ConfigurationException">
+    ///     The content directory publishes no landing page.
+    /// </exception>
+    /// <exception cref="YamlException">
+    ///     A front matter block is not well-formed YAML.
+    /// </exception>
+    /// <exception cref="BuildException">
+    ///     The output directory is a link, one path is published twice, or a front matter block declares a
+    ///     stylesheet or a script the scan did not locate.
+    /// </exception>
+    /// <exception cref="IOException">
+    ///     A file cannot be written or removed.
+    /// </exception>
+    public Task<BuildReport> BuildAsync(SiteOptions options, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(options);
 

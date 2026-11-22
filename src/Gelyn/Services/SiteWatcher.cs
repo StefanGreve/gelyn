@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Threading.Channels;
 
-using Gelyn.Abstractions;
 using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
 using Gelyn.Exceptions;
@@ -19,14 +18,14 @@ using Spectre.Console;
 namespace Gelyn.Services;
 
 /// <summary>
-///     <inheritdoc path="/summary/node()"/>
+///     Rebuilds the site whenever a source file or the configuration file changes.
 /// </summary>
 /// <remarks>
 ///     Two watchers report into one channel the rebuild loop reads, so a rebuild never runs on a callback
 ///     thread, where a <see cref="FileSystemEventHandler"/> returning <see langword="void"/> would leave a
 ///     failure unobserved and block the watcher while its buffer fills. The tests drive that channel too.
 /// </remarks>
-internal sealed class SiteWatcher : SiteWatcherContract
+internal sealed class SiteWatcher
 {
     /// <summary>
     ///     How long the loop waits for further changes before it rebuilds.
@@ -54,7 +53,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
     private readonly Dictionary<string, (DateTime Written, long Length)> _entries =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private readonly SiteBuilderContract _builder;
+    private readonly SiteBuilder _builder;
     private readonly Func<SiteOptions> _reload;
     private readonly string _contentRoot;
     private readonly string _configurationFile;
@@ -99,7 +98,7 @@ internal sealed class SiteWatcher : SiteWatcherContract
     ///     Receives the records the loop writes.
     /// </param>
     public SiteWatcher(
-        SiteBuilderContract builder,
+        SiteBuilder builder,
         SiteOptions options,
         Func<SiteOptions> reload,
         string contentRoot,
@@ -128,8 +127,20 @@ internal sealed class SiteWatcher : SiteWatcherContract
     internal ChannelWriter<string> Changes =>
         this._changes.Writer;
 
-    /// <inheritdoc/>
-    public override async Task WatchAsync(CancellationToken cancellationToken)
+    /// <summary>
+    ///     Watches the content tree and the configuration file until the operation is canceled, rebuilding
+    ///     the site once per burst of changes.
+    /// </summary>
+    /// <param name="cancellationToken">
+    ///     Token used to cancel the operation.
+    /// </param>
+    /// <returns>
+    ///     A task that completes once the loop has stopped.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    ///     The content directory or the directory holding the configuration file does not exist.
+    /// </exception>
+    public async Task WatchAsync(CancellationToken cancellationToken)
     {
         SiteOptions options = this._options;
         string root = this._contentRoot;

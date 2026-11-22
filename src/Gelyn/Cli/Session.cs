@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.IO.Abstractions;
 
-using Gelyn.Abstractions;
 using Gelyn.Diagnostics;
 using Gelyn.Exceptions;
 using Gelyn.Extensions;
@@ -26,9 +25,9 @@ internal sealed class Session : IDisposable
     private readonly long _started;
     private DiagnosticLog? _log;
     private SiteOptions? _options;
-    private SiteBuilderContract? _builder;
-    private FileServerContract? _server;
-    private SiteWatcherContract? _watcher;
+    private SiteBuilder? _builder;
+    private FileServer? _server;
+    private SiteWatcher? _watcher;
     private bool _disposed;
 
     /// <summary>
@@ -141,7 +140,7 @@ internal sealed class Session : IDisposable
     /// <summary>
     ///     The builder that writes the site, constructed on the first read.
     /// </summary>
-    public SiteBuilderContract Builder =>
+    public SiteBuilder Builder =>
         this._builder ??= new SiteBuilder(
             new ContentPipeline(this.ContentRoot, this.FileSystem),
             this.ContentRoot,
@@ -152,7 +151,7 @@ internal sealed class Session : IDisposable
     /// <summary>
     ///     The server that answers requests for the written site, constructed on the first read.
     /// </summary>
-    public FileServerContract Server =>
+    public FileServer Server =>
         this._server ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Log.CreateLogger<FileServer>());
 
     /// <summary>
@@ -161,7 +160,7 @@ internal sealed class Session : IDisposable
     /// <exception cref="ConfigurationException">
     ///     The settings the watcher starts from are rejected, as <see cref="Options"/> raises it.
     /// </exception>
-    public SiteWatcherContract Watcher =>
+    public SiteWatcher Watcher =>
         this._watcher ??= new SiteWatcher(
             this.Builder,
             this.Options,

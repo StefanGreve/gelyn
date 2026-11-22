@@ -2,7 +2,6 @@ using System.IO.Abstractions;
 using System.Net;
 using System.Net.Mime;
 
-using Gelyn.Abstractions;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
@@ -10,7 +9,7 @@ using Gelyn.Model;
 namespace Gelyn.Services;
 
 /// <summary>
-///     <inheritdoc path="/summary/node()"/>
+///     Decides which file in the output directory answers a given request path.
 /// </summary>
 /// <remarks>
 ///     Resolution follows the conventions of the targets a generated site is deployed to, so that a preview
@@ -38,7 +37,7 @@ namespace Gelyn.Services;
 ///     instead of to the resolver. It is resolved again on each request, so that a caller cannot weaken the
 ///     containment test by passing a path that was never normalized.
 /// </remarks>
-internal sealed class StaticFileResolver : StaticFileResolverContract
+internal sealed class StaticFileResolver
 {
     private const string IndexFileName = "index.html";
     private const string NotFoundFileName = "404.html";
@@ -68,8 +67,20 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
         this._fileSystem = fileSystem;
     }
 
-    /// <inheritdoc/>
-    public override ServedFile Resolve(string outputDirectory, string requestPath)
+    /// <summary>
+    ///     Resolves one request path against the output directory.
+    /// </summary>
+    /// <param name="outputDirectory">
+    ///     The directory the generated site was written to, which is the only directory a request can reach.
+    /// </param>
+    /// <param name="requestPath">
+    ///     The path of the requested URL, percent-encoded as the client sent it.
+    /// </param>
+    /// <returns>
+    ///     The file that answers the request together with the status and media type to answer under, or a
+    ///     404 when nothing in the output directory does.
+    /// </returns>
+    public ServedFile Resolve(string outputDirectory, string requestPath)
     {
         ArgumentNullException.ThrowIfNull(outputDirectory);
         ArgumentNullException.ThrowIfNull(requestPath);
@@ -86,8 +97,16 @@ internal sealed class StaticFileResolver : StaticFileResolverContract
             : this.NotFound(root);
     }
 
-    /// <inheritdoc/>
-    public override ServedFile ResolveNotFound(string outputDirectory)
+    /// <summary>
+    ///     Resolves the 404 response of the output directory, for a request that no path inside it answers.
+    /// </summary>
+    /// <param name="outputDirectory">
+    ///     The directory the generated site was written to.
+    /// </param>
+    /// <returns>
+    ///     The not-found page the site declares, or a 404 without a body when it declares none.
+    /// </returns>
+    public ServedFile ResolveNotFound(string outputDirectory)
     {
         ArgumentNullException.ThrowIfNull(outputDirectory);
 
