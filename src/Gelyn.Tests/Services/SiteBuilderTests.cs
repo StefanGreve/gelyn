@@ -1623,7 +1623,6 @@ public partial class SiteBuilderTests
     ///     written, as a sequential pass over the pages and then the documents would report it.
     /// </summary>
     [Test]
-    [Skip("Testably's MockFileSystem ignores FileAttributes.ReadOnly, so neither write fails.")]
     public async Task BuildAsync_Test_FailingPage_WinsOverAFailingDocument()
     {
         // Arrange
