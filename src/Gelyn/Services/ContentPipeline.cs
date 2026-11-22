@@ -5,11 +5,10 @@ using Gelyn.Abstractions;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
-
-using SharpYaml;
 
 namespace Gelyn.Services;
 
@@ -83,7 +82,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
         if (items is not [{ Kind: ContentKind.Page, OutputPath: LandingPageOutputPath }, ..])
         {
             string home = path.Combine(root, IndexFileName);
-            throw new FileNotFoundException($"No landing page found at '{home}'.", home);
+            throw new ConfigurationException($"No landing page found at '{home}'.");
         }
 
         return items;
@@ -175,7 +174,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
             string outputPath = this._fileSystem.Path.Combine(segments);
 
             if (!names.TryAdd(name, file.Info.FullName))
-                throw new IOException(DescribeCollision(names[name], file.Info.FullName, outputPath));
+                throw new BuildException(DescribeCollision(names[name], file.Info.FullName, outputPath));
 
             items.Add(new ContentItem
             {
@@ -210,7 +209,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
             if (items.Count > count && !names.TryAdd(child.Name, child.FullName))
             {
                 string outputPath = this._fileSystem.Path.Combine([.. context.Prefix, child.Name]);
-                throw new IOException(DescribeCollision(names[child.Name], child.FullName, outputPath));
+                throw new BuildException(DescribeCollision(names[child.Name], child.FullName, outputPath));
             }
         }
     }
@@ -246,7 +245,7 @@ internal sealed class ContentPipeline : ContentPipelineContract
                 string key = kind is ContentKind.Stylesheet ? "stylesheets" : "scripts";
                 string noun = kind is ContentKind.Stylesheet ? "stylesheet" : "script";
 
-                throw new YamlException($"'{value}' under {key} in '{page.SourcePath}' is not a {noun} in the content directory.");
+                throw new BuildException($"'{value}' under {key} in '{page.SourcePath}' is not a {noun} in the content directory.");
             }
 
             if (!hrefs.Contains(file.Href, StringComparer.Ordinal))

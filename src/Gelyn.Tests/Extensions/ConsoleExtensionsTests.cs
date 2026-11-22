@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Tests.Fixtures;
 
@@ -59,26 +59,6 @@ public class ConsoleExtensionsTests
 
         // Assert
         await Assert.That(writer.ToString()).IsEqualTo($"error: First failed.{Environment.NewLine}error: Second failed.{Environment.NewLine}");
-    }
-
-    /// <summary>
-    ///     Verifies that nested aggregates are written by the failures they hold, a rejected configuration among
-    ///     them split as well.
-    /// </summary>
-    [Test]
-    public async Task WriteError_Test_NestedAggregate_IsWrittenByItsContents()
-    {
-        // Arrange
-        using var writer = new StringWriter(CultureInfo.InvariantCulture);
-        IAnsiConsole console = CapturedConsole.Create(writer);
-        var configuration = new ConfigurationException(["First failed.", "Second failed."]);
-        var exception = new AggregateException(new AggregateException(configuration), new IOException("Third failed."));
-
-        // Act
-        console.WriteError(exception);
-
-        // Assert
-        await Assert.That(writer.ToString()).IsEqualTo($"error: First failed.{Environment.NewLine}error: Second failed.{Environment.NewLine}error: Third failed.{Environment.NewLine}");
     }
 
     /// <summary>

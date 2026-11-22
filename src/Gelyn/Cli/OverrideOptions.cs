@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Parsing;
 
 using Gelyn.Core;
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Cli;

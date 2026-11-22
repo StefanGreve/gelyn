@@ -1,4 +1,4 @@
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 
 namespace Gelyn.Cli;
 
@@ -35,15 +35,8 @@ internal static class ExitCodes
     ///     The exception the command failed with.
     /// </param>
     /// <returns>
-    ///     <see cref="ConfigurationError"/> when the configuration was rejected, <see cref="Error"/> otherwise.
+    ///     <see cref="ConfigurationError"/> for a <see cref="ConfigurationException"/>, <see cref="Error"/> for
+    ///     every other exception.
     /// </returns>
-    internal static int For(Exception exception) =>
-        exception switch
-        {
-            ConfigurationException or FileNotFoundException or InvalidDataException => ConfigurationError,
-            // The configuration binder wraps a value it cannot convert in an InvalidOperationException.
-            // Only an inner FormatException marks that exception as a configuration error instead of a bug.
-            InvalidOperationException { InnerException: FormatException } => ConfigurationError,
-            _ => Error,
-        };
+    internal static int For(Exception exception) => exception is ConfigurationException ? ConfigurationError : Error;
 }

@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.IO.Abstractions;
 using System.Text.Json;
 
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Validators;

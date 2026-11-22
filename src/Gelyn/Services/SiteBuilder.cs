@@ -6,6 +6,7 @@ using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
+using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
@@ -157,7 +158,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
 
         // Writing through a link is dangerous, since the prune deletes any data at its target the build did not write.
         if (root.IsLink)
-            throw new IOException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
+            throw new BuildException($"The output directory '{outputDirectory}' is a link, which a build does not write through.");
 
         clock.Skip();
         List<GeneratedDocument> composed = this.ComposeGenerated(items, pages, options);
@@ -229,7 +230,7 @@ internal sealed class SiteBuilder : SiteBuilderContract
         foreach (GeneratedDocument document in composed)
         {
             if (items.FirstOrDefault(item => item.OutputPath.Equals(document.Path, StringComparison.OrdinalIgnoreCase)) is ContentItem item)
-                throw new IOException($"'{item.SourcePath}' and {DescribeGenerated(document.Path)} both publish '{document.Path}'.");
+                throw new BuildException($"'{item.SourcePath}' and {DescribeGenerated(document.Path)} both publish '{document.Path}'.");
 
             files.Add(document.Path);
         }

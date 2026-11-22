@@ -1,3 +1,4 @@
+using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -20,10 +21,10 @@ internal abstract class ContentPipelineContract
     /// <returns>
     ///     Every file, landing page first, with the files the build has no use for left out.
     /// </returns>
-    /// <exception cref="FileNotFoundException">
+    /// <exception cref="ConfigurationException">
     ///     The scan publishes no <c>index.md</c> at the root of the content directory.
     /// </exception>
-    /// <exception cref="IOException">
+    /// <exception cref="BuildException">
     ///     Two entries publish one path.
     /// </exception>
     public abstract IReadOnlyList<ContentItem> Scan(SiteOptions options);
@@ -46,8 +47,10 @@ internal abstract class ContentPipelineContract
     ///     Every <see cref="ContentKind.Page"/>, in the order it was given.
     /// </returns>
     /// <exception cref="YamlException">
-    ///     A front matter block is not well-formed YAML, or declares a stylesheet or a script the scan did not
-    ///     locate.
+    ///     A front matter block is not well-formed YAML.
+    /// </exception>
+    /// <exception cref="BuildException">
+    ///     A front matter block declares a stylesheet or a script the scan did not locate.
     /// </exception>
     public abstract IReadOnlyList<ContentPage> Render(IReadOnlyList<ContentItem> items, CancellationToken cancellationToken);
 }

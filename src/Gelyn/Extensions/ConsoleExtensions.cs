@@ -1,4 +1,4 @@
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 
 using Spectre.Console;
 
@@ -36,9 +36,7 @@ internal static class ConsoleExtensions
         /// </summary>
         /// <remarks>
         ///     A <see cref="ConfigurationException"/> is written by its failures, because its message joins them
-        ///     on one line. An <see cref="AggregateException"/> is written by its contents, because its own
-        ///     message nests one "One or more errors occurred" per layer and names none of the failures
-        ///     underneath them.
+        ///     on one line.
         /// </remarks>
         /// <param name="exception">
         ///     The exception to report.
@@ -54,9 +52,8 @@ internal static class ConsoleExtensions
 
     #region Helpers
 
-    private static IEnumerable<string> CollectMessages(Exception exception) => exception switch
+    private static IReadOnlyList<string> CollectMessages(Exception exception) => exception switch
     {
-        AggregateException aggregate => aggregate.InnerExceptions.SelectMany(CollectMessages),
         ConfigurationException configuration => configuration.Failures,
         _ => [exception.Message],
     };

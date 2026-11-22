@@ -13,6 +13,7 @@ using System.Xml.Linq;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Diagnostics;
+using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
@@ -1353,7 +1354,7 @@ public partial class SiteBuilderTests
 
         // Act and Assert
         await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("and the generated feed both publish 'feed.xml'");
     }
 
@@ -1613,7 +1614,7 @@ public partial class SiteBuilderTests
 
         // Act and Assert
         await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("and the generated sitemap both publish 'sitemap.xml'");
     }
 
@@ -2046,7 +2047,7 @@ public partial class SiteBuilderTests
 
         // Act
         await Assert.That(async () => { await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None); })
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("is a link");
 
         // Assert

@@ -93,7 +93,7 @@ public class ProgramTests
     }
 
     /// <summary>
-    ///     Verifies that an I/O failure while writing fails the build, which the build command reports itself.
+    ///     Verifies that an I/O failure while writing fails the build, which no command catches on its own.
     /// </summary>
     [Test]
     public async Task Main_Test_OutputDirectoryThatIsAFile_ExitsWithAnError()

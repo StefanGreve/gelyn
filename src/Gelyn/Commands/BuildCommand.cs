@@ -3,7 +3,6 @@ using System.CommandLine;
 using Gelyn.Abstractions;
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
-using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -38,21 +37,13 @@ internal sealed class BuildCommand : Command
             SiteBuilderContract siteBuilder = session.Builder;
             SiteOptions site = session.Options;
 
-            try
-            {
-                BuildReport report = await siteBuilder
-                    .BuildAsync(site, cancellationToken)
-                    .ConfigureAwait(false);
+            BuildReport report = await siteBuilder
+                .BuildAsync(site, cancellationToken)
+                .ConfigureAwait(false);
 
-                WriteReport(session.StdOut, report);
+            WriteReport(session.StdOut, report);
 
-                return ExitCodes.Success;
-            }
-            catch (IOException exception) when (exception is not FileNotFoundException)
-            {
-                session.StdErr.WriteError(exception);
-                return ExitCodes.Error;
-            }
+            return ExitCodes.Success;
         });
     }
 

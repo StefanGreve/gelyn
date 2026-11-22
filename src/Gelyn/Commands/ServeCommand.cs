@@ -1,10 +1,8 @@
 using System.CommandLine;
-using System.Net;
 
 using Gelyn.Abstractions;
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
-using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
@@ -103,11 +101,6 @@ internal sealed class ServeCommand : Command
             {
                 // Ctrl+C is how this command is meant to end, so it is not a failure.
                 return ExitCodes.Success;
-            }
-            catch (Exception exception) when (exception is not FileNotFoundException and (IOException or HttpListenerException or PlatformNotSupportedException))
-            {
-                session.StdErr.WriteError(exception);
-                return ExitCodes.Error;
             }
         });
     }

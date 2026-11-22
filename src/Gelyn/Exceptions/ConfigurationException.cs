@@ -1,11 +1,12 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Exceptions;
 
 /// <summary>
-///     The exception that is thrown when the settings of a run are rejected.
+///     The exception that is thrown when the site is rejected before the build starts.
 /// </summary>
 /// <remarks>
-///     One instance carries every failure the load found, so that a run reports them all at once instead of
-///     stopping at the first.
+///     One instance carries every failure the settings load found, so that a run reports them all at once
+///     instead of stopping at the first. The scan throws it with one failure for a content directory without
+///     a landing page, which the documentation lists under the same exit code as a rejected setting.
 /// </remarks>
 internal sealed class ConfigurationException : Exception
 {
@@ -21,7 +22,7 @@ internal sealed class ConfigurationException : Exception
     ///     Initializes a new instance of the <see cref="ConfigurationException"/> class with one failure.
     /// </summary>
     /// <param name="message">
-    ///     The failure, a sentence that names the setting at fault.
+    ///     The failure, a sentence that names what is at fault.
     /// </param>
     public ConfigurationException(string message)
         : this([message])
@@ -33,7 +34,7 @@ internal sealed class ConfigurationException : Exception
     ///     cause.
     /// </summary>
     /// <param name="message">
-    ///     The failure, a sentence that names the setting at fault.
+    ///     The failure, a sentence that names what is at fault.
     /// </param>
     /// <param name="innerException">
     ///     The exception that caused the rejection.
@@ -47,7 +48,7 @@ internal sealed class ConfigurationException : Exception
     ///     Initializes a new instance of the <see cref="ConfigurationException"/> class.
     /// </summary>
     /// <param name="failures">
-    ///     The failures the load found, each a sentence that names the setting at fault.
+    ///     The failures, each a sentence that names what is at fault.
     /// </param>
     /// <param name="innerException">
     ///     The exception that caused the rejection, or <see langword="null"/> when a rule rejected a value.
@@ -59,7 +60,7 @@ internal sealed class ConfigurationException : Exception
     }
 
     /// <summary>
-    ///     The failures the load found, each a sentence that names the setting at fault.
+    ///     The failures, each a sentence that names what is at fault.
     /// </summary>
     public IReadOnlyList<string> Failures { get; }
 }

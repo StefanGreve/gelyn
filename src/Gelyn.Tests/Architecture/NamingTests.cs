@@ -28,6 +28,7 @@ public class NamingTests : ArchBase
     [Arguments(CommandsNamespace, "Command")]
     [Arguments(ComponentsNamespace, "Component")]
     [Arguments(ContextNamespace, "Context")]
+    [Arguments(ExceptionsNamespace, "Exception")]
     [Arguments(ExtensionsNamespace, "Extensions")]
     [Arguments(ValidatorsNamespace, "Validator")]
     public void Naming_Test_EveryTypeCarriesTheSuffixOfItsNamespace(string namespaceName, string suffix)

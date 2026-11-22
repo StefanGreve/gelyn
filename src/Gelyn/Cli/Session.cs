@@ -2,8 +2,8 @@ using System.CommandLine;
 using System.IO.Abstractions;
 
 using Gelyn.Abstractions;
-using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
+using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Model.Options;
 using Gelyn.Services;

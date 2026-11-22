@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
@@ -234,7 +235,7 @@ public class ContentPipelineTests
 
         // Act and Assert
         await Assert.That(() => fixture.Pipeline.Scan(fixture.Options))
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("both publish 'blog'");
     }
 
@@ -248,7 +249,7 @@ public class ContentPipelineTests
         ContentFixture fixture = ContentFixture.CreateEmpty().Write("about.md", "About");
 
         // Act and Assert
-        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+        await Assert.That(() => Scan(fixture)).Throws<ConfigurationException>();
     }
 
     /// <summary>
@@ -265,7 +266,7 @@ public class ContentPipelineTests
             .LinkFile("index.md", "home.md");
 
         // Act and Assert
-        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+        await Assert.That(() => Scan(fixture)).Throws<ConfigurationException>();
     }
 
     /// <summary>
@@ -279,7 +280,7 @@ public class ContentPipelineTests
         ContentFixture fixture = ContentFixture.Create().WithExcludePatterns("index.md");
 
         // Act and Assert
-        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+        await Assert.That(() => Scan(fixture)).Throws<ConfigurationException>();
     }
 
     /// <summary>
@@ -293,7 +294,7 @@ public class ContentPipelineTests
         fixture.Options.ContentDirectory = "missing";
 
         // Act and Assert
-        await Assert.That(() => Scan(fixture)).Throws<FileNotFoundException>();
+        await Assert.That(() => Scan(fixture)).Throws<ConfigurationException>();
     }
 
     /// <summary>
@@ -331,7 +332,7 @@ public class ContentPipelineTests
 
         // Act and Assert
         await Assert.That(() => Scan(fixture))
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("both publish 'about.html'");
     }
 
@@ -349,7 +350,7 @@ public class ContentPipelineTests
 
         // Act and Assert
         await Assert.That(() => Scan(fixture))
-            .ThrowsExactly<IOException>()
+            .ThrowsExactly<BuildException>()
             .WithMessageContaining("both publish 'a.html'");
     }
 
@@ -1240,7 +1241,7 @@ public class ContentPipelineTests
             .WriteFile("about.md", Declaring(line));
 
         // Act and Assert
-        await Assert.That(() => Render(fixture)).Throws<YamlException>();
+        await Assert.That(() => Render(fixture)).Throws<BuildException>();
     }
 
     /// <summary>
@@ -1258,7 +1259,7 @@ public class ContentPipelineTests
             .WithExcludePatterns("draft.css");
 
         // Act and Assert
-        await Assert.That(() => Render(fixture)).Throws<YamlException>();
+        await Assert.That(() => Render(fixture)).Throws<BuildException>();
     }
 
     /// <summary>

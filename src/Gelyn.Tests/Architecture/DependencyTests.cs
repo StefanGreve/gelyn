@@ -20,7 +20,8 @@ public class DependencyTests : ArchBase
     ///     The tool layers as commands over services over components over the model, each layer reaching
     ///     down and never up: a command drives a service, a service composes components, and a component
     ///     reads the model. The model carries data alone, so it depends on none of the three, and the
-    ///     abstractions sit beside it, each implemented by one service. The diagnostics sit beside the services,
+    ///     abstractions and the exceptions sit beside it, the former each implemented by one service. The
+    ///     diagnostics sit beside the services,
     ///     which time and report through them, out of reach of the rendering layers. The command line layer
     ///     parses the arguments and composes the services for the commands that open it, so it reaches down
     ///     to every other layer and stays independent of the commands. Each pair below names a layer and one
@@ -36,6 +37,11 @@ public class DependencyTests : ArchBase
     [Arguments(ModelNamespace, ComponentsNamespace)]
     [Arguments(ModelNamespace, DiagnosticsNamespace)]
     [Arguments(ModelNamespace, ServicesNamespace)]
+    [Arguments(ExceptionsNamespace, CliNamespace)]
+    [Arguments(ExceptionsNamespace, CommandsNamespace)]
+    [Arguments(ExceptionsNamespace, ComponentsNamespace)]
+    [Arguments(ExceptionsNamespace, DiagnosticsNamespace)]
+    [Arguments(ExceptionsNamespace, ServicesNamespace)]
     [Arguments(ComponentsNamespace, CliNamespace)]
     [Arguments(ComponentsNamespace, CommandsNamespace)]
     [Arguments(ComponentsNamespace, DiagnosticsNamespace)]

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Cli;
 using Gelyn.Commands;
-using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Tests.Fixtures;
