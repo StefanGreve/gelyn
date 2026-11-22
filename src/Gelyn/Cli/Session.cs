@@ -20,17 +20,11 @@ namespace Gelyn.Cli;
 ///     Represents one run of the tool with its content root, its settings, its consoles and the services the
 ///     command resolves.
 /// </summary>
-/// <remarks>
-///     A command action opens the session from its parse result, so <c>--help</c>, <c>--version</c>, a parse
-///     error and tab completion read no file and construct no service. The settings are loaded on the first
-///     read of <see cref="Options"/>, inside the action, so that <c>--info</c> can probe the file without
-///     loading it and a command meets a rejected setting where its exit code is mapped.
-/// </remarks>
 internal sealed class Session : IDisposable
 {
     private readonly LogLevel _verbosity;
     private readonly long _started;
-    private ILoggerFactory? _loggers;
+    private DiagnosticLog? _log;
     private SiteOptions? _options;
     private SiteBuilderContract? _builder;
     private FileServerContract? _server;
@@ -125,24 +119,22 @@ internal sealed class Session : IDisposable
         get
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-
             return this._options ??= this.Settings.Load();
         }
     }
 
     /// <summary>
-    ///     The factory the services take their loggers from, created on the first read.
+    ///     The log the services write their records to, created on the first read.
     /// </summary>
     /// <exception cref="ObjectDisposedException">
     ///     The session has been disposed.
     /// </exception>
-    public ILoggerFactory Loggers
+    public DiagnosticLog Log
     {
         get
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-
-            return this._loggers ??= this.CreateLoggers();
+            return this._log ??= this.CreateLog();
         }
     }
 
@@ -150,13 +142,18 @@ internal sealed class Session : IDisposable
     ///     The builder that writes the site, constructed on the first read.
     /// </summary>
     public SiteBuilderContract Builder =>
-        this._builder ??= new SiteBuilder(new ContentPipeline(this.ContentRoot, this.FileSystem), this.ContentRoot, this.FileSystem, this.Loggers.CreateLogger<SiteBuilder>());
+        this._builder ??= new SiteBuilder(
+            new ContentPipeline(this.ContentRoot, this.FileSystem),
+            this.ContentRoot,
+            this.FileSystem,
+            this.Log.CreateLogger<SiteBuilder>()
+        );
 
     /// <summary>
     ///     The server that answers requests for the written site, constructed on the first read.
     /// </summary>
     public FileServerContract Server =>
-        this._server ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Loggers.CreateLogger<FileServer>());
+        this._server ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Log.CreateLogger<FileServer>());
 
     /// <summary>
     ///     The watcher that rebuilds the site on a change, constructed on the first read.
@@ -175,7 +172,8 @@ internal sealed class Session : IDisposable
             this.StdErr,
             TimeProvider.System,
             this.FileSystem,
-            this.Loggers.CreateLogger<SiteWatcher>());
+            this.Log.CreateLogger<SiteWatcher>()
+        );
 
     /// <summary>
     ///     Creates the session of a parsed command line, with the configuration file resolved from
@@ -207,9 +205,22 @@ internal sealed class Session : IDisposable
         LogLevel level = parseResult.GetValue<LogLevel>(VerbosityOption.OptionName);
 
         var fileSystem = new RealFileSystem();
-        var settings = new SiteSettings(contentRoot, ConfigurationFile.Resolve(contentRoot, requested), optional: requested is null, parseResult, fileSystem);
+        var settings = new SiteSettings(
+            contentRoot,
+            ConfigurationFile.Resolve(contentRoot, requested),
+            optional: requested is null,
+            parseResult, fileSystem
+        );
 
-        return new Session(contentRoot, settings, fileSystem, stdOut, stdErr, level, started);
+        return new Session(
+            contentRoot,
+            settings,
+            fileSystem,
+            stdOut,
+            stdErr,
+            level,
+            started
+        );
     }
 
     /// <inheritdoc/>
@@ -221,27 +232,33 @@ internal sealed class Session : IDisposable
 
     #region Helpers
 
-    // Private rather than protected virtual, since the class is sealed, and never called with false, since
-    // nothing here needs a finalizer.
     private void Dispose(bool disposing)
     {
         if (this._disposed) return;
 
-        if (disposing) this._loggers?.Dispose();
+        if (disposing) this._log?.Dispose();
 
         this._disposed = true;
     }
 
     // The startup record is written here, where the first service asks for a logger, so a run that reads no
     // service writes nothing.
-    private ILoggerFactory CreateLoggers()
+    private DiagnosticLog CreateLog()
     {
-        ILoggerFactory loggers = LoggerFactory.Create(logging => logging.ConfigureDiagnostics(this._verbosity));
+        var log = new DiagnosticLog(
+            this._verbosity,
+            this.StdErr.Profile.Out.Writer,
+            SupportsColor(this.StdErr),
+            TimeProvider.System
+        );
 
-        loggers.CreateLogger<Session>().LogStartupCompleted(this._started.ElapsedMilliseconds);
-
-        return loggers;
+        log.CreateLogger<Session>().LogStartupCompleted(this._started.ElapsedMilliseconds);
+        return log;
     }
+
+    // Spectre has already detected the terminal, NO_COLOR and a legacy console for the error stream.
+    private static bool SupportsColor(IAnsiConsole console) =>
+        console.Profile.Capabilities.Ansi && console.Profile.Capabilities.ColorSystem != ColorSystem.NoColors;
 
     #endregion
 }

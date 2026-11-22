@@ -5,9 +5,6 @@ using System.Threading.Tasks;
 
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
-using Gelyn.Model.Options;
-
-using Microsoft.Extensions.Options;
 
 namespace Gelyn.Tests.Cli;
 
@@ -58,7 +55,6 @@ public class ExitCodesTests
     public static IEnumerable<Func<Exception>> ConfigurationFailures()
     {
         yield return () => new ConfigurationException(["Title must not be empty.", "BaseUrl must be an absolute http or https URL."]);
-        yield return () => new OptionsValidationException(Microsoft.Extensions.Options.Options.DefaultName, typeof(SiteOptions), ["BaseUrl must be an absolute http or https URL."]);
         yield return () => new FileNotFoundException("The configuration file 'nope.json' was not found and is not optional.");
         yield return () => new FileNotFoundException("No landing page found at 'content/index.md'.");
         yield return () => new InvalidDataException("Failed to load configuration from file 'gelyn.json'.");

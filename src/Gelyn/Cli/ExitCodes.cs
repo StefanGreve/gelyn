@@ -1,7 +1,5 @@
 using Gelyn.Core.Internals;
 
-using Microsoft.Extensions.Options;
-
 namespace Gelyn.Cli;
 
 /// <summary>
@@ -33,11 +31,6 @@ internal static class ExitCodes
     /// <summary>
     ///     Maps an exception that escaped a command to its exit code.
     /// </summary>
-    /// <remarks>
-    ///     The configuration binder wraps a value it cannot convert in an
-    ///     <see cref="InvalidOperationException"/>. Only an inner <see cref="FormatException"/> marks that
-    ///     exception as a configuration error instead of a bug.
-    /// </remarks>
     /// <param name="exception">
     ///     The exception the command failed with.
     /// </param>
@@ -47,7 +40,9 @@ internal static class ExitCodes
     internal static int For(Exception exception) =>
         exception switch
         {
-            ConfigurationException or OptionsValidationException or FileNotFoundException or InvalidDataException => ConfigurationError,
+            ConfigurationException or FileNotFoundException or InvalidDataException => ConfigurationError,
+            // The configuration binder wraps a value it cannot convert in an InvalidOperationException.
+            // Only an inner FormatException marks that exception as a configuration error instead of a bug.
             InvalidOperationException { InnerException: FormatException } => ConfigurationError,
             _ => Error,
         };

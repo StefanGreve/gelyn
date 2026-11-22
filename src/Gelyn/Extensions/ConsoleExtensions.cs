@@ -1,7 +1,5 @@
 using Gelyn.Core.Internals;
 
-using Microsoft.Extensions.Options;
-
 using Spectre.Console;
 
 namespace Gelyn.Extensions;
@@ -37,10 +35,10 @@ internal static class ConsoleExtensions
         ///     Writes one <c>error:</c> line for each failure an exception carries.
         /// </summary>
         /// <remarks>
-        ///     A <see cref="ConfigurationException"/> and an <see cref="OptionsValidationException"/> are written
-        ///     by their failures, because their messages join them on one line. An <see cref="AggregateException"/>
-        ///     is written by its contents, because its own message nests one "One or more errors occurred" per
-        ///     layer and names none of the failures underneath them.
+        ///     A <see cref="ConfigurationException"/> is written by its failures, because its message joins them
+        ///     on one line. An <see cref="AggregateException"/> is written by its contents, because its own
+        ///     message nests one "One or more errors occurred" per layer and names none of the failures
+        ///     underneath them.
         /// </remarks>
         /// <param name="exception">
         ///     The exception to report.
@@ -60,7 +58,6 @@ internal static class ConsoleExtensions
     {
         AggregateException aggregate => aggregate.InnerExceptions.SelectMany(CollectMessages),
         ConfigurationException configuration => configuration.Failures,
-        OptionsValidationException validation => validation.Failures,
         _ => [exception.Message],
     };
 

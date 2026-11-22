@@ -13,6 +13,8 @@ using Gelyn.Tests.Fixtures;
 
 using Microsoft.Extensions.Logging;
 
+using Spectre.Console;
+
 namespace Gelyn.Tests.Cli;
 
 /// <summary>
@@ -107,14 +109,14 @@ public class SessionTests
     [Test]
     [Arguments(new[] { "build", "--verbosity", "Debug" }, true)]
     [Arguments(new[] { "build" }, false)]
-    public async Task Loggers_Test_Verbosity_SetsTheMinimumLevel(string[] args, bool debug)
+    public async Task Log_Test_Verbosity_SetsTheMinimumLevel(string[] args, bool debug)
     {
         // Arrange
         using var fixture = DiskFixture.Create();
 
         // Act
         using Session session = Open(fixture.Root, Parse(args));
-        ILogger logger = session.Loggers.CreateLogger<SessionTests>();
+        ILogger logger = session.Log.CreateLogger<SessionTests>();
 
         // Assert
         using (Assert.Multiple())
@@ -122,6 +124,48 @@ public class SessionTests
             await Assert.That(logger.IsEnabled(LogLevel.Debug)).IsEqualTo(debug);
             await Assert.That(logger.IsEnabled(LogLevel.Warning)).IsTrue();
         }
+    }
+
+    /// <summary>
+    ///     Verifies that the startup record reaches the error console when the first service asks for a logger,
+    ///     in the documented line format.
+    /// </summary>
+    [Test]
+    public async Task Log_Test_FirstRead_WritesTheStartupRecord()
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        using var stdErr = new StringWriter();
+
+        // Act
+        using (Session session = Open(fixture.Root, Parse("build", "--verbosity", "Debug"), CapturedConsole.Create(stdErr)))
+            _ = session.Log;
+
+        // Assert
+        await Assert.That(stdErr.ToString()).Matches(@"^\d\d:\d\d:\d\d\.\d{3} dbug: Gelyn\.Cli\.Session\[1006\] Started in [\d.]+ ms\r?\n$");
+    }
+
+    /// <summary>
+    ///     Verifies that the level of a record is colored on a console that renders ANSI colors and plain on one
+    ///     that does not, which is what a redirected error stream is.
+    /// </summary>
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
+    public async Task Log_Test_Colors_FollowTheErrorConsole(bool colors)
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        using var stdErr = new StringWriter();
+
+        IAnsiConsole console = colors ? CreateColorConsole(stdErr) : CapturedConsole.Create(stdErr);
+
+        // Act
+        using (Session session = Open(fixture.Root, Parse("build", "--verbosity", "Debug"), console))
+            _ = session.Log;
+
+        // Assert
+        await Assert.That(stdErr.ToString().Contains('\e', StringComparison.Ordinal)).IsEqualTo(colors);
     }
 
     /// <summary>
@@ -157,7 +201,7 @@ public class SessionTests
         using (Assert.Multiple())
         {
             await Assert.That(() => _ = session.Options).Throws<ObjectDisposedException>();
-            await Assert.That(() => _ = session.Loggers).Throws<ObjectDisposedException>();
+            await Assert.That(() => _ = session.Log).Throws<ObjectDisposedException>();
         }
     }
 
@@ -168,8 +212,16 @@ public class SessionTests
     private static ParseResult Parse(params string[] args) =>
         GelynCommand.Create(static _ => throw new InvalidOperationException("The tree is parsed here and never invoked.")).Parse(args);
 
-    private static Session Open(string contentRoot, ParseResult parsed) =>
-        Session.Open(parsed, contentRoot, CapturedConsole.Create(TextWriter.Null), CapturedConsole.Create(TextWriter.Null), Stopwatch.GetTimestamp());
+    private static Session Open(string contentRoot, ParseResult parsed, IAnsiConsole? stdErr = null) =>
+        Session.Open(parsed, contentRoot, CapturedConsole.Create(TextWriter.Null), stdErr ?? CapturedConsole.Create(TextWriter.Null), Stopwatch.GetTimestamp());
+
+    private static IAnsiConsole CreateColorConsole(TextWriter writer) => AnsiConsole.Create(new AnsiConsoleSettings
+    {
+        Ansi = AnsiSupport.Yes,
+        ColorSystem = ColorSystemSupport.Standard,
+        Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
+        Out = new AnsiConsoleOutput(writer),
+    });
 
     #endregion
 }

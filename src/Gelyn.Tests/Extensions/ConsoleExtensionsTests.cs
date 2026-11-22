@@ -4,10 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 using Gelyn.Tests.Fixtures;
-
-using Microsoft.Extensions.Options;
 
 using Spectre.Console;
 
@@ -45,15 +44,15 @@ public class ConsoleExtensionsTests
     #region Error Tests
 
     /// <summary>
-    ///     Verifies that each validation failure is written on a line of its own.
+    ///     Verifies that each failure of a rejected configuration is written on a line of its own.
     /// </summary>
     [Test]
-    public async Task WriteError_Test_ValidationFailures_AreWrittenOnePerLine()
+    public async Task WriteError_Test_ConfigurationFailures_AreWrittenOnePerLine()
     {
         // Arrange
         using var writer = new StringWriter(CultureInfo.InvariantCulture);
         IAnsiConsole console = CapturedConsole.Create(writer);
-        var exception = new OptionsValidationException(Microsoft.Extensions.Options.Options.DefaultName, typeof(object), ["First failed.", "Second failed."]);
+        var exception = new ConfigurationException(["First failed.", "Second failed."]);
 
         // Act
         console.WriteError(exception);
@@ -63,7 +62,7 @@ public class ConsoleExtensionsTests
     }
 
     /// <summary>
-    ///     Verifies that nested aggregates are written by the failures they hold, a validation failure among
+    ///     Verifies that nested aggregates are written by the failures they hold, a rejected configuration among
     ///     them split as well.
     /// </summary>
     [Test]
@@ -72,8 +71,8 @@ public class ConsoleExtensionsTests
         // Arrange
         using var writer = new StringWriter(CultureInfo.InvariantCulture);
         IAnsiConsole console = CapturedConsole.Create(writer);
-        var validation = new OptionsValidationException(Microsoft.Extensions.Options.Options.DefaultName, typeof(object), ["First failed.", "Second failed."]);
-        var exception = new AggregateException(new AggregateException(validation), new IOException("Third failed."));
+        var configuration = new ConfigurationException(["First failed.", "Second failed."]);
+        var exception = new AggregateException(new AggregateException(configuration), new IOException("Third failed."));
 
         // Act
         console.WriteError(exception);
