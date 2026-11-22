@@ -13,8 +13,6 @@ using Microsoft.Extensions.Logging;
 
 using SharpYaml;
 
-using Spectre.Console;
-
 namespace Gelyn.Services;
 
 /// <summary>
@@ -59,8 +57,8 @@ internal sealed class SiteWatcher
     private readonly string _configurationFile;
     private SiteOptions _options;
     private readonly IFileSystem _fileSystem;
-    private readonly IAnsiConsole _stdOut;
-    private readonly IAnsiConsole _stdErr;
+    private readonly ConsoleStream _stdOut;
+    private readonly ConsoleStream _stdErr;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<SiteWatcher> _logger;
 
@@ -103,8 +101,8 @@ internal sealed class SiteWatcher
         Func<SiteOptions> reload,
         string contentRoot,
         string configurationFile,
-        IAnsiConsole stdOut,
-        IAnsiConsole stdErr,
+        ConsoleStream stdOut,
+        ConsoleStream stdErr,
         TimeProvider timeProvider,
         IFileSystem fileSystem,
         ILogger<SiteWatcher> logger)
@@ -263,7 +261,7 @@ internal sealed class SiteWatcher
 
             if (this.Moved(contentDirectory, outputDirectory, basePath, options) is string moved)
             {
-                this._stdErr.MarkupLineInterpolated($"[yellow]warning:[/] {moved} changed. Restart [bold]gelyn serve[/] to pick that up.");
+                this._stdErr.WriteLine($"{this._stdErr.Paint("warning:", AnsiCodes.BrightYellow)} {moved} changed. Restart {this._stdErr.Paint("gelyn serve", AnsiCodes.Bold)} to pick that up.");
                 continue;
             }
 
@@ -457,7 +455,7 @@ internal sealed class SiteWatcher
             ? $"{Path.GetRelativePath(this._contentRoot, trigger)} changed"
             : string.Create(Tool.Culture, $"{changeCount} entries changed");
 
-        this._stdOut.MarkupLineInterpolated($"[green]rebuilt[/] {fileCount} file(s) in {elapsed} ms after {cause}.");
+        this._stdOut.WriteLine($"{this._stdOut.Paint("rebuilt", AnsiCodes.DarkGreen)} {fileCount} file(s) in {elapsed} ms after {cause}.");
     }
 
     #endregion

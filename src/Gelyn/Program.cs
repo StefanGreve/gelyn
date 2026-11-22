@@ -6,8 +6,6 @@ using Gelyn.Commands;
 using Gelyn.Core.Internals;
 using Gelyn.Extensions;
 
-using Spectre.Console;
-
 namespace Gelyn;
 
 /// <summary>
@@ -29,14 +27,8 @@ internal static class Program
     {
         long started = Stopwatch.GetTimestamp();
 
-        IAnsiConsole stdOut = AnsiConsole.Console;
-        IAnsiConsole stdErr = AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Out = new AnsiConsoleOutput(System.Console.Error),
-        });
-
-        stdOut.DisableWrappingWhenRedirected();
-        stdErr.DisableWrappingWhenRedirected();
+        ConsoleStream stdOut = ConsoleStream.StandardOutput;
+        ConsoleStream stdErr = ConsoleStream.StandardError;
 
         try
         {

@@ -9,8 +9,6 @@ using Gelyn.Model;
 
 using Microsoft.Extensions.Logging;
 
-using Spectre.Console;
-
 namespace Gelyn.Services;
 
 /// <summary>
@@ -44,8 +42,8 @@ internal sealed class FileServer
 
     private readonly StaticFileResolver _resolver;
     private readonly IFileSystem _fileSystem;
-    private readonly IAnsiConsole _stdOut;
-    private readonly IAnsiConsole _stdErr;
+    private readonly ConsoleStream _stdOut;
+    private readonly ConsoleStream _stdErr;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<FileServer> _logger;
 
@@ -73,8 +71,8 @@ internal sealed class FileServer
     public FileServer(
         StaticFileResolver resolver,
         IFileSystem fileSystem,
-        IAnsiConsole stdOut,
-        IAnsiConsole stdErr,
+        ConsoleStream stdOut,
+        ConsoleStream stdErr,
         TimeProvider timeProvider,
         ILogger<FileServer> logger)
     {
@@ -196,7 +194,7 @@ internal sealed class FileServer
         this._logger.LogServerStarted(outputDirectory, address);
 
         if (launchBrowser && !Browser.TryLaunch(address, out string? errorMessage))
-            this._stdErr.MarkupLineInterpolated($"[yellow]warning:[/] no browser was opened: {errorMessage}");
+            this._stdErr.WriteLine($"{this._stdErr.Paint("warning:", AnsiCodes.BrightYellow)} no browser was opened: {errorMessage}");
 
         // GetContextAsync accepts no token, so tearing the listener down is what unblocks a pending accept.
         using CancellationTokenRegistration registration = cancellationToken.Register(listener.Stop);
@@ -388,9 +386,8 @@ internal sealed class FileServer
         }
     }
 
-    // Bypasses the console, which would wrap the line and read a bracket in a request path as markup.
     private void Write(string line) =>
-        this._stdOut.Profile.Out.Writer.WriteLine(line);
+        this._stdOut.WriteLine(line);
 
     // Matched on a segment boundary, so that a base path of /docs leaves /docs-old to the not-found page.
     private static bool TryStripBasePath(string path, string basePath, [NotNullWhen(true)] out string? relative)

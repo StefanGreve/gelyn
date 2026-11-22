@@ -6,14 +6,13 @@ using System.Threading.Tasks;
 
 using Gelyn.Cli;
 using Gelyn.Commands;
+using Gelyn.Core.Internals;
 using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Tests.Fixtures;
 
 using Microsoft.Extensions.Logging;
-
-using Spectre.Console;
 
 namespace Gelyn.Tests.Cli;
 
@@ -152,20 +151,20 @@ public class SessionTests
     [Test]
     [Arguments(true)]
     [Arguments(false)]
-    public async Task Log_Test_Colors_FollowTheErrorConsole(bool colors)
+    public async Task Log_Test_Colors_FollowTheErrorConsole(bool useColors)
     {
         // Arrange
         using var fixture = DiskFixture.Create();
         using var stdErr = new StringWriter();
 
-        IAnsiConsole console = colors ? CreateColorConsole(stdErr) : CapturedConsole.Create(stdErr);
+        var console = new ConsoleStream(stdErr, isTerminal: useColors, useColors);
 
         // Act
         using (Session session = Open(fixture.Root, Parse("build", "--verbosity", "Debug"), console))
             _ = session.Log;
 
         // Assert
-        await Assert.That(stdErr.ToString().Contains('\e', StringComparison.Ordinal)).IsEqualTo(colors);
+        await Assert.That(stdErr.ToString().Contains('\e', StringComparison.Ordinal)).IsEqualTo(useColors);
     }
 
     /// <summary>
@@ -212,16 +211,8 @@ public class SessionTests
     private static ParseResult Parse(params string[] args) =>
         GelynCommand.Create(static _ => throw new InvalidOperationException("The tree is parsed here and never invoked.")).Parse(args);
 
-    private static Session Open(string contentRoot, ParseResult parsed, IAnsiConsole? stdErr = null) =>
+    private static Session Open(string contentRoot, ParseResult parsed, ConsoleStream? stdErr = null) =>
         Session.Open(parsed, contentRoot, CapturedConsole.Create(TextWriter.Null), stdErr ?? CapturedConsole.Create(TextWriter.Null), Stopwatch.GetTimestamp());
-
-    private static IAnsiConsole CreateColorConsole(TextWriter writer) => AnsiConsole.Create(new AnsiConsoleSettings
-    {
-        Ansi = AnsiSupport.Yes,
-        ColorSystem = ColorSystemSupport.Standard,
-        Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
-        Out = new AnsiConsoleOutput(writer),
-    });
 
     #endregion
 }

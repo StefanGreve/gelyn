@@ -30,8 +30,6 @@ public class ThirdPartyNoticesTests
         ("Markdig", "Markdig"),
         ("Microsoft.Extensions.*", ".NET Runtime and the Microsoft.Extensions libraries"),
         ("SharpYaml", "SharpYaml"),
-        ("Spectre.Console", "Spectre.Console"),
-        ("Spectre.Console.Ansi", "Spectre.Console"),
         ("System.CommandLine", "System.CommandLine"),
         ("Testably.Abstractions*", "Testably.Abstractions"),
     ];

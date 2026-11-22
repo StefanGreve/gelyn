@@ -1,36 +1,21 @@
+using Gelyn.Core.Internals;
 using Gelyn.Exceptions;
-
-using Spectre.Console;
 
 namespace Gelyn.Extensions;
 
 /// <summary>
-///     Provides extension methods for <see cref="IAnsiConsole"/>.
+///     Provides extension methods for <see cref="ConsoleStream"/>.
 /// </summary>
 internal static class ConsoleExtensions
 {
     /// <summary>
-    ///     Defines extensions for the console that is written to.
+    ///     Defines extensions for the stream that is written to.
     /// </summary>
     /// <param name="console">
-    ///     The console, used as the receiver.
+    ///     The stream, used as the receiver.
     /// </param>
-    extension(IAnsiConsole console)
+    extension(ConsoleStream console)
     {
-        /// <summary>
-        ///     Stops the console from wrapping lines when its output is not a terminal.
-        /// </summary>
-        /// <remarks>
-        ///     Spectre.Console assumes 80 columns for an output that is not a terminal, which splits long paths
-        ///     in a file or a CI log. Left-aligned text renders without padding, so the unbounded width costs
-        ///     nothing, but a widget that fills the width, such as a rule or a centered paragraph, would allocate
-        ///     it.
-        /// </remarks>
-        public void DisableWrappingWhenRedirected()
-        {
-            if (!console.Profile.Out.IsTerminal) console.Profile.Width = int.MaxValue;
-        }
-
         /// <summary>
         ///     Writes one <c>error:</c> line for each failure an exception carries.
         /// </summary>
@@ -46,7 +31,7 @@ internal static class ConsoleExtensions
             ArgumentNullException.ThrowIfNull(exception);
 
             foreach (string message in CollectMessages(exception))
-                console.MarkupLineInterpolated($"[red]error:[/] {message}");
+                console.WriteLine($"{console.Paint("error:", AnsiCodes.BrightRed)} {message}");
         }
     }
 

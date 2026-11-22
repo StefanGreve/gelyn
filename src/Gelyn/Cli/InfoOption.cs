@@ -2,12 +2,11 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO.Abstractions;
 using System.Runtime.InteropServices;
+using System.Text;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
-
-using Spectre.Console;
 
 namespace Gelyn.Cli;
 
@@ -30,10 +29,10 @@ internal sealed class InfoOption : Option<bool>
 
     private const string Undefined = "(undefined)";
 
-    private static readonly Style HeadingStyle = new(foreground: Color.Teal);
-    private static readonly Style ValueStyle = new(decoration: Decoration.Dim);
-    private static readonly Style UndefinedStyle = new(foreground: Color.Yellow);
-    private static readonly Style FailureStyle = new(foreground: Color.Red);
+    private const string HeadingCodes = AnsiCodes.DarkCyan;
+    private const string ValueCodes = AnsiCodes.Dim;
+    private const string UndefinedCodes = AnsiCodes.BrightYellow;
+    private const string FailureCodes = AnsiCodes.BrightRed;
 
     // The os-release specification makes the second file the fallback for the first.
     private static readonly string[] OsReleasePaths = ["/etc/os-release", "/usr/lib/os-release"];
@@ -58,15 +57,11 @@ internal sealed class InfoOption : Option<bool>
 
     #region Helpers
 
-    // Only a terminal gets color, so a redirected report stays plain text, and NO_COLOR clears the color system.
-    private static bool UsesColor(IAnsiConsole stdOut) =>
-        stdOut.Profile is { Out.IsTerminal: true, Capabilities: { Ansi: true, ColorSystem: not ColorSystem.NoColors } };
-
     private static string Report(Session session)
     {
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         (string osName, string osVersion, string osPlatform) = HostOperatingSystem(session.FileSystem);
-        (string appSettings, Style appSettingsStyle) = AppSettings(session.Settings.Probe(), home);
+        (string appSettings, string appSettingsCodes) = AppSettings(session.Settings.Probe(), home);
 
         Entry[] entries =
         [
@@ -82,34 +77,25 @@ internal sealed class InfoOption : Option<bool>
             new("Runtime Environment", "SDK", Tool.SdkVersion ?? Unknown),
             new("Configuration", "Bundled Themes", string.Join(", ", ThemeCatalog.Names)),
             new("Configuration", "Content root", ShortenPath(session.ContentRoot, home)),
-            new("Configuration", "AppSettings", appSettings, appSettingsStyle),
+            new("Configuration", "AppSettings", appSettings, appSettingsCodes),
         ];
 
         string? group = null;
         int width = entries.Max(static entry => entry.Label.Length) + 2;
-        using var report = new StringWriter(Tool.Culture);
-
-        // Standard emits the 16-color codes, which every ANSI terminal maps to its scheme.
-        var writer = new AnsiWriter(
-            report,
-            new AnsiCapabilities
-            {
-                Ansi = UsesColor(session.StdOut),
-                ColorSystem = ColorSystem.Standard
-            }
-        );
+        ConsoleStream stdOut = session.StdOut;
+        var report = new StringBuilder();
 
         foreach (Entry entry in entries)
         {
             if (entry.Group != group)
             {
-                if (group is not null) writer.WriteLine();
+                if (group is not null) report.AppendLine();
 
-                writer.Write($"[{entry.Group}]", HeadingStyle, null).WriteLine();
+                report.AppendLine(stdOut.Paint($"[{entry.Group}]", HeadingCodes));
                 group = entry.Group;
             }
 
-            writer.Write("  ").Write((entry.Label + ":").PadRight(width)).Write(entry.Value, entry.Style ?? ValueStyle, null).WriteLine();
+            report.Append("  ").Append((entry.Label + ":").PadRight(width)).AppendLine(stdOut.Paint(entry.Value, entry.Codes ?? ValueCodes));
         }
 
         return report.ToString();
@@ -146,16 +132,16 @@ internal sealed class InfoOption : Option<bool>
     }
 
     // Read from a probe of the run's own settings, so the line names the file the run applies and cannot disagree with it.
-    private static (string Value, Style Style) AppSettings(ConfigurationFileStatus file, string home)
+    private static (string Value, string Codes) AppSettings(ConfigurationFileStatus file, string home)
     {
         string path = ShortenPath(file.Path, home);
 
         return file switch
         {
-            { Exists: false, Optional: false } => ($"{path} (not found)", FailureStyle),
-            { Failure: Exception failure } => ($"{path} (not readable: {ShortenPaths(failure.GetBaseException().Message, home)})", FailureStyle),
-            { Exists: true } => (path, ValueStyle),
-            _ => (Undefined, UndefinedStyle),
+            { Exists: false, Optional: false } => ($"{path} (not found)", FailureCodes),
+            { Failure: Exception failure } => ($"{path} (not readable: {ShortenPaths(failure.GetBaseException().Message, home)})", FailureCodes),
+            { Exists: true } => (path, ValueCodes),
+            _ => (Undefined, UndefinedCodes),
         };
     }
 
@@ -174,7 +160,7 @@ internal sealed class InfoOption : Option<bool>
 
     #endregion
 
-    private readonly record struct Entry(string Group, string Label, string Value, Style? Style = null);
+    private readonly record struct Entry(string Group, string Label, string Value, string? Codes = null);
 
     private sealed class InfoAction(Func<ParseResult, Session> open) : SynchronousCommandLineAction
     {

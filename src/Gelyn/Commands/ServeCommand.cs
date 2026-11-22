@@ -6,8 +6,6 @@ using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
 
-using Spectre.Console;
-
 namespace Gelyn.Commands;
 
 /// <summary>
@@ -75,8 +73,7 @@ internal sealed class ServeCommand : Command
 
                 string outputDirectory = session.FileSystem.Path.Combine(session.ContentRoot, site.OutputDirectory);
 
-                string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-                session.StdOut.MarkupLineInterpolated($"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+                session.StdOut.WriteLine(BuildCommand.ComposeSummary(session.StdOut, report));
 
                 using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 

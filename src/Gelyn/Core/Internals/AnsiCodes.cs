@@ -11,6 +11,11 @@ internal static class AnsiCodes
     internal const string Bold = "\e[1m";
 
     /// <summary>
+    ///     Switches on faint, which a terminal renders as a dimmer foreground.
+    /// </summary>
+    internal const string Dim = "\e[2m";
+
+    /// <summary>
     ///     Sets the foreground to black.
     /// </summary>
     internal const string Black = "\e[30m";
@@ -26,9 +31,14 @@ internal static class AnsiCodes
     internal const string DarkGreen = "\e[32m";
 
     /// <summary>
-    ///     Sets the foreground to yellow.
+    ///     Sets the foreground to dark yellow.
     /// </summary>
-    internal const string Yellow = "\e[33m";
+    internal const string DarkYellow = "\e[33m";
+
+    /// <summary>
+    ///     Sets the foreground to dark cyan.
+    /// </summary>
+    internal const string DarkCyan = "\e[36m";
 
     /// <summary>
     ///     Sets the foreground to gray.
@@ -44,6 +54,16 @@ internal static class AnsiCodes
     ///     Sets the background to dark red.
     /// </summary>
     internal const string DarkRedBackground = "\e[41m";
+
+    /// <summary>
+    ///     Sets the foreground to bright red.
+    /// </summary>
+    internal const string BrightRed = "\e[91m";
+
+    /// <summary>
+    ///     Sets the foreground to bright yellow.
+    /// </summary>
+    internal const string BrightYellow = "\e[93m";
 
     /// <summary>
     ///     Restores the default foreground, weight and background.

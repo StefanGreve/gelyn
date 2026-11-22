@@ -1,12 +1,11 @@
 using System.CommandLine;
+using System.Text;
 
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;
-
-using Spectre.Console;
 
 namespace Gelyn.Commands;
 
@@ -15,10 +14,6 @@ namespace Gelyn.Commands;
 /// </summary>
 internal sealed class BuildCommand : Command
 {
-    private static readonly Style CreatedStyle = new(foreground: Color.Green);
-    private static readonly Style RemovedStyle = new(foreground: Color.Yellow);
-    private static readonly Style FigureStyle = new(decoration: Decoration.Bold);
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="BuildCommand"/> class.
     /// </summary>
@@ -50,105 +45,66 @@ internal sealed class BuildCommand : Command
     #region Helpers
 
     /// <summary>
-    ///     Writes the report of a build to the console in a single write.
+    ///     Writes the report of a build to the stream in a single write.
     /// </summary>
-    /// <remarks>
-    ///     A terminal without escape sequences colors its text through the console API between writes, so it
-    ///     receives the report line by line instead.
-    /// </remarks>
     /// <param name="console">
-    ///     The console to write to.
+    ///     The stream to write to.
     /// </param>
     /// <param name="report">
     ///     The report of the build.
     /// </param>
-    internal static void WriteReport(IAnsiConsole console, BuildReport report)
-    {
-        Profile profile = console.Profile;
-
-        if (profile.Out.IsTerminal && !profile.Capabilities.Ansi)
-        {
-            PrintReport(console, report);
-            return;
-        }
-
-        var capabilities = new AnsiCapabilities
-        {
-            Ansi = profile.Capabilities.Ansi,
-            ColorSystem = profile.Capabilities.ColorSystem
-        };
-
-        profile.Out.Writer.Write(ComposeReport(report, capabilities));
-    }
+    internal static void WriteReport(ConsoleStream console, BuildReport report) =>
+        console.Writer.Write(ComposeReport(console, report));
 
     /// <summary>
-    ///     Composes the report of a build as text, with the escape sequences the capabilities allow.
+    ///     Composes the report of a build as text, colored when the stream colors.
     /// </summary>
-    /// <remarks>
-    ///     Paths are written as given, without markup, emoji or line wrapping.
-    /// </remarks>
+    /// <param name="console">
+    ///     The stream the text is meant for.
+    /// </param>
     /// <param name="report">
     ///     The report of the build.
-    /// </param>
-    /// <param name="capabilities">
-    ///     The capabilities of the output the text is meant for.
     /// </param>
     /// <returns>
     ///     One line per file, followed by the summary line.
     /// </returns>
-    internal static string ComposeReport(BuildReport report, AnsiCapabilities capabilities)
+    internal static string ComposeReport(ConsoleStream console, BuildReport report)
     {
-        using var text = new StringWriter(Tool.Culture);
-        var writer = new AnsiWriter(text, capabilities);
+        var text = new StringBuilder();
 
         foreach (string page in report.Pages)
-            writer.Write("created", CreatedStyle, null).Write(" ").WriteLine(page);
+            text.Append(console.Paint("created", AnsiCodes.DarkGreen)).Append(' ').AppendLine(page);
 
         foreach (string file in report.Generated)
-            writer.Write("created", CreatedStyle, null).Write(" ").WriteLine(file);
+            text.Append(console.Paint("created", AnsiCodes.DarkGreen)).Append(' ').AppendLine(file);
 
         foreach (string copy in report.Copies)
-            writer.Write("copied", CreatedStyle, null).Write(" ").WriteLine(copy);
+            text.Append(console.Paint("copied", AnsiCodes.DarkGreen)).Append(' ').AppendLine(copy);
 
         foreach (string removal in report.Removed)
-            writer.Write("removed", RemovedStyle, null).Write(" ").WriteLine(removal);
+            text.Append(console.Paint("removed", AnsiCodes.BrightYellow)).Append(' ').AppendLine(removal);
 
-        string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-
-        writer.Write("Processed ")
-            .Write(report.FileCount.ToString(Tool.Culture), FigureStyle, null)
-            .Write(" file(s) in ")
-            .Write(elapsed, FigureStyle, null)
-            .WriteLine(" ms.");
-
-        return text.ToString();
+        return text.AppendLine(ComposeSummary(console, report)).ToString();
     }
 
     /// <summary>
-    ///     Renders the report of a build through the console, one markup line per file.
+    ///     Composes the summary line of a build, with the figures in bold when the stream colors.
     /// </summary>
     /// <param name="console">
-    ///     The console to render to.
+    ///     The stream the text is meant for.
     /// </param>
     /// <param name="report">
     ///     The report of the build.
     /// </param>
-    internal static void PrintReport(IAnsiConsole console, BuildReport report)
+    /// <returns>
+    ///     The line, without its line break.
+    /// </returns>
+    internal static string ComposeSummary(ConsoleStream console, BuildReport report)
     {
-        foreach (string page in report.Pages)
-            console.MarkupLineInterpolated($"[green]created[/] {page}");
+        string count = console.Paint(report.FileCount.ToString(Tool.Culture), AnsiCodes.Bold);
+        string elapsed = console.Paint(report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture), AnsiCodes.Bold);
 
-        foreach (string file in report.Generated)
-            console.MarkupLineInterpolated($"[green]created[/] {file}");
-
-        foreach (string copy in report.Copies)
-            console.MarkupLineInterpolated($"[green]copied[/] {copy}");
-
-        foreach (string removal in report.Removed)
-            console.MarkupLineInterpolated($"[yellow]removed[/] {removal}");
-
-        string elapsed = report.Elapsed.TotalMilliseconds.ToString("F2", Tool.Culture);
-        console.MarkupLineInterpolated(Tool.Culture, $"Processed [bold]{report.FileCount}[/] file(s) in [bold]{elapsed}[/] ms.");
+        return $"Processed {count} file(s) in {elapsed} ms.";
     }
 
     #endregion

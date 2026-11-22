@@ -1,9 +1,8 @@
 using System.CommandLine;
 
 using Gelyn.Cli;
+using Gelyn.Core.Internals;
 using Gelyn.Model.Options;
-
-using Spectre.Console;
 
 namespace Gelyn.Commands;
 
@@ -32,13 +31,13 @@ internal sealed class CleanCommand : Command
 
             if (!session.FileSystem.Directory.Exists(directory))
             {
-                session.StdOut.MarkupLineInterpolated($"Nothing to remove at {directory}.");
+                session.StdOut.WriteLine($"Nothing to remove at {directory}.");
 
                 return ExitCodes.Success;
             }
 
             session.FileSystem.Directory.Delete(directory, recursive: true);
-            session.StdOut.MarkupLineInterpolated($"[green]removed[/] {directory}");
+            session.StdOut.WriteLine($"{session.StdOut.Paint("removed", AnsiCodes.DarkGreen)} {directory}");
 
             return ExitCodes.Success;
         });

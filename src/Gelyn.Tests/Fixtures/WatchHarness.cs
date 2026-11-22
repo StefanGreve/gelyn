@@ -15,8 +15,6 @@ using Gelyn.Services;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 
-using Spectre.Console;
-
 namespace Gelyn.Tests.Fixtures;
 
 /// <summary>
@@ -71,8 +69,8 @@ internal sealed class WatchHarness : IAsyncDisposable
         this._errorWriter = TextWriter.Synchronized(this._errorOutput);
 
         // The two streams are captured apart, so a test can tell which one a message reached.
-        IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
-        IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
+        ConsoleStream stdOut = CapturedConsole.Create(this._writer);
+        ConsoleStream stdErr = CapturedConsole.Create(this._errorWriter);
 
         this.Watcher = new SiteWatcher(
             content.Builder,

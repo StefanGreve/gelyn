@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.IO.Abstractions;
 
+using Gelyn.Core.Internals;
 using Gelyn.Diagnostics;
 using Gelyn.Exceptions;
 using Gelyn.Extensions;
@@ -8,8 +9,6 @@ using Gelyn.Model.Options;
 using Gelyn.Services;
 
 using Microsoft.Extensions.Logging;
-
-using Spectre.Console;
 
 using Testably.Abstractions;
 
@@ -24,10 +23,6 @@ internal sealed class Session : IDisposable
     private readonly LogLevel _verbosity;
     private readonly long _started;
     private DiagnosticLog? _log;
-    private SiteOptions? _options;
-    private SiteBuilder? _builder;
-    private FileServer? _server;
-    private SiteWatcher? _watcher;
     private bool _disposed;
 
     /// <summary>
@@ -43,10 +38,10 @@ internal sealed class Session : IDisposable
     ///     The file system the run reads and writes through.
     /// </param>
     /// <param name="stdOut">
-    ///     The console the run writes its output to.
+    ///     The stream the run writes its output to.
     /// </param>
     /// <param name="stdErr">
-    ///     The console the run writes its warnings and failures to.
+    ///     The stream the run writes its warnings and failures to.
     /// </param>
     /// <param name="verbosity">
     ///     The minimum level the services log at.
@@ -58,8 +53,8 @@ internal sealed class Session : IDisposable
         string contentRoot,
         SiteSettings settings,
         IFileSystem fileSystem,
-        IAnsiConsole stdOut,
-        IAnsiConsole stdErr,
+        ConsoleStream stdOut,
+        ConsoleStream stdErr,
         LogLevel verbosity,
         long started)
     {
@@ -88,14 +83,14 @@ internal sealed class Session : IDisposable
     public IFileSystem FileSystem { get; }
 
     /// <summary>
-    ///     The console the run writes its output to.
+    ///     The stream the run writes its output to.
     /// </summary>
-    public IAnsiConsole StdOut { get; }
+    public ConsoleStream StdOut { get; }
 
     /// <summary>
-    ///     The console the run writes its warnings and failures to.
+    ///     The stream the run writes its warnings and failures to.
     /// </summary>
-    public IAnsiConsole StdErr { get; }
+    public ConsoleStream StdErr { get; }
 
     /// <summary>
     ///     The settings of the run, loaded and validated on the first read.
@@ -118,7 +113,7 @@ internal sealed class Session : IDisposable
         get
         {
             ObjectDisposedException.ThrowIf(this._disposed, this);
-            return this._options ??= this.Settings.Load();
+            return field ??= this.Settings.Load();
         }
     }
 
@@ -141,7 +136,7 @@ internal sealed class Session : IDisposable
     ///     The builder that writes the site, constructed on the first read.
     /// </summary>
     public SiteBuilder Builder =>
-        this._builder ??= new SiteBuilder(
+        field ??= new SiteBuilder(
             new ContentPipeline(this.ContentRoot, this.FileSystem),
             this.ContentRoot,
             this.FileSystem,
@@ -152,7 +147,7 @@ internal sealed class Session : IDisposable
     ///     The server that answers requests for the written site, constructed on the first read.
     /// </summary>
     public FileServer Server =>
-        this._server ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Log.CreateLogger<FileServer>());
+        field ??= new FileServer(new StaticFileResolver(this.FileSystem), this.FileSystem, this.StdOut, this.StdErr, TimeProvider.System, this.Log.CreateLogger<FileServer>());
 
     /// <summary>
     ///     The watcher that rebuilds the site on a change, constructed on the first read.
@@ -161,7 +156,7 @@ internal sealed class Session : IDisposable
     ///     The settings the watcher starts from are rejected, as <see cref="Options"/> raises it.
     /// </exception>
     public SiteWatcher Watcher =>
-        this._watcher ??= new SiteWatcher(
+        field ??= new SiteWatcher(
             this.Builder,
             this.Options,
             this.Settings.Load,
@@ -185,10 +180,10 @@ internal sealed class Session : IDisposable
     ///     The directory every relative setting is resolved against.
     /// </param>
     /// <param name="stdOut">
-    ///     The console the run writes its output to.
+    ///     The stream the run writes its output to.
     /// </param>
     /// <param name="stdErr">
-    ///     The console the run writes its warnings and failures to.
+    ///     The stream the run writes its warnings and failures to.
     /// </param>
     /// <param name="started">
     ///     The timestamp the process started at, which the startup record is measured from.
@@ -196,7 +191,7 @@ internal sealed class Session : IDisposable
     /// <returns>
     ///     The session, which the caller disposes when the command completes.
     /// </returns>
-    public static Session Open(ParseResult parseResult, string contentRoot, IAnsiConsole stdOut, IAnsiConsole stdErr, long started)
+    public static Session Open(ParseResult parseResult, string contentRoot, ConsoleStream stdOut, ConsoleStream stdErr, long started)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
@@ -244,20 +239,11 @@ internal sealed class Session : IDisposable
     // service writes nothing.
     private DiagnosticLog CreateLog()
     {
-        var log = new DiagnosticLog(
-            this._verbosity,
-            this.StdErr.Profile.Out.Writer,
-            SupportsColor(this.StdErr),
-            TimeProvider.System
-        );
+        var log = new DiagnosticLog(this._verbosity, this.StdErr.Writer, this.StdErr.UseColors, TimeProvider.System);
 
         log.CreateLogger<Session>().LogStartupCompleted(this._started.ElapsedMilliseconds);
         return log;
     }
-
-    // Spectre has already detected the terminal, NO_COLOR and a legacy console for the error stream.
-    private static bool SupportsColor(IAnsiConsole console) =>
-        console.Profile.Capabilities.Ansi && console.Profile.Capabilities.ColorSystem != ColorSystem.NoColors;
 
     #endregion
 }

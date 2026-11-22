@@ -4,11 +4,8 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
-using Gelyn.Extensions;
+using Gelyn.Core.Internals;
 using Gelyn.Model;
-using Gelyn.Tests.Stubs;
-
-using Spectre.Console;
 
 namespace Gelyn.Tests.Commands;
 
@@ -24,73 +21,50 @@ public class BuildCommandTests
         Generated = ["feed.xml"],
         Copies = ["images/logo.png"],
         Removed = ["old.html"],
-        Elapsed = TimeSpan.FromMilliseconds(12.345),
+        Elapsed = TimeSpan.FromMilliseconds(12.5),
     };
 
     #region Report Tests
 
     /// <summary>
-    ///     Verifies that the composed report is byte for byte what the console renders line by line, with and
-    ///     without escape sequences and in every color system.
+    ///     Verifies that the report names each file on a line of its own with the paths as given, and that the
+    ///     words and the figures are colored on a stream that colors and plain on one that does not.
     /// </summary>
     [Test]
-    [Arguments(false, ColorSystemSupport.NoColors)]
-    [Arguments(true, ColorSystemSupport.NoColors)]
-    [Arguments(true, ColorSystemSupport.Legacy)]
-    [Arguments(true, ColorSystemSupport.Standard)]
-    [Arguments(true, ColorSystemSupport.EightBit)]
-    [Arguments(true, ColorSystemSupport.TrueColor)]
-    public async Task ComposeReport_Test_Output_MatchesTheConsoleRendering(bool ansi, ColorSystemSupport colorSystem)
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task ComposeReport_Test_Stream_ColorsTheWordsWhenItColors(bool useColors)
     {
         // Arrange
-        using var rendered = new StringWriter(CultureInfo.InvariantCulture);
-        IAnsiConsole console = CreateConsole(new AnsiConsoleOutput(rendered), ansi, colorSystem);
-        var capabilities = new AnsiCapabilities
-        {
-            Ansi = console.Profile.Capabilities.Ansi,
-            ColorSystem = console.Profile.Capabilities.ColorSystem
-        };
+        var console = new ConsoleStream(TextWriter.Null, isTerminal: useColors, useColors);
+        string count = Report.FileCount.ToString(CultureInfo.InvariantCulture);
+        string expected = string.Join(Environment.NewLine,
+        [
+            $"{Paint("created", AnsiCodes.DarkGreen, useColors)} index.html",
+            $"{Paint("created", AnsiCodes.DarkGreen, useColors)} [draft]/notes.html",
+            $"{Paint("created", AnsiCodes.DarkGreen, useColors)} feed.xml",
+            $"{Paint("copied", AnsiCodes.DarkGreen, useColors)} images/logo.png",
+            $"{Paint("removed", AnsiCodes.BrightYellow, useColors)} old.html",
+            $"Processed {Paint(count, AnsiCodes.Bold, useColors)} file(s) in {Paint("12.50", AnsiCodes.Bold, useColors)} ms.",
+            "",
+        ]);
 
         // Act
-        BuildCommand.PrintReport(console, Report);
-        string composed = BuildCommand.ComposeReport(Report, capabilities);
+        string composed = BuildCommand.ComposeReport(console, Report);
 
         // Assert
-        await Assert.That(composed).IsEqualTo(rendered.ToString());
-        await Assert.That(composed.Contains('\e', StringComparison.Ordinal)).IsEqualTo(ansi);
+        await Assert.That(composed).IsEqualTo(expected);
     }
 
     /// <summary>
-    ///     Verifies that an emoji shortcode in a path is written as given, where the console's markup would
-    ///     replace it with the emoji.
+    ///     Verifies that the stream receives the whole report in a single write.
     /// </summary>
     [Test]
-    public async Task ComposeReport_Test_EmojiShortcode_IsWrittenAsGiven()
-    {
-        // Arrange
-        BuildReport report = Report with { Pages = [":rocket:.html"] };
-        var capabilities = new AnsiCapabilities
-        {
-            Ansi = false,
-            ColorSystem = ColorSystem.NoColors
-        };
-
-        // Act
-        string composed = BuildCommand.ComposeReport(report, capabilities);
-
-        // Assert
-        await Assert.That(composed).StartsWith($"created :rocket:.html{Environment.NewLine}");
-    }
-
-    /// <summary>
-    ///     Verifies that an output that is not a terminal receives the whole report in a single write.
-    /// </summary>
-    [Test]
-    public async Task WriteReport_Test_RedirectedOutput_ReceivesOneWrite()
+    public async Task WriteReport_Test_Stream_ReceivesOneWrite()
     {
         // Arrange
         using var writer = new CountingWriter();
-        IAnsiConsole console = CreateConsole(new AnsiConsoleOutputStub(writer, isTerminal: false), ansi: false, ColorSystemSupport.NoColors);
+        var console = new ConsoleStream(writer, isTerminal: false, useColors: false);
 
         // Act
         BuildCommand.WriteReport(console, Report);
@@ -99,42 +73,12 @@ public class BuildCommandTests
         await Assert.That(writer.Writes).IsEqualTo(1);
     }
 
-    /// <summary>
-    ///     Verifies that a terminal without escape sequences receives the report through the console, write by
-    ///     write, so that the console API can color the text between writes.
-    /// </summary>
-    [Test]
-    public async Task WriteReport_Test_TerminalWithoutAnsi_IsWrittenThroughTheConsole()
-    {
-        // Arrange
-        using var writer = new CountingWriter();
-        IAnsiConsole console = CreateConsole(new AnsiConsoleOutputStub(writer, isTerminal: true), ansi: false, ColorSystemSupport.NoColors);
-
-        // Act
-        BuildCommand.WriteReport(console, Report);
-
-        // Assert
-        await Assert.That(writer.Writes).IsGreaterThan(1);
-    }
-
     #endregion
 
     #region Helpers
 
-    private static IAnsiConsole CreateConsole(IAnsiConsoleOutput output, bool ansi, ColorSystemSupport colorSystem)
-    {
-        IAnsiConsole console = AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Ansi = ansi ? AnsiSupport.Yes : AnsiSupport.No,
-            ColorSystem = colorSystem,
-            Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
-            Out = output,
-        });
-
-        console.DisableWrappingWhenRedirected();
-
-        return console;
-    }
+    private static string Paint(string text, string codes, bool useColors) =>
+        useColors ? codes + text + AnsiCodes.Reset : text;
 
     private sealed class CountingWriter() : StringWriter(CultureInfo.InvariantCulture)
     {

@@ -167,6 +167,9 @@ csharp_using_directive_placement = outside_namespace:silent
 # IDE0005: Remove unnecessary using directives
 dotnet_diagnostic.IDE0005.severity = warning
 
+# IDE1006: Naming rule violation
+dotnet_diagnostic.IDE1006.severity = none
+
 #### C# Formatting Rules ####
 
 # New line preferences
@@ -405,3 +408,6 @@ dotnet_naming_style.s_camelcase.required_suffix =
 dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
+
+# CA1060: Move P/Invokes to NativeMethods class
+dotnet_diagnostic.CA1060.severity = warning

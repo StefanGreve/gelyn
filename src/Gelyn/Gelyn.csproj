@@ -27,6 +27,8 @@
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- The interop source generator writes unsafe code for the P/Invokes in NativeMethods. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
     <StripSymbols>true</StripSymbols>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
@@ -110,7 +112,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="SharpYaml" />
-    <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Testably.Abstractions" />
   </ItemGroup>

@@ -140,7 +140,7 @@ internal sealed class DiagnosticLog : IDisposable
         LogLevel.Trace => ("trce", AnsiCodes.BlackBackground + AnsiCodes.Gray),
         LogLevel.Debug => ("dbug", AnsiCodes.BlackBackground + AnsiCodes.Gray),
         LogLevel.Information => ("info", AnsiCodes.BlackBackground + AnsiCodes.DarkGreen),
-        LogLevel.Warning => ("warn", AnsiCodes.BlackBackground + AnsiCodes.Bold + AnsiCodes.Yellow),
+        LogLevel.Warning => ("warn", AnsiCodes.BlackBackground + AnsiCodes.Bold + AnsiCodes.DarkYellow),
         LogLevel.Error => ("fail", AnsiCodes.DarkRedBackground + AnsiCodes.Black),
         LogLevel.Critical => ("crit", AnsiCodes.DarkRedBackground + AnsiCodes.Bold + AnsiCodes.Gray),
         _ => throw new ArgumentOutOfRangeException(nameof(level)),

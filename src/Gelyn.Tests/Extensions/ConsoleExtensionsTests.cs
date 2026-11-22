@@ -1,14 +1,12 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
+using Gelyn.Core.Internals;
 using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Tests.Fixtures;
-
-using Spectre.Console;
 
 namespace Gelyn.Tests.Extensions;
 
@@ -18,29 +16,6 @@ namespace Gelyn.Tests.Extensions;
 [Category(Categories.Internal)]
 public class ConsoleExtensionsTests
 {
-    #region Wrapping Tests
-
-    /// <summary>
-    ///     Verifies that a console whose output is not a terminal writes a line longer than 80 columns whole.
-    /// </summary>
-    [Test]
-    public async Task DisableWrappingWhenRedirected_Test_LongLine_IsWrittenWhole()
-    {
-        // Arrange
-        using var writer = new StringWriter(CultureInfo.InvariantCulture);
-        IAnsiConsole console = CapturedConsole.Create(writer);
-        string path = string.Join('/', Enumerable.Repeat("segment", 30));
-
-        // Act
-        console.DisableWrappingWhenRedirected();
-        console.MarkupLineInterpolated($"[green]created[/] {path}");
-
-        // Assert
-        await Assert.That(writer.ToString()).IsEqualTo($"created {path}{Environment.NewLine}");
-    }
-
-    #endregion
-
     #region Error Tests
 
     /// <summary>
@@ -51,7 +26,7 @@ public class ConsoleExtensionsTests
     {
         // Arrange
         using var writer = new StringWriter(CultureInfo.InvariantCulture);
-        IAnsiConsole console = CapturedConsole.Create(writer);
+        ConsoleStream console = CapturedConsole.Create(writer);
         var exception = new ConfigurationException(["First failed.", "Second failed."]);
 
         // Act
@@ -69,13 +44,30 @@ public class ConsoleExtensionsTests
     {
         // Arrange
         using var writer = new StringWriter(CultureInfo.InvariantCulture);
-        IAnsiConsole console = CapturedConsole.Create(writer);
+        ConsoleStream console = CapturedConsole.Create(writer);
 
         // Act
         console.WriteError(new IOException("Access [denied]."));
 
         // Assert
         await Assert.That(writer.ToString()).IsEqualTo($"error: Access [denied].{Environment.NewLine}");
+    }
+
+    /// <summary>
+    ///     Verifies that the word before a failure is colored on a stream that colors.
+    /// </summary>
+    [Test]
+    public async Task WriteError_Test_ColoringStream_ColorsTheWord()
+    {
+        // Arrange
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        var console = new ConsoleStream(writer, isTerminal: true, useColors: true);
+
+        // Act
+        console.WriteError(new IOException("Access denied."));
+
+        // Assert
+        await Assert.That(writer.ToString()).IsEqualTo($"{AnsiCodes.BrightRed}error:{AnsiCodes.Reset} Access denied.{Environment.NewLine}");
     }
 
     #endregion

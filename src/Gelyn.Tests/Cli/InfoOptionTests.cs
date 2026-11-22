@@ -11,11 +11,8 @@ using Gelyn.Commands;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
 using Gelyn.Tests.Fixtures;
-using Gelyn.Tests.Stubs;
 
 using Microsoft.Extensions.Logging;
-
-using Spectre.Console;
 
 using Testably.Abstractions.Testing;
 
@@ -90,14 +87,14 @@ public class InfoOptionTests
     public async Task Color_Test_Terminal_ReceivesTheColoredReport()
     {
         // Act
-        string output = Report(Create(stdOut: Terminal(isTerminal: true, ColorSystemSupport.Standard)));
+        string output = Report(Create(stdOut: new ConsoleStream(TextWriter.Null, isTerminal: true, useColors: true)));
 
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(output).Contains("\e[36m[Project]\e[0m");
-            await Assert.That(output).Contains($"  Version:        \e[2m{Tool.Version}\e[0m");
-            await Assert.That(output).Contains($"  AppSettings:    \e[93m{Undefined}\e[0m");
+            await Assert.That(output).Contains($"{AnsiCodes.DarkCyan}[Project]{AnsiCodes.Reset}");
+            await Assert.That(output).Contains($"  Version:        {AnsiCodes.Dim}{Tool.Version}{AnsiCodes.Reset}");
+            await Assert.That(output).Contains($"  AppSettings:    {AnsiCodes.BrightYellow}{Undefined}{AnsiCodes.Reset}");
         }
     }
 
@@ -106,12 +103,12 @@ public class InfoOptionTests
     ///     receive plain text.
     /// </summary>
     [Test]
-    [Arguments(false, ColorSystemSupport.Standard)]
-    [Arguments(true, ColorSystemSupport.NoColors)]
-    public async Task Color_Test_RedirectedOrColorless_ReceivesPlainText(bool isTerminal, ColorSystemSupport colors)
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Color_Test_RedirectedOrColorless_ReceivesPlainText(bool isTerminal)
     {
         // Act
-        string output = Report(Create(stdOut: Terminal(isTerminal, colors)));
+        string output = Report(Create(stdOut: new ConsoleStream(TextWriter.Null, isTerminal, useColors: false)));
 
         // Assert
         using (Assert.Multiple())
@@ -287,7 +284,7 @@ public class InfoOptionTests
             .WriteOutside("site.json", contents);
 
         string path = Path.Combine(fixture.Root, "site.json");
-        IAnsiConsole console = CapturedConsole.Create(TextWriter.Null);
+        ConsoleStream console = CapturedConsole.Create(TextWriter.Null);
         var command = GelynCommand.Create(parsed => Session.Open(parsed, fixture.Root, console, console, Stopwatch.GetTimestamp()));
 
         // Act
@@ -379,7 +376,7 @@ public class InfoOptionTests
     #region Helpers
 
     // A session whose settings are never loaded, since the report probes the file and reads no setting.
-    private static InfoOption Create(string? configurationFile = null, bool optional = true, string? contentRoot = null, MockFileSystem? fileSystem = null, IAnsiConsole? stdOut = null)
+    private static InfoOption Create(string? configurationFile = null, bool optional = true, string? contentRoot = null, MockFileSystem? fileSystem = null, ConsoleStream? stdOut = null)
     {
         string root = contentRoot ?? Path.GetFullPath("/site");
         MockFileSystem files = fileSystem ?? new MockFileSystem();
@@ -397,15 +394,6 @@ public class InfoOptionTests
 
     private static ParseResult Parse() =>
         GelynCommand.Create(static _ => throw new InvalidOperationException("The tree is parsed here and never invoked.")).Parse([]);
-
-    private static IAnsiConsole Terminal(bool isTerminal, ColorSystemSupport colors) =>
-        AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Ansi = AnsiSupport.Yes,
-            ColorSystem = colors,
-            Enrichment = new ProfileEnrichment { UseDefaultEnrichers = false },
-            Out = new AnsiConsoleOutputStub(TextWriter.Null, isTerminal),
-        });
 
     private static (int ExitCode, string Output, string Error) Invoke(InfoOption option, params string[] args)
     {

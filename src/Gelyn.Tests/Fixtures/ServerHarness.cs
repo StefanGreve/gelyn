@@ -6,12 +6,11 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Core.Internals;
 using Gelyn.Services;
 
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
-
-using Spectre.Console;
 
 namespace Gelyn.Tests.Fixtures;
 
@@ -50,8 +49,8 @@ internal sealed class ServerHarness : IAsyncDisposable
 
         // A StringWriter, because a TestConsole would need a package the suite does not otherwise want.
         // The two streams are captured apart, so a test can tell which one a message reached.
-        IAnsiConsole stdOut = CapturedConsole.Create(this._writer);
-        IAnsiConsole stdErr = CapturedConsole.Create(this._errorWriter);
+        ConsoleStream stdOut = CapturedConsole.Create(this._writer);
+        ConsoleStream stdErr = CapturedConsole.Create(this._errorWriter);
 
         var server = new FileServer(fixture.Resolver, fixture.FileSystem, stdOut, stdErr, this.TimeProvider, this.Logger);
 
