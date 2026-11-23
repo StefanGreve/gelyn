@@ -44,10 +44,9 @@ internal static class FileSystemInfoExtensions
         ///     Indicates whether the entry is a symbolic link or a junction.
         /// </summary>
         /// <remarks>
-        ///     The attribute comes with the enumeration on Windows and costs one <c>lstat</c> on Linux and macOS,
-        ///     which the other metadata reads of the entry then share, whereas reading
-        ///     <see cref="IFileSystemInfo.LinkTarget"/> opens the entry on Windows and reads its link on Unix.
-        ///     The target still decides, because a reparse point of any other kind has none.
+        ///     Besides symbolic links and junctions, Windows marks other entries as reparse points, such as a file
+        ///     that OneDrive manages. They have no <see cref="IFileSystemInfo.LinkTarget"/> and are not links.
+        ///     Only a reparse point has its link target read, which costs further file system calls.
         /// </remarks>
         public bool IsLink =>
             entry.Attributes.HasFlag(FileAttributes.ReparsePoint) && entry.LinkTarget is not null;

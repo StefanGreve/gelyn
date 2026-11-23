@@ -20,6 +20,9 @@ internal static class HeadComponent
     /// <summary>
     ///     Writes the metadata of a page, without the enclosing <c>head</c> element.
     /// </summary>
+    /// <remarks>
+    ///     The page's own description replaces the site's, and only a revised page carries a revision date.
+    /// </remarks>
     /// <param name="context">
     ///     What the layout shares between the pages of the build.
     /// </param>

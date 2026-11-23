@@ -10,10 +10,6 @@ namespace Gelyn.Validators;
 /// <summary>
 ///     Checks that <see cref="SiteOptions"/> carries usable values before anything consumes it.
 /// </summary>
-/// <remarks>
-///     Written by hand, because <c>ValidateDataAnnotations</c> is annotated <c>RequiresUnreferencedCode</c>
-///     and cannot see members the trimmer may have removed.
-/// </remarks>
 internal sealed partial class SiteOptionsValidator
 {
     private readonly string _contentRoot;

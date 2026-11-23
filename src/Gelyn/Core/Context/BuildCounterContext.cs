@@ -4,10 +4,8 @@ namespace Gelyn.Core.Context;
 ///     What one build counted and how long each of its phases took.
 /// </summary>
 /// <remarks>
-///     The durations are raw timestamps rather than a <see cref="TimeSpan"/>, because the phases are timed
-///     with <see cref="System.Diagnostics.Stopwatch.GetTimestamp"/> and converted once at the point they are
-///     reported. Every member is <c>required</c> so that the call site names each value: the five durations
-///     share a type, and a positional argument list lets two of them trade places without a compiler error.
+///     Every duration except <see cref="Elapsed"/> is a count of <see cref="System.Diagnostics.Stopwatch"/> ticks,
+///     at <see cref="System.Diagnostics.Stopwatch.Frequency"/> ticks per second.
 /// </remarks>
 internal sealed record BuildCounterContext
 {

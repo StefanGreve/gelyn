@@ -11,12 +11,6 @@ namespace Gelyn.Core;
 /// <summary>
 ///     The syndication feed published beside the generated pages, as an Atom 1.0 document.
 /// </summary>
-/// <remarks>
-///     Built with <see cref="XmlWriter"/> on two grounds: <c>System.ServiceModel.Syndication</c> is a poor
-///     fit for Native AOT, and the writer escapes every value it is handed, where the HTML components have to
-///     encode theirs. It rejects a character XML cannot carry. The document is assembled in memory and returned
-///     as bytes, which keeps this a pure function and leaves the single write to the caller.
-/// </remarks>
 /// <seealso href="https://www.rfc-editor.org/rfc/rfc4287.html">RFC 4287, The Atom Syndication Format</seealso>
 internal static class AtomFeed
 {
@@ -32,9 +26,6 @@ internal static class AtomFeed
     /// <summary>
     ///     The media type the feed is served and linked as.
     /// </summary>
-    /// <remarks>
-    ///     RFC 4287 registers it, and <see cref="MediaTypeNames"/> declares no constant for it.
-    /// </remarks>
     internal const string ContentType = "application/atom+xml";
 
     private const string TextType = "text";

@@ -347,10 +347,8 @@ internal static partial class LogMessages
     ///     The bound address, which is a loopback prefix.
     /// </param>
     /// <remarks>
-    ///     Declared without <c>SkipEnabledCheck</c>, as every record the preview server and its rebuild loop
-    ///     write is: each argument is already in hand where it is called, so there is no evaluation a guard
-    ///     could spare. Leaving the generated check in place keeps the level enforced in one place instead
-    ///     of at every call site.
+    ///     Decorated with <see cref="LoggerMessageAttribute"/> without <c>SkipEnabledCheck</c> because the arguments
+    ///     are already in hand at every call site, so the generated level check is the only guard the record needs.
     /// </remarks>
     [LoggerMessage(
         EventId = EventIds.SERVER_STARTED,

@@ -33,9 +33,6 @@ namespace Gelyn.Services;
 ///             </description>
 ///         </item>
 ///     </list>
-///     The output directory arrives per call and is never held, because it belongs to one serving session
-///     instead of to the resolver. It is resolved again on each request, so that a caller cannot weaken the
-///     containment test by passing a path that was never normalized.
 /// </remarks>
 internal sealed class StaticFileResolver
 {
@@ -85,6 +82,8 @@ internal sealed class StaticFileResolver
         ArgumentNullException.ThrowIfNull(outputDirectory);
         ArgumentNullException.ThrowIfNull(requestPath);
 
+        // The directory belongs to one serving session, so it arrives per call and is never held. Resolving it each
+        // time keeps a caller from weakening the containment test with a path that was never normalized.
         string root = PathBoundary.Resolve(outputDirectory);
 
         return this.TryLocate(root, requestPath, out string? located)

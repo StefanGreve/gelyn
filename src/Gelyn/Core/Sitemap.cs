@@ -9,11 +9,6 @@ namespace Gelyn.Core;
 /// <summary>
 ///     The inventory of pages published beside the generated site, as a Sitemap 0.9 document.
 /// </summary>
-/// <remarks>
-///     Built with <see cref="XmlWriter"/> on the grounds <see cref="AtomFeed"/> records, and assembled in
-///     memory and returned as bytes for the same reason: it keeps the render a pure function and leaves the
-///     single write to the caller. The two documents have no element in common, so they share no code.
-/// </remarks>
 /// <seealso href="https://www.sitemaps.org/protocol.html">Sitemaps XML format</seealso>
 internal static class Sitemap
 {

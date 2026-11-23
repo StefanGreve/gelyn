@@ -38,8 +38,8 @@ internal static partial class NativeMethods
     ///     process has no such device.
     /// </returns>
     /// <remarks>
-    ///     Reads the process table and never blocks, so the GC transition is suppressed, where the two mode calls
-    ///     are requests to the console host.
+    ///     Decorated with <see cref="SuppressGCTransitionAttribute"/> because the call reads the process table and
+    ///     never blocks, where the two mode calls are requests to the console host.
     /// </remarks>
     [SuppressGCTransition]
     [SupportedOSPlatform("windows")]

@@ -19,42 +19,6 @@ namespace Gelyn.Services;
 /// <summary>
 ///     Writes the finished site to the output directory.
 /// </summary>
-/// <remarks>
-///     The build is processed in this order:
-///     <list type="number">
-///         <item>
-///             <description>
-///                 <see cref="ComposeGenerated"/> composes the feed, the sitemap and the files of the theme,
-///                 each of which the configuration has to ask for.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="PruneOutput"/> deletes the output the build no longer publishes, before anything
-///                 is written.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="CreateMissingDirectories"/> creates the directories the prune did not find.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="WriteDocuments"/> composes and writes the rendered pages, and writes the composed
-///                 documents after them in the same pass.
-///             </description>
-///         </item>
-///         <item>
-///             <description>
-///                 <see cref="CopyAssets"/> copies every located file that is not a page.
-///             </description>
-///         </item>
-///     </list>
-///     Pages are written and files copied on several threads through <see cref="OrderedParallel"/>. The report
-///     still lists them in input order, and a failure surfaces as the one a sequential pass would have stopped
-///     at.
-/// </remarks>
 internal sealed class SiteBuilder
 {
     private readonly ContentPipeline _pipeline;
@@ -92,10 +56,6 @@ internal sealed class SiteBuilder
     /// <summary>
     ///     Generates the whole site.
     /// </summary>
-    /// <remarks>
-    ///     The build runs on a thread pool thread, because its passes over the pages block until every page
-    ///     is done.
-    /// </remarks>
     /// <param name="options">
     ///     The settings the site is built against.
     /// </param>
@@ -122,6 +82,7 @@ internal sealed class SiteBuilder
     {
         ArgumentNullException.ThrowIfNull(options);
 
+        // The build runs on a thread pool thread, because its passes over the pages block until every page is done.
         return Task.Run(() => this.Build(options, cancellationToken), CancellationToken.None);
     }
 
@@ -129,11 +90,6 @@ internal sealed class SiteBuilder
     ///     Writes one counter per phase, in the order the phases run, followed by the heap figures and the build
     ///     total.
     /// </summary>
-    /// <remarks>
-    ///     The seam a test drives with durations of its own choosing. A build cannot supply them, because its
-    ///     phases are timed with <see cref="Stopwatch.GetTimestamp"/>, so only distinct values set by hand show
-    ///     that no counter reports the duration of another phase.
-    /// </remarks>
     /// <param name="counters">
     ///     What the build counted and how long each of its phases took.
     /// </param>
@@ -517,10 +473,6 @@ internal sealed class SiteBuilder
     ///     under another spelling the one it is published under, and strikes every directory found under its
     ///     published spelling off the missing ones.
     /// </summary>
-    /// <remarks>
-    ///     Recursive like the scan, because a flat enumeration would descend into a skipped directory and
-    ///     cost a deployed <c>.git</c> its contents.
-    /// </remarks>
     /// <param name="directory">
     ///     The directory to walk.
     /// </param>
@@ -563,6 +515,7 @@ internal sealed class SiteBuilder
 
             if (entry is IDirectoryInfo child)
             {
+                // Recursive, since a flat enumeration would reach into a skipped directory and empty a deployed .git.
                 if (this.PruneDirectory(child, entryPath, context, cancellationToken))
                 {
                     // Found under its published spelling, as every directory a build keeps for its pages is, or else

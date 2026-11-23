@@ -100,13 +100,13 @@ internal static class OverrideOptions
         },
         new Option<bool>($"--{Feed}")
         {
-            Description = "Whether to write a syndication feed of the pages that ask to be in one.",
+            Description = "Enable or disable the syndication feed of the pages that ask to be in one.",
             HelpName = "true|false",
             Arity = ArgumentArity.ExactlyOne,
         },
         new Option<bool>($"--{Sitemap}")
         {
-            Description = "Whether to write a sitemap of the pages the site publishes.",
+            Description = "Enable or disable the sitemap of the pages the site publishes.",
             HelpName = "true|false",
             Arity = ArgumentArity.ExactlyOne,
         },

@@ -3,12 +3,6 @@ namespace Gelyn.Core.Context;
 /// <summary>
 ///     What one level of the content walk inherits from the level above it.
 /// </summary>
-/// <remarks>
-///     Two kinds of value sit here and the distinction is worth keeping in mind when the walk is changed:
-///     <see cref="Excluded"/> is fixed for the whole scan, while the rest are recomputed per directory and
-///     handed down with a <c>with</c> expression. A directory therefore reads its own state and never writes
-///     to a parent's.
-/// </remarks>
 internal sealed record ScanContext
 {
     /// <summary>

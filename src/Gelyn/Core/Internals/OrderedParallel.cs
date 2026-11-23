@@ -29,9 +29,6 @@ internal static class OrderedParallel
     /// <returns>
     ///     The result of each item, at the index of that item.
     /// </returns>
-    /// <remarks>
-    ///     Runs <see cref="For{TResult}"/> over the indices of the items, with its order of results and failures.
-    /// </remarks>
     /// <exception cref="OperationCanceledException">
     ///     <paramref name="cancellationToken"/> was canceled.
     /// </exception>
@@ -75,11 +72,6 @@ internal static class OrderedParallel
     ///         then starts no index above it but still runs every index below it. The winning index therefore
     ///         does not depend on how the threads were scheduled. Indices above it that were already running
     ///         complete.
-    ///     </para>
-    ///     <para>
-    ///         One thread per processor suits both kinds of work this serves. Rendering keeps a core busy, and
-    ///         writing waits on the file system, where twice as many threads measured no faster on a 10,000-page
-    ///         site.
     ///     </para>
     /// </remarks>
     /// <exception cref="OperationCanceledException">

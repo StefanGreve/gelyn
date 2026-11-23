@@ -16,8 +16,7 @@ namespace Gelyn.Services;
 /// </summary>
 /// <remarks>
 ///     Written with local development in mind. Do not use this class in a production environment: it binds
-///     loopback and answers one request at a time. This narrow scope is what makes <see cref="HttpListener"/> a
-///     suitable transport here, since none of the cautions in its reference applies to a preview server.
+///     loopback and answers one request at a time.
 /// </remarks>
 internal sealed class FileServer
 {
@@ -116,12 +115,8 @@ internal sealed class FileServer
     ///     Every address the server binds, all of them loopback.
     /// </summary>
     /// <remarks>
-    ///     A request is routed by matching its <c>Host</c> header against the host of a prefix, and never by
-    ///     the socket it arrived on, so loopback needs one prefix per spelling a reader might type. A request
-    ///     matching none of them is answered by the listener itself, with a 404. <c>[::1]</c> is left out
-    ///     because the managed implementation used outside Windows rejects a bracketed IPv6 literal from
-    ///     <see cref="HttpListener.Start"/>, which would take the other prefixes down with it. A wildcard host
-    ///     would make the header irrelevant at the cost of binding every interface.
+    ///     The prefixes cover <c>127.0.0.1</c> and <c>localhost</c>. The listener answers a request whose
+    ///     <c>Host</c> header names neither, such as <c>[::1]</c>, with a 404.
     /// </remarks>
     /// <param name="port">
     ///     The port to serve on.
@@ -131,6 +126,9 @@ internal sealed class FileServer
     /// </returns>
     internal static IReadOnlyList<string> Addresses(int port) =>
     [
+        // HttpListener routes by the Host header, so loopback needs one prefix per spelling, and a wildcard host would
+        // bind every interface. [::1] is left out, because the managed implementation outside Windows rejects a
+        // bracketed IPv6 literal from Start, which would take the other prefixes down with it.
         Address(port),
         string.Create(Tool.Culture, $"http://{LoopbackName}:{port}/"),
     ];
@@ -184,6 +182,8 @@ internal sealed class FileServer
         string address = Address(port, basePath);
         string? refresh = refreshSeconds?.ToString(Tool.Culture);
 
+        // HttpListener suits a loopback server that answers one request at a time, where none of the cautions in its
+        // reference applies.
         using var listener = new HttpListener();
 
         foreach (string prefix in Addresses(port))

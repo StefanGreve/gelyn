@@ -11,11 +11,6 @@ namespace Gelyn.Diagnostics;
 ///     Writes the records of a run to standard error, one line per record, from the level <c>--verbosity</c>
 ///     selects.
 /// </summary>
-/// <remarks>
-///     A record is formatted on the thread that logs it and queued for one task that writes the lines in order.
-///     The task starts with the first record, so a run that logs nothing starts nothing, and disposing the log
-///     waits until every queued line is written.
-/// </remarks>
 [SuppressMessage("Usage", "CA2213:Disposable fields should be disposed", Justification = $"{Justifications.ByDesign}. The writer is standard error, which the session owns.")]
 internal sealed class DiagnosticLog : IDisposable
 {
@@ -115,9 +110,10 @@ internal sealed class DiagnosticLog : IDisposable
         ArgumentNullException.ThrowIfNull(category);
         ArgumentNullException.ThrowIfNull(message);
 
+        // Formatted here, on the thread that logs, and queued for the one task that writes the lines in order.
         string line = this.Format(level, category, eventId, message, exception);
 
-        // The guard spares the delegate that the method group allocates on every call once the drain runs.
+        // The first record starts the drain. The guard keeps later calls from allocating the method group's delegate.
         if (this._drain is null) LazyInitializer.EnsureInitialized(ref this._drain, ref this._drainLock, this.StartDrain);
 
         this._lines.Writer.TryWrite(line);

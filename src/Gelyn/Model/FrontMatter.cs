@@ -10,9 +10,7 @@ namespace Gelyn.Model;
 /// <remarks>
 ///     A property is <see langword="null"/> when the block declares no value for it, and a date also when its
 ///     value is not written as <c>yyyy-MM-dd</c>. A value declared as an empty string is kept as one, so the
-///     two cases stay distinguishable. The properties carry a setter rather than an <c>init</c> accessor
-///     because the generated deserialization code assigns them from an ordinary statement, which C# permits
-///     only inside an object initializer or a constructor.
+///     two cases stay distinguishable.
 /// </remarks>
 internal sealed record FrontMatter
 {

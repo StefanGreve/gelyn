@@ -13,12 +13,6 @@ internal static class PageLayout
     /// <summary>
     ///     Composes a complete HTML document into a buffer, as UTF-8 with every line ending on a line feed.
     /// </summary>
-    /// <remarks>
-    ///     The head is written here and never passed in, because its contents depend on the page: its own
-    ///     description replaces the site's, and only a revised page carries a revision date. The comment thread,
-    ///     rendered once for the build, is written for a page that asks for one. The body is written in segments
-    ///     around every <c>[TOD]</c> marker it carries, each giving way to a table of documents.
-    /// </remarks>
     /// <param name="context">
     ///     What the layout shares between the pages of the build.
     /// </param>

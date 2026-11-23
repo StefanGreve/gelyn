@@ -18,11 +18,6 @@ namespace Gelyn.Services;
 /// <summary>
 ///     Rebuilds the site whenever a source file or the configuration file changes.
 /// </summary>
-/// <remarks>
-///     Two watchers report into one channel the rebuild loop reads, so a rebuild never runs on a callback
-///     thread, where a <see cref="FileSystemEventHandler"/> returning <see langword="void"/> would leave a
-///     failure unobserved and block the watcher while its buffer fills. The tests drive that channel too.
-/// </remarks>
 internal sealed class SiteWatcher
 {
     /// <summary>
@@ -289,14 +284,6 @@ internal sealed class SiteWatcher
     /// <summary>
     ///     Reports whether the entry at one path has changed since the loop last saw it.
     /// </summary>
-    /// <remarks>
-    ///     A copy made from a file whose write time is recent raises a change on the source, not just the
-    ///     destination. That turns the asset copying every rebuild performs into a loop - five copies of a
-    ///     touched file raise five notifications, five of an untouched file none - each rebuild reporting the
-    ///     change that begins the next one. Write time and length distinguish a real save from the echo, with
-    ///     a missing path counting because nothing remains to compare, and a directory because it comes from
-    ///     the <see cref="FileSystemWatcher.Error"/> handler and rebuilds everything.
-    /// </remarks>
     /// <param name="path">
     ///     The absolute path a watcher reported.
     /// </param>
@@ -305,6 +292,7 @@ internal sealed class SiteWatcher
     /// </returns>
     private bool HasChanged(string path)
     {
+        // A directory comes from the Error handler, which asks for a rebuild of everything.
         if (this._fileSystem.Directory.Exists(path)) return true;
 
         IFileInfo entry = this._fileSystem.FileInfo.New(path);
@@ -315,6 +303,8 @@ internal sealed class SiteWatcher
             return true;
         }
 
+        // Copying a recently written file raises a change on the source too, so every rebuild's asset copies would
+        // start the next one. Write time and length tell a real save from that echo.
         (DateTime Written, long Length) current = (entry.LastWriteTimeUtc, entry.Length);
 
         if (this._entries.TryGetValue(path, out (DateTime Written, long Length) previous) && previous == current)
@@ -328,11 +318,6 @@ internal sealed class SiteWatcher
     /// <summary>
     ///     Starts one watcher that reports every change it sees to the loop.
     /// </summary>
-    /// <remarks>
-    ///     A handler writes the path and returns, leaving the callback thread free before the watcher's
-    ///     buffer can fill. An overflow loses the events it could not hold, which the
-    ///     <see cref="FileSystemWatcher.Error"/> handler answers with a rebuild of the whole site.
-    /// </remarks>
     /// <param name="directory">
     ///     The directory to watch, which has to exist.
     /// </param>
@@ -351,13 +336,16 @@ internal sealed class SiteWatcher
     private static FileSystemWatcher Observe(string directory, string filter, bool recursive, ChannelWriter<string> writer)
     {
         var watcher = new FileSystemWatcher(directory, filter) { IncludeSubdirectories = recursive };
+
+        // Handlers only queue the path, so no rebuild runs on a callback thread, where a void handler would leave a
+        // failure unobserved and block the watcher while its buffer fills.
         void Report(object sender, FileSystemEventArgs e) => writer.TryWrite(e.FullPath);
 
         watcher.Changed += Report;
         watcher.Created += Report;
         watcher.Deleted += Report;
         watcher.Renamed += Report;
-        watcher.Error += (_, _) => writer.TryWrite(directory);
+        watcher.Error += (_, _) => writer.TryWrite(directory); // An overflow loses events, so the whole directory is reported.
         watcher.EnableRaisingEvents = true;
 
         return watcher;

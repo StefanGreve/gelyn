@@ -36,7 +36,6 @@ internal static class Program
             // picks the exit code. The default handler would print the stack trace and return 1.
             var configuration = new InvocationConfiguration { EnableDefaultExceptionHandler = false };
 
-            // Parsed once, on the whole tree. An action that needs the site opens its session from the parse.
             ParseResult parsed = GelynCommand
                 .Create(parseResult => Session.Open(parseResult, ContentRoot.Resolve(), stdOut, stdErr, started))
                 .Parse(args);

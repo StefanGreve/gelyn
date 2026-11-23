@@ -79,11 +79,6 @@ internal sealed class PageBuffer : IBufferWriter<byte>, IDisposable
     ///     Folds every carriage return written so far into a line feed, in place, so that the document ends every
     ///     line on <see cref="Tool.LineEnding"/> whatever the content or the configuration carried.
     /// </summary>
-    /// <remarks>
-    ///     A pair collapses onto its line feed and a lone carriage return becomes one. The fold is safe on the
-    ///     bytes, because UTF-8 never uses the byte 0x0D inside a multi-byte sequence, and the line breaks HTML
-    ///     treats as content, such as U+2028, are left alone.
-    /// </remarks>
     /// <exception cref="ObjectDisposedException">
     ///     The buffer has been disposed.
     /// </exception>
@@ -91,6 +86,8 @@ internal sealed class PageBuffer : IBufferWriter<byte>, IDisposable
     {
         ObjectDisposedException.ThrowIf(this._disposed, this);
 
+        // A pair collapses onto its line feed and a lone carriage return becomes one. Folding the raw bytes is safe,
+        // because UTF-8 never uses the byte 0x0D inside a multi-byte sequence, and U+2028 and its kind are left alone.
         Span<byte> bytes = this._buffer.AsSpan(0, this.Length);
         int position = bytes.IndexOf(CarriageReturn);
 
