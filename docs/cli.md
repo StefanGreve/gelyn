@@ -1,7 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-14
+revised: 2026-11-24
 description: Shell tab completion, the serve command, the request log, diagnostics, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
@@ -88,6 +88,14 @@ gelyn clean --output public # another directory
 These are the only `build` options `clean` takes, because it builds nothing. Pass the same `--content` and
 `--output` you build with: `clean` refuses every output directory a build refuses, such as one that is or holds
 the content directory, so it never removes your sources.
+
+`gelyn build --clean` removes the output directory the same way and then builds. A plain build keeps entries
+whose name starts with a dot and symbolic links, as described under [Rebuilds](usage.md#rebuilds), and `--clean` is
+how you clear those in one step. It is off by default.
+
+```sh
+gelyn build --clean
+```
 
 ## Diagnostics
 

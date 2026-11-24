@@ -14,6 +14,8 @@ namespace Gelyn.Commands;
 /// </summary>
 internal sealed class BuildCommand : Command
 {
+    private const string CleanOption = "clean";
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="BuildCommand"/> class.
     /// </summary>
@@ -23,6 +25,13 @@ internal sealed class BuildCommand : Command
     public BuildCommand(Func<ParseResult, Session> open)
         : base("build", "Generate the site into the output directory.")
     {
+        var clean = new Option<bool>($"--{CleanOption}")
+        {
+            Description = "Remove the output directory before building, dot-prefixed entries and links included.",
+        };
+
+        this.Options.Add(clean);
+
         foreach (Option option in OverrideOptions.Definitions)
             this.Options.Add(option);
 
@@ -31,6 +40,9 @@ internal sealed class BuildCommand : Command
             using Session session = open(parseResult);
             SiteBuilder siteBuilder = session.Builder;
             SiteOptions site = session.Options;
+
+            if (parseResult.GetValue(clean))
+                CleanCommand.RemoveDirectory(session, session.FileSystem.Path.Combine(session.ContentRoot, site.OutputDirectory));
 
             BuildReport report = await siteBuilder
                 .BuildAsync(site, cancellationToken)

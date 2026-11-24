@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-15
+revised: 2026-11-24
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
@@ -824,7 +824,8 @@ The output directory itself can't be a link. A build would write its pages where
 delete everything there that it didn't write, so Gelyn refuses to build into one and exits with code 1. On
 such a directory, `gelyn clean` removes the link and leaves its target alone.
 
-`gelyn clean` removes the output directory outright, which is the one way to clear those entries as well.
+`gelyn clean` removes the output directory outright, and `gelyn build --clean` does the same before it builds.
+Either one clears those entries as well.
 
 A rebuild with no source change produces byte-identical pages, because a page's bytes depend on its own sources,
 the configuration, the titles and dates of the pages it lists or links, and the tool version alone. That holds

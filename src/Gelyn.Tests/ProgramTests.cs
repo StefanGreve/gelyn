@@ -212,6 +212,33 @@ public class ProgramTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that <c>build --clean</c> removes the dot-prefixed entries a plain build keeps, and that the
+    ///     build without the option keeps them.
+    /// </summary>
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Main_Test_BuildClean_RemovesWhatABuildKeeps(bool clean)
+    {
+        // Arrange
+        using DiskFixture fixture = DiskFixture.Create().Write("index.md", "# Home");
+        string kept = Path.Combine(fixture.Options.OutputDirectory, ".nojekyll");
+        fixture.WriteOutside(kept, "");
+        string[] args = clean ? ["build", "--clean"] : ["build"];
+
+        // Act
+        int exitCode = await RunAsync(fixture, args);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(exitCode).IsEqualTo(ExitCodes.Success);
+            await Assert.That(fixture.Holds(kept)).IsEqualTo(!clean);
+            await Assert.That(fixture.Holds(Path.Combine(fixture.Options.OutputDirectory, "index.html"))).IsTrue();
+        }
+    }
+
     #endregion // Clean Tests
 
     #region Helpers
