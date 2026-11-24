@@ -17,6 +17,11 @@ internal sealed record RenderedMarkdown
     public required IReadOnlyList<UnknownKey> UnknownKeys { get; init; }
 
     /// <summary>
+    ///     The values the front matter declares that the member meant for them rejects, in the order declared.
+    /// </summary>
+    public required IReadOnlyList<InvalidValue> InvalidValues { get; init; }
+
+    /// <summary>
     ///     The rendered HTML body, excluding the front matter block.
     /// </summary>
     public required string Html { get; init; }

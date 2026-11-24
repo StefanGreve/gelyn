@@ -141,6 +141,7 @@ public class CommentsComponentTests
             Scripts = [],
             Favicon = null,
             UnknownKeys = [],
+            InvalidValues = [],
         };
 
         using var buffer = new PageBuffer();

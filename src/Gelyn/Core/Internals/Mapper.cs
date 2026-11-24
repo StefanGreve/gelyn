@@ -42,5 +42,6 @@ internal static class Mapper
             Scripts = item.Scripts,
             Favicon = item.Favicon,
             UnknownKeys = document.UnknownKeys,
+            InvalidValues = document.InvalidValues,
         };
 }

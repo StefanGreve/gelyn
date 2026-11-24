@@ -47,7 +47,8 @@ internal sealed class MarkdownRenderer
     ///     The Markdown source, optionally preceded by a front matter block.
     /// </param>
     /// <returns>
-    ///     The parsed front matter, the keys it declares that no member reads, and the rendered HTML body.
+    ///     The parsed front matter, the keys it declares that no member reads, the values it declares that
+    ///     their members reject, and the rendered HTML body.
     /// </returns>
     public static RenderedMarkdown Render(string markdown)
     {
@@ -55,21 +56,21 @@ internal sealed class MarkdownRenderer
 
         FrontMatter? frontMatter = null;
         IReadOnlyList<UnknownKey> unknownKeys = [];
+        IReadOnlyList<InvalidValue> invalidValues = [];
 
         // UseYamlFrontMatter marks the block but leaves its contents unread, and the block parser opens
         // only at offset zero, so front matter can never sit anywhere but index 0.
         if (document.Count > 0 && document[0] is YamlFrontMatterBlock block)
         {
             ReadOnlySpan<char> source = markdown.AsSpan(block.Span.Start, block.Span.Length);
-
-            if (!FrontMatterParser.TryParse(source, out frontMatter, out IReadOnlyList<UnknownKey>? unknown))
-                unknownKeys = unknown;
+            _ = FrontMatterParser.TryParse(source, out frontMatter, out unknownKeys, out invalidValues);
         }
 
         return new RenderedMarkdown
         {
             FrontMatter = frontMatter,
             UnknownKeys = unknownKeys,
+            InvalidValues = invalidValues,
             Html = Markdown.ToHtml(document, Pipeline),
         };
     }

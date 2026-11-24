@@ -9,9 +9,10 @@ namespace Gelyn.Core.Internals;
 /// </summary>
 /// <remarks>
 ///     The source generator rejects a <see cref="DateOnly"/> member outright with <c>SHARPYAML002</c> and never
-///     falls back to reflection, so the type binds only through a converter the member names. Reading a scalar
-///     that is not written as <c>yyyy-MM-dd</c> yields <see langword="null"/>, which leaves the rest of the block
-///     readable instead of failing it over one malformed date. A sequence or a mapping still fails the block.
+///     falls back to reflection, so the type binds only through a converter the member names. A value that is
+///     not a scalar written as <c>yyyy-MM-dd</c> is rejected before it is consumed, which lets
+///     <see cref="FrontMatterParser"/> skip it and report it, so the rest of the block stays readable instead of
+///     failing over one malformed date.
 /// </remarks>
 internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
 {
@@ -20,15 +21,20 @@ internal sealed class DateOnlyConverter : YamlConverter<DateOnly?>
     /// <inheritdoc/>
     public override DateOnly? Read(YamlReader reader)
     {
+        // A key without a value is a key the author left blank, not a malformed date.
+        if (YamlScalar.IsNull(reader))
+        {
+            reader.Read();
+            return null;
+        }
+
         string? value = reader.GetScalarValue();
 
-        // The scalar is consumed here, because the caller would otherwise read the value again as the next
-        // key and fault the mapping.
-        reader.Read();
+        if (!DateOnly.TryParseExact(value, Format, Tool.Culture, DateTimeStyles.None, out DateOnly date))
+            throw reader.CreateException($"'{value}' is not a date written as {Format}");
 
-        return DateOnly.TryParseExact(value, Format, Tool.Culture, DateTimeStyles.None, out DateOnly date)
-            ? date
-            : null;
+        reader.Read();
+        return date;
     }
 
     /// <inheritdoc/>

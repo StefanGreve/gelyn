@@ -2792,6 +2792,42 @@ public partial class SiteBuilderTests
 
     #endregion // Unknown Key Tests
 
+    #region Invalid Value Tests
+
+    /// <summary>
+    ///     Verifies that a front matter value its setting rejects is named by a warning that points at its file
+    ///     and line and says why, and that the page is still written with the setting's default, because a
+    ///     malformed date costs one setting and not the build.
+    /// </summary>
+    [Test]
+    public async Task BuildAsync_Test_InvalidValue_IsReportedAndThePageIsWritten()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("about.md", string.Join(Environment.NewLine, "---", "title: About", "date: Sep 13, 2026", "---", "About"));
+
+        string source = Path.Combine(fixture.ContentRoot, "about.md");
+
+        // Act
+        BuildReport report = await fixture.Builder.BuildAsync(fixture.Options, CancellationToken.None);
+
+        // Assert
+        FakeLogRecord warning = Reported(fixture, EventIds.FRONT_MATTER_VALUE_IGNORED);
+
+        using (Assert.Multiple())
+        {
+            await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+            await Assert.That(warning.GetStructuredStateValue("Key")).IsEqualTo("date");
+            await Assert.That(warning.GetStructuredStateValue("Line")).IsEqualTo("3");
+            await Assert.That(warning.GetStructuredStateValue("Path")).IsEqualTo(source);
+            await Assert.That(warning.GetStructuredStateValue("Reason")).Contains("Sep 13, 2026");
+            await Assert.That(report.Pages).Contains("about.html");
+        }
+    }
+
+    #endregion // Invalid Value Tests
+
     #region Document Shell Tests
 
     /// <summary>

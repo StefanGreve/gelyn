@@ -88,6 +88,11 @@ internal static class EventIds
     /// </summary>
     internal const int SITEMAP_LIMIT_EXCEEDED = 1_014;
 
+    /// <summary>
+    ///     One page declares a front matter value that the setting meant for it rejects.
+    /// </summary>
+    internal const int FRONT_MATTER_VALUE_IGNORED = 1_015;
+
     #endregion
 
     #region Serving (1_100 - 1_199)

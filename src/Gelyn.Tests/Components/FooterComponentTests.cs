@@ -298,6 +298,7 @@ public class FooterComponentTests
             Scripts = [],
             Favicon = null,
             UnknownKeys = [],
+            InvalidValues = [],
         };
 
         // The entry sits on a second page, so the link is shown to follow the site and not the page.

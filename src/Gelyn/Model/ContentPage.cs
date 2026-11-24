@@ -124,4 +124,10 @@ internal sealed record ContentPage
     ///     as a warning, because the setting it was meant to be takes no effect.
     /// </summary>
     public required IReadOnlyList<UnknownKey> UnknownKeys { get; init; }
+
+    /// <summary>
+    ///     The values the front matter declares that the member meant for them rejects, in the order declared.
+    ///     Each is reported as a warning, because the setting keeps its default.
+    /// </summary>
+    public required IReadOnlyList<InvalidValue> InvalidValues { get; init; }
 }

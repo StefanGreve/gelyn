@@ -307,6 +307,35 @@ internal static partial class LogMessages
     internal static partial void LogFrontMatterKeyIgnored(this ILogger logger, string key, int line, string path);
 
     /// <summary>
+    ///     Reports that one page declares a front matter value that the setting meant for it rejects, such as
+    ///     a date not written as <c>yyyy-MM-dd</c>, since the setting keeps its default.
+    /// </summary>
+    /// <param name="logger">
+    ///     The logger the record is written to.
+    /// </param>
+    /// <param name="key">
+    ///     The key the value is declared under, as written in the block.
+    /// </param>
+    /// <param name="line">
+    ///     The one-based line of the source file the value is declared on.
+    /// </param>
+    /// <param name="path">
+    ///     The absolute path of the page's source file, which is the file the value is edited in.
+    /// </param>
+    /// <param name="reason">
+    ///     Why the value was rejected, as the setting's converter reported it.
+    /// </param>
+    /// <remarks>
+    ///     A warning and not a failure, for the reason <see cref="LogFrontMatterKeyIgnored"/> gives.
+    /// </remarks>
+    [LoggerMessage(
+        EventId = EventIds.FRONT_MATTER_VALUE_IGNORED,
+        EventName = nameof(EventIds.FRONT_MATTER_VALUE_IGNORED),
+        Level = LogLevel.Warning,
+        Message = "Ignored the value of {Key} on line {Line} of {Path}, because {Reason}")]
+    internal static partial void LogFrontMatterValueIgnored(this ILogger logger, string key, int line, string path, string reason);
+
+    /// <summary>
     ///     Reports that one file of the configured theme was not written, because a file of the same name at
     ///     the root of the content directory replaces it.
     /// </summary>

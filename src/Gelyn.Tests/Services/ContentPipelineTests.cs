@@ -1287,7 +1287,8 @@ public class ContentPipelineTests
 
     /// <summary>
     ///     Verifies that when several pages carry malformed front matter, the failure of the first one in
-    ///     scan order surfaces, which is the page a sequential render would have stopped at.
+    ///     scan order surfaces, which is the page a sequential render would have stopped at. The block is
+    ///     malformed YAML, so the parser's error surfaces, as a value no member accepts is skipped instead.
     /// </summary>
     [Test]
     [Repeat(5)]
@@ -1308,11 +1309,11 @@ public class ContentPipelineTests
         ContentItem first = items.Single(static item => item.Href == "/page010.html");
 
         var expected = await Assert.That(() => fixture.Pipeline.Render([first], CancellationToken.None))
-            .ThrowsExactly<YamlException>();
+            .Throws<YamlException>();
 
         // Act and Assert
         await Assert.That(() => fixture.Pipeline.Render(items, CancellationToken.None))
-            .ThrowsExactly<YamlException>()
+            .Throws<YamlException>()
             .WithMessage(expected!.Message);
     }
 

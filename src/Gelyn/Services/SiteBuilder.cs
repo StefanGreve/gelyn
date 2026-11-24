@@ -129,8 +129,13 @@ internal sealed class SiteBuilder
         clock.Charge(BuildPhase.Render);
 
         foreach (ContentPage page in pages)
+        {
             foreach (UnknownKey key in page.UnknownKeys)
                 this._logger.LogFrontMatterKeyIgnored(key.Name, key.Line, page.SourcePath);
+
+            foreach (InvalidValue value in page.InvalidValues)
+                this._logger.LogFrontMatterValueIgnored(value.Name, value.Line, page.SourcePath, value.Message);
+        }
 
         string outputDirectory = this._fileSystem.Path.Combine(this._contentRoot, options.OutputDirectory);
 

@@ -191,6 +191,7 @@ public partial class HeaderComponentTests
             Scripts = [],
             Favicon = null,
             UnknownKeys = [],
+            InvalidValues = [],
         };
 
     #endregion

@@ -43,7 +43,7 @@ public class FrontMatterParserTests
             """;
 
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         using (Assert.Multiple())
@@ -78,7 +78,7 @@ public class FrontMatterParserTests
             """;
 
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         using (Assert.Multiple())
@@ -99,7 +99,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_MathRendering_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.EnableMathRendering).IsEqualTo(expected);
@@ -121,7 +121,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_FeedOptIn_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.EnableFeed).IsEqualTo(expected);
@@ -138,7 +138,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_Comments_IsReadAsADeclaredBoolean(string line, bool? expected)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.EnableComments).IsEqualTo(expected);
@@ -153,7 +153,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_BlockWithoutEntries_ReturnsNull(string block)
     {
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result).IsNull();
@@ -168,7 +168,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_NewlineConventions_AreAllSupported(string block)
     {
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsEqualTo("Home");
@@ -184,7 +184,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_BlockScalar_KeepsItsFinalLineBreak(string block)
     {
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsEqualTo("Home\n");
@@ -205,7 +205,7 @@ public class FrontMatterParserTests
             """;
 
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(block, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -220,7 +220,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_KeyCaseMismatch_LeavesTitleUnset(string line)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -235,7 +235,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_AbsentValue_LeavesTitleUnset(string line)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsNull();
@@ -251,7 +251,7 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_EmptyQuotedValue_IsPreserved(string line)
     {
         // Act
-        FrontMatterParser.TryParse(line, out FrontMatter? result, out _);
+        FrontMatterParser.TryParse(line, out FrontMatter? result, out _, out _);
 
         // Assert
         await Assert.That(result?.Title).IsEqualTo(string.Empty);
@@ -266,12 +266,13 @@ public class FrontMatterParserTests
     public async Task TryParse_Test_NonMappingBlock_Throws(string block)
     {
         // Act and Assert
-        await Assert.That(() => FrontMatterParser.TryParse(block, out _, out _)).Throws<YamlException>();
+        await Assert.That(() => FrontMatterParser.TryParse(block, out _, out _, out _)).Throws<YamlException>();
     }
 
     /// <summary>
     ///     Verifies that a value not written as an ISO 8601 calendar date leaves the date unset and does not
-    ///     abort the block, including the spellings the invariant culture would otherwise accept.
+    ///     abort the block but is reported with its key and line, including the spellings the invariant culture
+    ///     would otherwise accept.
     /// </summary>
     [Test]
     [Arguments("not a date")]
@@ -286,13 +287,22 @@ public class FrontMatterParserTests
         string block = $"title: Home\ndate: {value}";
 
         // Act
-        FrontMatterParser.TryParse(block, out FrontMatter? result, out _);
+        bool isComplete = FrontMatterParser.TryParse(
+            block,
+            out FrontMatter? result,
+            out _,
+            out IReadOnlyList<InvalidValue> invalidValues);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(result?.Title).IsEqualTo("Home");
             await Assert.That(result?.Date).IsNull();
+            await Assert.That(isComplete).IsFalse();
+            await Assert.That(invalidValues.Count).IsEqualTo(1);
+            await Assert.That(invalidValues[0].Name).IsEqualTo("date");
+            await Assert.That(invalidValues[0].Line).IsEqualTo(2);
+            await Assert.That(invalidValues[0].Message).Contains(value);
         }
     }
 
@@ -311,8 +321,8 @@ public class FrontMatterParserTests
         try
         {
             // Act
-            FrontMatterParser.TryParse("date: 2026-09-13", out FrontMatter? iso, out _);
-            FrontMatterParser.TryParse("date: 13/09/2026", out FrontMatter? dayFirst, out _);
+            FrontMatterParser.TryParse("date: 2026-09-13", out FrontMatter? iso, out _, out _);
+            FrontMatterParser.TryParse("date: 13/09/2026", out FrontMatter? dayFirst, out _, out _);
 
             // Assert
             using (Assert.Multiple())
@@ -343,7 +353,8 @@ public class FrontMatterParserTests
         bool isComplete = FrontMatterParser.TryParse(
             block,
             out FrontMatter? result,
-            out IReadOnlyList<UnknownKey>? unknownKeys);
+            out IReadOnlyList<UnknownKey> unknownKeys,
+            out _);
 
         // Assert
         using (Assert.Multiple())
@@ -376,7 +387,8 @@ public class FrontMatterParserTests
         bool isComplete = FrontMatterParser.TryParse(
             block,
             out FrontMatter? result,
-            out IReadOnlyList<UnknownKey>? unknownKeys);
+            out IReadOnlyList<UnknownKey> unknownKeys,
+            out _);
 
         // Assert
         using (Assert.Multiple())
@@ -403,13 +415,13 @@ public class FrontMatterParserTests
             """;
 
         // Act
-        bool isComplete = FrontMatterParser.TryParse(block, out _, out IReadOnlyList<UnknownKey>? unknownKeys);
+        bool isComplete = FrontMatterParser.TryParse(block, out _, out IReadOnlyList<UnknownKey> unknownKeys, out _);
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(isComplete).IsTrue();
-            await Assert.That(unknownKeys).IsNull();
+            await Assert.That(unknownKeys).IsEmpty();
         }
     }
 

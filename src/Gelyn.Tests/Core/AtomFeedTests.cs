@@ -469,6 +469,7 @@ public class AtomFeedTests
             Scripts = [],
             Favicon = null,
             UnknownKeys = [],
+            InvalidValues = [],
         };
 
     private static DateOnly? Parse(string? date) =>

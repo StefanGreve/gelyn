@@ -143,6 +143,7 @@ public class DocumentCatalogTests
             Scripts = [],
             Favicon = null,
             UnknownKeys = [],
+            InvalidValues = [],
         };
 
     private static DateOnly? Parse(string? date) =>

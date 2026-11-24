@@ -12,7 +12,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15" />
-    <PackageVersion Include="SharpYaml" Version="3.17.0" />
+    <PackageVersion Include="SharpYaml" Version="3.18.0" />
     <PackageVersion Include="System.CommandLine" Version="3.0.0" />
     <PackageVersion Include="Testably.Abstractions" Version="11.1.0" />
   </ItemGroup>
