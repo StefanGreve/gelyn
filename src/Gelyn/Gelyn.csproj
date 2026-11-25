@@ -36,6 +36,11 @@
     <UseSizeOptimizedLinq>true</UseSizeOptimizedLinq>
   </PropertyGroup>
 
+  <PropertyGroup Label="Garbage collection">
+    <!-- Background GC caps the gen0 budget at a few MB, so the render threads stop for a collection every few MB. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+  </PropertyGroup>
+
   <PropertyGroup Label="Tool packaging">
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>gelyn</ToolCommandName>
