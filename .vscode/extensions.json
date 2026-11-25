@@ -5,6 +5,7 @@
     "editorconfig.editorconfig",
     "redhat.vscode-xml",
     "github.vscode-github-actions",
-    "usernamehw.errorlens"
+    "usernamehw.errorlens",
+    "ms-vscode-remote.remote-containers"
   ]
 }

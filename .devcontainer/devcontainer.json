@@ -1,0 +1,28 @@
+{
+  "name": "gelyn",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "mounts": [
+    "source=${devcontainerId}-gelyn-bin,target=${containerWorkspaceFolder}/src/Gelyn/bin,type=volume",
+    "source=${devcontainerId}-gelyn-obj,target=${containerWorkspaceFolder}/src/Gelyn/obj,type=volume",
+    "source=${devcontainerId}-schema-bin,target=${containerWorkspaceFolder}/src/Gelyn.Schema/bin,type=volume",
+    "source=${devcontainerId}-schema-obj,target=${containerWorkspaceFolder}/src/Gelyn.Schema/obj,type=volume",
+    "source=${devcontainerId}-tests-bin,target=${containerWorkspaceFolder}/src/Gelyn.Tests/bin,type=volume",
+    "source=${devcontainerId}-tests-obj,target=${containerWorkspaceFolder}/src/Gelyn.Tests/obj,type=volume"
+  ],
+  "postCreateCommand": "sudo chown vscode:vscode src/*/bin src/*/obj && git config --global --add safe.directory ${containerWorkspaceFolder} && make setup",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "editorconfig.editorconfig",
+        "redhat.vscode-xml",
+        "github.vscode-github-actions",
+        "usernamehw.errorlens"
+      ]
+    }
+  }
+}

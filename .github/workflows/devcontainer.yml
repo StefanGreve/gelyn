@@ -1,0 +1,45 @@
+name: Dev Container
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - .devcontainer/**
+      - .config/dotnet-tools.json
+      - .github/workflows/devcontainer.yml
+      - global.json
+      - Makefile
+  pull_request:
+    branches: [ master ]
+    paths:
+      - .devcontainer/**
+      - .config/dotnet-tools.json
+      - .github/workflows/devcontainer.yml
+      - global.json
+      - Makefile
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test in the Dev Container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          filter: tree:0
+
+      - name: Build the Container and Run the Tests
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: make test
