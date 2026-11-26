@@ -450,8 +450,8 @@ public partial class SiteBuilderTests
     }
 
     /// <summary>
-    ///     Verifies that the highlighter precedes the resources the content tree supplies, so that a script of
-    ///     the author's finds the blocks already replaced.
+    ///     Verifies that the highlighter precedes the resources the content tree supplies, so that it starts
+    ///     before any script of the author's runs.
     /// </summary>
     [Test]
     public async Task BuildAsync_Test_Highlighter_PrecedesTheCascadedResources()
