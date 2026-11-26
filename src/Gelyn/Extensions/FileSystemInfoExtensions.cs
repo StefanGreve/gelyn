@@ -1,5 +1,7 @@
 using System.IO.Abstractions;
 
+using Gelyn.Core.Internals;
+
 namespace Gelyn.Extensions;
 
 /// <summary>
@@ -28,6 +30,7 @@ internal static class FileSystemInfoExtensions
         /// <returns>
         ///     The entries, in ordinal order of their names.
         /// </returns>
+        [SuppressMessage("ApiDesign", "RS0030:Do not use banned APIs", Justification = $"{Justifications.ByDesign}. The one listing every walk goes through.")]
         public IFileSystemInfo[] ListEntries() =>
             [.. directory.EnumerateFileSystemInfos().OrderBy(static entry => entry.Name, StringComparer.Ordinal)];
     }

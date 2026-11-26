@@ -24,6 +24,11 @@
     <AnalysisMode>all</AnalysisMode>
   </PropertyGroup>
 
+  <ItemGroup Label="Analyzers">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="BannedSymbols.txt" />
+  </ItemGroup>
+
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
     <!-- The interop source generator writes unsafe code for the P/Invokes in NativeMethods. -->

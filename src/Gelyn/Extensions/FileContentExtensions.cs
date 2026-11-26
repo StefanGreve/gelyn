@@ -22,10 +22,10 @@ internal static class FileContentExtensions
         ///     the copy with the given modification time.
         /// </summary>
         /// <remarks>
-        ///     Unlike <see cref="IFile.Copy(string, string, bool)"/>, this leaves the attributes and permissions
-        ///     of the source behind, so a read-only source does not produce a read-only copy that the next build
-        ///     cannot overwrite. The caller supplies the modification time, so the source is not queried for it,
-        ///     and a deploy tool that compares times still skips an unchanged file.
+        ///     Unlike <c>IFile.Copy</c>, this leaves the attributes and permissions of the source behind, so a
+        ///     read-only source does not produce a read-only copy that the next build cannot overwrite. The caller
+        ///     supplies the modification time, so the source is not queried for it, and a deploy tool that compares
+        ///     times still skips an unchanged file.
         /// </remarks>
         /// <param name="sourcePath">
         ///     The path of the file to copy.
@@ -67,7 +67,7 @@ internal static class FileContentExtensions
 
         /// <summary>
         ///     Reads a text file whole, with one read into a pooled buffer and one decode, and returns the same
-        ///     text as <see cref="IFile.ReadAllText(string)"/>.
+        ///     text as <c>IFile.ReadAllText</c>.
         /// </summary>
         /// <param name="path">
         ///     The path of the file to read.

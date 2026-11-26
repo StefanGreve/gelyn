@@ -38,6 +38,7 @@ public class ThirdPartyNoticesTests
     private static readonly string[] BuildTime =
     [
         "MinVer",
+        "Microsoft.CodeAnalysis.BannedApiAnalyzers",
         "Microsoft.DotNet.ILCompiler",
         "runtime.*.Microsoft.DotNet.ILCompiler",
         "Microsoft.NET.ILLink.Tasks",
