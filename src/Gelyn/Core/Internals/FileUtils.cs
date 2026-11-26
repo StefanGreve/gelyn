@@ -1,4 +1,6 @@
+using System.Buffers;
 using System.IO.Abstractions;
+using System.Text;
 
 namespace Gelyn.Core.Internals;
 
@@ -60,4 +62,78 @@ internal static class FileUtils
         file.SetLastWriteTimeUtc(destinationPath, lastWriteTimeUtc);
     }
 
+    /// <summary>
+    ///     Reads a text file whole, with one read into a pooled buffer and one decode, and returns the same text
+    ///     as <see cref="IFile.ReadAllText(string)"/>.
+    /// </summary>
+    /// <param name="fileSystem">
+    ///     The file system the file belongs to.
+    /// </param>
+    /// <param name="path">
+    ///     The path of the file to read.
+    /// </param>
+    /// <returns>
+    ///     The text of the file without its byte order mark, with U+FFFD in place of every byte sequence the
+    ///     detected encoding does not allow.
+    /// </returns>
+    internal static string ReadText(IFileSystem fileSystem, string path)
+    {
+        // Unbuffered, because the whole file goes into a buffer of its own length.
+        using Stream stream = fileSystem.File.Open(path, new FileStreamOptions
+        {
+            Mode = FileMode.Open,
+            Access = FileAccess.Read,
+            Share = FileShare.Read,
+            Options = FileOptions.SequentialScan,
+            BufferSize = 0,
+        });
+
+        // One byte more than the file holds, so that the read which finds the end needs no larger buffer.
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(checked((int)stream.Length + 1));
+        int count = 0;
+
+        try
+        {
+            while (true)
+            {
+                // Full only if the file grew after its length was taken, as when an editor saves it during a rebuild.
+                if (count == buffer.Length)
+                {
+                    byte[] larger = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                    buffer.AsSpan(0, count).CopyTo(larger);
+                    ArrayPool<byte>.Shared.Return(buffer);
+                    buffer = larger;
+                }
+
+                int read = stream.Read(buffer, count, buffer.Length - count);
+
+                if (read == 0)
+                    break;
+
+                count += read;
+            }
+
+            return DecodeText(buffer.AsSpan(0, count));
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    #region Helpers
+
+    // The marks StreamReader detects, the UTF-32 LE mark ahead of the UTF-16 LE mark it starts with. Encoding.UTF8
+    // and not Tool.Encoding, which would turn a stray byte in a source into a failed build.
+    private static string DecodeText(ReadOnlySpan<byte> bytes) => bytes switch
+    {
+        [0xEF, 0xBB, 0xBF, ..] => Encoding.UTF8.GetString(bytes[3..]),
+        [0xFF, 0xFE, 0x00, 0x00, ..] => Encoding.UTF32.GetString(bytes[4..]),
+        [0xFF, 0xFE, ..] => Encoding.Unicode.GetString(bytes[2..]),
+        [0xFE, 0xFF, ..] => Encoding.BigEndianUnicode.GetString(bytes[2..]),
+        [0x00, 0x00, 0xFE, 0xFF, ..] => new UTF32Encoding(bigEndian: true, byteOrderMark: true).GetString(bytes[4..]),
+        _ => Encoding.UTF8.GetString(bytes),
+    };
+
+    #endregion
 }

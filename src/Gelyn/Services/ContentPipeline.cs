@@ -149,7 +149,7 @@ internal sealed class ContentPipeline
     // small file costs more in overlapped I/O and continuations than it frees up.
     private ContentPage RenderPage(ContentItem item, Dictionary<string, ContentItem> files)
     {
-        string markdown = this._fileSystem.File.ReadAllText(item.SourcePath);
+        string markdown = FileUtils.ReadText(this._fileSystem, item.SourcePath);
 
         RenderedMarkdown document = MarkdownRenderer.Render(markdown);
         FrontMatter? frontMatter = document.FrontMatter;
