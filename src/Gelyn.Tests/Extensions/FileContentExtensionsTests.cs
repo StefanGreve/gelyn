@@ -4,18 +4,18 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Extensions;
 using Gelyn.Tests.Fixtures;
 
 using Testably.Abstractions.Testing;
 
-namespace Gelyn.Tests.Core.Internals;
+namespace Gelyn.Tests.Extensions;
 
 /// <summary>
-///     Unit tests for the <see cref="FileUtils"/> class.
+///     Unit tests for the <see cref="FileContentExtensions"/> class.
 /// </summary>
 [Category(Categories.Internal)]
-public class FileUtilsTests
+public class FileContentExtensionsTests
 {
     // Characters of one to four bytes in UTF-8, the last a surrogate pair in UTF-16.
     private const string Text = "Gr\U000000FC\U000000DFe, \U000020AC und \U0001F600";
@@ -40,7 +40,7 @@ public class FileUtilsTests
         fileSystem.File.SetLastWriteTimeUtc(Source, written.AddDays(1));
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination, written);
+        fileSystem.File.CopyContent(Source, Destination, written);
 
         // Assert
         using (Assert.Multiple())
@@ -63,7 +63,7 @@ public class FileUtilsTests
         fileSystem.File.WriteAllBytes(Destination, [0x0A, 0x0B, 0x0C, 0x0D]);
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination, DateTime.UnixEpoch);
+        fileSystem.File.CopyContent(Source, Destination, DateTime.UnixEpoch);
 
         // Assert
         await Assert.That(fileSystem.File.ReadAllBytes(Destination)).IsEquivalentTo(expected);
@@ -80,7 +80,7 @@ public class FileUtilsTests
         fileSystem.File.SetAttributes(Source, FileAttributes.ReadOnly);
 
         // Act
-        FileUtils.CopyContent(fileSystem, Source, Destination, DateTime.UnixEpoch);
+        fileSystem.File.CopyContent(Source, Destination, DateTime.UnixEpoch);
 
         // Assert
         using (Assert.Multiple())
@@ -108,7 +108,7 @@ public class FileUtilsTests
         fileSystem.AddFile(Page, bytes);
 
         // Act
-        string text = FileUtils.ReadText(fileSystem, Page);
+        string text = fileSystem.File.ReadText(Page);
 
         // Assert
         using (Assert.Multiple())
@@ -131,7 +131,7 @@ public class FileUtilsTests
         fileSystem.AddFile(Page, bytes);
 
         // Act
-        string text = FileUtils.ReadText(fileSystem, Page);
+        string text = fileSystem.File.ReadText(Page);
 
         // Assert
         using (Assert.Multiple())
@@ -152,7 +152,7 @@ public class FileUtilsTests
         fileSystem.AddFile(Page, []);
 
         // Act
-        string text = FileUtils.ReadText(fileSystem, Page);
+        string text = fileSystem.File.ReadText(Page);
 
         // Assert
         await Assert.That(text).IsEqualTo(string.Empty);
