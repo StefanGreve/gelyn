@@ -1,3 +1,4 @@
+using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
@@ -45,7 +46,7 @@ public class MarkdownRendererTests
         RenderedMarkdown rendered = MarkdownRenderer.Render(markdown);
 
         // Assert
-        await Assert.That(rendered.Html).Contains(expected);
+        await Assert.That(DecodeBody(rendered)).Contains(expected);
     }
 
     /// <summary>
@@ -59,7 +60,7 @@ public class MarkdownRendererTests
         RenderedMarkdown rendered = MarkdownRenderer.Render("[Notes](notes.markdown)");
 
         // Assert
-        await Assert.That(rendered.Html).Contains("""<a href="notes.markdown">""");
+        await Assert.That(DecodeBody(rendered)).Contains("""<a href="notes.markdown">""");
     }
 
     #endregion // Extension Tests
@@ -79,8 +80,8 @@ public class MarkdownRendererTests
         using (Assert.Multiple())
         {
             await Assert.That(rendered.FrontMatter?.Title).IsEqualTo("Home");
-            await Assert.That(rendered.Html).Contains("""<h1 id="body">Body</h1>""");
-            await Assert.That(rendered.Html).DoesNotContain("title: Home");
+            await Assert.That(DecodeBody(rendered)).Contains("""<h1 id="body">Body</h1>""");
+            await Assert.That(DecodeBody(rendered)).DoesNotContain("title: Home");
         }
     }
 
@@ -98,7 +99,7 @@ public class MarkdownRendererTests
         using (Assert.Multiple())
         {
             await Assert.That(rendered.FrontMatter).IsNull();
-            await Assert.That(rendered.Html).Contains("Body");
+            await Assert.That(DecodeBody(rendered)).Contains("Body");
         }
     }
 
@@ -126,8 +127,8 @@ public class MarkdownRendererTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(rendered.Html).Contains("<p>[^1]: the note</p>");
-            await Assert.That(rendered.Html).DoesNotContain("footnote-ref");
+            await Assert.That(DecodeBody(rendered)).Contains("<p>[^1]: the note</p>");
+            await Assert.That(DecodeBody(rendered)).DoesNotContain("footnote-ref");
         }
     }
 
@@ -144,10 +145,31 @@ public class MarkdownRendererTests
         // Assert
         using (Assert.Multiple())
         {
-            await Assert.That(rendered.Html).Contains("""class="footnote-ref">""");
-            await Assert.That(rendered.Html).DoesNotContain("<p>[^1]: the note</p>");
+            await Assert.That(DecodeBody(rendered)).Contains("""class="footnote-ref">""");
+            await Assert.That(DecodeBody(rendered)).DoesNotContain("<p>[^1]: the note</p>");
         }
     }
 
     #endregion // Footnote Tests
+
+    #region Body Tests
+
+    /// <summary>
+    ///     Verifies that a document holding an unpaired surrogate is refused in the render, so that its page fails
+    ///     before anything reaches the disk.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_UnpairedSurrogate_IsRefused()
+    {
+        // Act and Assert
+        await Assert.That(() => MarkdownRenderer.Render("a" + (char)0xD800)).Throws<EncoderFallbackException>();
+    }
+
+    #endregion // Body Tests
+
+    #region Helpers
+
+    private static string DecodeBody(RenderedMarkdown rendered) => Encoding.UTF8.GetString(rendered.Body.Span);
+
+    #endregion
 }

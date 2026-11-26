@@ -48,8 +48,11 @@ internal sealed class MarkdownRenderer
     /// </param>
     /// <returns>
     ///     The parsed front matter, the keys it declares that no member reads, the values it declares that
-    ///     their members reject, and the rendered HTML body.
+    ///     their members reject, and the rendered HTML body as UTF-8.
     /// </returns>
+    /// <exception cref="System.Text.EncoderFallbackException">
+    ///     The rendered HTML holds an unpaired surrogate.
+    /// </exception>
     public static RenderedMarkdown Render(string markdown)
     {
         MarkdownDocument document = Markdown.Parse(markdown, Pipeline);
@@ -66,12 +69,20 @@ internal sealed class MarkdownRenderer
             _ = FrontMatterParser.TryParse(source, out frontMatter, out unknownKeys, out invalidValues);
         }
 
+        // Encoded once, at its exact size, from the pooled writer, so the HTML never becomes a string.
+        using var writer = new PooledTextWriter();
+        Markdown.ToHtml(document, writer, Pipeline);
+
+        ReadOnlySpan<char> html = writer.WrittenSpan;
+        byte[] body = new byte[Tool.Encoding.GetByteCount(html)];
+        Tool.Encoding.GetBytes(html, body);
+
         return new RenderedMarkdown
         {
             FrontMatter = frontMatter,
             UnknownKeys = unknownKeys,
             InvalidValues = invalidValues,
-            Html = Markdown.ToHtml(document, Pipeline),
+            Body = body,
         };
     }
 
