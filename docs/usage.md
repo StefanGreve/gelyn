@@ -1,7 +1,7 @@
 ---
 title: Usage
 date: 2026-10-19
-revised: 2026-11-24
+revised: 2026-11-26
 description: The content tree, front matter, and the Markdown extensions Gelyn renders.
 enableSyntaxHighlighting: true
 ---
@@ -702,27 +702,38 @@ Gelyn writes one module script into the head of that page:
 
 ```html
 <script type="module">
-import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "https://cdn.jsdelivr.net/npm/shiki@4.6.0/+esm";
-const blocks = new Map();
-for (const code of document.querySelectorAll("pre > code[class*='language-']")) {
-    const lang = [...code.classList].find(name => name.startsWith("language-")).slice("language-".length);
-    if (lang in bundledLanguages) blocks.set(code, lang);
-}
-if (blocks.size > 0) {
-    const themes = { light: "github-light", dark: "github-dark" };
-    const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(blocks.values())], engine: createJavaScriptRegexEngine() });
-    for (const [code, lang] of blocks) {
-        const transformers = [{ code(node) { this.addClassToHast(node, code.className); } }];
-        code.parentElement.outerHTML = highlighter.codeToHtml(code.textContent.replace(/\n$/, ""), { lang, themes, defaultColor: false, transformers });
-    }
+const codes = [...document.querySelectorAll("pre > code[class*='language-']")];
+if (codes.length > 0) {
+    const source = `
+    import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "https://cdn.jsdelivr.net/npm/shiki@4.6.0/+esm";
+    onmessage = async ({ data: blocks }) => {
+        const known = blocks.filter(block => block.lang in bundledLanguages);
+        if (known.length > 0) {
+            const themes = { light: "github-light", dark: "github-dark" };
+            const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(known.map(block => block.lang))], engine: createJavaScriptRegexEngine() });
+            for (const block of known) {
+                const transformers = [{ code(node) { this.addClassToHast(node, block.className); } }];
+                postMessage({ index: block.index, html: highlighter.codeToHtml(block.text, { lang: block.lang, themes, defaultColor: false, transformers }) });
+            }
+        }
+        close();
+    };`;
+    const worker = new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })), { type: "module" });
+    worker.onmessage = ({ data }) => { codes[data.index].parentElement.outerHTML = data.html; };
+    worker.postMessage(codes.map((code, index) => ({ index, lang: [...code.classList].find(name => name.startsWith("language-")).slice("language-".length), text: code.textContent.replace(/\n$/, ""), className: code.className })));
 }
 </script>
 ```
 
-The script collects every block whose language Shiki bundles, which includes the aliases, so `sh`, `js` and
-`md` all qualify. A block naming a language it lacks is left as Markdig wrote it, and so is a `text` block,
-which needs no color. One highlighter is created for the languages the page uses, and each grammar is fetched
-once, on demand. The engine is Shiki's JavaScript one, so no WebAssembly is downloaded.
+The script hands every fenced block to a worker, which imports Shiki and keeps the blocks whose language Shiki
+bundles, aliases included, so `sh`, `js` and `md` all qualify. A block naming a language Shiki lacks is left as
+Markdig wrote it, and so is a `text` block, which needs no color. One highlighter is created for the languages
+the page uses, and each grammar is fetched once, on demand. The engine is Shiki's JavaScript one, so no
+WebAssembly is downloaded.
+
+The worker keeps Shiki off the page's main thread. Compiling a grammar takes tens of milliseconds per language,
+and the page couldn't respond to input during that time. Each block is replaced as soon as its HTML comes back,
+so a script of yours can't count on finding the blocks highlighted when it runs.
 
 Each block comes back as `<pre class="shiki ..." tabindex="0">`, with a `<span class="line">` per line, the
 original `language-*` class kept on the `<code>` element, and a `style` attribute per token. Shiki colors

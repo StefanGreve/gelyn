@@ -164,23 +164,30 @@ internal static class HeadComponent
         // The dist entry imports bare specifiers, so this is jsDelivr's bundled build.
         string shiki = $"https://cdn.jsdelivr.net/npm/shiki@{WebUtility.HtmlEncode(version)}/+esm";
 
+        // Shiki runs in a worker, because compiling a language's grammar blocks its thread for tens of milliseconds.
         // The JavaScript engine needs no WebAssembly download. A language Shiki lacks is left as Markdig wrote
         // it. With no default color, the theme's stylesheet picks between the two palettes.
         head.Append($$"""
             <script type="module">
-            import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "{{shiki}}";
-            const blocks = new Map();
-            for (const code of document.querySelectorAll("pre > code[class*='language-']")) {
-                const lang = [...code.classList].find(name => name.startsWith("language-")).slice("language-".length);
-                if (lang in bundledLanguages) blocks.set(code, lang);
-            }
-            if (blocks.size > 0) {
-                const themes = { light: "{{LightTheme}}", dark: "{{DarkTheme}}" };
-                const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(blocks.values())], engine: createJavaScriptRegexEngine() });
-                for (const [code, lang] of blocks) {
-                    const transformers = [{ code(node) { this.addClassToHast(node, code.className); } }];
-                    code.parentElement.outerHTML = highlighter.codeToHtml(code.textContent.replace(/\n$/, ""), { lang, themes, defaultColor: false, transformers });
-                }
+            const codes = [...document.querySelectorAll("pre > code[class*='language-']")];
+            if (codes.length > 0) {
+                const source = `
+                import { bundledLanguages, createHighlighter, createJavaScriptRegexEngine } from "{{shiki}}";
+                onmessage = async ({ data: blocks }) => {
+                    const known = blocks.filter(block => block.lang in bundledLanguages);
+                    if (known.length > 0) {
+                        const themes = { light: "{{LightTheme}}", dark: "{{DarkTheme}}" };
+                        const highlighter = await createHighlighter({ themes: Object.values(themes), langs: [...new Set(known.map(block => block.lang))], engine: createJavaScriptRegexEngine() });
+                        for (const block of known) {
+                            const transformers = [{ code(node) { this.addClassToHast(node, block.className); } }];
+                            postMessage({ index: block.index, html: highlighter.codeToHtml(block.text, { lang: block.lang, themes, defaultColor: false, transformers }) });
+                        }
+                    }
+                    close();
+                };`;
+                const worker = new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })), { type: "module" });
+                worker.onmessage = ({ data }) => { codes[data.index].parentElement.outerHTML = data.html; };
+                worker.postMessage(codes.map((code, index) => ({ index, lang: [...code.classList].find(name => name.startsWith("language-")).slice("language-".length), text: code.textContent.replace(/\n$/, ""), className: code.className })));
             }
             </script>
         """);
