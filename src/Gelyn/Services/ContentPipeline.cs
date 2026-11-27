@@ -115,6 +115,9 @@ internal sealed class ContentPipeline
     ///     Every item a scan located, in the order the pages among them are to be rendered. The other items
     ///     are the files a page's front matter may declare.
     /// </param>
+    /// <param name="bodies">
+    ///     The owner the body of each page is allocated from.
+    /// </param>
     /// <param name="cancellationToken">
     ///     Token used to cancel the operation.
     /// </param>
@@ -127,9 +130,10 @@ internal sealed class ContentPipeline
     /// <exception cref="BuildException">
     ///     A front matter block declares a stylesheet or a script the scan did not locate.
     /// </exception>
-    public IReadOnlyList<ContentPage> Render(IReadOnlyList<ContentItem> items, CancellationToken cancellationToken)
+    public IReadOnlyList<ContentPage> Render(IReadOnlyList<ContentItem> items, PageBodies bodies, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(bodies);
 
         IPath path = this._fileSystem.Path;
 
@@ -140,18 +144,18 @@ internal sealed class ContentPipeline
 
         ContentItem[] pages = [.. items.Where(static item => item.Kind is ContentKind.Page)];
 
-        return OrderedParallel.Select(pages, item => this.RenderPage(item, files), cancellationToken);
+        return OrderedParallel.Select(pages, item => this.RenderPage(item, files, bodies), cancellationToken);
     }
 
     #region Helpers
 
     // Read synchronously, because the caller already runs pages in parallel and an asynchronous read of a
     // small file costs more in overlapped I/O and continuations than it frees up.
-    private ContentPage RenderPage(ContentItem item, Dictionary<string, ContentItem> files)
+    private ContentPage RenderPage(ContentItem item, Dictionary<string, ContentItem> files, PageBodies bodies)
     {
         string markdown = this._fileSystem.File.ReadText(item.SourcePath);
 
-        RenderedMarkdown document = MarkdownRenderer.Render(markdown);
+        RenderedMarkdown document = MarkdownRenderer.Render(markdown, bodies);
         FrontMatter? frontMatter = document.FrontMatter;
 
         IReadOnlyList<string> stylesheets = this.ResolveAssets(item, item.Stylesheets, frontMatter?.Stylesheets, ContentKind.Stylesheet, files);

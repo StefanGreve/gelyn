@@ -80,6 +80,10 @@ internal sealed record ContentPage
     /// <summary>
     ///     The rendered HTML body as UTF-8, excluding the document shell.
     /// </summary>
+    /// <remarks>
+    ///     A build frees the body once its page is composed, after which a read throws
+    ///     <see cref="ObjectDisposedException"/>.
+    /// </remarks>
     public required ReadOnlyMemory<byte> Body { get; init; }
 
     /// <summary>

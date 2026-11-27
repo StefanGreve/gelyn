@@ -31,7 +31,6 @@
 
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
-    <!-- The interop source generator writes unsafe code for the P/Invokes in NativeMethods. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
     <StripSymbols>true</StripSymbols>

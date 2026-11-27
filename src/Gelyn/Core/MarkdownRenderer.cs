@@ -46,6 +46,9 @@ internal sealed class MarkdownRenderer
     /// <param name="markdown">
     ///     The Markdown source, optionally preceded by a front matter block.
     /// </param>
+    /// <param name="bodies">
+    ///     The owner the rendered body is allocated from.
+    /// </param>
     /// <returns>
     ///     The parsed front matter, the keys it declares that no member reads, the values it declares that
     ///     their members reject, and the rendered HTML body as UTF-8.
@@ -53,7 +56,7 @@ internal sealed class MarkdownRenderer
     /// <exception cref="System.Text.EncoderFallbackException">
     ///     The rendered HTML holds an unpaired surrogate.
     /// </exception>
-    public static RenderedMarkdown Render(string markdown)
+    public static RenderedMarkdown Render(string markdown, PageBodies bodies)
     {
         MarkdownDocument document = Markdown.Parse(markdown, Pipeline);
 
@@ -74,8 +77,8 @@ internal sealed class MarkdownRenderer
         Markdown.ToHtml(document, writer, Pipeline);
 
         ReadOnlySpan<char> html = writer.WrittenSpan;
-        byte[] body = new byte[Tool.Encoding.GetByteCount(html)];
-        Tool.Encoding.GetBytes(html, body);
+        Memory<byte> body = bodies.Allocate(Tool.Encoding.GetByteCount(html));
+        Tool.Encoding.GetBytes(html, body.Span);
 
         return new RenderedMarkdown
         {

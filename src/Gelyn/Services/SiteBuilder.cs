@@ -125,7 +125,8 @@ internal sealed class SiteBuilder
         IReadOnlyList<ContentItem> items = this._pipeline.Scan(options);
         clock.Charge(BuildPhase.Scan);
 
-        IReadOnlyList<ContentPage> pages = this._pipeline.Render(items, cancellationToken);
+        using var bodies = new PageBodies();
+        IReadOnlyList<ContentPage> pages = this._pipeline.Render(items, bodies, cancellationToken);
         clock.Charge(BuildPhase.Render);
 
         foreach (ContentPage page in pages)
@@ -158,7 +159,7 @@ internal sealed class SiteBuilder
 
         this.CreateMissingDirectories(tree, pruned.Missing, outputDirectory);
 
-        string[] written = this.WriteDocuments(pages, composed, options, outputDirectory, clock, cancellationToken);
+        string[] written = this.WriteDocuments(pages, bodies, composed, options, outputDirectory, clock, cancellationToken);
         string[] copied = this.CopyAssets(items, outputDirectory, cancellationToken);
         clock.Charge(BuildPhase.Write);
 
@@ -247,6 +248,7 @@ internal sealed class SiteBuilder
 
     private string[] WriteDocuments(
         IReadOnlyList<ContentPage> pages,
+        PageBodies bodies,
         List<GeneratedDocument> composed,
         SiteOptions options,
         string outputDirectory,
@@ -265,7 +267,7 @@ internal sealed class SiteBuilder
 
         string[] written = OrderedParallel.For(pages.Count + composed.Count, index =>
             index < pages.Count
-                ? this.WritePage(layout, pages[index], outputDirectory, isMeasuring, ref composeTicks, ref writeTicks)
+                ? this.WritePage(layout, pages[index], bodies, outputDirectory, isMeasuring, ref composeTicks, ref writeTicks)
                 : this.WriteGenerated(composed[index - pages.Count], outputDirectory, isMeasuring, ref writeTicks), cancellationToken);
 
         clock.Split(composeTicks, writeTicks);
@@ -273,11 +275,14 @@ internal sealed class SiteBuilder
         return written;
     }
 
-    private string WritePage(LayoutContext layout, ContentPage page, string outputDirectory, bool isMeasuring, ref long composeTicks, ref long writeTicks)
+    private string WritePage(LayoutContext layout, ContentPage page, PageBodies bodies, string outputDirectory, bool isMeasuring, ref long composeTicks, ref long writeTicks)
     {
         long composeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
         using var document = new PageBuffer();
         PageLayout.Render(layout, page, document);
+
+        // Freed ahead of the write, since the document holds a copy.
+        bodies.Release(page.Body);
         long writeStarted = isMeasuring ? Stopwatch.GetTimestamp() : 0;
 
         this._fileSystem.File.WriteAllBytes(this._fileSystem.Path.Combine(outputDirectory, page.OutputPath), document.WrittenSpan);

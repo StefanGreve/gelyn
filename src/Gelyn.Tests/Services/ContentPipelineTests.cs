@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Gelyn.Core.Internals;
 using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Services;
@@ -1096,9 +1097,10 @@ public class ContentPipelineTests
     {
         // Arrange
         var fixture = ContentFixture.Create();
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
         ContentPage deep = pages.Single(page => page.Title == "Deep");
 
         // Assert
@@ -1125,9 +1127,10 @@ public class ContentPipelineTests
             .Write("index.md")
             .Write("colophon.md")
             .Write("blog/index.md");
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
 
         // Assert
         using (Assert.Multiple())
@@ -1147,9 +1150,10 @@ public class ContentPipelineTests
     {
         // Arrange
         var fixture = ContentFixture.CreateSyndicated();
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
 
         // Assert
         using (Assert.Multiple())
@@ -1172,9 +1176,10 @@ public class ContentPipelineTests
         ContentFixture fixture = ContentFixture.CreateStyled()
             .WriteFile("assets/chart.css", "svg{width:100%}")
             .WriteFile("blog/hello.md", Declaring("stylesheets: [../assets/chart.css]"));
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
 
         // Assert
         using (Assert.Multiple())
@@ -1196,9 +1201,10 @@ public class ContentPipelineTests
             .WriteFile("assets/lib.js", "globalThis.lib = 1")
             .WriteFile("assets/chart.js", "globalThis.chart = lib")
             .WriteFile("about.md", Declaring("scripts: [assets/lib.js, assets/chart.js]"));
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
 
         // Assert
         await Assert.That(Scripts(pages, "/about.html")).IsEqualTo("/app.js,/assets/lib.js,/assets/chart.js");
@@ -1214,9 +1220,10 @@ public class ContentPipelineTests
         // Arrange
         ContentFixture fixture = ContentFixture.CreateStyled()
             .WriteFile("blog/hello.md", Declaring("stylesheets: [../styles.css]"));
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = Render(fixture);
+        IReadOnlyList<ContentPage> pages = Render(fixture, bodies);
 
         // Assert
         await Assert.That(Stylesheets(pages, "/blog/hello.html")).IsEqualTo("/styles.css,/blog/blog.css");
@@ -1239,9 +1246,10 @@ public class ContentPipelineTests
             .WriteFile("assets/chart.css", "svg{width:100%}")
             .WriteFile("assets/chart.js", "globalThis.chart = 1")
             .WriteFile("about.md", Declaring(line));
+        using var bodies = new PageBodies();
 
         // Act and Assert
-        await Assert.That(() => Render(fixture)).Throws<BuildException>();
+        await Assert.That(() => Render(fixture, bodies)).Throws<BuildException>();
     }
 
     /// <summary>
@@ -1257,9 +1265,10 @@ public class ContentPipelineTests
             .WriteFile("assets/draft.css", "body{outline:1px solid red}")
             .WriteFile("about.md", Declaring("stylesheets: [assets/draft.css]"))
             .WithExcludePatterns("draft.css");
+        using var bodies = new PageBodies();
 
         // Act and Assert
-        await Assert.That(() => Render(fixture)).Throws<BuildException>();
+        await Assert.That(() => Render(fixture, bodies)).Throws<BuildException>();
     }
 
     /// <summary>
@@ -1276,9 +1285,10 @@ public class ContentPipelineTests
             fixture.Write($"page{index:D3}.md", $"Page {index}");
 
         IReadOnlyList<ContentItem> items = Scan(fixture);
+        using var bodies = new PageBodies();
 
         // Act
-        IReadOnlyList<ContentPage> pages = fixture.Pipeline.Render(items, CancellationToken.None);
+        IReadOnlyList<ContentPage> pages = fixture.Pipeline.Render(items, bodies, CancellationToken.None);
 
         // Assert
         await Assert.That(string.Join(',', pages.Select(static page => page.Href)))
@@ -1307,12 +1317,13 @@ public class ContentPipelineTests
 
         IReadOnlyList<ContentItem> items = Scan(fixture);
         ContentItem first = items.Single(static item => item.Href == "/page010.html");
+        using var bodies = new PageBodies();
 
-        var expected = await Assert.That(() => fixture.Pipeline.Render([first], CancellationToken.None))
+        var expected = await Assert.That(() => fixture.Pipeline.Render([first], bodies, CancellationToken.None))
             .Throws<YamlException>();
 
         // Act and Assert
-        await Assert.That(() => fixture.Pipeline.Render(items, CancellationToken.None))
+        await Assert.That(() => fixture.Pipeline.Render(items, bodies, CancellationToken.None))
             .Throws<YamlException>()
             .WithMessage(expected!.Message);
     }
@@ -1328,9 +1339,10 @@ public class ContentPipelineTests
         IReadOnlyList<ContentItem> items = Scan(fixture);
         using var cancellation = new CancellationTokenSource();
         await cancellation.CancelAsync();
+        using var bodies = new PageBodies();
 
         // Act and Assert
-        await Assert.That(() => fixture.Pipeline.Render(items, cancellation.Token))
+        await Assert.That(() => fixture.Pipeline.Render(items, bodies, cancellation.Token))
             .Throws<OperationCanceledException>();
     }
 
@@ -1363,8 +1375,8 @@ public class ContentPipelineTests
     private static string Declaring(string line) =>
         string.Join(Environment.NewLine, "---", line, "---");
 
-    private static IReadOnlyList<ContentPage> Render(ContentFixture fixture) =>
-        fixture.Pipeline.Render(Scan(fixture), CancellationToken.None);
+    private static IReadOnlyList<ContentPage> Render(ContentFixture fixture, PageBodies bodies) =>
+        fixture.Pipeline.Render(Scan(fixture), bodies, CancellationToken.None);
 
     #endregion
 }
