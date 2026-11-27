@@ -1,0 +1,58 @@
+// The symbols gelyn must not use, for the banned API analyzer (RS0030). Each entry is a documentation comment
+// ID: T: bans a type with all of its members, M: bans one overload of a method, named by its parameter types.
+// The analyzer ignores an entry that matches no symbol, so BannedSymbolsTests requires every overload here.
+
+// The disk is reached through IFileSystem alone, so that the tests run every file operation on the mock.
+T:System.IO.Directory;Use IFileSystem.Directory
+T:System.IO.DirectoryInfo;Use IFileSystem.DirectoryInfo
+T:System.IO.File;Use IFileSystem.File
+T:System.IO.FileInfo;Use IFileSystem.FileInfo
+
+// A whole file is read and copied by the extensions on IFile.
+M:System.IO.Abstractions.IFile.Copy(System.String,System.String);Use IFile.CopyContent from Gelyn.Extensions
+M:System.IO.Abstractions.IFile.Copy(System.String,System.String,System.Boolean);Use IFile.CopyContent from Gelyn.Extensions
+M:System.IO.Abstractions.IFile.ReadAllText(System.String);Use IFile.ReadText from Gelyn.Extensions
+M:System.IO.Abstractions.IFile.ReadAllText(System.String,System.Text.Encoding);Use IFile.ReadText from Gelyn.Extensions
+
+// A directory is listed by ListEntries alone, in the ordinal order that the scan, the prune and their reports
+// share, whatever order the file system returns.
+M:System.IO.Abstractions.IDirectory.EnumerateDirectories(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateDirectories(System.String,System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateDirectories(System.String,System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateDirectories(System.String,System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateFiles(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateFiles(System.String,System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateFiles(System.String,System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.EnumerateFiles(System.String,System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetDirectories(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetDirectories(System.String,System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetDirectories(System.String,System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetDirectories(System.String,System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetFiles(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetFiles(System.String,System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetFiles(System.String,System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectory.GetFiles(System.String,System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateDirectories;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateDirectories(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateDirectories(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateDirectories(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFileSystemInfos;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFileSystemInfos(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFileSystemInfos(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFileSystemInfos(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFiles;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFiles(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFiles(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.EnumerateFiles(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetDirectories;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetDirectories(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetDirectories(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetDirectories(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFileSystemInfos;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFileSystemInfos(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFileSystemInfos(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFileSystemInfos(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFiles;Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFiles(System.String);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFiles(System.String,System.IO.SearchOption);Use ListEntries from Gelyn.Extensions
+M:System.IO.Abstractions.IDirectoryInfo.GetFiles(System.String,System.IO.EnumerationOptions);Use ListEntries from Gelyn.Extensions

@@ -1,3 +1,5 @@
+using Gelyn.Core.Internals;
+
 namespace Gelyn.Cli;
 
 /// <summary>
@@ -14,6 +16,7 @@ internal static class ContentRoot
     /// <returns>
     ///     The absolute path of the content root, which need not exist.
     /// </returns>
+    [SuppressMessage("ApiDesign", "RS0030:Do not use banned APIs", Justification = $"{Justifications.ByDesign}. The session's file system does not exist yet.")]
     internal static string Resolve() =>
         Environment.GetEnvironmentVariable(Variable) is { Length: > 0 } root ? Path.GetFullPath(root) : Directory.GetCurrentDirectory();
 }

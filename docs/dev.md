@@ -1,7 +1,7 @@
 ---
 title: Development
 date: 2026-10-20
-revised: 2026-11-24
+revised: 2026-11-26
 description: Building from source, make targets, git hooks, theme development, the SDK pin, versioning, and deployment.
 enableSyntaxHighlighting: true
 ---
@@ -145,6 +145,21 @@ an installed copy of that version would otherwise count as up to date.
 > A plain `dotnet pack` emits only the pointer package listing the per-architecture ones, so the matching RID
 > has to be packed as well. `Gelyn` resolves as a package id rather than a path, so `nuget.config` declares
 > `artifacts/nupkg` as the `local` source and maps `Gelyn*` to it.
+
+### Banned Symbols
+
+`src/Gelyn/BannedSymbols.txt` names the APIs the tool must not call, for the [banned API analyzer][banned-api]. A
+call to one fails the Release build with `RS0030`, and the message names the replacement:
+
+- The `System.IO` types `File`, `FileInfo`, `Directory` and `DirectoryInfo`, so that every file operation goes
+  through `IFileSystem` and the tests run it on the mock.
+- `IFile.ReadAllText` and `IFile.Copy`, which the extensions `ReadText` and `CopyContent` replace.
+- Six listings of `IDirectoryInfo` and four of `IDirectory`, so that every walk lists through `ListEntries`, in the
+  ordinal order that the scan, the prune and their reports share.
+
+An entry bans one overload, and the analyzer ignores an entry that matches no symbol, so `BannedSymbolsTests`
+requires the list to name every overload of each banned method. A member that has to call a banned API, such as
+`ListEntries` itself, suppresses `RS0030` with `[SuppressMessage]` and `Justifications.ByDesign`.
 
 ### The Configuration Schema
 
@@ -337,3 +352,4 @@ winget install -e --id jqlang.jq
 [winget-uninstall]: https://learn.microsoft.com/en-us/windows/package-manager/winget/uninstall
 [llms-txt]: https://llmstxt.org
 [jq]: https://jqlang.org
+[banned-api]: https://github.com/dotnet/roslyn/blob/main/src/RoslynAnalyzers/Microsoft.CodeAnalysis.BannedApiAnalyzers/BannedApiAnalyzers.Help.md

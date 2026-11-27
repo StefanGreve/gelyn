@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup Label="Build">
     <GlobalPackageReference Include="MinVer" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
   </ItemGroup>
   <ItemGroup Label="Runtime">
     <PackageVersion Include="Markdig" Version="1.6.0" />

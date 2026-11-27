@@ -22,7 +22,7 @@ internal sealed record RenderedMarkdown
     public required IReadOnlyList<InvalidValue> InvalidValues { get; init; }
 
     /// <summary>
-    ///     The rendered HTML body, excluding the front matter block.
+    ///     The rendered HTML body as UTF-8, excluding the front matter block.
     /// </summary>
-    public required string Html { get; init; }
+    public required ReadOnlyMemory<byte> Body { get; init; }
 }

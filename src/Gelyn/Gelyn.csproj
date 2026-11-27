@@ -24,9 +24,13 @@
     <AnalysisMode>all</AnalysisMode>
   </PropertyGroup>
 
+  <ItemGroup Label="Analyzers">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="BannedSymbols.txt" />
+  </ItemGroup>
+
   <PropertyGroup Label="Native AOT">
     <PublishAot>true</PublishAot>
-    <!-- The interop source generator writes unsafe code for the P/Invokes in NativeMethods. -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
     <StripSymbols>true</StripSymbols>
@@ -34,6 +38,11 @@
     <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
     <OptimizationPreference>Speed</OptimizationPreference>
     <UseSizeOptimizedLinq>true</UseSizeOptimizedLinq>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Garbage collection">
+    <!-- Background GC caps the gen0 budget at a few MB, so the render threads stop for a collection every few MB. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
   </PropertyGroup>
 
   <PropertyGroup Label="Tool packaging">
