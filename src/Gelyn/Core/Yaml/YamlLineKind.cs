@@ -1,7 +1,7 @@
 namespace Gelyn.Core.Yaml;
 
 /// <summary>
-///     The kinds of line that a block is made of, outside a scalar that spans lines.
+///     The kinds of line that a block is made of.
 /// </summary>
 internal enum YamlLineKind
 {

@@ -1,7 +1,7 @@
 namespace Gelyn.Core.Yaml;
 
 /// <summary>
-///     The kinds of value that a key or an entry of a sequence holds.
+///     The kinds of value that a key or an entry of a list holds.
 /// </summary>
 internal enum YamlNodeKind
 {
@@ -11,17 +11,12 @@ internal enum YamlNodeKind
     Null,
 
     /// <summary>
-    ///     A scalar in any style, whose text the parser holds.
+    ///     Plain or quoted text on one line, which the parser holds.
     /// </summary>
     Scalar,
 
     /// <summary>
-    ///     A sequence in block or in flow style.
+    ///     A list, in brackets on one line or with one entry to a line.
     /// </summary>
     Sequence,
-
-    /// <summary>
-    ///     A mapping in block or in flow style.
-    /// </summary>
-    Mapping,
 }

@@ -5,26 +5,18 @@ using Gelyn.Exceptions;
 namespace Gelyn.Core.Yaml;
 
 /// <summary>
-///     Reads a flat YAML mapping one key and one value at a time, in the subset of YAML 1.2 that front matter is
-///     written in.
+///     Reads a flat YAML mapping one key and one value at a time, where a value is text on one line or a list of
+///     such text.
 /// </summary>
 /// <seealso href="https://yaml.org/spec/1.2.2/"/>
-internal ref partial struct LeanYamlParser
+internal ref struct LeanYamlParser
 {
     private const string Blanks = " \t";
 
-    private const char Escape = (char)0x1B;
-    private const char NextLine = (char)0x85;
-    private const char NoBreakSpace = (char)0xA0;
-    private const char LineSeparator = (char)0x2028;
-    private const char ParagraphSeparator = (char)0x2029;
-    private const char BeforeSurrogates = (char)0xD7FF;
-    private const char AfterSurrogates = (char)0xE000;
-    private const char LastPrintable = (char)0xFFFD;
+    private static readonly SearchValues<char> FlowStops = SearchValues.Create(",[]{}:#");
 
     private readonly ReadOnlySpan<char> _block;
     private ReadOnlySpan<char> _text;
-    private char[]? _buffer;
     private int _position;
     private int _lineEnd;
     private int _next;
@@ -32,13 +24,11 @@ internal ref partial struct LeanYamlParser
     private int _keyLine;
     private int _valueLine;
     private int _valueIndex;
-    private int _sequenceIndent;
-    private int _flowIndex;
-    private int _flowLine;
+    private int _listColumn;
+    private int _listIndex;
     private bool _isStarted;
-    private bool _isLenient;
-    private bool _inBlockSequence;
-    private bool _inFlowSequence;
+    private bool _inBlockList;
+    private bool _inFlowList;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="LeanYamlParser"/> struct.
@@ -69,7 +59,8 @@ internal ref partial struct LeanYamlParser
     public readonly ReadOnlySpan<char> Text => this._text;
 
     /// <summary>
-    ///     Reads the next key of the mapping, and skips whatever the caller left unread of the value before it.
+    ///     Reads the next key of the mapping. A value or an entry that the caller left unread is read first, so that
+    ///     it is held to the same rules.
     /// </summary>
     /// <param name="key">
     ///     When this method returns, the key as text, which stays valid until the parser reads on.
@@ -101,36 +92,24 @@ internal ref partial struct LeanYamlParser
         }
 
         if (indent > 0)
-            throw new FrontMatterException(this._line, MalformedReasons.ContinuesNothing);
+            throw new FrontMatterException(this._line, MalformedReasons.Indented);
 
         if (content > 0)
             throw new FrontMatterException(this._line, MalformedReasons.TabIndents);
 
         ReadOnlySpan<char> line = this._block[this._position..this._lineEnd];
-        int colon;
+        int colon = FindKeyEnd(line);
 
         if (line[0] is '"' or '\'')
-        {
-            int start = this._line;
-            int end = this._position;
-            key = this.ReadQuotedScalar(ref end, 0);
-            colon = this.SkipBlanks(end) - this._position;
+            throw new FrontMatterException(this._line, MalformedReasons.QuotedKey);
 
-            // An implicit key sits on one line, section 7.4.2.
-            if (this._line != start || colon >= line.Length || line[colon] != ':' || !IsEndOrBlank(line, colon + 1))
-                throw new FrontMatterException(start, MalformedReasons.NotAKey);
-        }
-        else
-        {
-            this.CheckKeyStart(line);
-            colon = FindKeyEnd(line);
+        if (line[0] is '&' or '*' or '!')
+            throw new FrontMatterException(this._line, MalformedReasons.NoProperties);
 
-            if (colon <= 0)
-                throw new FrontMatterException(this._line, MalformedReasons.NotAKey);
+        if (colon <= 0 || line[0] is '[' or ']' or '{' or '}' or ',' || (line[0] is '-' or '?' && IsEndOrBlank(line, 1)))
+            throw new FrontMatterException(this._line, MalformedReasons.NotAKey);
 
-            key = line[..colon].TrimEnd(Blanks);
-        }
-
+        key = line[..colon].TrimEnd(Blanks);
         this._keyLine = this._line;
         this._valueIndex = this._position + colon + 1;
 
@@ -141,13 +120,12 @@ internal ref partial struct LeanYamlParser
     ///     Reads the value of the key that was read last.
     /// </summary>
     /// <returns>
-    ///     The kind of the value, or <see cref="YamlNodeKind.Null"/> when no value is left to read. The text of a
-    ///     scalar is in <see cref="Text"/>, and the entries of a sequence are read by <see cref="ReadEntry"/>. A
-    ///     mapping is skipped.
+    ///     <see cref="YamlNodeKind.Scalar"/> for text on the line of the key, which is then in <see cref="Text"/>,
+    ///     <see cref="YamlNodeKind.Sequence"/> for a list, whose entries <see cref="ReadEntry"/> reads, and
+    ///     <see cref="YamlNodeKind.Null"/> when the key has no value or its value was read before.
     /// </returns>
     /// <exception cref="FrontMatterException">
-    ///     The value is malformed, or carries an anchor, a tag or an alias, which only a value that is left unread
-    ///     may carry.
+    ///     The value is malformed, or uses YAML that front matter does not support.
     /// </exception>
     public YamlNodeKind ReadValue()
     {
@@ -157,57 +135,63 @@ internal ref partial struct LeanYamlParser
             return YamlNodeKind.Null;
 
         this._valueIndex = -1;
-        this._isLenient = false;
+        this._valueLine = this._line;
+        index = this.SkipBlanks(index);
 
-        return this.ReadNode(index, 0, true);
+        if (this.IsLineEnd(index))
+        {
+            this.AdvanceLine();
+            return this.OpenBlockList();
+        }
+
+        if (this._block[index] == '[')
+        {
+            this._inFlowList = true;
+            this._listIndex = index + 1;
+
+            return YamlNodeKind.Sequence;
+        }
+
+        YamlNodeKind kind = this.ReadScalar(ref index, false);
+        this.ExpectLineEnd(index, MalformedReasons.AfterQuote);
+
+        return kind;
     }
 
     /// <summary>
-    ///     Reads the next entry of the sequence that <see cref="ReadValue"/> found.
+    ///     Reads the next entry of the list that <see cref="ReadValue"/> found.
     /// </summary>
     /// <param name="kind">
-    ///     When this method returns, the kind of the entry. The text of a scalar is in <see cref="Text"/>. A
-    ///     sequence or a mapping inside the sequence is skipped.
+    ///     When this method returns, <see cref="YamlNodeKind.Scalar"/> for an entry whose text is in
+    ///     <see cref="Text"/>, or <see cref="YamlNodeKind.Null"/> for an entry without text.
     /// </param>
     /// <returns>
-    ///     <see langword="true"/> when an entry was read, <see langword="false"/> at the end of the sequence.
+    ///     <see langword="true"/> when an entry was read, <see langword="false"/> at the end of the list.
     /// </returns>
     /// <exception cref="FrontMatterException">
-    ///     The sequence is malformed, or uses YAML that front matter does not support.
+    ///     The list is malformed, or uses YAML that front matter does not support.
     /// </exception>
     public bool ReadEntry(out YamlNodeKind kind)
     {
         kind = YamlNodeKind.Null;
 
-        if (this._inBlockSequence)
+        if (this._inBlockList)
         {
-            if (this.ReadBlockEntry(this._sequenceIndent, out kind))
+            if (this.ReadBlockEntry(out kind))
                 return true;
 
-            this._inBlockSequence = false;
+            this._inBlockList = false;
         }
-        else if (this._inFlowSequence)
+        else if (this._inFlowList)
         {
-            if (this.ReadFlowEntry(ref this._flowIndex, this._sequenceIndent, this._flowLine, out kind))
+            if (this.ReadFlowEntry(out kind))
                 return true;
 
-            this._inFlowSequence = false;
-            this.ExpectLineEnd(this._flowIndex, MalformedReasons.AfterBracket);
+            this._inFlowList = false;
+            this.ExpectLineEnd(this._listIndex, MalformedReasons.AfterBracket);
         }
 
         return false;
-    }
-
-    /// <summary>
-    ///     Returns the buffer that the parser rented for a scalar it had to decode.
-    /// </summary>
-    public void Dispose()
-    {
-        if (this._buffer is char[] buffer)
-        {
-            ArrayPool<char>.Shared.Return(buffer);
-            this._buffer = null;
-        }
     }
 
     #region Helpers
@@ -219,23 +203,9 @@ internal ref partial struct LeanYamlParser
     private static bool IsMarker(ReadOnlySpan<char> line) =>
         (line.StartsWith("---") || line.StartsWith("...")) && IsEndOrBlank(line, 3);
 
-    // The printable set of YAML 1.2.2, section 5.1, without the surrogates that pair up.
-    private static bool IsPrintable(char c) =>
-        c is '\t' or '\n' or '\r' or NextLine or (>= NoBreakSpace and <= BeforeSurrogates) or (>= AfterSurrogates and <= LastPrintable);
+    private static bool IsNull(ReadOnlySpan<char> text) => text is "~" or "null" or "Null" or "NULL";
 
-    private static int CountLineBreaks(ReadOnlySpan<char> text)
-    {
-        int count = 0;
-
-        for (int index = 0; index < text.Length; index++)
-        {
-            if (text[index] == '\n' || (text[index] == '\r' && (index + 1 == text.Length || text[index + 1] != '\n')))
-                count++;
-        }
-
-        return count;
-    }
-
+    // A key ends at the first ':' that a blank or the end of the line follows, and a comment ends the search.
     private static int FindKeyEnd(ReadOnlySpan<char> line)
     {
         int index = 0;
@@ -263,29 +233,9 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    private static int FindQuoteEnd(ReadOnlySpan<char> text)
-    {
-        char quote = text[0];
-
-        for (int index = 1; index < text.Length; index++)
-        {
-            char c = text[index];
-
-            if (c == '\\' && quote == '"')
-                index++;
-            else if (c == quote && quote == '\'' && index + 1 < text.Length && text[index + 1] == '\'')
-                index++;
-            else if (c == quote)
-                return index;
-        }
-
-        return -1;
-    }
-
     private void StartBlock()
     {
         this._isStarted = true;
-        this.CheckCharacters();
         this.MoveToLine(0);
 
         ReadOnlySpan<char> first = this._block[..this._lineEnd];
@@ -294,17 +244,10 @@ internal ref partial struct LeanYamlParser
             this.AdvanceLine();
     }
 
-    // Only a value that the caller never asked for may carry an anchor, a tag or an alias.
     private void SkipValue()
     {
-        int index = this._valueIndex;
-
-        if (index >= 0)
-        {
-            this._valueIndex = -1;
-            this._isLenient = true;
-            _ = this.ReadNode(index, 0, true);
-        }
+        if (this._valueIndex >= 0)
+            _ = this.ReadValue();
 
         while (this.ReadEntry(out _))
         {
@@ -335,34 +278,6 @@ internal ref partial struct LeanYamlParser
     {
         this.MoveToLine(this._next);
         this._line++;
-    }
-
-    private readonly void CheckCharacters()
-    {
-        ReadOnlySpan<char> block = this._block;
-        int index = 0;
-
-        while (true)
-        {
-            int offset = block[index..].IndexOfAnyExceptInRange(' ', '~');
-
-            if (offset < 0)
-                return;
-
-            index += offset;
-            char c = block[index];
-
-            if (char.IsHighSurrogate(c) && index + 1 < block.Length && char.IsLowSurrogate(block[index + 1]))
-            {
-                index += 2;
-                continue;
-            }
-
-            if (!IsPrintable(c))
-                throw new FrontMatterException(CountLineBreaks(block[..index]) + 1, MalformedReasons.DescribeCharacter(c));
-
-            index++;
-        }
     }
 
     // The indent counts the leading spaces, and the content is the offset of the first character that is no blank.
@@ -409,12 +324,6 @@ internal ref partial struct LeanYamlParser
         return kind;
     }
 
-    private void SkipIndentedLines(int parentIndent)
-    {
-        while (this.SkipToContent(out int indent, out _) is YamlLineKind.Content && indent > parentIndent)
-            this.AdvanceLine();
-    }
-
     private void ExpectBlockEnd()
     {
         if (this.SkipToContent(out _, out _) is not YamlLineKind.End)
@@ -427,17 +336,14 @@ internal ref partial struct LeanYamlParser
         return offset < 0 ? this._lineEnd : index + offset;
     }
 
-    private readonly int SkipToken(int index)
-    {
-        int offset = this._block[index..this._lineEnd].IndexOfAny(' ', '\t');
-        return offset < 0 ? this._lineEnd : index + offset;
-    }
-
     private readonly bool IsEndOrBlank(int index) => index >= this._lineEnd || IsBlank(this._block[index]);
 
     private readonly bool IsEntry(int index) => this._block[index] == '-' && this.IsEndOrBlank(index + 1);
 
-    // Only a comment may follow a value that ends within its line, and a blank separates the two.
+    // A '#' starts a comment only behind a blank.
+    private readonly bool IsLineEnd(int index) => index == this._lineEnd || (this._block[index] == '#' && IsBlank(this._block[index - 1]));
+
+    // Only a comment may follow a value, and a blank separates the two.
     private void ExpectLineEnd(int index, string reason)
     {
         int next = this.SkipBlanks(index);
@@ -448,182 +354,192 @@ internal ref partial struct LeanYamlParser
         this.AdvanceLine();
     }
 
-    private readonly void CheckKeyStart(ReadOnlySpan<char> line)
+    // The entries of a list sit below its key, one to a line, with their dashes at one column.
+    private YamlNodeKind OpenBlockList()
     {
-        char c = line[0];
-        bool isAlone = IsEndOrBlank(line, 1);
-
-        switch (c)
-        {
-            case '%':
-            case '?' when isAlone:
-                throw new FrontMatterException(this._line, MalformedReasons.NoDirectives);
-            case '&' or '*' or '!':
-                throw new FrontMatterException(this._line, MalformedReasons.NoProperties);
-            case '[' or '{' or '|' or '>':
-            case '-' or ':' when isAlone:
-                throw new FrontMatterException(this._line, MalformedReasons.NotAKey);
-            case ',' or ']' or '}' or '@' or '`':
-                throw new FrontMatterException(this._line, MalformedReasons.DescribeStart(c, false));
-        }
-    }
-
-    private YamlNodeKind ReadNode(int index, int parentIndent, bool isKeyValue)
-    {
-        int start = this.SkipBlanks(index);
-
-        if (start == this._lineEnd || this._block[start] == '#')
-        {
-            this.AdvanceLine();
-            return this.ReadNodeBelow(parentIndent, isKeyValue);
-        }
-
-        this._valueLine = this._line;
-
-        if (!isKeyValue && (this.IsEntry(start) || this.StartsMapping(start)))
-        {
-            YamlNodeKind kind = this.IsEntry(start) ? YamlNodeKind.Sequence : YamlNodeKind.Mapping;
-            this.AdvanceLine();
-            this.SkipIndentedLines(parentIndent);
-
-            return kind;
-        }
-
-        return this.ReadInlineNode(start, parentIndent, isKeyValue);
-    }
-
-    private YamlNodeKind ReadNodeBelow(int parentIndent, bool isKeyValue)
-    {
-        YamlLineKind kind = this.SkipToContent(out int indent, out int content);
-        this._valueLine = this._line;
-
-        if (kind is not YamlLineKind.Content)
+        if (this.SkipToContent(out int indent, out int content) is not YamlLineKind.Content || content != indent || !this.IsEntry(this._position + indent))
             return YamlNodeKind.Null;
 
-        int start = this._position + content;
-        bool isEntry = this.IsEntry(start);
+        this._inBlockList = true;
+        this._listColumn = indent;
+        this._valueLine = this._line;
 
-        if (indent > parentIndent)
-        {
-            bool isCollection = isEntry || this.StartsMapping(start);
-
-            // A tab may separate the indentation from text, yet never from the '-' or the key of a collection.
-            if (isCollection && content > indent)
-                throw new FrontMatterException(this._line, MalformedReasons.TabIndents);
-
-            if (isEntry && isKeyValue)
-                return this.OpenBlockSequence(indent);
-
-            if (isCollection)
-            {
-                this.SkipIndentedLines(parentIndent);
-                return isEntry ? YamlNodeKind.Sequence : YamlNodeKind.Mapping;
-            }
-
-            return this.ReadInlineNode(start, parentIndent, isKeyValue);
-        }
-
-        // The entries of a sequence may sit at the column of the key that holds it, section 8.2.1.
-        if (isEntry && isKeyValue && content == indent && indent == parentIndent)
-            return this.OpenBlockSequence(indent);
-
-        return YamlNodeKind.Null;
+        return YamlNodeKind.Sequence;
     }
 
-    private YamlNodeKind ReadInlineNode(int index, int parentIndent, bool isKeyValue)
+    private bool ReadBlockEntry(out YamlNodeKind kind)
+    {
+        kind = YamlNodeKind.Null;
+        YamlLineKind line = this.SkipToContent(out int indent, out int content);
+
+        if (line is not YamlLineKind.Content || indent < this._listColumn)
+            return false;
+
+        if (indent > this._listColumn)
+            throw new FrontMatterException(this._line, MalformedReasons.Indented);
+
+        if (content != indent || !this.IsEntry(this._position + indent))
+            return false;
+
+        int index = this.SkipBlanks(this._position + indent + 1);
+        this._valueLine = this._line;
+
+        if (this.IsLineEnd(index))
+        {
+            this.AdvanceLine();
+            return true;
+        }
+
+        kind = this.ReadScalar(ref index, false);
+        this.ExpectLineEnd(index, MalformedReasons.AfterQuote);
+
+        return true;
+    }
+
+    // A list in brackets opens and closes on one line, and a comma may follow its last entry.
+    private bool ReadFlowEntry(out YamlNodeKind kind)
+    {
+        kind = YamlNodeKind.Null;
+        int index = this.SkipBlanks(this._listIndex);
+
+        if (this.IsLineEnd(index))
+            throw new FrontMatterException(this._line, MalformedReasons.OpenBracket);
+
+        if (this._block[index] == ']')
+        {
+            this._listIndex = index + 1;
+            return false;
+        }
+
+        if (this._block[index] == ',')
+            throw new FrontMatterException(this._line, MalformedReasons.EmptyEntry);
+
+        kind = this.ReadScalar(ref index, true);
+        index = this.SkipBlanks(index);
+
+        if (this.IsLineEnd(index))
+            throw new FrontMatterException(this._line, MalformedReasons.OpenBracket);
+
+        if (this._block[index] == ',')
+            index++;
+        else if (this._block[index] != ']')
+            throw new FrontMatterException(this._line, MalformedReasons.NoSeparator);
+
+        this._listIndex = index;
+
+        return true;
+    }
+
+    // Reads the text that starts at the index, and moves the index behind it.
+    private YamlNodeKind ReadScalar(ref int index, bool isFlow)
     {
         char c = this._block[index];
-
-        while (c is '&' or '!')
-        {
-            if (!this._isLenient)
-                throw new FrontMatterException(this._line, MalformedReasons.NoProperties);
-
-            index = this.SkipBlanks(this.SkipToken(index));
-
-            if (index == this._lineEnd || this._block[index] == '#')
-            {
-                this.AdvanceLine();
-                return this.ReadNodeBelow(parentIndent, isKeyValue);
-            }
-
-            c = this._block[index];
-        }
 
         switch (c)
         {
             case '"' or '\'':
-                this._text = this.ReadQuotedScalar(ref index, parentIndent);
-                this.ExpectLineEnd(index, MalformedReasons.AfterQuote);
+                this._text = this.ReadQuotedScalar(ref index);
                 return YamlNodeKind.Scalar;
 
-            case '|' or '>':
-                this._text = this.ReadBlockScalar(index, parentIndent);
-                return YamlNodeKind.Scalar;
+            case '|' or '>' when !isFlow:
+                throw new FrontMatterException(this._line, MalformedReasons.BlockText);
 
-            case '[' when isKeyValue:
-                return this.OpenFlowSequence(index, parentIndent);
-
-            case '[':
-                this.SkipFlowSequence(ref index, parentIndent);
-                this.ExpectLineEnd(index, MalformedReasons.AfterBracket);
-                return YamlNodeKind.Sequence;
-
-            case '{':
-                this.SkipFlowCollection(ref index, parentIndent);
-                this.ExpectLineEnd(index, MalformedReasons.AfterBracket);
-                return YamlNodeKind.Mapping;
-
-            case '*' when this._isLenient:
-                this._text = default;
-                this.ExpectLineEnd(this.SkipToken(index), MalformedReasons.AfterAlias);
-                return YamlNodeKind.Scalar;
-
-            case '*':
+            case '&' or '*' or '!':
                 throw new FrontMatterException(this._line, MalformedReasons.NoProperties);
 
-            case ',' or ']' or '}' or '%' or '@' or '`':
+            case '[' or ']' or '{' or '}' or ',' or '#' or '|' or '>' or '%' or '@' or '`':
                 throw new FrontMatterException(this._line, MalformedReasons.DescribeStart(c, false));
 
             case '-' or '?' or ':' when this.IsEndOrBlank(index + 1):
                 throw new FrontMatterException(this._line, MalformedReasons.DescribeStart(c, true));
-
-            default:
-                return this.ReadPlainScalar(index, parentIndent);
         }
+
+        int end = this.FindPlainEnd(index, isFlow);
+        this._text = this._block[index..end];
+        index = end;
+
+        return IsNull(this._text) ? YamlNodeKind.Null : YamlNodeKind.Scalar;
     }
 
-    private readonly bool StartsMapping(int index)
+    // Plain text ends at a comment and at the end of its line, and inside brackets at an indicator of the list.
+    private readonly int FindPlainEnd(int index, bool isFlow)
     {
-        // An anchor or a tag belongs to the node behind it, and its name may hold a colon, section 6.9.
-        while (this._block[index] is '&' or '!')
-        {
-            index = this.SkipBlanks(this.SkipToken(index));
+        ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
+        int offset = 0;
 
-            if (index == this._lineEnd || this._block[index] == '#')
-                return false;
+        while (true)
+        {
+            int found = isFlow ? rest[offset..].IndexOfAny(FlowStops) : rest[offset..].IndexOfAny(':', '#');
+
+            if (found < 0)
+            {
+                offset = rest.Length;
+                break;
+            }
+
+            offset += found;
+
+            if (rest[offset] == ':')
+            {
+                if (IsEndOrBlank(rest, offset + 1) || (isFlow && rest[offset + 1] is ',' or ']'))
+                    throw new FrontMatterException(this._line, MalformedReasons.MappingInText);
+            }
+            else if (rest[offset] != '#' || (offset > 0 && IsBlank(rest[offset - 1])))
+            {
+                break;
+            }
+
+            offset++;
         }
 
-        ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
-        char c = rest[0];
+        return index + rest[..offset].TrimEnd(Blanks).Length;
+    }
 
-        // None of these starts a key, so the line is read as the value it tries to be.
-        if (c is '[' or '{' or '|' or '>' or ',' or ']' or '}' or '%' or '@' or '`')
-            return false;
-
-        if (c == '?' && IsEndOrBlank(rest, 1))
-            return true;
-
-        if (c is not ('"' or '\''))
-            return FindKeyEnd(rest) >= 0;
-
-        int close = FindQuoteEnd(rest);
+    private ReadOnlySpan<char> ReadQuotedScalar(scoped ref int index)
+    {
+        char quote = this._block[index];
+        ReadOnlySpan<char> rest = this._block[(index + 1)..this._lineEnd];
+        int close = quote == '"' ? rest.IndexOfAny('"', '\\') : rest.IndexOf('\'');
 
         if (close < 0)
-            return false;
+            throw new FrontMatterException(this._line, MalformedReasons.OpenQuote);
 
-        ReadOnlySpan<char> tail = rest[(close + 1)..].TrimStart(Blanks);
-        return tail.Length > 0 && tail[0] == ':' && IsEndOrBlank(tail, 1);
+        // Without an escape, the text is a slice of the block.
+        if (rest[close] == quote && (quote == '"' || close + 1 == rest.Length || rest[close + 1] != '\''))
+        {
+            index += close + 2;
+            return rest[..close];
+        }
+
+        char[] buffer = new char[rest.Length];
+        int length = 0;
+
+        for (int offset = 0; offset < rest.Length; offset++)
+        {
+            char c = rest[offset];
+
+            if (c == quote && (quote == '"' || offset + 1 == rest.Length || rest[offset + 1] != '\''))
+            {
+                index += offset + 2;
+                return buffer.AsSpan(0, length);
+            }
+
+            // Two single quotes stand for one, and a backslash stands before a double quote or a backslash.
+            if (c == quote || (c == '\\' && quote == '"'))
+            {
+                if (++offset == rest.Length)
+                    break;
+
+                if (c == '\\' && rest[offset] is not ('"' or '\\'))
+                    throw new FrontMatterException(this._line, MalformedReasons.DescribeEscape(rest[offset]));
+
+                c = rest[offset];
+            }
+
+            buffer[length++] = c;
+        }
+
+        throw new FrontMatterException(this._line, MalformedReasons.OpenQuote);
     }
 
     #endregion

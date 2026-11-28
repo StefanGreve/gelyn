@@ -118,31 +118,24 @@ internal static class FrontMatterParser
         int declared = 0;
         var parser = new LeanYamlParser(block);
 
-        try
+        while (parser.ReadKey(out ReadOnlySpan<char> name))
         {
-            while (parser.ReadKey(out ReadOnlySpan<char> name))
+            frontMatter ??= new FrontMatter();
+            FrontMatterKey key = MatchKey(name);
+
+            if (key is FrontMatterKey.Unknown)
             {
-                frontMatter ??= new FrontMatter();
-                FrontMatterKey key = MatchKey(name);
-
-                if (key is FrontMatterKey.Unknown)
-                {
-                    (unknown ??= []).Add(new UnknownKey { Name = name.ToString(), Line = parser.KeyLine });
-                    continue;
-                }
-
-                int bit = 1 << (int)key;
-
-                if ((declared & bit) != 0)
-                    throw new FrontMatterException(parser.KeyLine, MalformedReasons.DescribeDuplicate(KeyNames[(int)key]));
-
-                declared |= bit;
-                ReadMember(ref parser, frontMatter, key, ref invalid);
+                (unknown ??= []).Add(new UnknownKey { Name = name.ToString(), Line = parser.KeyLine });
+                continue;
             }
-        }
-        finally
-        {
-            parser.Dispose();
+
+            int bit = 1 << (int)key;
+
+            if ((declared & bit) != 0)
+                throw new FrontMatterException(parser.KeyLine, MalformedReasons.DescribeDuplicate(KeyNames[(int)key]));
+
+            declared |= bit;
+            ReadMember(ref parser, frontMatter, key, ref invalid);
         }
 
         unknownKeys = (IReadOnlyList<UnknownKey>?)unknown ?? [];
@@ -223,9 +216,6 @@ internal static class FrontMatterParser
             case YamlNodeKind.Sequence:
                 RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsText);
                 return null;
-            case YamlNodeKind.Mapping:
-                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsText);
-                return null;
             default:
                 return null;
         }
@@ -243,9 +233,6 @@ internal static class FrontMatterParser
                 return null;
             case YamlNodeKind.Sequence:
                 RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsDate);
-                return null;
-            case YamlNodeKind.Mapping:
-                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsDate);
                 return null;
             default:
                 return null;
@@ -267,9 +254,6 @@ internal static class FrontMatterParser
             case YamlNodeKind.Sequence:
                 RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsBoolean);
                 return null;
-            case YamlNodeKind.Mapping:
-                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsBoolean);
-                return null;
             default:
                 return null;
         }
@@ -284,9 +268,6 @@ internal static class FrontMatterParser
             case YamlNodeKind.Scalar:
                 RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.DescribeList(parser.Text));
                 return null;
-            case YamlNodeKind.Mapping:
-                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsList);
-                return null;
             default:
                 return null;
         }
@@ -294,23 +275,7 @@ internal static class FrontMatterParser
         List<string?> entries = [];
 
         while (parser.ReadEntry(out YamlNodeKind kind))
-        {
-            switch (kind)
-            {
-                case YamlNodeKind.Scalar:
-                    entries.Add(parser.Text.ToString());
-                    break;
-                case YamlNodeKind.Null:
-                    entries.Add(null);
-                    break;
-                case YamlNodeKind.Sequence:
-                    RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsPath);
-                    break;
-                default:
-                    RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsPath);
-                    break;
-            }
-        }
+            entries.Add(kind is YamlNodeKind.Scalar ? parser.Text.ToString() : null);
 
         return entries;
     }

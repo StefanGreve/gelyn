@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,8 +19,6 @@ namespace Gelyn.Tests.Core.Yaml;
 public class LeanYamlParserTests
 {
     private const char Backslash = (char)92;
-
-    private const string NoProperties = "front matter supports no anchors, aliases or tags";
 
     private static readonly string[] LineBreaks = ["\n", "\r\n", "\r"];
 
@@ -100,8 +97,7 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a key is read as text: a plain key as written, without the spaces and tabs before its
-    ///     colon, and a quoted key decoded.
+    ///     Verifies that a key is read as written, without the spaces and tabs before its colon.
     /// </summary>
     [Test]
     [Arguments("title: Home", "title")]
@@ -111,11 +107,6 @@ public class LeanYamlParserTests
     [Arguments("a b: c", "a b")]
     [Arguments("a:b: c", "a:b")]
     [Arguments("url#1: c", "url#1")]
-    [Arguments("\"title\": Home", "title")]
-    [Arguments("'title': Home", "title")]
-    [Arguments("\"title\" : Home", "title")]
-    [Arguments("\"ti\\x74le\": Home", "title")]
-    [Arguments("'ti''tle': x", "ti'tle")]
     public async Task ReadKey_Test_Key_IsReadAsText(string block, string expected)
     {
         // Act
@@ -151,20 +142,19 @@ public class LeanYamlParserTests
     #region Scalar Tests
 
     /// <summary>
-    ///     Verifies that a plain scalar is read as written: trimmed, ended by a comment, and kept as text when it
-    ///     looks like a number, a boolean or a date.
+    ///     Verifies that plain text is read as written: trimmed, ended by a comment, and kept as text when it looks
+    ///     like a number, a boolean or a date.
     /// </summary>
     [Test]
     [Arguments("title: Home", "Home")]
     [Arguments("title:   Home \t ", "Home")]
     [Arguments("title:\tHome", "Home")]
-    [Arguments("title : Home", "Home")]
-    [Arguments("title\t: Home", "Home")]
     [Arguments("title: 123", "123")]
     [Arguments("title: 1.5", "1.5")]
     [Arguments("title: true", "true")]
     [Arguments("title: nUll", "nUll")]
     [Arguments("title: 2026-09-13", "2026-09-13")]
+    [Arguments("title: Notes about software", "Notes about software")]
     [Arguments("title: Home # note", "Home")]
     [Arguments("title: Home\t# note", "Home")]
     [Arguments("title: Home#tag", "Home#tag")]
@@ -175,19 +165,18 @@ public class LeanYamlParserTests
     [Arguments("title: it's", "it's")]
     [Arguments("title: a\ttab", "a\ttab")]
     [Arguments("title: https://example.com/a#b", "https://example.com/a#b")]
-    public async Task ReadValue_Test_PlainScalar_IsReadAsWritten(string block, string expected)
+    public async Task ReadValue_Test_PlainText_IsReadAsWritten(string block, string expected)
     {
         // Act and Assert
         await AssertText(block, expected);
     }
 
     /// <summary>
-    ///     Verifies that a quoted scalar keeps what a plain one would lose: its blanks, the spelling of null, and
-    ///     an empty string, which stays distinct from an absent value.
+    ///     Verifies that quoted text keeps what plain text would lose: its blanks, a colon or a hash sign, the
+    ///     spelling of null, and an empty string, which stays distinct from an absent value.
     /// </summary>
     [Test]
     [Arguments("title: \"null\"", "null")]
-    [Arguments("title: 'It''s'", "It's")]
     [Arguments("title: \"\"", "")]
     [Arguments("title: ''", "")]
     [Arguments("title: \"\" # c", "")]
@@ -195,141 +184,55 @@ public class LeanYamlParserTests
     [Arguments("title: \" a \"", " a ")]
     [Arguments("title: \"a # b\"", "a # b")]
     [Arguments("title: 'a: b'", "a: b")]
-    [Arguments("title:\n  \"Home\"", "Home")]
-    public async Task ReadValue_Test_QuotedScalar_IsKeptAsText(string block, string expected)
+    [Arguments("title: \"Part 2: the parser\"", "Part 2: the parser")]
+    public async Task ReadValue_Test_QuotedText_IsKeptAsWritten(string block, string expected)
     {
         // Act and Assert
         await AssertText(block, expected);
     }
 
     /// <summary>
-    ///     Verifies that a scalar folds over its lines: a line break becomes a space, every blank line between two
-    ///     lines of text becomes a line break, and an escaped line break joins the lines as they are.
+    ///     Verifies the escapes of quoted text: two single quotes stand for one inside single quotes, and a backslash
+    ///     stands before a double quote or a backslash inside double quotes, where it is plain text otherwise.
     /// </summary>
     [Test]
-    [Arguments("title: plain\n  continued", "plain continued")]
-    [Arguments("title: one\n\n  two", "one\ntwo")]
-    [Arguments("title: a\n\n\n  b", "a\n\nb")]
-    [Arguments("title: x\n \tcontinued", "x continued")]
-    [Arguments("title: a\n  - b", "a - b")]
-    [Arguments("title: a\n  [x]", "a [x]")]
-    [Arguments("title:\n  Home", "Home")]
-    [Arguments("title:\n \tHome", "Home")]
-    [Arguments("title: # c\n  Home", "Home")]
-    [Arguments("title:\n\n  # c\n  Home\n  more", "Home more")]
-    [Arguments("title: \"multi\n  line\"", "multi line")]
-    [Arguments("title: 'multi\n  line'", "multi line")]
-    [Arguments("title: \"one\n\n  two\"", "one\ntwo")]
-    [Arguments("title: \"a\n\n\n  b\"", "a\n\nb")]
-    [Arguments("title: 'a\n\n  b'", "a\nb")]
-    [Arguments("title: \"a  \n  b\"", "a b")]
-    [Arguments("title: \"fold\\\n  ed\"", "folded")]
-    [Arguments("title: \"a \\\n  b\"", "a b")]
-    [Arguments("title: 'a\n  # b\n  c'", "a # b c")]
-    public async Task ReadValue_Test_ScalarOverSeveralLines_IsFolded(string block, string expected)
+    [Arguments("title: 'It''s'", "It's")]
+    [Arguments("title: ''''", "'")]
+    [Arguments("title: 'a''''b'", "a''b")]
+    [Arguments("title: 'C:\\temp'", "C:\\temp")]
+    [Arguments("title: 'say \"hi\"'", "say \"hi\"")]
+    [Arguments("title: \"A \\\"quoted\\\" word\"", "A \"quoted\" word")]
+    [Arguments("title: \"C:\\\\temp\"", "C:\\temp")]
+    [Arguments("title: \"\\\\\"", "\\")]
+    [Arguments("title: \"it's\"", "it's")]
+    public async Task ReadValue_Test_QuotedText_DecodesItsEscapes(string block, string expected)
     {
         // Act and Assert
         await AssertText(block, expected);
     }
 
     /// <summary>
-    ///     Verifies the two block scalar styles with every indicator: the literal one keeps line breaks, the folded
-    ///     one folds them except around lines that are indented further, and the chomping indicator decides which
-    ///     final line breaks stay.
+    ///     Verifies that any other backslash sequence in double quotes stops the block, so that no escape is read
+    ///     as one the author did not mean.
     /// </summary>
     [Test]
-    [Arguments("title: |\n  Home\n---", "Home\n")]
-    [Arguments("title: |\n  Home", "Home")]
-    [Arguments("title: |-\n  strip\n---", "strip")]
-    [Arguments("title: |+\n  keep\n\n\n---", "keep\n\n\n")]
-    [Arguments("title: >\n  folded\n  text\n---", "folded text\n")]
-    [Arguments("title: >2\n   indented\n---", " indented\n")]
-    [Arguments("title: |1\n  a\n---", " a\n")]
-    [Arguments("title: |2-\n   text\n---", " text")]
-    [Arguments("title: |-2\n   text\n---", " text")]
-    [Arguments("title: | # c\n  text\n---", "text\n")]
-    [Arguments("title: >\n  a\n    b\n  c\n---", "a\n  b\nc\n")]
-    [Arguments("title: >\n  a\n\n  b\n---", "a\nb\n")]
-    [Arguments("title: >\n  a\n  b\n\n  c\n   d\n  e\n---", "a b\nc\n d\ne\n")]
-    [Arguments("title: >\n\n  a\n---", "\na\n")]
-    [Arguments("title: |\n  a\n\n\n---", "a\n")]
-    [Arguments("title: |\n  a\n   b\n  c\n---", "a\n b\nc\n")]
-    [Arguments("title: >+\n  a\n\n\n---", "a\n\n\n")]
-    [Arguments("title: >-\n  a\n\n\n---", "a")]
-    [Arguments("title: |\n  \ttext\n---", "\ttext\n")]
-    [Arguments("title: |\n  a\n  # c\nauthor: x", "a\n# c\n")]
-    [Arguments("title:\n  |\n    text\n---", "text\n")]
-    [Arguments("title: |\nauthor: x", "")]
-    [Arguments("title: |+\n\n\nauthor: x", "\n\n")]
-    [Arguments("title: |\n \nauthor: x", "")]
-    public async Task ReadValue_Test_BlockScalar_KeepsOrFoldsItsLines(string block, string expected)
-    {
-        // Act and Assert
-        await AssertText(block, expected);
-    }
-
-    /// <summary>
-    ///     Verifies that a double-quoted scalar decodes every escape of YAML 1.2.
-    /// </summary>
-    [Test]
-    public async Task ReadValue_Test_DoubleQuotedScalar_DecodesEveryEscape()
+    [Arguments("t")]
+    [Arguments("n")]
+    [Arguments("x41")]
+    [Arguments("/")]
+    [Arguments("q")]
+    public async Task ReadValue_Test_OtherEscape_Throws(string escape)
     {
         // Arrange
-        (string Escape, string Expected)[] escapes =
-        [
-            ("0", "\0"),
-            ("a", "\a"),
-            ("b", "\b"),
-            ("t", "\t"),
-            ("\t", "\t"),
-            ("n", "\n"),
-            ("v", "\v"),
-            ("f", "\f"),
-            ("r", "\r"),
-            ("e", ((char)0x1B).ToString()),
-            (" ", " "),
-            ("\"", "\""),
-            ("/", "/"),
-            (Backslash.ToString(), Backslash.ToString()),
-            ("N", ((char)0x85).ToString()),
-            ("_", ((char)0xA0).ToString()),
-            ("L", ((char)0x2028).ToString()),
-            ("P", ((char)0x2029).ToString()),
-            ("x41", "A"),
-            ("u00E9", ((char)0xE9).ToString()),
-            ("U0001F600", char.ConvertFromUtf32(0x1F600)),
-        ];
+        string block = $"date: 2026-09-13\ntitle: \"a{Backslash}{escape}b\"";
+        string reason = $"'{Backslash}{escape[0]}' is not one of the two escapes, '{Backslash}{Backslash}' and '{Backslash}\"'";
 
         // Act and Assert
-        using (Assert.Multiple())
-        {
-            foreach ((string escape, string expected) in escapes)
-            {
-                Entry[] entries = ReadEntries($"title: \"a{Backslash}{escape}b\"");
-                await Assert.That(entries[0].Value.Text).IsEqualTo($"a{expected}b");
-            }
-        }
+        await AssertFailure(block, 2, reason);
     }
 
     /// <summary>
-    ///     Verifies that an escape which names no character stops the block, on the line it sits on.
-    /// </summary>
-    [Test]
-    [Arguments("q", "'{0}q' is not an escape")]
-    [Arguments("x4", "'{0}x' is not followed by the 2 hexadecimal digits of a character")]
-    [Arguments("uD800", "'{0}u' is not followed by the 4 hexadecimal digits of a character")]
-    [Arguments("U00110000", "'{0}U' is not followed by the 8 hexadecimal digits of a character")]
-    public async Task ReadValue_Test_UnknownEscape_Throws(string escape, string reason)
-    {
-        // Arrange
-        string block = $"date: 2026-09-13\ntitle: \"a{Backslash}{escape}\"";
-
-        // Act and Assert
-        await AssertFailure(block, 2, string.Format(CultureInfo.InvariantCulture, reason, Backslash));
-    }
-
-    /// <summary>
-    ///     Verifies that an empty value and the plain spellings of null are no scalar.
+    ///     Verifies that an empty value and the plain spellings of null are no text.
     /// </summary>
     [Test]
     [Arguments("title: ~")]
@@ -341,7 +244,6 @@ public class LeanYamlParserTests
     [Arguments("title: # c")]
     [Arguments("title: ~ # c")]
     [Arguments("title:\n  # c")]
-    [Arguments("title:\n  ~")]
     public async Task ReadValue_Test_NullSpelling_IsNull(string block)
     {
         // Act
@@ -359,23 +261,16 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a value is reported with its kind and with the line it starts on, which is the line below
-    ///     the key when the value sits there.
+    ///     Verifies that a value is reported with its kind and with the line it starts on, which for a list below
+    ///     its key is the line of the first entry.
     /// </summary>
     [Test]
     [Arguments("title: Home", nameof(YamlNodeKind.Scalar), 1)]
-    [Arguments("title:\n  Home", nameof(YamlNodeKind.Scalar), 2)]
-    [Arguments("title:\n\n  # c\n  Home", nameof(YamlNodeKind.Scalar), 4)]
-    [Arguments("title: |\n  text", nameof(YamlNodeKind.Scalar), 1)]
-    [Arguments("title: \"a\n  b\"", nameof(YamlNodeKind.Scalar), 1)]
+    [Arguments("title: 'Home'", nameof(YamlNodeKind.Scalar), 1)]
     [Arguments("title: [a, b]", nameof(YamlNodeKind.Sequence), 1)]
-    [Arguments("title:\n  [a]", nameof(YamlNodeKind.Sequence), 2)]
     [Arguments("title:\n  - a", nameof(YamlNodeKind.Sequence), 2)]
     [Arguments("title:\n- a", nameof(YamlNodeKind.Sequence), 2)]
-    [Arguments("title: {a: b}", nameof(YamlNodeKind.Mapping), 1)]
-    [Arguments("title: {a: b,\n  c: d}", nameof(YamlNodeKind.Mapping), 1)]
-    [Arguments("title:\n  name: x", nameof(YamlNodeKind.Mapping), 2)]
-    [Arguments("title:\n  ? a\n  : b", nameof(YamlNodeKind.Mapping), 2)]
+    [Arguments("title:\n\n  # c\n  - a", nameof(YamlNodeKind.Sequence), 4)]
     public async Task ReadValue_Test_Value_IsReportedWithItsKindAndLine(string block, string kind, int line)
     {
         // Act
@@ -403,18 +298,10 @@ public class LeanYamlParserTests
         static (YamlNodeKind Before, YamlNodeKind First, YamlNodeKind Second) ReadTwice(string text)
         {
             var parser = new LeanYamlParser(text);
+            YamlNodeKind before = parser.ReadValue();
+            _ = parser.ReadKey(out _);
 
-            try
-            {
-                YamlNodeKind before = parser.ReadValue();
-                _ = parser.ReadKey(out _);
-
-                return (before, parser.ReadValue(), parser.ReadValue());
-            }
-            finally
-            {
-                parser.Dispose();
-            }
+            return (before, parser.ReadValue(), parser.ReadValue());
         }
 
         // Act
@@ -429,49 +316,64 @@ public class LeanYamlParserTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that printable ASCII and text in other scripts are kept as written.
+    /// </summary>
+    [Test]
+    public async Task ReadValue_Test_EveryPrintableCharacter_IsText()
+    {
+        // Arrange
+        string ascii = string.Concat(Enumerable.Range(0x20, 0x5F).Select(static code => (char)code));
+        string others = string.Concat((char)0xE9, (char)0x65E5, (char)0x672C) + char.ConvertFromUtf32(0x1F600);
+        string block = $"title: x{ascii}\ndescription: a{others}b\ntitel: Typo";
+
+        // Act
+        Entry[] entries = ReadEntries(block);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(entries.Length).IsEqualTo(3);
+            await Assert.That(entries[0].Value.Text).IsEqualTo($"x{ascii}");
+            await Assert.That(entries[1].Value.Text).IsEqualTo($"a{others}b");
+            await Assert.That(entries[2].KeyLine).IsEqualTo(3);
+        }
+    }
+
     #endregion // Scalar Tests
 
-    #region Sequence Tests
+    #region List Tests
 
     /// <summary>
-    ///     Verifies that a sequence is read in the block and in the flow style: with null entries, a trailing comma,
-    ///     comments, entries over several lines, and entries at the column of the key.
+    ///     Verifies that a list is read in brackets on one line and with one entry to a line: with entries that are
+    ///     plain, quoted or null, a trailing comma, comments, and dashes at the column of the key or further in.
     /// </summary>
     [Test]
     [Arguments("stylesheets: [a.css, b.css]", "a.css|b.css")]
+    [Arguments("stylesheets: [ a.css ,b.css ]", "a.css|b.css")]
     [Arguments("stylesheets: [a.css, ]", "a.css")]
     [Arguments("stylesheets: []", "")]
     [Arguments("stylesheets: [ ]", "")]
-    [Arguments("stylesheets: [a.css,\n  b.css]", "a.css|b.css")]
-    [Arguments("stylesheets: [\n  a.css,\n  b.css\n  ]", "a.css|b.css")]
     [Arguments("stylesheets: [\"a b.css\", 'c.css']", "a b.css|c.css")]
+    [Arguments("stylesheets: [\"a, b.css\", 'c].css']", "a, b.css|c].css")]
     [Arguments("stylesheets: [~, a.css]", "<null>|a.css")]
-    [Arguments("stylesheets: [a.css, # c\n  b.css]", "a.css|b.css")]
-    [Arguments("stylesheets: [a,\n# c\n  b]", "a|b")]
-    [Arguments("stylesheets: [a\n  b]", "a b")]
-    [Arguments("stylesheets: [a\n\n  b]", "a\nb")]
-    [Arguments("stylesheets: [a\n  # c\n  , b]", "a|b")]
     [Arguments("stylesheets: [a b, c]", "a b|c")]
     [Arguments("stylesheets: [a:b]", "a:b")]
     [Arguments("stylesheets: [it's.css]", "it's.css")]
     [Arguments("stylesheets: [a.css] # c", "a.css")]
-    [Arguments("stylesheets:\n  [a.css]", "a.css")]
     [Arguments("stylesheets:\n- a.css\n- b.css", "a.css|b.css")]
     [Arguments("stylesheets:\n  - a.css\n  - b.css", "a.css|b.css")]
+    [Arguments("stylesheets: # c\n  - a.css", "a.css")]
+    [Arguments("stylesheets:\n# c\n  - a.css", "a.css")]
     [Arguments("stylesheets:\n  -\n  - a.css", "<null>|a.css")]
     [Arguments("stylesheets:\n  - ~\n  - a.css", "<null>|a.css")]
+    [Arguments("stylesheets:\n  - # c\n  - a.css", "<null>|a.css")]
     [Arguments("stylesheets:\n  -\ta.css", "a.css")]
     [Arguments("stylesheets:\n  - a.css\n  # c\n  - b.css", "a.css|b.css")]
-    [Arguments("stylesheets:\n# c\n  - a.css", "a.css")]
     [Arguments("stylesheets:\n  - a.css\n\n  - b.css", "a.css|b.css")]
-    [Arguments("stylesheets:\n  - a\n    b\n  - c", "a b|c")]
-    [Arguments("stylesheets:\n  - a\n   - b", "a - b")]
-    [Arguments("stylesheets:\n- a.css\n  - b.css", "a.css - b.css")]
-    [Arguments("stylesheets:\n  - |\n    a.css\n  - b.css", "a.css\n|b.css")]
-    [Arguments("stylesheets:\n  -\n    a.css", "a.css")]
     [Arguments("stylesheets:\n  - a.css # c\n  - 'b.css' # c", "a.css|b.css")]
-    [Arguments("stylesheets:\n  - \"a\n    b\"", "a b")]
-    public async Task ReadEntry_Test_Sequence_IsReadInBothStyles(string block, string expected)
+    [Arguments("stylesheets:\n  - \"a: b.css\"", "a: b.css")]
+    public async Task ReadEntry_Test_List_IsReadInBothForms(string block, string expected)
     {
         // Act
         Entry[][] readings = ReadUnderEachLineBreak(block);
@@ -488,10 +390,10 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a sequence which sits at the column of its key ends where the next key begins.
+    ///     Verifies that a list whose dashes sit at the column of its key ends where the next key begins.
     /// </summary>
     [Test]
-    public async Task ReadEntry_Test_SequenceAtTheColumnOfItsKey_EndsAtTheNextKey()
+    public async Task ReadEntry_Test_ListAtTheColumnOfItsKey_EndsAtTheNextKey()
     {
         // Act
         Entry[] entries = ReadEntries("stylesheets:\n- a.css\ntitle: Home\nscripts:\n- a.js\n- b.js");
@@ -507,67 +409,39 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that an entry which is itself a sequence or a mapping is skipped and reported by its kind and
-    ///     with its own line, and that the other entries are still read.
+    ///     Verifies that an entry is reported with the line it sits on.
     /// </summary>
     [Test]
-    [Arguments("stylesheets: [a, [b], c]", "a|<sequence>|c", 1)]
-    [Arguments("stylesheets: [a, [b, , c]]", "a|<sequence>", 1)]
-    [Arguments("stylesheets: [a: b]", "<mapping>", 1)]
-    [Arguments("stylesheets: [a, b: ]", "a|<mapping>", 1)]
-    [Arguments("stylesheets: [a, {b: c}]", "a|<mapping>", 1)]
-    [Arguments("stylesheets:\n  - [nested]", "<sequence>", 2)]
-    [Arguments("stylesheets:\n  - a.css\n  - - b", "a.css|<sequence>", 3)]
-    [Arguments("stylesheets:\n  - a: b\n  - c.css", "<mapping>|c.css", 2)]
-    [Arguments("stylesheets:\n  - {a: b}\n  - c.css", "<mapping>|c.css", 2)]
-    [Arguments("stylesheets:\n  - a.css\n  -\n    b: c", "a.css|<mapping>", 4)]
-    [Arguments("stylesheets:\n  - a.css\n  - [b,\n    c]\n  - d.css", "a.css|<sequence>|d.css", 3)]
-    [Arguments("stylesheets:\n  -\n    [b,\n     c]", "<sequence>", 3)]
-    [Arguments("stylesheets:\n  - &a b: c\n  - d.css", "<mapping>|d.css", 2)]
-    public async Task ReadEntry_Test_NestedEntry_IsSkippedAndReportedByItsKind(string block, string expected, int line)
+    public async Task ReadEntry_Test_Entry_IsReportedWithItsLine()
     {
         // Act
-        Entry[][] readings = ReadUnderEachLineBreak(block);
+        Entry[] entries = ReadEntries("title: Home\nstylesheets:\n  - a.css\n\n  - b.css\nscripts: [a.js, b.js]");
 
         // Assert
         using (Assert.Multiple())
         {
-            foreach (Entry[] entries in readings)
-            {
-                Node nested = entries[0].Items.Single(static item => item.Kind is YamlNodeKind.Sequence or YamlNodeKind.Mapping);
-
-                await Assert.That(Join(entries[0].Items)).IsEqualTo(expected);
-                await Assert.That(nested.Line).IsEqualTo(line);
-            }
+            await Assert.That(string.Join(',', entries[1].Items.Select(static item => item.Line))).IsEqualTo("3,5");
+            await Assert.That(string.Join(',', entries[2].Items.Select(static item => item.Line))).IsEqualTo("6,6");
         }
     }
 
     /// <summary>
-    ///     Verifies that a value which is no sequence has no entries, before and after it is read.
+    ///     Verifies that a value which is no list has no entries, before and after it is read.
     /// </summary>
     [Test]
     [Arguments("title: Home")]
     [Arguments("title:")]
-    [Arguments("title: {a: b}")]
-    public async Task ReadEntry_Test_ValueThatIsNoSequence_HasNoEntries(string block)
+    public async Task ReadEntry_Test_ValueThatIsNoList_HasNoEntries(string block)
     {
         // Arrange
         static (bool Before, bool After) ReadAround(string text)
         {
             var parser = new LeanYamlParser(text);
+            _ = parser.ReadKey(out _);
+            bool before = parser.ReadEntry(out _);
+            _ = parser.ReadValue();
 
-            try
-            {
-                _ = parser.ReadKey(out _);
-                bool before = parser.ReadEntry(out _);
-                _ = parser.ReadValue();
-
-                return (before, parser.ReadEntry(out _));
-            }
-            finally
-            {
-                parser.Dispose();
-            }
+            return (before, parser.ReadEntry(out _));
         }
 
         // Act
@@ -581,47 +455,25 @@ public class LeanYamlParserTests
         }
     }
 
-    #endregion // Sequence Tests
+    #endregion // List Tests
 
-    #region Skipped Value Tests
+    #region Unread Value Tests
 
     /// <summary>
-    ///     Verifies that a value which the caller leaves unread is skipped whatever it holds, also when it carries
-    ///     an anchor, a tag or an alias, and that the keys after it are still read with their lines.
+    ///     Verifies that a value which the caller leaves unread is passed over, and that the keys after it are still
+    ///     read with their lines.
     /// </summary>
     [Test]
     [Arguments("titel: Typo\ntitle: Home", "titel@1,title@2")]
     [Arguments("Title: x\ntitle: Home", "Title@1,title@2")]
     [Arguments("a b: c\ntitle: Home", "a b@1,title@2")]
-    [Arguments("'ti''tle': x\ntitle: Home", "ti'tle@1,title@2")]
+    [Arguments("author:\ntitle: Home", "author@1,title@2")]
     [Arguments("author: a\nauthor: b\ntitle: Home", "author@1,author@2,title@3")]
-    [Arguments("author:\n  name: Ada\ntags: [notes, yaml]\ntitle: Home", "author@1,tags@3,title@4")]
-    [Arguments("author: {name: x,\n  url: y}\ntitle: Home", "author@1,title@3")]
-    [Arguments("author: {name: O'Brien}\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: [it's, \"a\"]\ntitle: Home", "author@1,title@2")]
-    [Arguments("author:\n  - x\n  - y\ntitle: Home", "author@1,title@4")]
-    [Arguments("author:\n- x\n- y\ntitle: Home", "author@1,title@4")]
-    [Arguments("author: |\n  text\n  more\ntitle: Home", "author@1,title@4")]
-    [Arguments("author: \"a\n  b\"\ntitle: Home", "author@1,title@3")]
-    [Arguments("author: &a x\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: !!str x\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: *a\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: &a\n  name: x\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  name: a: b\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  deep:\n    deeper: [x\n  other: y\ntitle: Home", "author@1,title@5")]
-    [Arguments("author:\n  \"a\\\"b\": x\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  'a''b': x\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  ? a\n  : b\ntitle: Home", "author@1,title@4")]
-    [Arguments("author: [&a x, !!str y, *a]\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: [&a , b]\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: {\"a\": 'b, c', d: [\"e]\"]}\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: {name: !!str 'a } b'}\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: [[&a \"x ] y\"]]\ntitle: Home", "author@1,title@2")]
-    [Arguments("author: {name: &a\n  'b } c'}\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  &name: x\ntitle: Home", "author@1,title@3")]
-    [Arguments("author:\n  &a\n  name: x\ntitle: Home", "author@1,title@4")]
-    [Arguments("author:\n  &a # note: x\n  name\ntitle: Home", "author@1,title@4")]
-    public async Task ReadKey_Test_UnreadValue_IsSkipped(string block, string expected)
+    [Arguments("author: \"a: b\"\ntitle: Home", "author@1,title@2")]
+    [Arguments("tags: [notes, yaml]\ntitle: Home", "tags@1,title@2")]
+    [Arguments("tags:\n  - x\n  - y\ntitle: Home", "tags@1,title@4")]
+    [Arguments("tags:\n- x\n- y\ntitle: Home", "tags@1,title@4")]
+    public async Task ReadKey_Test_UnreadValue_IsPassedOver(string block, string expected)
     {
         // Act
         string[] readings = [.. LineBreaks.Select(lineBreak => ReadKeys(block.Replace("\n", lineBreak, StringComparison.Ordinal)))];
@@ -635,33 +487,24 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that the entries of a sequence which the caller leaves unread are skipped by the next key.
+    ///     Verifies that the entries of a list which the caller leaves unread are passed over by the next key.
     /// </summary>
     [Test]
     [Arguments("stylesheets: [a, b, c]\ntitle: Home")]
-    [Arguments("stylesheets: [a,\n  b,\n  c]\ntitle: Home")]
     [Arguments("stylesheets:\n  - a\n  - b\n  - c\ntitle: Home")]
     [Arguments("stylesheets:\n- a\n- b\n- c\ntitle: Home")]
-    public async Task ReadKey_Test_UnreadEntries_AreSkipped(string block)
+    public async Task ReadKey_Test_UnreadEntries_ArePassedOver(string block)
     {
         // Arrange
         static (string? Entry, string Key, string? Text) ReadAround(string text)
         {
             var parser = new LeanYamlParser(text);
+            _ = parser.ReadKey(out _);
+            _ = parser.ReadValue();
+            string? entry = parser.ReadEntry(out _) ? parser.Text.ToString() : null;
+            string key = parser.ReadKey(out ReadOnlySpan<char> name) ? name.ToString() : string.Empty;
 
-            try
-            {
-                _ = parser.ReadKey(out _);
-                _ = parser.ReadValue();
-                string? entry = parser.ReadEntry(out _) ? parser.Text.ToString() : null;
-                string key = parser.ReadKey(out ReadOnlySpan<char> name) ? name.ToString() : string.Empty;
-
-                return (entry, key, parser.ReadValue() is YamlNodeKind.Scalar ? parser.Text.ToString() : null);
-            }
-            finally
-            {
-                parser.Dispose();
-            }
+            return (entry, key, parser.ReadValue() is YamlNodeKind.Scalar ? parser.Text.ToString() : null);
         }
 
         // Act
@@ -676,87 +519,18 @@ public class LeanYamlParserTests
         }
     }
 
-    /// <summary>
-    ///     Verifies that an anchor, an alias or a tag stops the block on a value that is read, while the same value
-    ///     passes when the caller leaves it unread.
-    /// </summary>
-    [Test]
-    [Arguments("title: &a Home", 1)]
-    [Arguments("title: !!str 123", 1)]
-    [Arguments("title: !custom Home", 1)]
-    [Arguments("title: *a", 1)]
-    [Arguments("title: &a\n  Home", 1)]
-    [Arguments("date: 2026-09-13\ntitle: *a", 2)]
-    [Arguments("stylesheets:\n  - &a x.css\n  - *a", 2)]
-    [Arguments("stylesheets: [&a x.css]", 1)]
-    [Arguments("stylesheets: [*a]", 1)]
-    [Arguments("title:\n  &name: x", 2)]
-    [Arguments("title:\n  &a # note: x\n  Home", 2)]
-    [Arguments("stylesheets:\n  - !a: b", 2)]
-    public async Task ReadValue_Test_AnchorAliasOrTag_Throws(string block, int line)
-    {
-        // Act and Assert
-        using (Assert.Multiple())
-        {
-            foreach (string lineBreak in LineBreaks)
-            {
-                string text = block.Replace("\n", lineBreak, StringComparison.Ordinal);
-                FrontMatterException? exception = await Assert.That(() => ReadEntries(text)).Throws<FrontMatterException>();
-
-                await Assert.That(exception?.Line).IsEqualTo(line);
-                await Assert.That(exception?.Reason).IsEqualTo(NoProperties);
-                await Assert.That(() => ReadKeys(text)).ThrowsNothing();
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that an anchor, an alias or a tag stops the block on a key, whether its value is read or not.
-    /// </summary>
-    [Test]
-    [Arguments("&a title: Home")]
-    [Arguments("*a : Home")]
-    [Arguments("!!str title: Home")]
-    public async Task ReadKey_Test_AnchorAliasOrTagOnAKey_Throws(string block)
-    {
-        // Act and Assert
-        await AssertFailure(block, 1, NoProperties);
-    }
-
-    /// <summary>
-    ///     Verifies that only a comment may follow an alias, which the parser reaches on a value that is skipped.
-    /// </summary>
-    [Test]
-    public async Task ReadKey_Test_TextAfterASkippedAlias_Throws()
-    {
-        // Act
-        FrontMatterException? exception = await Assert.That(() => ReadKeys("author: *a b")).Throws<FrontMatterException>();
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(exception?.Line).IsEqualTo(1);
-            await Assert.That(exception?.Reason).IsEqualTo("text follows the alias");
-        }
-    }
-
-    #endregion // Skipped Value Tests
+    #endregion // Unread Value Tests
 
     #region Malformed Block Tests
 
     /// <summary>
-    ///     Verifies that a tab stops the block wherever spaces have to indent a line.
+    ///     Verifies that a tab stops the block where spaces have to indent a line.
     /// </summary>
     [Test]
     [Arguments("\ttitle: Home", 1)]
-    [Arguments("title: plain\n\tcontinued", 2)]
-    [Arguments("title: |\n\ttext", 2)]
-    [Arguments("title: |\n  a\n \tb", 3)]
-    [Arguments("author:\n\tname: x", 2)]
-    [Arguments("title:\n \t- a", 2)]
-    [Arguments("author:\n \tname: x", 2)]
-    [Arguments("stylesheets: [a.css,\n\tb.css]", 2)]
-    [Arguments("title: \"a\n\tb\"", 2)]
+    [Arguments("title: Home\n\tdate: 2026-09-13", 2)]
+    [Arguments("stylesheets:\n\t- a.css", 2)]
+    [Arguments("stylesheets:\n  - a.css\n\t- b.css", 3)]
     public async Task ReadKey_Test_TabInIndentation_Throws(string block, int line)
     {
         // Act and Assert
@@ -764,21 +538,62 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a line at the first column which is no key and its colon stops the block, as does a
-    ///     mapping that is not written in block style at that column.
+    ///     Verifies that an indented line stops the block unless it is an entry of a list, since a value ends with
+    ///     its line: text does not continue below, and neither a value nor a mapping sits below its key.
+    /// </summary>
+    [Test]
+    [Arguments("  title: Home", 1)]
+    [Arguments("title: plain\n  continued", 2)]
+    [Arguments("title: one\n\n  two", 3)]
+    [Arguments("title: Home\n  # c\n  two", 3)]
+    [Arguments("title: \"Home\"\n  more", 2)]
+    [Arguments("title:\n  Home", 2)]
+    [Arguments("title: # c\n  Home", 2)]
+    [Arguments("author:\n  name: Ada", 2)]
+    [Arguments("stylesheets: [a.css]\n  more", 2)]
+    [Arguments("stylesheets:\n  - a.css\n    more", 3)]
+    [Arguments("stylesheets:\n  - a.css\n  b.css", 3)]
+    [Arguments("stylesheets:\n  - a.css\n   - b.css", 3)]
+    [Arguments("stylesheets:\n    - a\n  - b", 3)]
+    [Arguments("stylesheets:\n  -\n    a.css", 3)]
+    public async Task ReadKey_Test_IndentedLine_Throws(string block, int line)
+    {
+        // Act and Assert
+        await AssertFailure(block, line, "it is indented, and a value ends with its line");
+    }
+
+    /// <summary>
+    ///     Verifies that block text stops the block, on the line of its indicator.
+    /// </summary>
+    [Test]
+    [Arguments("title: |", 1)]
+    [Arguments("title: >", 1)]
+    [Arguments("title: |-", 1)]
+    [Arguments("title: >+2", 1)]
+    [Arguments("description: |\n  Who I am\n  and what I write", 1)]
+    [Arguments("stylesheets:\n  - |\n    a.css", 2)]
+    public async Task ReadValue_Test_BlockText_Throws(string block, int line)
+    {
+        // Act and Assert
+        await AssertFailure(block, line, "front matter holds no block text, so write the text on one line");
+    }
+
+    /// <summary>
+    ///     Verifies that a line at the first column which is no key and its colon stops the block.
     /// </summary>
     [Test]
     [Arguments("just a bare sentence", 1)]
+    [Arguments("title # note: x", 1)]
     [Arguments("title:Home", 1)]
     [Arguments("- a\n- b", 1)]
-    [Arguments("{title: Home}", 1)]
+    [Arguments("- a: b", 1)]
+    [Arguments("? title\n: Home", 1)]
+    [Arguments("? title: Home", 1)]
     [Arguments(": x", 1)]
-    [Arguments("\"title\":Home", 1)]
-    [Arguments("\"title\n  more\": Home", 1)]
+    [Arguments("{title: Home}", 1)]
+    [Arguments("%YAML 1.2\ntitle: Home", 1)]
     [Arguments("title: Home\nplain", 2)]
-    [Arguments("title: plain\ncontinued", 2)]
-    [Arguments("date:\n>-\n  2026-09-13", 2)]
-    [Arguments("title:\n\"Home\"", 2)]
+    [Arguments("title: Home\n?", 2)]
     [Arguments("stylesheets:\n[a.css]", 2)]
     [Arguments("stylesheets:\n  - a.css\n- b.css", 3)]
     public async Task ReadKey_Test_LineThatIsNoKey_Throws(string block, int line)
@@ -788,16 +603,53 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a colon which a space or the end of the line follows stops the block inside plain text,
+    ///     Verifies that a key in quotes stops the block.
+    /// </summary>
+    [Test]
+    [Arguments("\"title\": Home", 1)]
+    [Arguments("'title': Home", 1)]
+    [Arguments("title:\n\"Home\"", 2)]
+    public async Task ReadKey_Test_QuotedKey_Throws(string block, int line)
+    {
+        // Act and Assert
+        await AssertFailure(block, line, "a key is written without quotes");
+    }
+
+    /// <summary>
+    ///     Verifies that an anchor, an alias or a tag stops the block, on a key and on any value.
+    /// </summary>
+    [Test]
+    [Arguments("&a title: Home", 1)]
+    [Arguments("*a : Home", 1)]
+    [Arguments("!!str title: Home", 1)]
+    [Arguments("title: &a Home", 1)]
+    [Arguments("title: !!str 123", 1)]
+    [Arguments("title: !custom Home", 1)]
+    [Arguments("title: *a", 1)]
+    [Arguments("author: &a x", 1)]
+    [Arguments("date: 2026-09-13\ntitle: *a", 2)]
+    [Arguments("stylesheets:\n  - &a x.css", 2)]
+    [Arguments("stylesheets: [&a x.css]", 1)]
+    [Arguments("stylesheets: [*a]", 1)]
+    public async Task ReadKey_Test_AnchorAliasOrTag_Throws(string block, int line)
+    {
+        // Act and Assert
+        await AssertFailure(block, line, "front matter supports no anchors, aliases or tags");
+    }
+
+    /// <summary>
+    ///     Verifies that a colon which a blank or the end of the line follows stops the block inside plain text,
     ///     where YAML would read it as the start of a mapping.
     /// </summary>
     [Test]
     [Arguments("title: a: b", 1)]
     [Arguments("title: Home:", 1)]
+    [Arguments("title: Part 2: the parser", 1)]
     [Arguments("author: a: b", 1)]
-    [Arguments("title: Home\n  bad: indent", 2)]
-    [Arguments("title: a\n  : b", 2)]
-    [Arguments("title:\n  Home\n  a: b", 3)]
+    [Arguments("stylesheets:\n  - a: b", 2)]
+    [Arguments("stylesheets: [a: b]", 1)]
+    [Arguments("stylesheets: [a, b: ]", 1)]
+    [Arguments("stylesheets: [a:]", 1)]
     public async Task ReadValue_Test_ColonInsidePlainText_Throws(string block, int line)
     {
         // Act and Assert
@@ -805,7 +657,8 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that plain text cannot start with an indicator of YAML.
+    ///     Verifies that plain text cannot start with an indicator of YAML, which also keeps a mapping and a nested
+    ///     list out of a value.
     /// </summary>
     [Test]
     [Arguments("title: @home", "@")]
@@ -814,14 +667,20 @@ public class LeanYamlParserTests
     [Arguments("title: ,x", ",")]
     [Arguments("title: ]x", "]")]
     [Arguments("title: }x", "}")]
+    [Arguments("title: {a: b}", "{")]
     [Arguments("title: - a", "- ")]
     [Arguments("title: -", "- ")]
     [Arguments("title: ? a", "? ")]
     [Arguments("title: : a", ": ")]
-    [Arguments("@title: Home", "@")]
-    [Arguments("title:\n  @home", "@")]
     [Arguments("stylesheets: [@a]", "@")]
+    [Arguments("stylesheets: [#a]", "#")]
+    [Arguments("stylesheets: [|a]", "|")]
+    [Arguments("stylesheets: [a, [b]]", "[")]
+    [Arguments("stylesheets: [a, {b: c}]", "{")]
     [Arguments("stylesheets: [a, : ]", ": ")]
+    [Arguments("stylesheets:\n  - [nested]", "[")]
+    [Arguments("stylesheets:\n  - {a: b}", "{")]
+    [Arguments("stylesheets:\n  - - b", "- ")]
     public async Task ReadValue_Test_PlainTextThatStartsWithAnIndicator_Throws(string block, string start)
     {
         // Arrange
@@ -832,31 +691,20 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a directive and a complex key stop the block.
+    ///     Verifies that a quote or a bracket stops the block when it is not closed on the line it opens on.
     /// </summary>
     [Test]
-    [Arguments("? title\n: Home", 1)]
-    [Arguments("%YAML 1.2\ntitle: Home", 1)]
-    [Arguments("title: Home\n?", 2)]
-    public async Task ReadKey_Test_DirectiveOrComplexKey_Throws(string block, int line)
-    {
-        // Act and Assert
-        await AssertFailure(block, line, "front matter supports no directives or complex keys");
-    }
-
-    /// <summary>
-    ///     Verifies that a quote or a bracket which is never closed stops the block on the line it opens on, also
-    ///     when the closing delimiter of the block comes first.
-    /// </summary>
-    [Test]
-    [Arguments("date: 2026-09-13\ntitle: \"unterminated", "the quote that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\ntitle: 'open\n  more", "the quote that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\ntitle: \"Fifty\n---", "the quote that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\ntitle: [Ten", "the bracket that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\ntitle: [Ten\n---", "the bracket that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\ntitle: {Ninety\n---", "the bracket that opens on it is never closed")]
-    [Arguments("date: 2026-09-13\nstylesheets: [a,\n  b", "the bracket that opens on it is never closed")]
-    public async Task ReadValue_Test_UnclosedQuoteOrBracket_ThrowsOnTheLineItOpensOn(string block, string reason)
+    [Arguments("date: 2026-09-13\ntitle: \"unterminated", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: 'open\n  more'", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: \"multi\n  line\"", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: \"a\\\"", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: \"a\\", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: 'a''", "the quote that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: [Ten", "the bracket that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\ntitle: [", "the bracket that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\nstylesheets: [a.css,\n  b.css]", "the bracket that opens on it is not closed on the same line")]
+    [Arguments("date: 2026-09-13\nstylesheets: [a.css, # c", "the bracket that opens on it is not closed on the same line")]
+    public async Task ReadValue_Test_UnclosedQuoteOrBracket_Throws(string block, string reason)
     {
         // Act and Assert
         await AssertFailure(block, 2, reason);
@@ -872,11 +720,6 @@ public class LeanYamlParserTests
     [Arguments("title: 'a''b' c", "text follows the closing quote")]
     [Arguments("stylesheets: [a.css] x", "text follows the closing bracket")]
     [Arguments("stylesheets: [a.css]# c", "text follows the closing bracket")]
-    [Arguments("title: {a: b} x", "text follows the closing bracket")]
-    [Arguments("title: >text", "text follows the block indicator")]
-    [Arguments("title: |0", "text follows the block indicator")]
-    [Arguments("title: |++", "text follows the block indicator")]
-    [Arguments("title: |# c", "text follows the block indicator")]
     public async Task ReadValue_Test_TextAfterAValue_Throws(string block, string reason)
     {
         // Act and Assert
@@ -884,46 +727,18 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies the rules of a flow sequence: no empty entry, and a comma between two entries.
+    ///     Verifies the rules of a list in brackets: no empty entry, and a comma between two entries.
     /// </summary>
     [Test]
     [Arguments("stylesheets: [a, , b]", "the list holds an empty entry")]
     [Arguments("stylesheets: [,]", "the list holds an empty entry")]
     [Arguments("stylesheets: [\"a\" \"b\"]", "an entry of the list is followed by neither ',' nor ']'")]
     [Arguments("stylesheets: [a [b]]", "an entry of the list is followed by neither ',' nor ']'")]
-    public async Task ReadEntry_Test_MalformedFlowSequence_Throws(string block, string reason)
+    [Arguments("stylesheets: [a}", "an entry of the list is followed by neither ',' nor ']'")]
+    public async Task ReadEntry_Test_MalformedListInBrackets_Throws(string block, string reason)
     {
         // Act and Assert
         await AssertFailure(block, 1, reason);
-    }
-
-    /// <summary>
-    ///     Verifies that a line which continues a value has to be indented, and that an indented line has to
-    ///     continue a value.
-    /// </summary>
-    [Test]
-    [Arguments("title: \"multi\nline\"", 2, "it continues a value but is not indented")]
-    [Arguments("title: 'multi\nline'", 2, "it continues a value but is not indented")]
-    [Arguments("title: \"a\\\n\"", 2, "it continues a value but is not indented")]
-    [Arguments("stylesheets: [a.css,\nb.css]", 2, "it continues a value but is not indented")]
-    [Arguments("stylesheets: [a.css\n]", 2, "it continues a value but is not indented")]
-    [Arguments("stylesheets: [a.css\nb.css]", 2, "it continues a value but is not indented")]
-    [Arguments("  title: Home", 1, "it is indented but continues no value")]
-    [Arguments("title: Home\n  date: 2026-09-13\n", 2, "': ' inside plain text starts a mapping, so quote the text")]
-    [Arguments("title: \"Home\"\n  more", 2, "it is indented but continues no value")]
-    [Arguments("title: one\n  # c\n  two", 3, "it is indented but continues no value")]
-    [Arguments("title: one # c\n  two", 2, "it is indented but continues no value")]
-    [Arguments("title: |\n    a\n  b", 3, "it is indented but continues no value")]
-    [Arguments("stylesheets: [a.css]\n  more", 2, "it is indented but continues no value")]
-    [Arguments("stylesheets:\n  - \"a\"\n    more", 3, "it is indented but continues no value")]
-    [Arguments("stylesheets:\n    - a\n  - b", 3, "it is indented but continues no value")]
-    [Arguments("stylesheets:\n  - a.css\n  b.css", 3, "it is indented but continues no value")]
-    [Arguments("title: |\n   \n  text", 2, "it is indented further than the text below it")]
-    [Arguments("title: |\n  \nauthor: x", 2, "it is indented further than the text below it")]
-    public async Task ReadKey_Test_MisplacedIndentation_Throws(string block, int line, string reason)
-    {
-        // Act and Assert
-        await AssertFailure(block, line, reason);
     }
 
     /// <summary>
@@ -942,63 +757,20 @@ public class LeanYamlParserTests
     }
 
     /// <summary>
-    ///     Verifies that a character outside the printable set of YAML stops the block on its line, and that the
-    ///     message names the character.
+    ///     Verifies the message of the exception, which names the line and the reason.
     /// </summary>
     [Test]
-    [Arguments(0x0000)]
-    [Arguments(0x0001)]
-    [Arguments(0x0008)]
-    [Arguments(0x000B)]
-    [Arguments(0x001F)]
-    [Arguments(0x007F)]
-    [Arguments(0x0080)]
-    [Arguments(0x0084)]
-    [Arguments(0x0086)]
-    [Arguments(0x009F)]
-    [Arguments(0xD800)]
-    [Arguments(0xDC00)]
-    [Arguments(0xFFFE)]
-    [Arguments(0xFFFF)]
-    public async Task ReadKey_Test_UnprintableCharacter_Throws(int code)
+    public async Task ReadKey_Test_MalformedBlock_NamesTheLineAndTheReason()
     {
-        // Arrange
-        string block = $"title: Home\r\ndescription: \"a{(char)code}b\"";
-
         // Act
-        FrontMatterException? exception = await Assert.That(() => ReadKeys(block)).Throws<FrontMatterException>();
+        FrontMatterException? exception = await Assert.That(() => ReadKeys("title: Home\r\n\ttitle: Home")).Throws<FrontMatterException>();
 
         // Assert
         using (Assert.Multiple())
         {
             await Assert.That(exception?.Line).IsEqualTo(2);
-            await Assert.That(exception?.Reason).IsEqualTo($"it holds the character U+{code:X4}, which YAML does not allow");
-            await Assert.That(exception?.Message).IsEqualTo($"The front matter is malformed on line 2, because it holds the character U+{code:X4}, which YAML does not allow.");
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that every printable character is text: all of ASCII, a pair of surrogates, and the characters
-    ///     that YAML 1.1 read as line breaks, which break no line and count as none.
-    /// </summary>
-    [Test]
-    public async Task ReadValue_Test_PrintableCharacters_AreText()
-    {
-        // Arrange
-        string ascii = string.Concat(Enumerable.Range(0x20, 0x5F).Select(static code => (char)code));
-        string others = string.Concat((char)0x85, (char)0xA0, (char)0x2028, (char)0x2029, (char)0xFEFF, (char)0xFFFD) + char.ConvertFromUtf32(0x1F600);
-        string block = $"title: |\n  x{ascii}\ndescription: a{others}b\ntitel: Typo";
-
-        // Act
-        Entry[] entries = ReadEntries(block);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            await Assert.That(entries.Length).IsEqualTo(3);
-            await Assert.That(entries[0].Value.Text).IsEqualTo($"x{ascii}\n");
-            await Assert.That(entries[1].Value.Text).IsEqualTo($"a{others}b");
-            await Assert.That(entries[2].KeyLine).IsEqualTo(4);
+            await Assert.That(exception?.Reason).IsEqualTo("a tab indents it");
+            await Assert.That(exception?.Message).IsEqualTo("The front matter is malformed on line 2, because a tab indents it.");
         }
     }
 
@@ -1006,51 +778,37 @@ public class LeanYamlParserTests
 
     #region Helpers
 
-    // Reads every key with its value and with every entry of a sequence.
+    // Reads every key with its value and with every entry of a list.
     private static Entry[] ReadEntries(string block)
     {
         List<Entry> entries = [];
         var parser = new LeanYamlParser(block);
 
-        try
+        while (parser.ReadKey(out ReadOnlySpan<char> key))
         {
-            while (parser.ReadKey(out ReadOnlySpan<char> key))
-            {
-                string name = key.ToString();
-                int keyLine = parser.KeyLine;
-                YamlNodeKind kind = parser.ReadValue();
-                var value = new Node(kind, kind is YamlNodeKind.Scalar ? parser.Text.ToString() : null, parser.ValueLine);
-                List<Node> items = [];
+            string name = key.ToString();
+            int keyLine = parser.KeyLine;
+            YamlNodeKind kind = parser.ReadValue();
+            var value = new Node(kind, kind is YamlNodeKind.Scalar ? parser.Text.ToString() : null, parser.ValueLine);
+            List<Node> items = [];
 
-                while (parser.ReadEntry(out YamlNodeKind itemKind))
-                    items.Add(new Node(itemKind, itemKind is YamlNodeKind.Scalar ? parser.Text.ToString() : null, parser.ValueLine));
+            while (parser.ReadEntry(out YamlNodeKind itemKind))
+                items.Add(new Node(itemKind, itemKind is YamlNodeKind.Scalar ? parser.Text.ToString() : null, parser.ValueLine));
 
-                entries.Add(new Entry(name, keyLine, value, items));
-            }
-        }
-        finally
-        {
-            parser.Dispose();
+            entries.Add(new Entry(name, keyLine, value, items));
         }
 
         return [.. entries];
     }
 
-    // Reads the keys alone, so that the parser skips every value.
+    // Reads the keys alone, so that the parser reads every value by itself.
     private static string ReadKeys(string block)
     {
         List<string> keys = [];
         var parser = new LeanYamlParser(block);
 
-        try
-        {
-            while (parser.ReadKey(out ReadOnlySpan<char> key))
-                keys.Add($"{key.ToString()}@{parser.KeyLine}");
-        }
-        finally
-        {
-            parser.Dispose();
-        }
+        while (parser.ReadKey(out ReadOnlySpan<char> key))
+            keys.Add($"{key.ToString()}@{parser.KeyLine}");
 
         return string.Join(',', keys);
     }
@@ -1061,13 +819,8 @@ public class LeanYamlParserTests
     private static string Describe(Entry[] entries) =>
         string.Join(',', entries.Select(static entry => $"{entry.Key}={entry.Value.Text}"));
 
-    private static string Join(IReadOnlyList<Node> items) => string.Join('|', items.Select(static item => item.Kind switch
-    {
-        YamlNodeKind.Scalar => item.Text,
-        YamlNodeKind.Null => "<null>",
-        YamlNodeKind.Sequence => "<sequence>",
-        _ => "<mapping>",
-    }));
+    private static string Join(IReadOnlyList<Node> items) =>
+        string.Join('|', items.Select(static item => item.Kind is YamlNodeKind.Scalar ? item.Text : "<null>"));
 
     private static async Task AssertText(string block, string expected)
     {
@@ -1081,7 +834,7 @@ public class LeanYamlParserTests
         }
     }
 
-    // A malformed block fails the same way whether its values are read or skipped.
+    // A malformed block fails the same way whether the caller reads its values or leaves them to the parser.
     private static async Task AssertFailure(string block, int line, string reason)
     {
         using (Assert.Multiple())
@@ -1090,12 +843,12 @@ public class LeanYamlParserTests
             {
                 string text = block.Replace("\n", lineBreak, StringComparison.Ordinal);
                 FrontMatterException? read = await Assert.That(() => ReadEntries(text)).Throws<FrontMatterException>();
-                FrontMatterException? skipped = await Assert.That(() => ReadKeys(text)).Throws<FrontMatterException>();
+                FrontMatterException? unread = await Assert.That(() => ReadKeys(text)).Throws<FrontMatterException>();
 
                 await Assert.That(read?.Line).IsEqualTo(line);
                 await Assert.That(read?.Reason).IsEqualTo(reason);
-                await Assert.That(skipped?.Line).IsEqualTo(line);
-                await Assert.That(skipped?.Reason).IsEqualTo(reason);
+                await Assert.That(unread?.Line).IsEqualTo(line);
+                await Assert.That(unread?.Reason).IsEqualTo(reason);
             }
         }
     }

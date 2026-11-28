@@ -522,14 +522,11 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that a key is matched by its text, so that a quoted key reaches its member once it is decoded,
-    ///     while a key in another case reaches none.
+    ///     Verifies that a key is matched by its text, so that a key in another case reaches no member.
     /// </summary>
     [Test]
+    [Arguments("title: Home", "Home")]
     [Arguments("title : Home", "Home")]
-    [Arguments("\"title\": Home", "Home")]
-    [Arguments("'title': Home", "Home")]
-    [Arguments("\"ti\\x74le\": Home", "Home")]
     [Arguments("Title: Home", null)]
     [Arguments("TITLE: Home", null)]
     public async Task Read_Test_Key_IsMatchedByItsText(string block, string? expected)
@@ -546,8 +543,8 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that text is kept as the block declares it: a value that looks like another type stays text, an
-    ///     empty string stays distinct from an absent value, and a block scalar keeps its final line break.
+    ///     Verifies that text is kept as the block declares it: a value that looks like another type stays text, and
+    ///     an empty string stays distinct from an absent value.
     /// </summary>
     [Test]
     [Arguments("title: 123", "123")]
@@ -555,8 +552,8 @@ public class FrontMatterParserTests
     [Arguments("title: 2026-09-13", "2026-09-13")]
     [Arguments("title: \"\"", "")]
     [Arguments("title: \"null\"", "null")]
-    [Arguments("title: plain\n  continued", "plain continued")]
-    [Arguments("title: |\n  Home\n---", "Home\n")]
+    [Arguments("title: \"Part 2: the parser\"", "Part 2: the parser")]
+    [Arguments("title: 'It''s here'", "It's here")]
     public async Task Read_Test_Text_IsKeptAsDeclared(string block, string expected)
     {
         // Act
@@ -637,16 +634,13 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that a date is written as <c>yyyy-MM-dd</c>, plain, quoted or in a folded block that is
-    ///     stripped of its line break.
+    ///     Verifies that a date is written as <c>yyyy-MM-dd</c>, plain or quoted.
     /// </summary>
     [Test]
     [Arguments("date: 2026-09-13")]
     [Arguments("date: \"2026-09-13\"")]
     [Arguments("date: '2026-09-13'")]
     [Arguments("date: 2026-09-13 # c")]
-    [Arguments("date:\n  2026-09-13")]
-    [Arguments("date: >-\n  2026-09-13\n---")]
     public async Task Read_Test_Date_IsWrittenAsAnIsoCalendarDate(string block)
     {
         // Act
@@ -676,11 +670,7 @@ public class FrontMatterParserTests
     [Arguments("date: 2026-09-13T10:00:00", "date", 2, "'2026-09-13T10:00:00' is not a date written as yyyy-MM-dd")]
     [Arguments("date: \" 2026-09-13\"", "date", 2, "' 2026-09-13' is not a date written as yyyy-MM-dd")]
     [Arguments("date: \"\"", "date", 2, "'' is not a date written as yyyy-MM-dd")]
-    [Arguments("date: 2026-09-13\n  x", "date", 2, "'2026-09-13 x' is not a date written as yyyy-MM-dd")]
-    [Arguments("date: |\n  2026-09-13", "date", 2, "'2026-09-13\\n' is not a date written as yyyy-MM-dd")]
-    [Arguments("date:\n  nope", "date", 3, "'nope' is not a date written as yyyy-MM-dd")]
     [Arguments("date: [2026-09-13]", "date", 2, "a list is not a date written as yyyy-MM-dd")]
-    [Arguments("date: {a: b}", "date", 2, "a mapping is not a date written as yyyy-MM-dd")]
     [Arguments("revised: 13/09/2026", "revised", 2, "'13/09/2026' is not a date written as yyyy-MM-dd")]
     [Arguments("enableFeed: yes", "enableFeed", 2, "'yes' is not true or false")]
     [Arguments("enableFeed: 1", "enableFeed", 2, "'1' is not true or false")]
@@ -688,16 +678,12 @@ public class FrontMatterParserTests
     [Arguments("enableFeed: tRuE", "enableFeed", 2, "'tRuE' is not true or false")]
     [Arguments("enableFeed: \" true\"", "enableFeed", 2, "' true' is not true or false")]
     [Arguments("enableFeed: \"\"", "enableFeed", 2, "'' is not true or false")]
-    [Arguments("enableFeed: |\n  true", "enableFeed", 2, "'true\\n' is not true or false")]
     [Arguments("enableFeed: [true]", "enableFeed", 2, "a list is not true or false")]
-    [Arguments("enableComments: {a: b}", "enableComments", 2, "a mapping is not true or false")]
+    [Arguments("enableComments:\n  - true", "enableComments", 3, "a list is not true or false")]
     [Arguments("title: [a, b]", "title", 2, "a list is not text")]
-    [Arguments("title: {a: b}", "title", 2, "a mapping is not text")]
-    [Arguments("title:\n  name: x", "title", 3, "a mapping is not text")]
     [Arguments("title:\n  - a", "title", 3, "a list is not text")]
     [Arguments("stylesheets: a.css", "stylesheets", 2, "'a.css' is not a list")]
-    [Arguments("stylesheets: {a: b}", "stylesheets", 2, "a mapping is not a list")]
-    [Arguments("scripts:\n  a: b", "scripts", 3, "a mapping is not a list")]
+    [Arguments("scripts: \"a.js\"", "scripts", 2, "'a.js' is not a list")]
     public async Task Read_Test_RejectedValue_IsReportedAndTheRestIsRead(string entry, string name, int line, string message)
     {
         // Arrange
@@ -756,73 +742,20 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that an entry which is itself a list or a mapping is dropped and reported under the key of the
-    ///     list with its own line, and that the other entries stay.
-    /// </summary>
-    [Test]
-    [Arguments("stylesheets: [a, [b], c]", "a|c", 1, "a list is not a path")]
-    [Arguments("stylesheets: [a: b]", "", 1, "a mapping is not a path")]
-    [Arguments("stylesheets: [a, b: ]", "a", 1, "a mapping is not a path")]
-    [Arguments("stylesheets: [a, {b: c}]", "a", 1, "a mapping is not a path")]
-    [Arguments("stylesheets:\n  - [nested]", "", 2, "a list is not a path")]
-    [Arguments("stylesheets:\n  - a.css\n  - - b", "a.css", 3, "a list is not a path")]
-    [Arguments("stylesheets:\n  - a: b\n  - c.css", "c.css", 2, "a mapping is not a path")]
-    [Arguments("stylesheets:\n  - {a: b}\n  - c.css", "c.css", 2, "a mapping is not a path")]
-    [Arguments("stylesheets:\n  - a.css\n  -\n    b: c", "a.css", 4, "a mapping is not a path")]
-    [Arguments("stylesheets:\n  - a.css\n  - [b,\n    c]\n  - d.css", "a.css|d.css", 3, "a list is not a path")]
-    public async Task Read_Test_NestedEntry_IsDroppedAndReported(string block, string expected, int line, string message)
-    {
-        // Act
-        Reading[] readings = ReadUnderEachLineBreak(block);
-
-        // Assert
-        using (Assert.Multiple())
-        {
-            foreach (Reading reading in readings)
-            {
-                await Assert.That(Join(reading.FrontMatter?.Stylesheets)).IsEqualTo(expected);
-                await Assert.That(reading.InvalidValues.Count).IsEqualTo(1);
-                await Assert.That(reading.InvalidValues[0].Name).IsEqualTo("stylesheets");
-                await Assert.That(reading.InvalidValues[0].Line).IsEqualTo(line);
-                await Assert.That(reading.InvalidValues[0].Message).IsEqualTo(message);
-            }
-        }
-    }
-
-    /// <summary>
-    ///     Verifies that a key no member reads is reported with its line, once for each time it is declared, that
-    ///     its value is skipped whatever it holds, and that the keys after it are still read.
+    ///     Verifies that a key no member reads is reported with its line, once for each time it is declared, and
+    ///     that the keys after it are still read.
     /// </summary>
     [Test]
     [Arguments("titel: Typo\ntitle: Home", "titel@1")]
     [Arguments("Title: x\ntitle: Home", "Title@1")]
     [Arguments("a b: c\ntitle: Home", "a b@1")]
-    [Arguments("'ti''tle': x\ntitle: Home", "ti'tle@1")]
+    [Arguments("author:\ntitle: Home", "author@1")]
     [Arguments("author: a\nauthor: b\ntitle: Home", "author@1,author@2")]
-    [Arguments("author:\n  name: Ada\ntags: [notes, yaml]\ntitle: Home", "author@1,tags@3")]
-    [Arguments("author: {name: x,\n  url: y}\ntitle: Home", "author@1")]
-    [Arguments("author: {name: O'Brien}\ntitle: Home", "author@1")]
-    [Arguments("author: [it's, \"a\"]\ntitle: Home", "author@1")]
-    [Arguments("author:\n  - x\n  - y\ntitle: Home", "author@1")]
-    [Arguments("author:\n- x\n- y\ntitle: Home", "author@1")]
-    [Arguments("author: |\n  text\n  more\ntitle: Home", "author@1")]
-    [Arguments("author: \"a\n  b\"\ntitle: Home", "author@1")]
-    [Arguments("author: &a x\ntitle: Home", "author@1")]
-    [Arguments("author: !!str x\ntitle: Home", "author@1")]
-    [Arguments("author: *a\ntitle: Home", "author@1")]
-    [Arguments("author: &a\n  name: x\ntitle: Home", "author@1")]
-    [Arguments("author:\n  name: a: b\ntitle: Home", "author@1")]
-    [Arguments("author:\n  deep:\n    deeper: [x\n  other: y\ntitle: Home", "author@1")]
-    [Arguments("author:\n  \"a\\\"b\": x\ntitle: Home", "author@1")]
-    [Arguments("author:\n  'a''b': x\ntitle: Home", "author@1")]
-    [Arguments("author:\n  ? a\n  : b\ntitle: Home", "author@1")]
-    [Arguments("author: [&a x, !!str y, *a]\ntitle: Home", "author@1")]
-    [Arguments("author: [&a , b]\ntitle: Home", "author@1")]
-    [Arguments("author: {\"a\": 'b, c', d: [\"e]\"]}\ntitle: Home", "author@1")]
-    [Arguments("author: {name: !!str 'a } b'}\ntitle: Home", "author@1")]
-    [Arguments("author: [[&a \"x ] y\"]]\ntitle: Home", "author@1")]
-    [Arguments("author:\n  &name: x\ntitle: Home", "author@1")]
-    public async Task Read_Test_UnknownKey_IsReportedAndSkipped(string block, string expected)
+    [Arguments("author: \"a: b\"\ntitle: Home", "author@1")]
+    [Arguments("tags: [notes, yaml]\ntitle: Home", "tags@1")]
+    [Arguments("tags:\n  - x\n  - y\ntitle: Home", "tags@1")]
+    [Arguments("tags:\n- x\n- y\ntitle: Home", "tags@1")]
+    public async Task Read_Test_UnknownKey_IsReportedAndPassedOver(string block, string expected)
     {
         // Act
         Reading[] readings = ReadUnderEachLineBreak(block);
@@ -840,13 +773,11 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that a recognized key stops the block when it is declared a second time, whichever way it is
-    ///     spelled.
+    ///     Verifies that a recognized key stops the block when it is declared a second time.
     /// </summary>
     [Test]
     [Arguments("title: a\ntitle: b", "title")]
     [Arguments("enableFeed: true\nenableFeed: false", "enableFeed")]
-    [Arguments("\"title\": a\ntitle: b", "title")]
     [Arguments("stylesheets: [a]\nstylesheets:\n  - b", "stylesheets")]
     public async Task Read_Test_RecognizedKeyDeclaredTwice_Throws(string block, string name)
     {
@@ -855,19 +786,17 @@ public class FrontMatterParserTests
     }
 
     /// <summary>
-    ///     Verifies that an anchor, an alias or a tag stops the block on the value of a recognized key, since front
-    ///     matter has no use for them, while the value of an unknown key may carry them.
+    ///     Verifies that an anchor, an alias or a tag stops the block, whether a member reads the key or not, since
+    ///     front matter has no use for them.
     /// </summary>
     [Test]
     [Arguments("title: &a Home", 1)]
     [Arguments("title: !!str 123", 1)]
     [Arguments("title: *a", 1)]
-    [Arguments("author: &a x\ntitle: *a", 2)]
-    [Arguments("stylesheets:\n  - &a x.css\n  - *a", 2)]
+    [Arguments("author: &a x", 1)]
+    [Arguments("stylesheets:\n  - &a x.css", 2)]
     [Arguments("stylesheets: [*a]", 1)]
-    [Arguments("title:\n  &name: x", 2)]
-    [Arguments("stylesheets:\n  - !a: b", 2)]
-    public async Task Read_Test_AnchorAliasOrTagOnARecognizedKey_Throws(string block, int line)
+    public async Task Read_Test_AnchorAliasOrTag_Throws(string block, int line)
     {
         // Act and Assert
         await AssertFailure(block, line, "front matter supports no anchors, aliases or tags");
@@ -878,10 +807,13 @@ public class FrontMatterParserTests
     ///     fault sits in a value that its member rejects or that no member reads.
     /// </summary>
     [Test]
-    [Arguments("date: 2026-09-13\ntitle: \"unterminated", 2, "the quote that opens on it is never closed")]
+    [Arguments("date: 2026-09-13\ntitle: \"unterminated", 2, "the quote that opens on it is not closed on the same line")]
+    [Arguments("title: Part 2: the parser", 1, "': ' inside plain text starts a mapping, so quote the text")]
     [Arguments("title: [a, , b]", 1, "the list holds an empty entry")]
     [Arguments("author: [a, , b]", 1, "the list holds an empty entry")]
-    [Arguments("author: x\n  more: y", 2, "': ' inside plain text starts a mapping, so quote the text")]
+    [Arguments("author:\n  name: Ada", 2, "it is indented, and a value ends with its line")]
+    [Arguments("description: |\n  Who I am", 1, "front matter holds no block text, so write the text on one line")]
+    [Arguments("stylesheets:\n  - a.css\n  - [b.css]", 3, "plain text cannot start with '[', so quote it")]
     [Arguments("title: Home\n--- x", 2, "a second document starts on it")]
     public async Task Read_Test_MalformedBlock_Throws(string block, int line, string reason)
     {

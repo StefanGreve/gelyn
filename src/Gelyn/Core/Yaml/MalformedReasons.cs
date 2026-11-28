@@ -1,5 +1,3 @@
-using Gelyn.Core.Internals;
-
 namespace Gelyn.Core.Yaml;
 
 /// <summary>
@@ -19,24 +17,24 @@ internal static class MalformedReasons
     internal const string NotAKey = "it is not a key followed by ': '";
 
     /// <summary>
-    ///     A line that continues a quoted scalar or a flow collection starts at the first column.
+    ///     A key is written in quotes.
     /// </summary>
-    internal const string NotIndented = "it continues a value but is not indented";
+    internal const string QuotedKey = "a key is written without quotes";
 
     /// <summary>
-    ///     An indented line follows a value that it cannot continue.
+    ///     A line is indented without being an entry of a list.
     /// </summary>
-    internal const string ContinuesNothing = "it is indented but continues no value";
+    internal const string Indented = "it is indented, and a value ends with its line";
 
     /// <summary>
-    ///     An anchor, an alias or a tag sits on a key, or on a value that is read.
+    ///     A value is written as block text, with <c>|</c> or <c>&gt;</c>.
+    /// </summary>
+    internal const string BlockText = "front matter holds no block text, so write the text on one line";
+
+    /// <summary>
+    ///     An anchor, an alias or a tag sits on a key or on a value.
     /// </summary>
     internal const string NoProperties = "front matter supports no anchors, aliases or tags";
-
-    /// <summary>
-    ///     A directive or a complex key sits at the first column.
-    /// </summary>
-    internal const string NoDirectives = "front matter supports no directives or complex keys";
 
     /// <summary>
     ///     A document marker carries text, or text follows the closing delimiter.
@@ -44,19 +42,19 @@ internal static class MalformedReasons
     internal const string SecondDocument = "a second document starts on it";
 
     /// <summary>
-    ///     A colon that a space or the end of the line follows sits inside plain text.
+    ///     A colon that a blank or the end of the line follows sits inside plain text.
     /// </summary>
     internal const string MappingInText = "': ' inside plain text starts a mapping, so quote the text";
 
     /// <summary>
-    ///     A quoted scalar is never closed.
+    ///     A quoted scalar is not closed on the line it opens on.
     /// </summary>
-    internal const string OpenQuote = "the quote that opens on it is never closed";
+    internal const string OpenQuote = "the quote that opens on it is not closed on the same line";
 
     /// <summary>
-    ///     A flow collection is never closed.
+    ///     A list in brackets is not closed on the line it opens on.
     /// </summary>
-    internal const string OpenBracket = "the bracket that opens on it is never closed";
+    internal const string OpenBracket = "the bracket that opens on it is not closed on the same line";
 
     /// <summary>
     ///     Text other than a comment follows a quoted scalar.
@@ -64,34 +62,19 @@ internal static class MalformedReasons
     internal const string AfterQuote = "text follows the closing quote";
 
     /// <summary>
-    ///     Text other than a comment follows a flow collection.
+    ///     Text other than a comment follows a list in brackets.
     /// </summary>
     internal const string AfterBracket = "text follows the closing bracket";
 
     /// <summary>
-    ///     Text other than a comment follows an alias.
-    /// </summary>
-    internal const string AfterAlias = "text follows the alias";
-
-    /// <summary>
-    ///     Text other than a comment follows the indicators of a block scalar.
-    /// </summary>
-    internal const string AfterIndicator = "text follows the block indicator";
-
-    /// <summary>
-    ///     Two commas of a flow sequence have no entry between them.
+    ///     Two commas of a list in brackets have no entry between them.
     /// </summary>
     internal const string EmptyEntry = "the list holds an empty entry";
 
     /// <summary>
-    ///     Two entries of a flow sequence have no comma between them.
+    ///     Two entries of a list in brackets have no comma between them.
     /// </summary>
     internal const string NoSeparator = "an entry of the list is followed by neither ',' nor ']'";
-
-    /// <summary>
-    ///     A blank line that leads a block scalar holds more spaces than the line below it.
-    /// </summary>
-    internal const string BlankTooWide = "it is indented further than the text below it";
 
     /// <summary>
     ///     Describes plain text that starts with an indicator of YAML.
@@ -121,40 +104,13 @@ internal static class MalformedReasons
     internal static string DescribeDuplicate(string key) => $"'{key}' is declared twice";
 
     /// <summary>
-    ///     Describes an escape of a double-quoted scalar that YAML does not define.
+    ///     Describes a backslash in double quotes that stands before neither a double quote nor a backslash.
     /// </summary>
     /// <param name="escape">
     ///     The character behind the backslash.
     /// </param>
     /// <returns>
-    ///     The reason, which names the escape.
+    ///     The reason, which names the escape and the two that front matter reads.
     /// </returns>
-    internal static string DescribeEscape(char escape) => $"'\\{escape}' is not an escape";
-
-    /// <summary>
-    ///     Describes an escape that the hexadecimal digits of a character do not follow.
-    /// </summary>
-    /// <param name="escape">
-    ///     The character behind the backslash.
-    /// </param>
-    /// <param name="digits">
-    ///     The number of digits the escape takes.
-    /// </param>
-    /// <returns>
-    ///     The reason, which names the escape and the number of digits.
-    /// </returns>
-    internal static string DescribeEscape(char escape, int digits) =>
-        string.Create(Tool.Culture, $"'\\{escape}' is not followed by the {digits} hexadecimal digits of a character");
-
-    /// <summary>
-    ///     Describes a character outside the printable set of YAML.
-    /// </summary>
-    /// <param name="character">
-    ///     The character.
-    /// </param>
-    /// <returns>
-    ///     The reason, which names the code point of the character.
-    /// </returns>
-    internal static string DescribeCharacter(char character) =>
-        string.Create(Tool.Culture, $"it holds the character U+{(int)character:X4}, which YAML does not allow");
+    internal static string DescribeEscape(char escape) => $"'\\{escape}' is not one of the two escapes, '\\\\' and '\\\"'";
 }
