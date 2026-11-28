@@ -1,4 +1,5 @@
 using Gelyn.Core.Internals;
+using Gelyn.Core.Yaml;
 using Gelyn.Model;
 
 using Markdig;

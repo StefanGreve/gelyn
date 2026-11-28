@@ -1,0 +1,321 @@
+using System.Globalization;
+
+using Gelyn.Core.Internals;
+using Gelyn.Exceptions;
+using Gelyn.Model;
+
+using SharpYaml;
+
+namespace Gelyn.Core.Yaml;
+
+/// <summary>
+///     Reads a front matter block.
+/// </summary>
+internal static class FrontMatterParser
+{
+    // Indexed by FrontMatterKey.
+    private static readonly string[] KeyNames =
+    [
+        string.Empty,
+        "title",
+        "date",
+        "revised",
+        "description",
+        "enableMathRendering",
+        "enableDiagramRendering",
+        "enableSyntaxHighlighting",
+        "enableComments",
+        "enableFeed",
+        "stylesheets",
+        "scripts",
+    ];
+
+    /// <summary>
+    ///     Parses a front matter block, including its surrounding delimiters, and reports whether every key
+    ///     it declares is one a member reads and every value is one its member accepts.
+    /// </summary>
+    /// <param name="block">
+    ///     The raw text of the block, which starts at the top of the source file.
+    /// </param>
+    /// <param name="frontMatter">
+    ///     When this method returns, the front matter the block declares, or <see langword="null"/> when the
+    ///     block is empty. Set whichever value is returned, because an unknown key or a rejected value is
+    ///     skipped and does not keep the other keys from being read. A key whose value is quoted but empty
+    ///     yields an empty string, which is distinct from the key being absent.
+    /// </param>
+    /// <param name="unknownKeys">
+    ///     When this method returns, the keys the block declares that no member reads, in the order declared.
+    /// </param>
+    /// <param name="invalidValues">
+    ///     When this method returns, the values the block declares that the member meant for them rejects, in
+    ///     the order declared. The member keeps its default.
+    /// </param>
+    /// <returns>
+    ///     <see langword="true"/> when no member is left without the key meant for it and every value was
+    ///     accepted; <see langword="false"/> when the block declares at least one unknown key or rejected value.
+    /// </returns>
+    /// <exception cref="YamlException">
+    ///     The block is not well-formed YAML, or declares something other than a mapping.
+    /// </exception>
+    public static bool TryParse(
+        ReadOnlySpan<char> block,
+        out FrontMatter? frontMatter,
+        out IReadOnlyList<UnknownKey> unknownKeys,
+        out IReadOnlyList<InvalidValue> invalidValues)
+    {
+        List<UnknownKey> keys = [];
+        List<InvalidValue> values = [];
+
+        YamlSerializerOptions options = YamlContext.Default.Options with
+        {
+            // Zero-based, and counted from the top of the file, where the block starts.
+            UnmappedMemberCallback = member => keys.Add(new UnknownKey
+            {
+                Name = member.Name,
+                Line = member.KeyStart.Line + 1
+            }),
+            InvalidValueHandling = YamlInvalidValueHandling.Skip,
+            InvalidValueCallback = value => values.Add(new InvalidValue
+            {
+                Name = value.Name,
+                Line = value.ValueStart.Line + 1,
+                Message = value.Message
+            }),
+        };
+
+        frontMatter = YamlSerializer.Deserialize<FrontMatter>(block.ToString(), options);
+        unknownKeys = keys;
+        invalidValues = values;
+
+        return keys.Count == 0 && values.Count == 0;
+    }
+
+    /// <summary>
+    ///     Reads a front matter block once, from its first line to its closing delimiter.
+    /// </summary>
+    /// <param name="block">
+    ///     The raw text of the block, with or without its delimiters. Its first line counts as line 1.
+    /// </param>
+    /// <param name="unknownKeys">
+    ///     When this method returns, the keys the block declares that no member reads, in the order declared.
+    /// </param>
+    /// <param name="invalidValues">
+    ///     When this method returns, the values the block declares that the member meant for them rejects, in
+    ///     the order declared. The member keeps its default.
+    /// </param>
+    /// <returns>
+    ///     The front matter the block declares, or <see langword="null"/> when the block declares no key.
+    /// </returns>
+    /// <exception cref="FrontMatterException">
+    ///     The block is malformed, uses YAML that front matter does not support, or declares a key twice that a
+    ///     member reads.
+    /// </exception>
+    public static FrontMatter? Read(ReadOnlySpan<char> block, out IReadOnlyList<UnknownKey> unknownKeys, out IReadOnlyList<InvalidValue> invalidValues)
+    {
+        FrontMatter? frontMatter = null;
+        List<UnknownKey>? unknown = null;
+        List<InvalidValue>? invalid = null;
+        int declared = 0;
+        var parser = new LeanYamlParser(block);
+
+        try
+        {
+            while (parser.ReadKey(out ReadOnlySpan<char> name))
+            {
+                frontMatter ??= new FrontMatter();
+                FrontMatterKey key = MatchKey(name);
+
+                // The parser skips the value of a key that no member reads.
+                if (key is FrontMatterKey.Unknown)
+                {
+                    (unknown ??= []).Add(new UnknownKey { Name = name.ToString(), Line = parser.KeyLine });
+                    continue;
+                }
+
+                int bit = 1 << (int)key;
+
+                if ((declared & bit) != 0)
+                    throw new FrontMatterException(parser.KeyLine, MalformedReasons.DescribeDuplicate(KeyNames[(int)key]));
+
+                declared |= bit;
+                ReadMember(ref parser, frontMatter, key, ref invalid);
+            }
+        }
+        finally
+        {
+            parser.Dispose();
+        }
+
+        unknownKeys = (IReadOnlyList<UnknownKey>?)unknown ?? [];
+        invalidValues = (IReadOnlyList<InvalidValue>?)invalid ?? [];
+
+        return frontMatter;
+    }
+
+    #region Helpers
+
+    private static FrontMatterKey MatchKey(ReadOnlySpan<char> name) => name switch
+    {
+        "title" => FrontMatterKey.Title,
+        "date" => FrontMatterKey.Date,
+        "revised" => FrontMatterKey.Revised,
+        "description" => FrontMatterKey.Description,
+        "enableMathRendering" => FrontMatterKey.EnableMathRendering,
+        "enableDiagramRendering" => FrontMatterKey.EnableDiagramRendering,
+        "enableSyntaxHighlighting" => FrontMatterKey.EnableSyntaxHighlighting,
+        "enableComments" => FrontMatterKey.EnableComments,
+        "enableFeed" => FrontMatterKey.EnableFeed,
+        "stylesheets" => FrontMatterKey.Stylesheets,
+        "scripts" => FrontMatterKey.Scripts,
+        _ => FrontMatterKey.Unknown,
+    };
+
+    private static void RejectValue(ref List<InvalidValue>? invalid, string name, int line, string message) =>
+        (invalid ??= []).Add(new InvalidValue { Name = name, Line = line, Message = message });
+
+    private static void ReadMember(ref LeanYamlParser parser, FrontMatter frontMatter, FrontMatterKey key, ref List<InvalidValue>? invalid)
+    {
+        string name = KeyNames[(int)key];
+
+        switch (key)
+        {
+            case FrontMatterKey.Title:
+                frontMatter.Title = ReadText(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.Date:
+                frontMatter.Date = ReadDate(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.Revised:
+                frontMatter.Revised = ReadDate(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.Description:
+                frontMatter.Description = ReadText(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.EnableMathRendering:
+                frontMatter.EnableMathRendering = ReadBoolean(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.EnableDiagramRendering:
+                frontMatter.EnableDiagramRendering = ReadBoolean(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.EnableSyntaxHighlighting:
+                frontMatter.EnableSyntaxHighlighting = ReadBoolean(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.EnableComments:
+                frontMatter.EnableComments = ReadBoolean(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.EnableFeed:
+                frontMatter.EnableFeed = ReadBoolean(ref parser, name, ref invalid);
+                break;
+            case FrontMatterKey.Stylesheets:
+                frontMatter.Stylesheets = ReadList(ref parser, name, ref invalid);
+                break;
+            default:
+                frontMatter.Scripts = ReadList(ref parser, name, ref invalid);
+                break;
+        }
+    }
+
+    private static string? ReadText(ref LeanYamlParser parser, string name, ref List<InvalidValue>? invalid)
+    {
+        switch (parser.ReadValue())
+        {
+            case YamlNodeKind.Scalar:
+                return parser.Text.ToString();
+            case YamlNodeKind.Sequence:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsText);
+                return null;
+            case YamlNodeKind.Mapping:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsText);
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    private static DateOnly? ReadDate(ref LeanYamlParser parser, string name, ref List<InvalidValue>? invalid)
+    {
+        switch (parser.ReadValue())
+        {
+            case YamlNodeKind.Scalar:
+                if (DateOnly.TryParseExact(parser.Text, DateFormat.Machine, Tool.Culture, DateTimeStyles.None, out DateOnly date))
+                    return date;
+
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.DescribeDate(parser.Text));
+                return null;
+            case YamlNodeKind.Sequence:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsDate);
+                return null;
+            case YamlNodeKind.Mapping:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsDate);
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    // The spellings of the core schema, section 10.3.2 of YAML 1.2.2.
+    private static bool? ReadBoolean(ref LeanYamlParser parser, string name, ref List<InvalidValue>? invalid)
+    {
+        switch (parser.ReadValue())
+        {
+            case YamlNodeKind.Scalar when parser.Text is "true" or "True" or "TRUE":
+                return true;
+            case YamlNodeKind.Scalar when parser.Text is "false" or "False" or "FALSE":
+                return false;
+            case YamlNodeKind.Scalar:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.DescribeBoolean(parser.Text));
+                return null;
+            case YamlNodeKind.Sequence:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsBoolean);
+                return null;
+            case YamlNodeKind.Mapping:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsBoolean);
+                return null;
+            default:
+                return null;
+        }
+    }
+
+    // An entry that is no path is dropped and reported under the key of the list.
+    private static List<string?>? ReadList(ref LeanYamlParser parser, string name, ref List<InvalidValue>? invalid)
+    {
+        switch (parser.ReadValue())
+        {
+            case YamlNodeKind.Sequence:
+                break;
+            case YamlNodeKind.Scalar:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.DescribeList(parser.Text));
+                return null;
+            case YamlNodeKind.Mapping:
+                RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsList);
+                return null;
+            default:
+                return null;
+        }
+
+        List<string?> entries = [];
+
+        while (parser.ReadEntry(out YamlNodeKind kind))
+        {
+            switch (kind)
+            {
+                case YamlNodeKind.Scalar:
+                    entries.Add(parser.Text.ToString());
+                    break;
+                case YamlNodeKind.Null:
+                    entries.Add(null);
+                    break;
+                case YamlNodeKind.Sequence:
+                    RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.ListAsPath);
+                    break;
+                default:
+                    RejectValue(ref invalid, name, parser.ValueLine, RejectionReasons.MappingAsPath);
+                    break;
+            }
+        }
+
+        return entries;
+    }
+
+    #endregion
+}
