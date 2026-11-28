@@ -4,6 +4,7 @@ using System.IO.Enumeration;
 using Gelyn.Core;
 using Gelyn.Core.Context;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Exceptions;
 using Gelyn.Extensions;
 using Gelyn.Model;

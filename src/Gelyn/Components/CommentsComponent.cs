@@ -1,7 +1,7 @@
 using System.Net;
 
 using Gelyn.Core.Context;
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 

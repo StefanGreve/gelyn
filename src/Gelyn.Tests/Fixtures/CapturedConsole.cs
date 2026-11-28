@@ -1,6 +1,7 @@
 using System.IO;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
+
 
 namespace Gelyn.Tests.Fixtures;
 

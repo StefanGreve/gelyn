@@ -2,9 +2,10 @@ using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 
-namespace Gelyn.Tests.Core.Internals;
+
+namespace Gelyn.Tests.Core.Internals.Terminal;
 
 /// <summary>
 ///     Unit tests for the <see cref="ConsoleStream"/> class.

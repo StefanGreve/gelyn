@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 using Gelyn.Cli;
 using Gelyn.Commands;
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Model.Options;

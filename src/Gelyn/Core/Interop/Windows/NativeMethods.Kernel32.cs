@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Interop;
 
 internal static partial class NativeMethods
 {

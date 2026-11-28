@@ -1,6 +1,8 @@
 using System.Runtime.Versioning;
 
-namespace Gelyn.Core.Internals;
+using Gelyn.Core.Interop;
+
+namespace Gelyn.Core.Internals.Terminal;
 
 /// <summary>
 ///     Represents one standard stream of the process, with whether it is a terminal and whether it colors.

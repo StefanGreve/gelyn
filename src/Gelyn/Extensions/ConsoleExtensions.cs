@@ -1,4 +1,4 @@
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Exceptions;
 
 namespace Gelyn.Extensions;

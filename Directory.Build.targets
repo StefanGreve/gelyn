@@ -5,6 +5,12 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
+  <!-- IDE0130 reads both properties, which only Visual Studio passes to the analyzers on its own -->
+  <ItemGroup Label="Analyzers">
+    <CompilerVisibleProperty Include="RootNamespace" />
+    <CompilerVisibleProperty Include="ProjectDir" />
+  </ItemGroup>
+
   <PropertyGroup Label="Analyzers" Condition="'$(Configuration)' == 'Release'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Exceptions;
 using Gelyn.Model;
 using Gelyn.Services;

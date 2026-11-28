@@ -10,6 +10,7 @@ using Gelyn.Cli;
 using Gelyn.Commands;
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Tests.Fixtures;
 
 using Microsoft.Extensions.Logging;

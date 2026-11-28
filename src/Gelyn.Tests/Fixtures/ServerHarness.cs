@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Services;
 
 using Microsoft.Extensions.Logging.Testing;

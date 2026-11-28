@@ -1,4 +1,4 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Interop;
 
 /// <summary>
 ///     The native functions the tool calls, one file per library.

@@ -3,9 +3,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 
-namespace Gelyn.Tests.Core.Internals;
+
+namespace Gelyn.Tests.Core.Internals.Primitives;
 
 /// <summary>
 ///     Unit tests for the <see cref="PageBuffer"/> class.

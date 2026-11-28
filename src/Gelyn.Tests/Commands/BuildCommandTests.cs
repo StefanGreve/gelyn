@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 
 using Gelyn.Commands;
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Model;
 
 namespace Gelyn.Tests.Commands;

@@ -1,7 +1,7 @@
 using System.CommandLine;
 
 using Gelyn.Cli;
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;

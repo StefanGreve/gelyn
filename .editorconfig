@@ -411,3 +411,7 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 
 # CA1060: Move P/Invokes to NativeMethods class
 dotnet_diagnostic.CA1060.severity = warning
+
+# NativeMethods is partial, so the file of each platform folder keeps the namespace of the class
+[src/Gelyn/Core/Interop/*/*.cs]
+dotnet_diagnostic.IDE0130.severity = none

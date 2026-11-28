@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using Gelyn.Cli;
 using Gelyn.Commands;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Diagnostics;
 using Gelyn.Services;
 

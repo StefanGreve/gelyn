@@ -3,6 +3,7 @@ using System.Text;
 using System.Xml;
 
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 

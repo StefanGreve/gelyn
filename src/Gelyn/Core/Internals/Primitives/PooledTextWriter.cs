@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Internals.Primitives;
 
 /// <summary>
 ///     A text writer over a growing array of characters, rented from the shared array pool, into which one document

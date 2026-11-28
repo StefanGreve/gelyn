@@ -1,4 +1,4 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Internals.Primitives;
 
 /// <summary>
 ///     Rules for deriving the addresses a published site uses from the URL it is served from.

@@ -2,6 +2,7 @@ using System.Text;
 using System.Threading.Channels;
 
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 
 using Microsoft.Extensions.Logging;
 

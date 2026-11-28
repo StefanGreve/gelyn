@@ -1,4 +1,4 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Internals.Primitives;
 
 /// <summary>
 ///     Operations on text that the framework offers in no single call.

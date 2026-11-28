@@ -3,6 +3,7 @@ using System.Text;
 
 using Gelyn.Cli;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 using Gelyn.Services;

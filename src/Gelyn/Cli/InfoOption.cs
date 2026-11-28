@@ -6,6 +6,8 @@ using System.Text;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Model;
 
 namespace Gelyn.Cli;

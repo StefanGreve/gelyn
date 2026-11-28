@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.IO.Abstractions;
 
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Diagnostics;
 using Gelyn.Exceptions;
 using Gelyn.Extensions;

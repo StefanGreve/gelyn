@@ -1,4 +1,4 @@
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Internals.Terminal;
 
 /// <summary>
 ///     The escape sequences the tool writes to color a terminal.

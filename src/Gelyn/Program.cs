@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Gelyn.Cli;
 using Gelyn.Commands;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Terminal;
 using Gelyn.Extensions;
 
 namespace Gelyn;

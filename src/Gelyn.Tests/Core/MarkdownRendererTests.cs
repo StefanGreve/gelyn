@@ -2,7 +2,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Gelyn.Core;
-using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Model;
 
 namespace Gelyn.Tests.Core;

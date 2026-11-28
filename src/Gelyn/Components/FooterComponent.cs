@@ -2,6 +2,7 @@ using System.Net;
 
 using Gelyn.Core;
 using Gelyn.Core.Internals;
+using Gelyn.Core.Internals.Primitives;
 using Gelyn.Model.Options;
 
 namespace Gelyn.Components;

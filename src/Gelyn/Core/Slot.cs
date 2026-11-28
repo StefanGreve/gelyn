@@ -1,4 +1,5 @@
-using Gelyn.Core.Internals;
+
+using Gelyn.Core.Internals.Primitives;
 
 namespace Gelyn.Core;
 

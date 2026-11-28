@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Runtime.InteropServices;
 
-namespace Gelyn.Core.Internals;
+namespace Gelyn.Core.Internals.Primitives;
 
 /// <summary>
 ///     Owns the HTML bodies of one build's pages, which it keeps in native memory.
