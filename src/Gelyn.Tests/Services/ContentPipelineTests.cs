@@ -11,8 +11,6 @@ using Gelyn.Model;
 using Gelyn.Services;
 using Gelyn.Tests.Fixtures;
 
-using SharpYaml;
-
 namespace Gelyn.Tests.Services;
 
 /// <summary>
@@ -1297,8 +1295,8 @@ public class ContentPipelineTests
 
     /// <summary>
     ///     Verifies that when several pages carry malformed front matter, the failure of the first one in
-    ///     scan order surfaces, which is the page a sequential render would have stopped at. The block is
-    ///     malformed YAML, so the parser's error surfaces, as a value no member accepts is skipped instead.
+    ///     scan order surfaces, which is the page a sequential render would have stopped at. Only a malformed
+    ///     block stops the render, since a value that no member accepts is skipped and reported.
     /// </summary>
     [Test]
     [Repeat(5)]
@@ -1320,12 +1318,39 @@ public class ContentPipelineTests
         using var bodies = new PageBodies();
 
         var expected = await Assert.That(() => fixture.Pipeline.Render([first], bodies, CancellationToken.None))
-            .Throws<YamlException>();
+            .Throws<BuildException>();
 
         // Act and Assert
         await Assert.That(() => fixture.Pipeline.Render(items, bodies, CancellationToken.None))
-            .Throws<YamlException>()
+            .Throws<BuildException>()
             .WithMessage(expected!.Message);
+    }
+
+    /// <summary>
+    ///     Verifies that malformed front matter stops the render with a message that names the file and the line
+    ///     at fault, and that the parser's own exception stays reachable as the cause.
+    /// </summary>
+    [Test]
+    public async Task Render_Test_MalformedFrontMatter_NamesTheFileAndTheLine()
+    {
+        // Arrange
+        ContentFixture fixture = ContentFixture.CreateEmpty()
+            .Write("index.md", "Home")
+            .WriteFile("about.md", "---\ntitle: About\ntitle: Again\n---\n\nAbout");
+
+        IReadOnlyList<ContentItem> items = Scan(fixture);
+        ContentItem page = items.Single(static item => item.Href == "/about.html");
+        using var bodies = new PageBodies();
+
+        // Act
+        BuildException? exception = await Assert.That(() => fixture.Pipeline.Render(items, bodies, CancellationToken.None)).Throws<BuildException>();
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(exception?.Message).IsEqualTo($"The front matter of '{page.SourcePath}' is malformed on line 3, because 'title' is declared twice.");
+            await Assert.That(exception?.InnerException).IsTypeOf<FrontMatterException>();
+        }
     }
 
     /// <summary>

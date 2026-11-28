@@ -11,8 +11,6 @@ using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Logging;
 
-using SharpYaml;
-
 namespace Gelyn.Services;
 
 /// <summary>
@@ -365,7 +363,7 @@ internal sealed class SiteWatcher
     ///     the exception is to fault the loop.
     /// </returns>
     private static bool IsBuildFailure(Exception exception) =>
-        exception is BuildException or ConfigurationException or IOException or UnauthorizedAccessException or YamlException;
+        exception is BuildException or ConfigurationException or IOException or UnauthorizedAccessException;
 
     /// <summary>
     ///     Writes what one failure has to say for itself.

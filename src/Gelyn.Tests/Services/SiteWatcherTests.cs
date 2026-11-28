@@ -259,6 +259,38 @@ public class SiteWatcherTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that a page saved with malformed front matter is reported by one error that names the file and
+    ///     the line, that the loop keeps running, and that the next save is rebuilt.
+    /// </summary>
+    [Test]
+    public async Task RebuildOnChangeAsync_Test_MalformedFrontMatter_LeavesTheLoopRunning()
+    {
+        // Arrange
+        var content = ContentFixture.Create();
+        await using var harness = WatchHarness.Start(content);
+
+        // Act
+        content.WriteFile("about.md", "---\ntitle: \"About\n---\n\nAbout");
+        harness.Change("about.md");
+
+        await harness.WaitForErrorsAsync(1);
+
+        content.WriteFile("about.md", "---\ntitle: \"About\"\n---\n\nAbout");
+        harness.Change("about.md");
+
+        await harness.WaitForRebuildsAsync(1);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(harness.Errors.Length).IsEqualTo(1);
+            await Assert.That(harness.Errors[0]).Contains("about.md").And.Contains("is malformed on line 2");
+            await Assert.That(harness.Rebuilds).IsEqualTo(1);
+            await Assert.That(harness.Stopped).IsFalse();
+        }
+    }
+
     #endregion // Rebuild Tests
 
     #region Configuration Tests

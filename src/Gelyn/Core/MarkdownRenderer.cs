@@ -1,5 +1,6 @@
 using Gelyn.Core.Internals;
 using Gelyn.Core.Yaml;
+using Gelyn.Exceptions;
 using Gelyn.Model;
 
 using Markdig;
@@ -54,6 +55,9 @@ internal sealed class MarkdownRenderer
     ///     The parsed front matter, the keys it declares that no member reads, the values it declares that
     ///     their members reject, and the rendered HTML body as UTF-8.
     /// </returns>
+    /// <exception cref="FrontMatterException">
+    ///     The front matter block is malformed, or uses YAML that front matter does not support.
+    /// </exception>
     /// <exception cref="System.Text.EncoderFallbackException">
     ///     The rendered HTML holds an unpaired surrogate.
     /// </exception>
@@ -70,7 +74,7 @@ internal sealed class MarkdownRenderer
         if (document.Count > 0 && document[0] is YamlFrontMatterBlock block)
         {
             ReadOnlySpan<char> source = markdown.AsSpan(block.Span.Start, block.Span.Length);
-            _ = FrontMatterParser.TryParse(source, out frontMatter, out unknownKeys, out invalidValues);
+            frontMatter = FrontMatterParser.Parse(source, out unknownKeys, out invalidValues);
         }
 
         // Encoded once, at its exact size, from the pooled writer, so the HTML never becomes a string.

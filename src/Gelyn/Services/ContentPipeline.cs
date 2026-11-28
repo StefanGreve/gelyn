@@ -9,8 +9,6 @@ using Gelyn.Extensions;
 using Gelyn.Model;
 using Gelyn.Model.Options;
 
-using SharpYaml;
-
 namespace Gelyn.Services;
 
 /// <summary>
@@ -124,11 +122,8 @@ internal sealed class ContentPipeline
     /// <returns>
     ///     Every <see cref="ContentKind.Page"/>, in the order it was given.
     /// </returns>
-    /// <exception cref="YamlException">
-    ///     A front matter block is not well-formed YAML.
-    /// </exception>
     /// <exception cref="BuildException">
-    ///     A front matter block declares a stylesheet or a script the scan did not locate.
+    ///     A front matter block is malformed, or declares a stylesheet or a script the scan did not locate.
     /// </exception>
     public IReadOnlyList<ContentPage> Render(IReadOnlyList<ContentItem> items, PageBodies bodies, CancellationToken cancellationToken)
     {
@@ -154,8 +149,17 @@ internal sealed class ContentPipeline
     private ContentPage RenderPage(ContentItem item, Dictionary<string, ContentItem> files, PageBodies bodies)
     {
         string markdown = this._fileSystem.File.ReadText(item.SourcePath);
+        RenderedMarkdown document;
 
-        RenderedMarkdown document = MarkdownRenderer.Render(markdown, bodies);
+        try
+        {
+            document = MarkdownRenderer.Render(markdown, bodies);
+        }
+        catch (FrontMatterException exception)
+        {
+            throw new BuildException(DescribeMalformedFrontMatter(item.SourcePath, exception), exception);
+        }
+
         FrontMatter? frontMatter = document.FrontMatter;
 
         IReadOnlyList<string> stylesheets = this.ResolveAssets(item, item.Stylesheets, frontMatter?.Stylesheets, ContentKind.Stylesheet, files);
@@ -320,6 +324,9 @@ internal sealed class ContentPipeline
 
     private static string DescribeCollision(string first, string second, string outputPath) =>
         $"'{first}' and '{second}' both publish '{outputPath}'.";
+
+    private static string DescribeMalformedFrontMatter(string path, FrontMatterException exception) =>
+        string.Create(Tool.Culture, $"The front matter of '{path}' is malformed on line {exception.Line}, because {exception.Reason}.");
 
     private static bool IsInNavigation(SourceFile file, int depth) =>
         depth switch

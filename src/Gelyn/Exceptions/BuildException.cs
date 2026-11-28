@@ -4,10 +4,10 @@ namespace Gelyn.Exceptions;
 ///     The exception that is thrown when the site breaks a rule of the build.
 /// </summary>
 /// <remarks>
-///     The rules are that no two entries publish one path, that a front matter block declares only stylesheets
-///     and scripts the scan located, and that the output directory is not a link. A build that fails this way
-///     exits with code 1, as one that fails on the file system does, where a <see cref="ConfigurationException"/>
-///     exits with 2.
+///     The rules are that no two entries publish one path, that a front matter block is well-formed and declares
+///     only stylesheets and scripts the scan located, and that the output directory is not a link. A build that
+///     fails this way exits with code 1, as one that fails on the file system does, where a
+///     <see cref="ConfigurationException"/> exits with 2.
 /// </remarks>
 internal sealed class BuildException : Exception
 {

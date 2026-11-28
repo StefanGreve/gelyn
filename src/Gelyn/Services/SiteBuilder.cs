@@ -12,8 +12,6 @@ using Gelyn.Model.Options;
 
 using Microsoft.Extensions.Logging;
 
-using SharpYaml;
-
 namespace Gelyn.Services;
 
 /// <summary>
@@ -68,12 +66,9 @@ internal sealed class SiteBuilder
     /// <exception cref="ConfigurationException">
     ///     The content directory publishes no landing page.
     /// </exception>
-    /// <exception cref="YamlException">
-    ///     A front matter block is not well-formed YAML.
-    /// </exception>
     /// <exception cref="BuildException">
-    ///     The output directory is a link, one path is published twice, or a front matter block declares a
-    ///     stylesheet or a script the scan did not locate.
+    ///     The output directory is a link, one path is published twice, or a front matter block is malformed or
+    ///     declares a stylesheet or a script the scan did not locate.
     /// </exception>
     /// <exception cref="IOException">
     ///     A file cannot be written or removed.
