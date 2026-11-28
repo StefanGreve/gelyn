@@ -18,9 +18,9 @@ public class VisibilityTests : ArchBase
     /// </summary>
     /// <remarks>
     ///     <c>ResideInNamespaceOrBelow</c> matches the root namespace as a prefix, so a namespace added
-    ///     later is covered without being named. Nested types are exempt because the SharpYaml source
-    ///     generator emits its state as private nested types inside <c>YamlContext</c>; an internal
-    ///     declaring type already bounds how accessible they can be.
+    ///     later is covered without being named. Nested types are exempt, because the tool declares private
+    ///     ones such as <c>ContentPipeline.SourceFile</c>, and an internal declaring type already bounds how
+    ///     accessible they can be.
     /// </remarks>
     [Test]
     public void Visibility_Test_EveryTypeIsInternal()

@@ -1,7 +1,3 @@
-using Gelyn.Core.Internals;
-
-using SharpYaml.Serialization;
-
 namespace Gelyn.Model;
 
 /// <summary>
@@ -23,14 +19,12 @@ internal sealed record FrontMatter
     ///     The publication date, or <see langword="null"/> when the block omits it or does not write it as
     ///     <c>yyyy-MM-dd</c>.
     /// </summary>
-    [YamlConverter(typeof(DateOnlyConverter))]
     public DateOnly? Date { get; set; }
 
     /// <summary>
     ///     The date the page was last revised, or <see langword="null"/> when the block omits it or does not write
     ///     it as <c>yyyy-MM-dd</c>. A page that has not been revised since it was published omits it.
     /// </summary>
-    [YamlConverter(typeof(DateOnlyConverter))]
     public DateOnly? Revised { get; set; }
 
     /// <summary>

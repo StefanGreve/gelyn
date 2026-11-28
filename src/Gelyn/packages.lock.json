@@ -73,12 +73,6 @@
         "resolved": "8.0.0",
         "contentHash": "AJy/KVjXgUbgjf6HiI8wAk4DSSq0SCmvXQF8aU6IB+pnIQq+YJvofvMczug2hqO8yEvnQY557ryew66KPpyCsA=="
       },
-      "SharpYaml": {
-        "type": "Direct",
-        "requested": "[3.18.0, )",
-        "resolved": "3.18.0",
-        "contentHash": "UKnmu8eacY4SL5CGZKeIirF0JTFNG+861MffpiwnAreJmqXHhqT0t5KcnrJ+uCiWpjVh7jmBj6eyGump7jfzGg=="
-      },
       "System.CommandLine": {
         "type": "Direct",
         "requested": "[3.0.0, )",

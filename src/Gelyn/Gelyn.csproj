@@ -119,7 +119,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="SharpYaml" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Testably.Abstractions" />
   </ItemGroup>

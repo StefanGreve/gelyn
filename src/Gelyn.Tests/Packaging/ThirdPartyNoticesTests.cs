@@ -29,7 +29,6 @@ public class ThirdPartyNoticesTests
     [
         ("Markdig", "Markdig"),
         ("Microsoft.Extensions.*", ".NET Runtime and the Microsoft.Extensions libraries"),
-        ("SharpYaml", "SharpYaml"),
         ("System.CommandLine", "System.CommandLine"),
         ("Testably.Abstractions*", "Testably.Abstractions"),
     ];
