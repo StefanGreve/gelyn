@@ -47,6 +47,17 @@ internal sealed class ConsoleStream
     public bool UseColors { get; }
 
     /// <summary>
+    ///     Indicates whether the stream discards its text, so that a caller can skip composing it.
+    /// </summary>
+    public bool IsDiscarded { get; private init; }
+
+    /// <summary>
+    ///     A stream that discards everything written to it, which replaces standard output under
+    ///     <c>--quiet</c>.
+    /// </summary>
+    public static ConsoleStream Discarded { get; } = new(TextWriter.Null, isTerminal: false, useColors: false) { IsDiscarded = true };
+
+    /// <summary>
     ///     The standard output stream of the process, with its terminal and its colors detected on the first
     ///     read.
     /// </summary>

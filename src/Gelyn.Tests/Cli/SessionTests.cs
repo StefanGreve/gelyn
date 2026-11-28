@@ -126,6 +126,31 @@ public class SessionTests
     }
 
     /// <summary>
+    ///     Verifies that <c>--quiet</c> replaces standard output with a stream that discards its text, before and
+    ///     after the subcommand alike, and that the session keeps the given stream without it.
+    /// </summary>
+    [Test]
+    [Arguments(new[] { "build" }, false)]
+    [Arguments(new[] { "build", "--quiet" }, true)]
+    [Arguments(new[] { "--quiet", "serve" }, true)]
+    public async Task StdOut_Test_Quiet_DiscardsTheOutput(string[] args, bool quiet)
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        ConsoleStream stdOut = CapturedConsole.Create(TextWriter.Null);
+
+        // Act
+        using var session = Session.Open(Parse(args), fixture.Root, stdOut, CapturedConsole.Create(TextWriter.Null), Stopwatch.GetTimestamp());
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(session.StdOut.IsDiscarded).IsEqualTo(quiet);
+            await Assert.That(ReferenceEquals(session.StdOut, stdOut)).IsEqualTo(!quiet);
+        }
+    }
+
+    /// <summary>
     ///     Verifies that the startup record reaches the error console when the first service asks for a logger,
     ///     in the documented line format.
     /// </summary>

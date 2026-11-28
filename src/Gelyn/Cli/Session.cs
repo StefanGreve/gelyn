@@ -171,7 +171,8 @@ internal sealed class Session : IDisposable
 
     /// <summary>
     ///     Creates the session of a parsed command line, with the configuration file resolved from
-    ///     <c>--config</c> and the log level from <c>--verbosity</c>.
+    ///     <c>--config</c>, the log level from <c>--verbosity</c>, and standard output discarded under
+    ///     <c>--quiet</c>.
     /// </summary>
     /// <param name="parseResult">
     ///     The result of parsing the full command tree, without errors.
@@ -197,6 +198,7 @@ internal sealed class Session : IDisposable
 
         string? requested = parseResult.GetValue<string>(ConfigurationFile.OptionName);
         LogLevel level = parseResult.GetValue<LogLevel>(VerbosityOption.OptionName);
+        bool quiet = parseResult.GetValue<bool>(QuietOption.OptionName);
 
         var fileSystem = new RealFileSystem();
         var settings = new SiteSettings(
@@ -210,7 +212,7 @@ internal sealed class Session : IDisposable
             contentRoot,
             settings,
             fileSystem,
-            stdOut,
+            quiet ? ConsoleStream.Discarded : stdOut,
             stdErr,
             level,
             started

@@ -57,7 +57,8 @@ internal sealed class BuildCommand : Command
     #region Helpers
 
     /// <summary>
-    ///     Writes the report of a build to the stream in a single write.
+    ///     Writes the report of a build to the stream in a single write, and composes nothing for a stream that
+    ///     discards its text.
     /// </summary>
     /// <param name="console">
     ///     The stream to write to.
@@ -65,8 +66,12 @@ internal sealed class BuildCommand : Command
     /// <param name="report">
     ///     The report of the build.
     /// </param>
-    internal static void WriteReport(ConsoleStream console, BuildReport report) =>
+    internal static void WriteReport(ConsoleStream console, BuildReport report)
+    {
+        if (console.IsDiscarded) return;
+
         console.Writer.Write(ComposeReport(console, report));
+    }
 
     /// <summary>
     ///     Composes the report of a build as text, colored when the stream colors.

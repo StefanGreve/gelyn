@@ -172,7 +172,8 @@ internal sealed class InfoOption : Option<bool>
 
             using Session session = open(parseResult);
 
-            parseResult.InvocationConfiguration.Output.Write(Report(session));
+            if (!session.StdOut.IsDiscarded)
+                parseResult.InvocationConfiguration.Output.Write(Report(session));
 
             return ExitCodes.Success;
         }

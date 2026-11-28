@@ -1,7 +1,7 @@
 ---
 title: CLI
 date: 2026-10-18
-revised: 2026-11-24
+revised: 2026-11-28
 description: Shell tab completion, the serve command, the request log, diagnostics, and the exit codes a run reports.
 enableSyntaxHighlighting: true
 ---
@@ -142,6 +142,16 @@ build waits on.
 `--verbosity` accepts any `LogLevel` name: `trace`, `debug`, `information`, `warning`, `error`, `critical`, or
 `none`. It defaults to `warning`, which hides the timings and keeps the warnings, such as a sitemap skipped
 because no `BaseUrl` is set or a front matter key Gelyn doesn't know.
+
+`--quiet` writes nothing to standard output. `build` composes no report, `clean` reports no removal, `serve`
+announces no address and logs no request, and `--info` prints no report. Standard error still follows
+`--verbosity`, so warnings and errors appear as before. `--quiet --verbosity none` leaves only the exit code and
+the error that stops a failed run:
+
+```sh
+gelyn build --quiet                 # warnings and errors only
+gelyn build --quiet --verbosity none # nothing but the exit code, unless the build fails
+```
 
 `gelyn --info` prints build, platform and configuration information to paste into a bug report. It runs even
 when the configuration file is missing, doesn't parse or can't be opened. Paths below your home directory start

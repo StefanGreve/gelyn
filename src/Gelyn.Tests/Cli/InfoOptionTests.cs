@@ -371,6 +371,30 @@ public class InfoOptionTests
         }
     }
 
+    /// <summary>
+    ///     Verifies that <c>--quiet</c> suppresses the report, as it suppresses the standard output of every command.
+    /// </summary>
+    [Test]
+    [Category(Categories.Integration)]
+    public async Task Invoke_Test_Quiet_WritesNothing()
+    {
+        // Arrange
+        using var fixture = DiskFixture.Create();
+        ConsoleStream console = CapturedConsole.Create(TextWriter.Null);
+        var command = GelynCommand.Create(parsed => Session.Open(parsed, fixture.Root, console, console, Stopwatch.GetTimestamp()));
+
+        // Act
+        (int exitCode, string output, string error) = Invoke(command, InfoOption.OptionName, QuietOption.OptionName);
+
+        // Assert
+        using (Assert.Multiple())
+        {
+            await Assert.That(exitCode).IsEqualTo(ExitCodes.Success);
+            await Assert.That(output).IsEmpty();
+            await Assert.That(error).IsEmpty();
+        }
+    }
+
     #endregion // Invocation Tests
 
     #region Helpers

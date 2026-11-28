@@ -14,6 +14,7 @@ internal sealed class GelynCommand : RootCommand
     {
         this.Options.Add(ConfigurationFile.CreateOption());
         this.Options.Add(VerbosityOption.CreateOption());
+        this.Options.Add(QuietOption.CreateOption());
         this.Options.Add(new InfoOption(open));
         this.Subcommands.Add(new BuildCommand(open));
         this.Subcommands.Add(new CleanCommand(open));
