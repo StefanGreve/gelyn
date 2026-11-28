@@ -17,7 +17,7 @@ internal sealed record InvalidValue
     public required int Line { get; init; }
 
     /// <summary>
-    ///     Why the value was rejected, as the member's converter reported it.
+    ///     Why the value was rejected, as a clause that completes "because".
     /// </summary>
     public required string Message { get; init; }
 }

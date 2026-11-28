@@ -4,9 +4,9 @@ namespace Gelyn.Model;
 ///     Front matter declared in the block at the top of a content file.
 /// </summary>
 /// <remarks>
-///     A property is <see langword="null"/> when the block declares no value for it, and a date also when its
-///     value is not written as <c>yyyy-MM-dd</c>. A value declared as an empty string is kept as one, so the
-///     two cases stay distinguishable.
+///     A property is <see langword="null"/> when the block declares no value for it or one that the property
+///     rejects. Text declared as an empty string is kept as one, which keeps it distinguishable from text that
+///     is absent.
 /// </remarks>
 internal sealed record FrontMatter
 {

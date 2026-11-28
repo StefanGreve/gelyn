@@ -323,7 +323,7 @@ internal static partial class LogMessages
     ///     The absolute path of the page's source file, which is the file the value is edited in.
     /// </param>
     /// <param name="reason">
-    ///     Why the value was rejected, as the setting's converter reported it.
+    ///     Why the value was rejected, as a clause that completes "because".
     /// </param>
     /// <remarks>
     ///     A warning and not a failure, for the reason <see cref="LogFrontMatterKeyIgnored"/> gives.
