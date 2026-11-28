@@ -50,7 +50,6 @@ internal ref partial struct LeanYamlParser
     // length of the block serves every scalar and never grows.
     private Span<char> RentBuffer() => this._buffer ??= ArrayPool<char>.Shared.Rent(this._block.Length);
 
-    // A plain scalar folds over the lines that are indented further than its parent, section 7.3.3.
     private YamlNodeKind ReadPlainScalar(int index, int parentIndent)
     {
         int end = this.ScanPlainLine(index, out bool hasComment);
@@ -103,7 +102,6 @@ internal ref partial struct LeanYamlParser
         return IsNull(first) ? YamlNodeKind.Null : YamlNodeKind.Scalar;
     }
 
-    // Returns the end of the text that a line of a plain scalar holds from the index on.
     private readonly int ScanPlainLine(int index, out bool hasComment)
     {
         ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
@@ -138,7 +136,6 @@ internal ref partial struct LeanYamlParser
         return index + rest[..end].TrimEnd(Blanks).Length;
     }
 
-    // Reads the quoted scalar that opens at the index, and moves the index past its closing quote.
     private ReadOnlySpan<char> ReadQuotedScalar(scoped ref int index, int parentIndent)
     {
         char quote = this._block[index];
@@ -195,7 +192,7 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    // Moves to the line that continues a quoted scalar. An escaped line break joins the two lines as they are.
+    // An escaped line break joins the two lines as they are.
     private int FoldQuotedBreak(Span<char> buffer, int length, int parentIndent, int openLine, bool isEscaped, out int index)
     {
         int breaks = 0;
@@ -231,7 +228,6 @@ internal ref partial struct LeanYamlParser
         return breaks > 0 || !isEscaped ? FoldBreaks(buffer, length, breaks) : length;
     }
 
-    // Decodes the escape whose character sits at the index, section 5.7.
     private readonly int DecodeEscape(Span<char> buffer, int length, scoped ref int index)
     {
         char c = this._block[index++];
@@ -257,7 +253,6 @@ internal ref partial struct LeanYamlParser
         return length + rune.EncodeToUtf16(buffer[length..]);
     }
 
-    // Reads the block scalar whose indicator sits at the index, sections 8.1.2 and 8.1.3.
     private ReadOnlySpan<char> ReadBlockScalar(int index, int parentIndent)
     {
         bool isLiteral = this._block[index] == '|';
@@ -305,7 +300,6 @@ internal ref partial struct LeanYamlParser
         return buffer[..length];
     }
 
-    // The indicators may come in either order, and only a comment may follow them, section 8.1.1.
     private readonly YamlChomping ReadBlockHeader(int index, out int indicator)
     {
         ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
@@ -334,8 +328,7 @@ internal ref partial struct LeanYamlParser
         return chomping;
     }
 
-    // Counts the blank lines ahead, and takes the indentation of the scalar from its first line of text when no
-    // indicator gave it, section 8.1.1.1.
+    // Takes the indentation of the scalar from its first line of text when no indicator gave it, section 8.1.1.1.
     private int SkipBlockBreaks(scoped ref int indent, int parentIndent)
     {
         int breaks = 0;

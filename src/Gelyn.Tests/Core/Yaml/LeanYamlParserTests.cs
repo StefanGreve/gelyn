@@ -521,6 +521,9 @@ public class LeanYamlParserTests
     [Arguments("stylesheets:\n  - a: b\n  - c.css", "<mapping>|c.css", 2)]
     [Arguments("stylesheets:\n  - {a: b}\n  - c.css", "<mapping>|c.css", 2)]
     [Arguments("stylesheets:\n  - a.css\n  -\n    b: c", "a.css|<mapping>", 4)]
+    [Arguments("stylesheets:\n  - a.css\n  - [b,\n    c]\n  - d.css", "a.css|<sequence>|d.css", 3)]
+    [Arguments("stylesheets:\n  -\n    [b,\n     c]", "<sequence>", 3)]
+    [Arguments("stylesheets:\n  - &a b: c\n  - d.css", "<mapping>|d.css", 2)]
     public async Task ReadEntry_Test_NestedEntry_IsSkippedAndReportedByItsKind(string block, string expected, int line)
     {
         // Act
@@ -612,6 +615,12 @@ public class LeanYamlParserTests
     [Arguments("author: [&a x, !!str y, *a]\ntitle: Home", "author@1,title@2")]
     [Arguments("author: [&a , b]\ntitle: Home", "author@1,title@2")]
     [Arguments("author: {\"a\": 'b, c', d: [\"e]\"]}\ntitle: Home", "author@1,title@2")]
+    [Arguments("author: {name: !!str 'a } b'}\ntitle: Home", "author@1,title@2")]
+    [Arguments("author: [[&a \"x ] y\"]]\ntitle: Home", "author@1,title@2")]
+    [Arguments("author: {name: &a\n  'b } c'}\ntitle: Home", "author@1,title@3")]
+    [Arguments("author:\n  &name: x\ntitle: Home", "author@1,title@3")]
+    [Arguments("author:\n  &a\n  name: x\ntitle: Home", "author@1,title@4")]
+    [Arguments("author:\n  &a # note: x\n  name\ntitle: Home", "author@1,title@4")]
     public async Task ReadKey_Test_UnreadValue_IsSkipped(string block, string expected)
     {
         // Act
@@ -681,6 +690,9 @@ public class LeanYamlParserTests
     [Arguments("stylesheets:\n  - &a x.css\n  - *a", 2)]
     [Arguments("stylesheets: [&a x.css]", 1)]
     [Arguments("stylesheets: [*a]", 1)]
+    [Arguments("title:\n  &name: x", 2)]
+    [Arguments("title:\n  &a # note: x\n  Home", 2)]
+    [Arguments("stylesheets:\n  - !a: b", 2)]
     public async Task ReadValue_Test_AnchorAliasOrTag_Throws(string block, int line)
     {
         // Act and Assert

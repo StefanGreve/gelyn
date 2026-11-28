@@ -125,7 +125,6 @@ internal static class FrontMatterParser
                 frontMatter ??= new FrontMatter();
                 FrontMatterKey key = MatchKey(name);
 
-                // The parser skips the value of a key that no member reads.
                 if (key is FrontMatterKey.Unknown)
                 {
                     (unknown ??= []).Add(new UnknownKey { Name = name.ToString(), Line = parser.KeyLine });
@@ -276,7 +275,6 @@ internal static class FrontMatterParser
         }
     }
 
-    // An entry that is no path is dropped and reported under the key of the list.
     private static List<string?>? ReadList(ref LeanYamlParser parser, string name, ref List<InvalidValue>? invalid)
     {
         switch (parser.ReadValue())

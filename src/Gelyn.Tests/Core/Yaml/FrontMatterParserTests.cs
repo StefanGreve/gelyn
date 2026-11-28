@@ -769,6 +769,7 @@ public class FrontMatterParserTests
     [Arguments("stylesheets:\n  - a: b\n  - c.css", "c.css", 2, "a mapping is not a path")]
     [Arguments("stylesheets:\n  - {a: b}\n  - c.css", "c.css", 2, "a mapping is not a path")]
     [Arguments("stylesheets:\n  - a.css\n  -\n    b: c", "a.css", 4, "a mapping is not a path")]
+    [Arguments("stylesheets:\n  - a.css\n  - [b,\n    c]\n  - d.css", "a.css|d.css", 3, "a list is not a path")]
     public async Task Read_Test_NestedEntry_IsDroppedAndReported(string block, string expected, int line, string message)
     {
         // Act
@@ -818,6 +819,9 @@ public class FrontMatterParserTests
     [Arguments("author: [&a x, !!str y, *a]\ntitle: Home", "author@1")]
     [Arguments("author: [&a , b]\ntitle: Home", "author@1")]
     [Arguments("author: {\"a\": 'b, c', d: [\"e]\"]}\ntitle: Home", "author@1")]
+    [Arguments("author: {name: !!str 'a } b'}\ntitle: Home", "author@1")]
+    [Arguments("author: [[&a \"x ] y\"]]\ntitle: Home", "author@1")]
+    [Arguments("author:\n  &name: x\ntitle: Home", "author@1")]
     public async Task Read_Test_UnknownKey_IsReportedAndSkipped(string block, string expected)
     {
         // Act
@@ -861,6 +865,8 @@ public class FrontMatterParserTests
     [Arguments("author: &a x\ntitle: *a", 2)]
     [Arguments("stylesheets:\n  - &a x.css\n  - *a", 2)]
     [Arguments("stylesheets: [*a]", 1)]
+    [Arguments("title:\n  &name: x", 2)]
+    [Arguments("stylesheets:\n  - !a: b", 2)]
     public async Task Read_Test_AnchorAliasOrTagOnARecognizedKey_Throws(string block, int line)
     {
         // Act and Assert

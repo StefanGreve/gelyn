@@ -216,7 +216,6 @@ internal ref partial struct LeanYamlParser
 
     private static bool IsEndOrBlank(ReadOnlySpan<char> text, int index) => index >= text.Length || IsBlank(text[index]);
 
-    // A document marker, which YAML reads at column 0 when a space, a tab or the end of the line follows it.
     private static bool IsMarker(ReadOnlySpan<char> line) =>
         (line.StartsWith("---") || line.StartsWith("...")) && IsEndOrBlank(line, 3);
 
@@ -237,7 +236,6 @@ internal ref partial struct LeanYamlParser
         return count;
     }
 
-    // The ':' that ends an implicit key, which a space, a tab or the end of the line follows, or -1.
     private static int FindKeyEnd(ReadOnlySpan<char> line)
     {
         int index = 0;
@@ -265,7 +263,6 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    // The closing quote of a quoted scalar that opens at the start of the text, or -1 when the line does not hold it.
     private static int FindQuoteEnd(ReadOnlySpan<char> text)
     {
         char quote = text[0];
@@ -297,8 +294,7 @@ internal ref partial struct LeanYamlParser
             this.AdvanceLine();
     }
 
-    // Reads the value of the last key to its end, whatever the caller left of it. Only a value that the caller
-    // never asked for may carry an anchor, a tag or an alias.
+    // Only a value that the caller never asked for may carry an anchor, a tag or an alias.
     private void SkipValue()
     {
         int index = this._valueIndex;
@@ -369,8 +365,7 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    // Measures the current line. The indent counts its leading spaces, and the content is the offset of its first
-    // character that is neither a space nor a tab.
+    // The indent counts the leading spaces, and the content is the offset of the first character that is no blank.
     private readonly YamlLineKind ClassifyLine(out int indent, out int content)
     {
         if (this._position >= this._block.Length)
@@ -473,8 +468,6 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    // Reads the node behind the ':' of a key or the '-' of an entry. It starts at the index, on the current
-    // line, or on the lines below it.
     private YamlNodeKind ReadNode(int index, int parentIndent, bool isKeyValue)
     {
         int start = this.SkipBlanks(index);
@@ -541,7 +534,6 @@ internal ref partial struct LeanYamlParser
     {
         char c = this._block[index];
 
-        // Only a value that the caller leaves unread may carry an anchor, a tag or an alias, which are skipped.
         while (c is '&' or '!')
         {
             if (!this._isLenient)
@@ -601,9 +593,17 @@ internal ref partial struct LeanYamlParser
         }
     }
 
-    // Tells whether the node at the index is a mapping, which is a key and its ':' on one line.
     private readonly bool StartsMapping(int index)
     {
+        // An anchor or a tag belongs to the node behind it, and its name may hold a colon, section 6.9.
+        while (this._block[index] is '&' or '!')
+        {
+            index = this.SkipBlanks(this.SkipToken(index));
+
+            if (index == this._lineEnd || this._block[index] == '#')
+                return false;
+        }
+
         ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
         char c = rest[0];
 

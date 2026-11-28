@@ -28,7 +28,6 @@ internal ref partial struct LeanYamlParser
         return YamlNodeKind.Sequence;
     }
 
-    // Reads the next entry of a block sequence whose dashes sit at the column, section 8.2.1.
     private bool ReadBlockEntry(int column, out YamlNodeKind kind)
     {
         kind = YamlNodeKind.Null;
@@ -49,8 +48,6 @@ internal ref partial struct LeanYamlParser
         return true;
     }
 
-    // Reads the next entry of a flow sequence with the comma behind it, or moves the index past the closing
-    // bracket, section 7.4.1.
     private bool ReadFlowEntry(scoped ref int index, int parentIndent, int openLine, out YamlNodeKind kind)
     {
         kind = YamlNodeKind.Null;
@@ -78,7 +75,6 @@ internal ref partial struct LeanYamlParser
         return true;
     }
 
-    // Reads a flow sequence whose entries nobody asks for, and moves the index past its closing bracket.
     private void SkipFlowSequence(scoped ref int index, int parentIndent)
     {
         int line = this._line;
@@ -88,9 +84,11 @@ internal ref partial struct LeanYamlParser
         {
             // An entry that nobody asked for is read for its syntax alone.
         }
+
+        // The entries moved the line of the value on, which is the line the sequence opens on.
+        this._valueLine = line;
     }
 
-    // Moves over blanks, comments and line breaks to the next character of a flow collection.
     private int SkipFlowSpace(int index, int parentIndent, int openLine)
     {
         int next = this.SkipBlanks(index);
@@ -185,7 +183,6 @@ internal ref partial struct LeanYamlParser
         return offset < 0 ? this._lineEnd : index + offset;
     }
 
-    // A plain scalar inside a flow collection also ends at the indicators of the collection, section 7.3.3.
     private YamlNodeKind ReadFlowPlainScalar(scoped ref int index, int parentIndent, int openLine)
     {
         int start = index;
@@ -250,8 +247,6 @@ internal ref partial struct LeanYamlParser
         return IsNull(first) ? YamlNodeKind.Null : YamlNodeKind.Scalar;
     }
 
-    // Returns the end of the text that a line holds from the index on, and moves the index to where the text
-    // stops. The text is open when it runs to the end of the line.
     private readonly int ScanFlowLine(scoped ref int index, out bool isOpen)
     {
         ReadOnlySpan<char> rest = this._block[index..this._lineEnd];
@@ -284,8 +279,7 @@ internal ref partial struct LeanYamlParser
         return end;
     }
 
-    // Follows the brackets of a collection that the parser does not read. A quote opens a scalar only where a
-    // node starts, so that an apostrophe inside plain text stays text.
+    // A quote opens a scalar only where a node starts, so that an apostrophe inside plain text stays text.
     private void SkipFlowCollection(scoped ref int index, int parentIndent)
     {
         int line = this._line;
@@ -301,6 +295,13 @@ internal ref partial struct LeanYamlParser
             {
                 _ = this.ReadQuotedScalar(ref index, parentIndent);
                 isStart = false;
+                continue;
+            }
+
+            // An anchor or a tag stands before its node, which may be a quoted scalar, section 6.9.
+            if (isStart && c is '&' or '!')
+            {
+                index = this.SkipFlowToken(index);
                 continue;
             }
 
